@@ -1,0 +1,33 @@
+{
+    "name": "@extremexp/core",
+    "version": "1.0.0",
+    "description": "Core utilities and shared functionality for extremexp",
+    "main": "./dist/index.js",
+    "types": "./dist/index.d.ts",
+    "exports": {
+        ".": {
+            "types": "./dist/index.d.ts",
+            "default": "./dist/index.js"
+        }
+    },
+    "scripts": {
+        "build": "tsc --build",
+        "build:watch": "tsc --build --watch",
+        "clean": "tsc --build --clean",
+        "test": "echo \"No tests specified\" && exit 0"
+    },
+    "files": [
+        "dist/**/*",
+        "src/**/*"
+    ],
+    "keywords": [
+        "extremexp",
+        "core",
+        "utilities"
+    ],
+    "author": "",
+    "license": "MIT",
+    "devDependencies": {
+        "typescript": "^5.4.5"
+    }
+}

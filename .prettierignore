@@ -1,0 +1,19 @@
+# Dependencies
+node_modules/
+
+# Build outputs
+dist/
+*.tsbuildinfo
+
+# Package lock files
+package-lock.json
+yarn.lock
+
+# Logs
+*.log
+
+# Coverage reports
+coverage/
+
+# VS Code extension packages
+*.vsix
