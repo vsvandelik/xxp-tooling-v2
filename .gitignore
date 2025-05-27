@@ -45,3 +45,8 @@ coverage/
 
 # VS Code extension development
 *.vsix
+
+# Antlr generated files
+*.interp
+*.tokens
+.antlr/

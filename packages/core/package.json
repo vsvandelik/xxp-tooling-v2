@@ -14,7 +14,8 @@
         "build": "tsc --build",
         "build:watch": "tsc --build --watch",
         "clean": "tsc --build --clean",
-        "test": "echo \"No tests specified\" && exit 0"
+        "test": "echo \"No tests specified\" && exit 0",
+		"antlr": "antlr4ng -Dlanguage=TypeScript -visitor -listener -o src/language/generated/ -Xexact-output-dir src/language/grammar/*.g4"
     },
     "files": [
         "dist/**/*",
@@ -27,7 +28,12 @@
     ],
     "author": "",
     "license": "MIT",
+    "dependencies": {
+         "antlr4-c3": "^3.4.1"
+    },
     "devDependencies": {
-        "typescript": "^5.4.5"
+        "typescript": "^5.4.5",
+		"antlr4ng": "^3.0.13",
+		"antlr4ng-cli": "^2.0.0"
     }
 }
