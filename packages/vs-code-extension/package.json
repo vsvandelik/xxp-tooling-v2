@@ -1,7 +1,9 @@
 {
-    "name": "@extremexp/vs-code-extension",
+    "name": "extremexp-vs-code-extension",
+    "displayName": "XXP & ESPACE Language Support",
     "version": "1.0.0",
-    "description": "VS Code extension for extremexp",
+    "description": "VS Code extension for XXP and ESPACE languages",
+    "publisher": "extremexp",
     "main": "./dist/extension.js",
     "types": "./dist/extension.d.ts",
     "exports": {
@@ -9,47 +11,75 @@
             "types": "./dist/extension.d.ts",
             "default": "./dist/extension.js"
         }
-    },
-    "scripts": {
+    },    "scripts": {
         "build": "tsc --build",
         "build:watch": "tsc --build --watch",
         "clean": "tsc --build --clean",
         "test": "echo \"No tests specified\" && exit 0",
         "vscode:prepublish": "npm run build",
-        "package": "vsce package"
-    },
-    "files": [
-        "dist/**/*",
-        "src/**/*"
-    ],
+        "package": "vsce package"    },
     "keywords": [
-        "extremexp",
-        "vscode",
-        "extension"
+        "xxp",
+        "espace",
+        "language",
+        "syntax highlighting",
+        "programming language"
     ],
-    "author": "",
+    "author": "ExtremEXP Team",
     "license": "MIT",
-    "engines": {
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/extremexp/xxp-tooling-v2.git"
+    },
+    "bugs": {
+        "url": "https://github.com/extremexp/xxp-tooling-v2/issues"
+    },
+    "homepage": "https://github.com/extremexp/xxp-tooling-v2#readme",    "engines": {
         "vscode": "^1.85.0"
     },
     "categories": [
-        "Other"
+        "Programming Languages"
     ],
-    "activationEvents": [
-        "onCommand:extremexp.helloWorld"
-    ],
+    "activationEvents": [],
     "contributes": {
-        "commands": [
+        "languages": [
             {
-                "command": "extremexp.helloWorld",
-                "title": "Hello World",
-                "category": "ExtremEXP"
+                "id": "xxp",
+                "aliases": [
+                    "XXP",
+                    "xxp"
+                ],
+                "extensions": [
+                    ".xxp"
+                ],
+                "configuration": "./src/language-configuration/language-configuration.json"
+            },
+            {
+                "id": "espace",
+                "aliases": [
+                    "ESPACE",
+                    "espace"
+                ],
+                "extensions": [
+                    ".espace"
+                ],
+                "configuration": "./src/language-configuration/language-configuration.json"
+            }
+        ],
+        "grammars": [
+            {
+                "language": "xxp",
+                "scopeName": "source.xxp",
+                "path": "./src/language-configuration/xxp.tmLanguage.json"
+            },
+            {
+                "language": "espace",
+                "scopeName": "source.espace",
+                "path": "./src/language-configuration/espace.tmLanguage.json"
             }
         ]
     },
     "dependencies": {
-        "@extremexp/core": "^1.0.0",
-        "@extremexp/artifact-generator": "^1.0.0"
     },
     "devDependencies": {
         "typescript": "^5.4.5",

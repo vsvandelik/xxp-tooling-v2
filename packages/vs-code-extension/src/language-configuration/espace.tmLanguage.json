@@ -1,0 +1,311 @@
+{
+	"$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+	"name": "espace",
+	"patterns": [
+		{
+			"include": "#strings"
+		},
+		{
+			"include": "#comments"
+		},
+		{
+			"include": "#keywords"
+		},
+		{
+			"include": "#connections"
+		},
+		{
+			"include": "#experimentDefinition"
+		},
+		{
+			"include": "#spaceDefinition"
+		},
+		{
+			"include": "#controlBlock"
+		},
+		{
+			"include": "#punctuationSemicolon"
+		},
+		{
+			"include": "#params"
+		},
+		{
+			"include": "#numericConstants"
+		},
+		{
+			"include": "#functions"
+		},
+		{
+			"include": "#strategy"
+		},
+		{
+			"include": "#dataDefinition"
+		},
+		{
+			"include": "#variablesDefinition"
+		}
+	],
+	"repository": {
+		"strings": {
+			"name": "string.quoted.double.espace",
+			"begin": "\"",
+			"end": "\"",
+			"patterns": [
+				{
+					"name": "constant.character.escape.espace",
+					"match": "\\\\."
+				}
+			]
+		},
+		"comments": {
+			"patterns": [
+				{
+					"name": "comment.line.espace",
+					"match": "//.*"
+				}
+			]
+		},
+		"keywords": {
+			"patterns": [
+				{
+					"match": "\\b(START|END)\\b",
+					"name": "constant.language.espace"
+				},
+				{
+					"match": "\\b(condition|of|configure|task|define|data)\\b",
+					"name": "keyword.other.espace"
+				}
+			]
+		},
+		"connections": {
+			"patterns": [
+				{
+					"match": "(START)(?=\\s*(->|-\\?>))",
+					"captures": {
+						"1": {
+							"name": "constant.language.espace"
+						}
+					}
+				},
+				{
+					"match": "\\b(\\w+)(?=\\s*(->|-\\?>))",
+					"captures": {
+						"1": {
+							"name": "entity.name.type.space.espace"
+						}
+					}
+				},
+				{
+					"match": "(?<=->|-\\?>)\\s*(END)",
+					"captures": {
+						"1": {
+							"name": "constant.language.espace"
+						}
+					}
+				},
+				{
+					"match": "(?<=->|-\\?>)\\s*(\\w+)",
+					"captures": {
+						"1": {
+							"name": "entity.name.type.space.espace"
+						}
+					}
+				},
+				{
+					"match": "(-\\?>)",
+					"name": "keyword.operator.conditional.espace"
+				},
+				{
+					"match": "(->)",
+					"name": "keyword.operator.connection.espace"
+				}
+			]
+		},
+		"experimentDefinition": {
+			"patterns": [
+				{
+					"match": "\\b(experiment)\\s+(\\w+)",
+					"captures": {
+						"1": {
+							"name": "storage.type.experiment.espace"
+						},
+						"2": {
+							"name": "entity.name.type.experiment.espace"
+						}
+					}
+				}
+			]
+		},
+		"spaceDefinition": {
+			"patterns": [
+				{
+					"match": "\\b(space)\\s+(\\w+)\\s+(of)\\s+(\\w+)",
+					"captures": {
+						"1": {
+							"name": "storage.type.space.espace"
+						},
+						"2": {
+							"name": "entity.name.type.space.espace"
+						},
+						"3": {
+							"name": "keyword.other.espace"
+						},
+						"4": {
+							"name": "entity.name.type.workflow.espace"
+						}
+					}
+				}
+			]
+		},
+		"controlBlock": {
+			"patterns": [
+				{
+					"match": "\\b(control)\\b",
+					"name": "keyword.control.espace"
+				},
+				{
+					"match": "\\b(condition)\\s+(\"[^\"]*\")",
+					"captures": {
+						"1": {
+							"name": "keyword.other.espace"
+						},
+						"2": {
+							"name": "string.quoted.double.espace"
+						}
+					}
+				}
+			]
+		},
+		"punctuationSemicolon": {
+			"patterns": [
+				{
+					"match": ";",
+					"name": "punctuation.terminator.statement.espace"
+				}
+			]
+		},
+		"params": {
+			"patterns": [
+				{
+					"match": "\\b(param)\\s+(\\w+)\\s*(=)\\s*(enum|range)\\s*\\(",
+					"captures": {
+						"1": {
+							"name": "keyword.other.espace"
+						},
+						"2": {
+							"name": "variable.parameter.espace"
+						},
+						"3": {
+							"name": "keyword.operator.espace"
+						},
+						"4": {
+							"name": "support.function.builtin.espace"
+						}
+					}
+				},
+				{
+					"match": "\\b(param)\\s+(\\w+)\\s*(=)\\s*([\\d\\.]+)",
+					"captures": {
+						"1": {
+							"name": "keyword.other.espace"
+						},
+						"2": {
+							"name": "variable.parameter.espace"
+						},
+						"3": {
+							"name": "keyword.operator.espace"
+						},
+						"4": {
+							"name": "constant.numeric.espace"
+						}
+					}
+				},
+				{
+					"match": "\\b(param)\\s+(\\w+)\\s*;",
+					"captures": {
+						"1": {
+							"name": "keyword.other.espace"
+						},
+						"2": {
+							"name": "variable.parameter.espace"
+						}
+					}
+				}
+			]
+		},
+		"numericConstants": {
+			"patterns": [
+				{
+					"match": "\\b(\\d+(\\.\\d+)?)\\b",
+					"name": "constant.numeric.espace"
+				}
+			]
+		},
+		"functions": {
+			"patterns": [
+				{
+					"match": "\\b(enum|range)(?=\\s*\\()",
+					"name": "support.function.builtin.espace"
+				}
+			]
+		},
+		"strategy": {
+			"patterns": [
+				{
+					"match": "\\b(strategy)\\s+(\\w+)",
+					"captures": {
+						"1": {
+							"name": "keyword.other.espace"
+						},
+						"2": {
+							"name": "constant.language.strategy.espace"
+						}
+					}
+				}
+			]
+		},
+		"dataDefinition": {
+			"patterns": [
+				{
+					"match": "(define)\\s+(data)\\s+(\\w+)\\s*(=)\\s*(\"[^\"]*\")",
+					"captures": {
+						"1": {
+							"name": "keyword.other.espace"
+						},
+						"2": {
+							"name": "storage.type.espace"
+						},
+						"3": {
+							"name": "variable.other.data.espace"
+						},
+						"4": {
+							"name": "keyword.operator.espace"
+						},
+						"5": {
+							"name": "string.quoted.double.espace"
+						}
+					}
+				}
+			]
+		},
+		"variablesDefinition": {
+			"patterns": [
+				{
+					"match": "(configure)\\s+(task)\\s+(\\w+)",
+					"captures": {
+						"1": {
+							"name": "keyword.other.espace"
+						},
+						"2": {
+							"name": "storage.type.espace"
+						},
+						"3": {
+							"name": "entity.name.function.task.espace"
+						}
+					}
+				}
+			]
+		}
+	},
+	"scopeName": "source.espace"
+}
