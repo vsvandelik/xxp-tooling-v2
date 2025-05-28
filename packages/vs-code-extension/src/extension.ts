@@ -25,7 +25,7 @@ function registerXXPLanguageFeatures(context: vscode.ExtensionContext) {
     // - Symbol providers
     // etc.
     
-    console.log('XXP language features registered');
+    console.log('XXP language features registered', context);
 }
 
 /**
@@ -39,7 +39,7 @@ function registerESPACELanguageFeatures(context: vscode.ExtensionContext) {
     // - Symbol providers
     // etc.
     
-    console.log('ESPACE language features registered');
+    console.log('ESPACE language features registered', context);
 }
 
 /**

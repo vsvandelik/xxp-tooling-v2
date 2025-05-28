@@ -1,0 +1,20 @@
+{
+    "extends": "../../../../../tsconfig.json",
+    "compilerOptions": {
+        "outDir": "../../../dist/language/generated",
+        "rootDir": ".",
+        "composite": true,
+        "declaration": true,
+        "declarationMap": true,
+        // Relaxed settings for auto-generated ANTLR files
+        "noUnusedLocals": false,
+        "noUnusedParameters": false,
+        "allowUnusedLabels": true
+    },
+    "include": [
+        "*.ts"
+    ],
+    "exclude": [
+        "node_modules"
+    ]
+}

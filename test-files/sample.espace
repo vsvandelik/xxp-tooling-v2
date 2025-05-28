@@ -1,0 +1,10 @@
+experiment SampleExperiment {
+    space ExampleSpace of WorkflowA {
+        strategy random;
+        param learningRate = enum(0.001, 0.01, 0.1);
+        param batchSize = range(16, 128, 16);
+        configure task ExampleTask {
+            param epochs = 10;
+        }
+    }
+}

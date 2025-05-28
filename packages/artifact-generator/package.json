@@ -2,19 +2,25 @@
     "name": "@extremexp/artifact-generator",
     "version": "1.0.0",
     "description": "Artifact generation utilities for extremexp",
-    "main": "./dist/index.js",
-    "types": "./dist/index.d.ts",
+    "main": "./dist/cli.js",
+    "types": "./dist/cli.d.ts",
+    "type": "module",
+    "bin": {
+        "artifact-generator": "./dist/cli.js"
+    },
     "exports": {
         ".": {
-            "types": "./dist/index.d.ts",
-            "default": "./dist/index.js"
+            "types": "./dist/cli.d.ts",
+            "default": "./dist/cli.js"
         }
     },
     "scripts": {
         "build": "tsc --build",
         "build:watch": "tsc --build --watch",
         "clean": "tsc --build --clean",
-        "test": "echo \"No tests specified\" && exit 0"
+        "test": "echo \"No tests specified\" && exit 0",
+        "cli": "node ./dist/cli.js",
+        "cli:dev": "npm run build && npm run cli"
     },
     "files": [
         "dist/**/*",
@@ -28,7 +34,8 @@
     "author": "",
     "license": "MIT",
     "dependencies": {
-        "@extremexp/core": "^1.0.0"
+        "@extremexp/core": "^1.0.0",
+        "commander": "^11.1.0"
     },
     "devDependencies": {
         "typescript": "^5.4.5"
