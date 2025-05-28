@@ -1,5 +1,6 @@
 import * as fs from 'fs';
 import * as path from 'path';
+import { workflowNameToFileName } from '@extremexp/core';
 
 export class FileResolver {
   private workflowDirectory: string;
@@ -16,7 +17,7 @@ export class FileResolver {
       if (visited.has(name)) return;
       visited.add(name);
 
-      const filePath = path.join(this.workflowDirectory, `${name}.xxp`);
+      const filePath = path.join(this.workflowDirectory, workflowNameToFileName(name));
 
       if (!fs.existsSync(filePath)) {
         throw new Error(`Workflow file not found: ${filePath}`);

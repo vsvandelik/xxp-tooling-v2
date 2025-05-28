@@ -9,3 +9,6 @@ export { XXPParser } from './language/generated/XXPParser.js';
 export { XXPLexer } from './language/generated/XXPLexer.js';
 export { XXPVisitor } from './language/generated/XXPVisitor.js';
 export { XXPListener } from './language/generated/XXPListener.js';
+
+// Export utility functions
+export { workflowNameToFileName } from './utils/naming.js';
