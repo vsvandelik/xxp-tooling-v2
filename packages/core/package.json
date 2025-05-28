@@ -15,8 +15,10 @@
         "build": "tsc --build",
         "build:watch": "tsc --build --watch",
         "clean": "tsc --build --clean",
-        "test": "echo \"No tests specified\" && exit 0",
-		"antlr": "antlr4ng -Dlanguage=TypeScript -visitor -listener -o src/language/generated/ -Xexact-output-dir src/language/grammar/*.g4"
+        "test": "jest",
+        "test:watch": "jest --watch",
+        "test:coverage": "jest --coverage",
+        "antlr": "antlr4ng -Dlanguage=TypeScript -visitor -listener -o src/language/generated/ -Xexact-output-dir src/language/grammar/*.g4"
     },
     "files": [
         "dist/**/*",

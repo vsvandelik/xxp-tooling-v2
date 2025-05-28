@@ -11,13 +11,17 @@
             "types": "./dist/extension.d.ts",
             "default": "./dist/extension.js"
         }
-    },    "scripts": {
+    },    
+    "scripts": {
         "build": "tsc --build",
         "build:watch": "tsc --build --watch",
         "clean": "tsc --build --clean",
-        "test": "echo \"No tests specified\" && exit 0",
+        "test": "jest",
+        "test:watch": "jest --watch",
+        "test:coverage": "jest --coverage",
         "vscode:prepublish": "npm run build",
-        "package": "vsce package"    },
+        "package": "vsce package"
+    },
     "keywords": [
         "xxp",
         "espace",

@@ -55,6 +55,44 @@ npm install
 - `npm run build:watch` - Build all packages in watch mode
 - `npm run clean` - Clean all build outputs
 - `npm run test` - Run tests for all packages
+- `npm run lint` - Lint all packages
+- `npm run format` - Format code with Prettier
+
+### Testing
+
+The project uses Jest with TypeScript and ESM support for comprehensive testing across all packages.
+
+#### Test Structure
+
+- Each package has its own `__tests__/` directory following modern conventions
+- Individual Jest configurations optimized for TypeScript/ESM
+- Coverage reports generated per package with HTML and LCOV formats
+
+#### Running Tests
+
+```bash
+# Run all tests across packages
+npm test
+
+# Run tests for a specific package
+cd packages/core && npm test
+cd packages/artifact-generator && npm test  
+cd packages/vs-code-extension && npm test
+
+# Run tests with coverage
+npm run test:coverage
+
+# Run tests in watch mode
+npm run test:watch
+```
+
+#### Current Test Coverage
+
+- **Core package**: 100% coverage on utility functions (naming.ts)
+- **Artifact generator**: Constructor and validation testing
+- **VS Code extension**: Basic module import testing
+
+See [TESTING.md](./TESTING.md) for detailed testing documentation and best practices.
 
 ### Development
 
@@ -115,8 +153,14 @@ npm run build:watch
 # Clean build outputs
 npm run clean
 
-# Run tests (when implemented)
+# Run tests across all packages
 npm run test
+
+# Run tests with coverage
+npm run test:coverage
+
+# Run tests in watch mode
+npm run test:watch
 ```
 
 ### Working with Individual Packages
