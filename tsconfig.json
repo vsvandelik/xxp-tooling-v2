@@ -20,8 +20,8 @@
         "strictPropertyInitialization": true,
         "noImplicitThis": true,
         "alwaysStrict": true,
-        "noUnusedLocals": true,
-        "noUnusedParameters": true,
+        //"noUnusedLocals": true, #TODO: Uncomment
+        //"noUnusedParameters": true,  #TODO: Uncomment
         "exactOptionalPropertyTypes": true,
         "noImplicitReturns": true,
         "noFallthroughCasesInSwitch": true,

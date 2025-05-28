@@ -17,11 +17,13 @@ export class SpaceModel {
   ) {}
 }
 
+export type ExpressionType = number | string;
+
 export class ParameterDefinition {
   constructor(
     public name: string,
     public type: 'enum' | 'range' | 'value',
-    public values: any[]
+    public values: ExpressionType[]
   ) {}
 }
 

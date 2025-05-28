@@ -1,10 +1,36 @@
-experiment SampleExperiment {
-    space ExampleSpace of WorkflowA {
-        strategy random;
-        param learningRate = enum(0.001, 0.01, 0.1);
-        param batchSize = range(16, 128, 16);
-        configure task ExampleTask {
-            param epochs = 10;
-        }
+experiment E1 {
+  space One of A1 {
+    strategy gridsearch;
+    param secondParam = enum(1,2,3);
+    param thirdParam = range(0.1, 0.5, 0.1);
+    configure task task2 {
+      param secondParam = 20;
     }
+  }
+
+  space Two of A1 {
+    strategy randomsearch;
+    param secondParam = enum(1);
+    param thirdParam = enum(0.1);
+  }
+
+  space Three of A2 {
+    strategy gridsearch;
+    param secondParam = enum(20,30,50);
+    param thirdParam = enum(20, 2000, 50);
+  }
+
+  control {
+    START -> One;
+    One -?> Two {
+      condition "input() == 'yes'";
+    }
+    One -?> Three {
+      condition "input() == 'no'";
+    }
+    Two -> END;
+    Three -> END;
+  }
+
+  define data inputData = "path/to/input/file";
 }

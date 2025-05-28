@@ -27,7 +27,7 @@ paramValue:
     enumFunction
     | rangeFunction;
 
-enumFunction: ENUM LPAREN expression COMMA expression COMMA expression RPAREN;
+enumFunction: ENUM LPAREN expression (COMMA expression)* RPAREN;
 rangeFunction: RANGE LPAREN NUMBER COMMA NUMBER COMMA NUMBER RPAREN;
 
 // Task configuration (similar to XXP)

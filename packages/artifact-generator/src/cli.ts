@@ -3,15 +3,15 @@
 import { Command } from 'commander';
 import * as fs from 'fs';
 import * as path from 'path';
-import { ArtifactGenerator } from './ArtifactGenerator.js';
+import { ArtifactGenerator } from './generators/ArtifactGenerator.js';
 
 const program = new Command();
 
+// prettier-ignore
 program
   .name('artifact-generator')
   .description('Generate experiment artifacts from ESPACE files')
-  .version('1.0.0')
-  ['argument']('<espace-file>', 'Path to the ESPACE experiment file')
+  .version('1.0.0')['argument']('<espace-file>', 'Path to the ESPACE experiment file')
   .option('-o, --output <path>', 'Output file path', 'artifact.json')
   .option('--validate-only', 'Only validate, do not generate artifact')
   .option('--verbose', 'Enable verbose logging')
