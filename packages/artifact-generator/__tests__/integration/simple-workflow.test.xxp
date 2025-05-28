@@ -1,0 +1,87 @@
+=== TEST NAME: Simple Single Workflow Test ===
+
+=== DESCRIPTION: Tests a simple single workflow without inheritance ===
+
+=== FILE: simpleWorkflow.xxp ===
+workflow SimpleWorkflow {
+    define task task1;
+    define data inputData;
+    define data outputData;
+    
+    START -> task1 -> END;
+    
+    configure task task1 {
+        implementation "simple_task.py";
+        param param1 = 1.0;
+        param param2;
+        input inputData;
+        output outputData;
+    }
+}
+
+=== FILE: simple.espace ===
+experiment SimpleExperiment {
+    space SingleSpace of SimpleWorkflow {
+        strategy gridsearch;
+        param param2 = enum(10, 20);
+    }
+    
+    control {
+        START -> SingleSpace;
+        SingleSpace -> END;
+    }
+    
+    define data inputData = "input.txt";
+}
+
+=== EXPECTED OUTPUT ===
+{
+    "experiment": "SimpleExperiment",
+    "version": "1.0",
+    "tasks": [
+        [
+            {
+                "taskId": "SimpleWorkflow:task1",
+                "workflow": "SimpleWorkflow",
+                "implementation": "simple_task.py",
+                "dynamicParameters": [
+                    "param2"
+                ],
+                "staticParameters": {
+                    "param1": 1.0
+                },
+                "inputData": [
+                    "inputData"
+                ],
+                "outputData": [
+                    "outputData"
+                ]
+            }
+        ]
+    ],
+    "spaces": [
+        {
+            "spaceId": "SingleSpace",
+            "tasksOrder": [
+                "SimpleWorkflow:task1"
+            ],
+            "parameters": [
+                {
+                    "param2": 10
+                },
+                {
+                    "param2": 20
+                }
+            ]
+        }
+    ],
+    "control": {
+        "START": "SingleSpace",
+        "transitions": [
+            {
+                "from": "SingleSpace",
+                "to": "END"
+            }
+        ]
+    }
+}

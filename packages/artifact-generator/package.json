@@ -21,8 +21,10 @@
         "test": "jest",
         "test:watch": "jest --watch",
         "test:coverage": "jest --coverage",
+        "test:integration": "npm test -- --testNamePattern=\"Integration Tests\"",
         "cli": "node ./dist/cli.js",
-        "cli:dev": "npm run build && npm run cli"
+        "cli:dev": "npm run build && npm run cli",
+        "integration-test": "node ./dist/integration-test-cli.js"
     },
     "files": [
         "dist/**/*",

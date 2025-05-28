@@ -76,7 +76,7 @@ Each package supports:
 
 ### 📁 Test Coverage
 - **Core package**: 100% coverage on `naming.ts` utility functions
-- **Artifact generator**: Basic constructor and validation tests
+- **Artifact generator**: Basic constructor and validation tests + Integration testing infrastructure
 - **VS Code extension**: Basic module import and placeholder tests
 
 ## Configuration Details
@@ -137,6 +137,37 @@ describe('Module Name', () => {
 3. **Performance tests**: Benchmark parsing and generation operations
 4. **Root project discovery**: Fix Jest configuration for unified test runs
 5. **CI/CD integration**: Automated testing in build pipelines
+
+## Integration Testing
+
+The artifact generator now includes comprehensive integration testing infrastructure that allows testing complete scenarios with multiple input files and expected outputs in single test files.
+
+### Integration Test Features
+- **Single file format**: Combine multiple XXP/ESPACE files and expected output
+- **Temporary file handling**: Automatic creation/cleanup of test environments
+- **JSON comparison**: Deep comparison of generated vs expected artifacts
+- **CLI tool**: Standalone utility for running individual integration tests
+- **Jest integration**: Automatic discovery and execution in test suite
+
+### Running Integration Tests
+```bash
+# Run all integration tests via Jest
+npm run test:integration
+
+# Run specific integration test file  
+npm run integration-test __tests__/integration/test-name.test.xxp
+
+# Run with verbose output
+npm run integration-test -- file.test.xxp --verbose
+```
+
+### Creating Integration Tests
+1. Create `.test.xxp` file in `__tests__/integration/`
+2. Define input files with `=== FILE: filename ===` sections
+3. Add expected JSON output with `=== EXPECTED OUTPUT ===`
+4. Tests are automatically discovered by Jest
+
+See `packages/artifact-generator/INTEGRATION_TESTING.md` for detailed documentation.
 
 ## Troubleshooting
 
