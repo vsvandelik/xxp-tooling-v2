@@ -1,5 +1,0 @@
-workflow A2 from A {
-	configure task task2 {
-		implementation "path/to/new_task3.py";
-	}
-}
