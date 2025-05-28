@@ -105,14 +105,23 @@ export class ArtifactGenerator {
       }
 
       const definedParams = new Set<string>();
+      const staticParams = new Set<string>();
       workflows.forEach(workflow =>
         workflow.tasks.forEach(task =>
-          task.parameters.forEach(param => definedParams.add(param.name))
+          task.parameters.forEach(param => {
+            definedParams.add(param.name);
+            // Parameters with static values (non-null) are considered "used"
+            if (param.value !== null) {
+              staticParams.add(param.name);
+            }
+          })
         )
       );
 
       for (const param of definedParams) {
-        if (!usedParams.has(param)) {
+        // A parameter is considered "used" if it's either used in experiment spaces
+        // or has a static value defined in the workflow
+        if (!usedParams.has(param) && !staticParams.has(param)) {
           warnings.push(`Parameter '${param}' is defined but never used`);
         }
       }

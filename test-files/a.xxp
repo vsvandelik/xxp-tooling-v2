@@ -6,9 +6,7 @@ workflow A {
 	define data task1Output2;
 	define data outputData;
 
-	START -> task1 -> task2 -> END;
-
-	configure task task1 {
+	START -> task1 -> task2 -> END;	configure task task1 {
 		implementation "path/to/task1.py";
 		param firstParam = 0.2;
 		param secondParam;

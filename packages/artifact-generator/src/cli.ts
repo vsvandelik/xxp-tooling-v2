@@ -12,7 +12,7 @@ program
   .name('artifact-generator')
   .description('Generate experiment artifacts from ESPACE files')
   .version('1.0.0')['argument']('<espace-file>', 'Path to the ESPACE experiment file')
-  .option('-o, --output <path>', 'Output file path', 'artifact.json')
+  .option('-o, --output <path>', 'Output file path (default: artifact.json in same directory as input file)', 'artifact.json')
   .option('--validate-only', 'Only validate, do not generate artifact')
   .option('--verbose', 'Enable verbose logging')
   .action(
@@ -47,7 +47,15 @@ program
 
         const artifact = await generator.generate(espaceFile);
 
-        const outputPath = path.resolve(options.output);
+        // If output is the default 'artifact.json', place it in the same directory as the input file
+        let outputPath: string;
+        if (options.output === 'artifact.json') {
+          const espaceDir = path.dirname(path.resolve(espaceFile));
+          outputPath = path.join(espaceDir, 'artifact.json');
+        } else {
+          outputPath = path.resolve(options.output);
+        }
+        
         fs.writeFileSync(outputPath, JSON.stringify(artifact, null, 2));
 
         console.log(`Artifact generated successfully: ${outputPath}`);

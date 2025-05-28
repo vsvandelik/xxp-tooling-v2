@@ -172,11 +172,11 @@ export class TaskResolver {
   ): ResolvedTask {
     const dynamicParameters: string[] = [];
     const staticParameters: Record<string, ExpressionType> = {};
-    const allParameters = new Map<string, ExpressionType>();
-
-    // Start with task's own parameters
+    const allParameters = new Map<string, ExpressionType>();    // Start with task's own parameters that have values
     for (const param of task.parameters) {
-      allParameters.set(param.name, param.value!);
+      if (param.value !== null) {
+        allParameters.set(param.name, param.value);
+      }
     }
 
     // Apply space parameters
@@ -187,11 +187,10 @@ export class TaskResolver {
       } else {
         dynamicParameters.push(paramName);
       }
-    }
-
-    // Check for remaining required parameters
+    }    // Check for remaining required parameters
     for (const param of task.parameters) {
-      if (param.isRequired && !allParameters.has(param.name)) {
+      const isProvided = allParameters.has(param.name) || dynamicParameters.includes(param.name);
+      if (param.isRequired && !isProvided) {
         throw new Error(`Required parameter '${param.name}' not provided for task '${task.name}'`);
       }
       if (
