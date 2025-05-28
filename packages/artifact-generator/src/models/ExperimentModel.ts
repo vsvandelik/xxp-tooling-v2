@@ -1,12 +1,11 @@
 export class ExperimentModel {
-    constructor(
-        public name: string,
-        public spaces: SpaceModel[],
-        public dataDefinitions: DataDefinition[],
-        public controlFlow: ControlFlow | null = null
+  constructor(
+    public name: string,
+    public spaces: SpaceModel[],
+    public dataDefinitions: DataDefinition[],
+    public controlFlow: ControlFlow | null = null
   ) {}
 }
-
 
 export class SpaceModel {
   constructor(
@@ -34,9 +33,7 @@ export class TaskConfiguration {
 }
 
 export class ControlFlow {
-  constructor(
-    public transitions: Transition[]
-  ) {}
+  constructor(public transitions: Transition[]) {}
 }
 
 export class Transition {

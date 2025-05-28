@@ -1,3 +1,1 @@
-export class WorkflowModel {
-    
-}
+export class WorkflowModel {}

@@ -1,265 +1,265 @@
 {
-	"$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
-	"name": "xxp",
-	"patterns": [
-		{
-			"include": "#strings"
-		},
-		{
-			"include": "#comments"
-		},
-		{
-			"include": "#keywords"
-		},
-		{
-			"include": "#connections"
-		},
-		{
-			"include": "#workflowDefinition"
-		},
-		{
-			"include": "#implementations"
-		},
-		{
-			"include": "#punctuationSemicolon"
-		},
-		{
-			"include": "#params"
-		},
-		{
-			"include": "#numericConstants"
-		},
-		{
-			"include": "#inputOutput"
-		},
-		{
-			"include": "#variablesDefinition"
-		}
-	],
-	"repository": {
-		"strings": {
-			"name": "string.quoted.double.xxp",
-			"begin": "\"",
-			"end": "\"",
-			"patterns": [
-				{
-					"name": "constant.character.escape.xxp",
-					"match": "\\\\."
-				}
-			]
-		},
-		"comments": {
-			"patterns": [
-				{
-					"name": "comment.line.xxp",
-					"match": "//.*"
-				}
-			]
-		},
-		"variablesDefinition": {
-			"patterns": [
-				{
-					"match": "(define)\\s+(task)\\s+(\\w+)",
-					"captures": {
-						"1": {
-							"name": "keyword.xxp"
-						},
-						"2": {
-							"name": "storage.type.xxp"
-						},
-						"3": {
-							"name": "entity.name.function.task.xxp"
-						}
-					}
-				},
-				{
-					"match": "(define)\\s+(data)\\s+(\\w+)",
-					"captures": {
-						"1": {
-							"name": "keyword.xxp"
-						},
-						"2": {
-							"name": "storage.type.xxp"
-						},
-						"3": {
-							"name": "variable.other.data.xxp"
-						}
-					}
-				},
-				{
-					"match": "(configure)\\s+(task)\\s+(\\w+)",
-					"captures": {
-						"1": {
-							"name": "keyword.xxp"
-						},
-						"2": {
-							"name": "storage.type.xxp"
-						},
-						"3": {
-							"name": "entity.name.function.task.xxp"
-						}
-					}
-				}
-			]
-		},
-		"keywords": {
-			"patterns": [
-				{
-					"match": "\\b(START|END)\\b",
-					"name": "constant.language.xxp"
-				},
-				{
-					"match": "\\b(define|configure|from|input|output)\\b",
-					"name": "keyword.other.xxp"
-				}
-			]
-		},
-		"connections": {
-			"patterns": [
-				{
-					"match": "(START)(?=\\s*->)",
-					"captures": {
-						"1": {
-							"name": "constant.language.xxp"
-						}
-					}
-				},
-				{
-					"match": "\\b(\\w+)(?=\\s*->)",
-					"captures": {
-						"1": {
-							"name": "entity.name.function.task.xxp"
-						}
-					}
-				},
-				{
-					"match": "(?<=->)\\s*(END)",
-					"captures": {
-						"1": {
-							"name": "constant.language.xxp"
-						}
-					}
-				},
-				{
-					"match": "(?<=->)\\s*(\\w+)",
-					"captures": {
-						"1": {
-							"name": "entity.name.function.task.xxp"
-						}
-					}
-				},
-				{
-					"match": "(->)",
-					"name": "keyword.operator.connection.xxp"
-				}
-			]
-		},
-		"workflowDefinition": {
-			"patterns": [
-				{
-					"match": "\\b(workflow)\\s+(\\w+)(?:\\s+(from)\\s+(\\w+))?",
-					"captures": {
-						"1": {
-							"name": "storage.type.workflow.xxp"
-						},
-						"2": {
-							"name": "entity.name.type.workflow.xxp"
-						},
-						"3": {
-							"name": "keyword.other.xxp"
-						},
-						"4": {
-							"name": "entity.name.type.workflow.xxp"
-						}
-					}
-				}
-			]
-		},
-		"implementations": {
-			"patterns": [
-				{
-					"match": "\\b(implementation)\\s+(\"[^\"]*\")",
-					"captures": {
-						"1": {
-							"name": "keyword.other.implementation.xxp"
-						},
-						"2": {
-							"name": "string.quoted.double.xxp"
-						}
-					}
-				},
-				{
-					"match": "\\b(implementation)\\b",
-					"name": "keyword.other.implementation.xxp"
-				}
-			]
-		},
-		"punctuationSemicolon": {
-			"patterns": [
-				{
-					"match": ";",
-					"name": "punctuation.terminator.statement.xxp"
-				}
-			]
-		},
-		"params": {
-			"patterns": [
-				{
-					"match": "\\b(param)\\s+(\\w+)\\s*(=)\\s*([\\d\\.]+)",
-					"captures": {
-						"1": {
-							"name": "keyword.other.xxp"
-						},
-						"2": {
-							"name": "variable.parameter.xxp"
-						},
-						"3": {
-							"name": "keyword.operator.xxp"
-						},
-						"4": {
-							"name": "constant.numeric.xxp"
-						}
-					}
-				},
-				{
-					"match": "\\b(param)\\s+(\\w+)\\s*;",
-					"captures": {
-						"1": {
-							"name": "keyword.other.xxp"
-						},
-						"2": {
-							"name": "variable.parameter.xxp"
-						}
-					}
-				}
-			]
-		},
-		"inputOutput": {
-			"patterns": [
-				{
-					"match": "\\b(input|output)\\s+(\\w+)(?:\\s*,\\s*(\\w+))*",
-					"captures": {
-						"1": {
-							"name": "keyword.other.xxp"
-						},
-						"2": {
-							"name": "variable.other.data.xxp"
-						},
-						"3": {
-							"name": "variable.other.data.xxp"
-						}
-					}
-				}
-			]
-		},
-		"numericConstants": {
-			"patterns": [
-				{
-					"match": "\\b(\\d+(\\.\\d+)?)\\b",
-					"name": "constant.numeric.xxp"
-				}
-			]
-		}
-	},
-	"scopeName": "source.xxp"
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "xxp",
+  "patterns": [
+    {
+      "include": "#strings"
+    },
+    {
+      "include": "#comments"
+    },
+    {
+      "include": "#keywords"
+    },
+    {
+      "include": "#connections"
+    },
+    {
+      "include": "#workflowDefinition"
+    },
+    {
+      "include": "#implementations"
+    },
+    {
+      "include": "#punctuationSemicolon"
+    },
+    {
+      "include": "#params"
+    },
+    {
+      "include": "#numericConstants"
+    },
+    {
+      "include": "#inputOutput"
+    },
+    {
+      "include": "#variablesDefinition"
+    }
+  ],
+  "repository": {
+    "strings": {
+      "name": "string.quoted.double.xxp",
+      "begin": "\"",
+      "end": "\"",
+      "patterns": [
+        {
+          "name": "constant.character.escape.xxp",
+          "match": "\\\\."
+        }
+      ]
+    },
+    "comments": {
+      "patterns": [
+        {
+          "name": "comment.line.xxp",
+          "match": "//.*"
+        }
+      ]
+    },
+    "variablesDefinition": {
+      "patterns": [
+        {
+          "match": "(define)\\s+(task)\\s+(\\w+)",
+          "captures": {
+            "1": {
+              "name": "keyword.xxp"
+            },
+            "2": {
+              "name": "storage.type.xxp"
+            },
+            "3": {
+              "name": "entity.name.function.task.xxp"
+            }
+          }
+        },
+        {
+          "match": "(define)\\s+(data)\\s+(\\w+)",
+          "captures": {
+            "1": {
+              "name": "keyword.xxp"
+            },
+            "2": {
+              "name": "storage.type.xxp"
+            },
+            "3": {
+              "name": "variable.other.data.xxp"
+            }
+          }
+        },
+        {
+          "match": "(configure)\\s+(task)\\s+(\\w+)",
+          "captures": {
+            "1": {
+              "name": "keyword.xxp"
+            },
+            "2": {
+              "name": "storage.type.xxp"
+            },
+            "3": {
+              "name": "entity.name.function.task.xxp"
+            }
+          }
+        }
+      ]
+    },
+    "keywords": {
+      "patterns": [
+        {
+          "match": "\\b(START|END)\\b",
+          "name": "constant.language.xxp"
+        },
+        {
+          "match": "\\b(define|configure|from|input|output)\\b",
+          "name": "keyword.other.xxp"
+        }
+      ]
+    },
+    "connections": {
+      "patterns": [
+        {
+          "match": "(START)(?=\\s*->)",
+          "captures": {
+            "1": {
+              "name": "constant.language.xxp"
+            }
+          }
+        },
+        {
+          "match": "\\b(\\w+)(?=\\s*->)",
+          "captures": {
+            "1": {
+              "name": "entity.name.function.task.xxp"
+            }
+          }
+        },
+        {
+          "match": "(?<=->)\\s*(END)",
+          "captures": {
+            "1": {
+              "name": "constant.language.xxp"
+            }
+          }
+        },
+        {
+          "match": "(?<=->)\\s*(\\w+)",
+          "captures": {
+            "1": {
+              "name": "entity.name.function.task.xxp"
+            }
+          }
+        },
+        {
+          "match": "(->)",
+          "name": "keyword.operator.connection.xxp"
+        }
+      ]
+    },
+    "workflowDefinition": {
+      "patterns": [
+        {
+          "match": "\\b(workflow)\\s+(\\w+)(?:\\s+(from)\\s+(\\w+))?",
+          "captures": {
+            "1": {
+              "name": "storage.type.workflow.xxp"
+            },
+            "2": {
+              "name": "entity.name.type.workflow.xxp"
+            },
+            "3": {
+              "name": "keyword.other.xxp"
+            },
+            "4": {
+              "name": "entity.name.type.workflow.xxp"
+            }
+          }
+        }
+      ]
+    },
+    "implementations": {
+      "patterns": [
+        {
+          "match": "\\b(implementation)\\s+(\"[^\"]*\")",
+          "captures": {
+            "1": {
+              "name": "keyword.other.implementation.xxp"
+            },
+            "2": {
+              "name": "string.quoted.double.xxp"
+            }
+          }
+        },
+        {
+          "match": "\\b(implementation)\\b",
+          "name": "keyword.other.implementation.xxp"
+        }
+      ]
+    },
+    "punctuationSemicolon": {
+      "patterns": [
+        {
+          "match": ";",
+          "name": "punctuation.terminator.statement.xxp"
+        }
+      ]
+    },
+    "params": {
+      "patterns": [
+        {
+          "match": "\\b(param)\\s+(\\w+)\\s*(=)\\s*([\\d\\.]+)",
+          "captures": {
+            "1": {
+              "name": "keyword.other.xxp"
+            },
+            "2": {
+              "name": "variable.parameter.xxp"
+            },
+            "3": {
+              "name": "keyword.operator.xxp"
+            },
+            "4": {
+              "name": "constant.numeric.xxp"
+            }
+          }
+        },
+        {
+          "match": "\\b(param)\\s+(\\w+)\\s*;",
+          "captures": {
+            "1": {
+              "name": "keyword.other.xxp"
+            },
+            "2": {
+              "name": "variable.parameter.xxp"
+            }
+          }
+        }
+      ]
+    },
+    "inputOutput": {
+      "patterns": [
+        {
+          "match": "\\b(input|output)\\s+(\\w+)(?:\\s*,\\s*(\\w+))*",
+          "captures": {
+            "1": {
+              "name": "keyword.other.xxp"
+            },
+            "2": {
+              "name": "variable.other.data.xxp"
+            },
+            "3": {
+              "name": "variable.other.data.xxp"
+            }
+          }
+        }
+      ]
+    },
+    "numericConstants": {
+      "patterns": [
+        {
+          "match": "\\b(\\d+(\\.\\d+)?)\\b",
+          "name": "constant.numeric.xxp"
+        }
+      ]
+    }
+  },
+  "scopeName": "source.xxp"
 }
