@@ -22,6 +22,11 @@ export interface ValidationResult {
   warnings: string[];
 }
 
+export interface ArtifactGeneratorOutput {
+  artifact?: ArtifactModel;
+  validation: ValidationResult;
+}
+
 export class ArtifactGenerator {
   private verbose = false;
   private experimentParser = new ExperimentParser();
@@ -38,19 +43,16 @@ export class ArtifactGenerator {
     this.verbose = options.verbose || false;
   }
 
-  async generate(espaceFilePath: string): Promise<ArtifactModel> {
-    console.log(`Generating artifact from: ${espaceFilePath}`);
+  async generate(espaceFilePath: string): Promise<ArtifactGeneratorOutput> {
+    if (this.verbose) {
+      console.log(`Generating artifact from: ${espaceFilePath}`);
+    }
     this.initializeFileResolver(espaceFilePath);
 
     const validation = await this.validate(espaceFilePath);
 
     if (validation.errors.length > 0) {
-      throw new Error(`Validation failed:\n${validation.errors.join('\n')}`);
-    }
-
-    if (validation.warnings.length > 0 && this.verbose) {
-      console.warn('Warnings:');
-      validation.warnings.forEach(warning => console.warn(`  - ${warning}`));
+      return { validation };
     }
 
     const { experiment, workflows } = await this.parseFiles(espaceFilePath);
@@ -63,7 +65,8 @@ export class ArtifactGenerator {
     const spaces = this.spaceGenerator.generate(experiment, resolvedParameters, resolvedTasks, this.taskResolver, workflows);
     const control = this.controlFlowGenerator.generate(experiment);
 
-    return new ArtifactModel(experiment.name, '1.0', tasks, spaces, control);
+    const artifact = new ArtifactModel(experiment.name, '1.0', tasks, spaces, control);
+    return { artifact, validation };
   }
 
   async validate(espaceFilePath: string): Promise<ValidationResult> {
@@ -143,7 +146,9 @@ export class ArtifactGenerator {
     const workflowNames = experiment.spaces.map(space => space.workflowName);
     const uniqueWorkflowNames = [...new Set(workflowNames)];
 
-    console.log(`Found workflows: ${uniqueWorkflowNames.join(', ')}`);
+    if (this.verbose) {
+      console.log(`Found workflows: ${uniqueWorkflowNames.join(', ')}`);
+    }
 
     const workflows: WorkflowModel[] = [];
 

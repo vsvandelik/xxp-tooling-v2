@@ -1,0 +1,26 @@
+=== invalidWorkflow.xxp ===
+
+workflow InvalidWorkflow {
+    define task task1;
+    
+    // Invalid syntax - missing semicolon
+    START -> task1 -> END
+    
+    configure task task1 {
+        implementation "script.py";
+    }
+}
+
+=== invalid.espace ===
+
+experiment InvalidExperiment {
+    space InvalidSpace of InvalidWorkflow {
+        strategy gridsearch;
+    }
+    control {
+        START -> InvalidSpace -> END;
+    }
+}
+
+=== ERRORS ===
+- Parsing error in file "invalidWorkflow.xxp" at line 7, column 4: extraneous input 'configure' expecting {';', '->'}

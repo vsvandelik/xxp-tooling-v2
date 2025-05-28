@@ -1,0 +1,61 @@
+=== runnerWorkflow.xxp ===
+
+workflow RunnerWorkflow {
+    define task task123;
+    START -> task123 -> END;
+
+    configure task task123 {
+        implementation "script.py";
+    }
+}
+
+=== runner.espace ===
+
+experiment E1 {
+    space ASpace of RunnerWorkflow {
+        strategy gridsearch;
+    }
+    control {
+        START -> ASpace -> END;
+    }
+}
+
+=== OUTPUT ===
+
+{
+  "experiment": "E1",
+  "version": "1.0",
+  "tasks": [
+    [
+      {
+        "taskId": "RunnerWorkflow:task123",
+        "workflow": "RunnerWorkflow",
+        "implementation": "script.py",
+        "dynamicParameters": [],
+        "staticParameters": {},
+        "inputData": [],
+        "outputData": []
+      }
+    ]
+  ],
+  "spaces": [
+    {
+      "spaceId": "ASpace",
+      "tasksOrder": [
+        "RunnerWorkflow:task123"
+      ],
+      "parameters": [
+        {}
+      ]
+    }
+  ],
+  "control": {
+    "START": "ASpace",
+    "transitions": [
+      {
+        "from": "ASpace",
+        "to": "END"
+      }
+    ]
+  }
+}

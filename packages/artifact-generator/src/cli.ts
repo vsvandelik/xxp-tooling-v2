@@ -32,20 +32,14 @@ program
 
         if (options.validateOnly) {
           const validation = await generator.validate(espaceFile);
-          if (validation.errors.length > 0) {
-            console.error('Validation errors:');
-            validation.errors.forEach(error => console.error(`  - ${error}`));
-            process.exit(1);
-          }
-          if (validation.warnings.length > 0) {
-            console.warn('Validation warnings:');
-            validation.warnings.forEach(warning => console.warn(`  - ${warning}`));
-          }
+          printValidationResults(validation);
           console.log('Validation successful');
           return;
         }
 
-        const artifact = await generator.generate(espaceFile);
+        const { artifact, validation } = await generator.generate(espaceFile);
+
+        printValidationResults(validation);
 
         // If output is the default 'artifact.json', place it in the same directory as the input file
         let outputPath: string;
@@ -60,10 +54,22 @@ program
 
         console.log(`Artifact generated successfully: ${outputPath}`);
       } catch (error) {
-        console.error('Error:', error instanceof Error ? error.message : error);
+        console.error('Unexpected error:', error instanceof Error ? error.message : error);
         process.exit(1);
       }
     }
   );
 
 program.parse();
+
+function printValidationResults(validation: { errors: string[]; warnings: string[] }): void {
+  if (validation.errors.length > 0) {
+    console.error('Validation errors:');
+    validation.errors.forEach(error => console.error(`  - ${error}`));
+    process.exit(1);
+  }
+  if (validation.warnings.length > 0) {
+    console.warn('Validation warnings:');
+    validation.warnings.forEach(warning => console.warn(`  - ${warning}`));
+  }
+}

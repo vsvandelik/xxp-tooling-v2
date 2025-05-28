@@ -1,0 +1,27 @@
+=== validWorkflow.xxp ===
+
+workflow ValidWorkflow {
+    define task task1;
+    
+    START -> task1 -> END;
+    
+    configure task task1 {
+        implementation "script.py";
+        param required_param;
+    }
+}
+
+=== validation-error.espace ===
+
+experiment ValidationErrorExperiment {
+    space TestSpace of ValidWorkflow {
+        strategy gridsearch;
+        // Missing required parameter definition
+    }
+    control {
+        START -> TestSpace -> END;
+    }
+}
+
+=== ERRORS ===
+- Required parameter 'required_param' not provided for task 'task1'
