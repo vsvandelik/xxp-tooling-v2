@@ -44,24 +44,20 @@ export class WorkflowModelVisitor extends XXPVisitor<any> {
         taskChain = this.visit(content.taskChain()!);
       } else if (content.taskConfiguration()) {
         const config = this.visit(content.taskConfiguration()!);
-        taskConfigurations.set(config.taskName, config);
+        taskConfigurations.set(config.name, config);
       }
     }
 
     // TODO: Add validations not to configure not existing task. And that there is just one task chain.
 
-    // Apply configurations to tasks
-    for (const task of tasks) {
-      const config = taskConfigurations.get(task.name);
-      if (config) {
-        task.implementation = config.implementation;
-        task.parameters = config.parameters;
-        task.inputs = config.inputs;
-        task.outputs = config.outputs;
-      }
-    }
-
-    return new WorkflowModel(this.workflowName!, parentWorkflow, tasks, data, taskChain);
+    return new WorkflowModel(
+      this.workflowName!, 
+      parentWorkflow, 
+      tasks, 
+      data, 
+      taskChain, 
+      Array.from(taskConfigurations.values())
+    );
   };
 
   override visitTaskDefinition = (ctx: TaskDefinitionContext): TaskModel => {
@@ -94,7 +90,17 @@ export class WorkflowModelVisitor extends XXPVisitor<any> {
     const header = ctx.taskConfigurationHeader();
     const body = ctx.taskConfigurationBody();
 
-    const taskName = header.taskNameRead().IDENTIFIER().getText();
+    const taskNameRead = header.taskNameRead();
+    if (!taskNameRead) {
+      throw new Error('TaskNameRead is null/undefined in task configuration');
+    }
+    
+    const identifier = taskNameRead.IDENTIFIER();
+    if (!identifier) {
+      throw new Error('IDENTIFIER is null/undefined in task configuration');
+    }
+    
+    const taskName = identifier.getText();
 
     let implementation: string | null = null;
     const parameters: ParameterModel[] = [];
@@ -132,7 +138,8 @@ export class WorkflowModelVisitor extends XXPVisitor<any> {
       }
     }
 
-    return new TaskConfigurationModel(taskName, implementation, parameters, inputs, outputs);
+    const result = new TaskConfigurationModel(taskName, implementation, parameters, inputs, outputs);
+    return result;
   };
 
   private parseExpression(ctx: ExpressionContext): ExpressionType | null {

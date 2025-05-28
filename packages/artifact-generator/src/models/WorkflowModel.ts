@@ -6,7 +6,8 @@ export class WorkflowModel {
     public parentWorkflow: string | null,
     public tasks: TaskModel[],
     public data: DataModel[],
-    public taskChain: TaskChain | null
+    public taskChain: TaskChain | null,
+    public taskConfigurations: TaskConfigurationModel[] = [] // TODO: This should  be merged with tasks
   ) {}
 }
 

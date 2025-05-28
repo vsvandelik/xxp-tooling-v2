@@ -59,6 +59,23 @@ export class TaskResolver {
     workflowMap: Map<string, WorkflowModel>
   ): WorkflowModel {
     if (!workflow.parentWorkflow) {
+      // Apply configurations to workflows without parents
+      for (const config of workflow.taskConfigurations) {
+        const task = workflow.tasks.find(t => t.name === config.name);
+        if (task) {
+          if (config.implementation !== null) {
+            task.implementation = config.implementation;
+          }
+          task.parameters = [...task.parameters, ...config.parameters];
+          if (config.inputs.length > 0) {
+            task.inputs = config.inputs;
+          }
+          if (config.outputs.length > 0) {
+            task.outputs = config.outputs;
+          }
+        }
+      }
+      
       return workflow;
     }
 
@@ -74,17 +91,17 @@ export class TaskResolver {
     // Merge parent and child workflows
     const mergedTasks = new Map<string, TaskModel>();
 
-    // Add child tasks first
-    for (const task of workflow.tasks) {
+    // Add parent tasks first (as the base)
+    for (const task of resolvedParent.tasks) {
       const taskModel = this.constructTaskModel(task, workflow.name);
       mergedTasks.set(task.name, taskModel);
     }
 
-    // Override with parent tasks (parent overrides child)
-    for (const task of resolvedParent.tasks) {
+    // Override with child tasks (child overrides parent)
+    for (const task of workflow.tasks) {
       const existingTask = mergedTasks.get(task.name);
       if (existingTask) {
-        // Merge task configurations, parent overrides child
+        // Merge task configurations, child overrides parent
         const mergedTask = new TaskModel(task.name, workflow.name);
         mergedTask.implementation = task.implementation || existingTask.implementation;
         mergedTask.parameters = [...existingTask.parameters, ...task.parameters];
@@ -97,12 +114,32 @@ export class TaskResolver {
       }
     }
 
-    return {
+    const result = {
       ...workflow,
       tasks: Array.from(mergedTasks.values()),
       data: [...workflow.data, ...resolvedParent.data],
       taskChain: resolvedParent.taskChain || workflow.taskChain,
+      taskConfigurations: workflow.taskConfigurations
     };
+
+    // Apply task configurations after inheritance resolution
+    for (const config of workflow.taskConfigurations) {
+      const task = result.tasks.find(t => t.name === config.name);
+      if (task) {
+        if (config.implementation !== null) {
+          task.implementation = config.implementation;
+        }
+        task.parameters = [...task.parameters, ...config.parameters];
+        if (config.inputs.length > 0) {
+          task.inputs = config.inputs;
+        }
+        if (config.outputs.length > 0) {
+          task.outputs = config.outputs;
+        }
+      }
+    }
+
+    return result;
   }
 
   private getSpaceParametersForTask(
