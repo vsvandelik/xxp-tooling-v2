@@ -21,9 +21,10 @@ export interface ResolvedTask {
 
 export class TaskResolver {
   resolve(experiment: ExperimentModel, workflows: WorkflowModel[]): Map<string, ResolvedTask> {
-    const resolvedTasks = new Map<string, ResolvedTask>();
     const workflowMap = this.buildWorkflowMap(workflows);
+    const tempTasks = new Map<string, ResolvedTask>();
 
+    // First pass: resolve all tasks with their child workflow names
     for (const space of experiment.spaces) {
       const workflow = workflowMap.get(space.workflowName);
       if (!workflow) {
@@ -35,15 +36,16 @@ export class TaskResolver {
       for (const task of resolvedWorkflow.tasks) {
         const taskId = `${space.workflowName}:${task.name}`;
 
-        if (!resolvedTasks.has(taskId)) {
+        if (!tempTasks.has(taskId)) {
           const spaceParameters = this.getSpaceParametersForTask(space, task.name);
           const resolvedTask = this.resolveTask(task, spaceParameters);
-          resolvedTasks.set(taskId, resolvedTask);
+          tempTasks.set(taskId, resolvedTask);
         }
       }
     }
 
-    return resolvedTasks;
+    // Second pass: deduplicate identical tasks
+    return this.deduplicateTasks(tempTasks, workflowMap);
   }
 
   private buildWorkflowMap(workflows: WorkflowModel[]): Map<string, WorkflowModel> {
@@ -222,5 +224,136 @@ export class TaskResolver {
     taskModel.inputs = task.inputs;
     taskModel.outputs = task.outputs;
     return taskModel;
+  }  
+  
+  private deduplicateTasks(
+    tempTasks: Map<string, ResolvedTask>,
+    workflowMap: Map<string, WorkflowModel>
+  ): Map<string, ResolvedTask> {
+    const resolvedTasks = new Map<string, ResolvedTask>();
+    const tasksByName = new Map<string, ResolvedTask[]>(); // taskName -> ResolvedTask[]
+    const taskIdMapping = new Map<string, string>(); // originalTaskId -> finalTaskId
+
+    // Group tasks by name
+    for (const resolvedTask of tempTasks.values()) {
+      if (!tasksByName.has(resolvedTask.name)) {
+        tasksByName.set(resolvedTask.name, []);
+      }
+      tasksByName.get(resolvedTask.name)!.push(resolvedTask);
+    }
+
+    // Process each task name group
+    for (const [taskName, tasks] of tasksByName) {
+      if (tasks.length === 0) continue; // Should never happen, but safety check
+      
+      if (tasks.length === 1) {
+        // Only one task with this name, keep it as is
+        const task = tasks[0]!;
+        resolvedTasks.set(task.id, task);
+      } else {
+        // Multiple tasks with same name, check if they can be deduplicated
+        const groupedByParent = new Map<string, ResolvedTask[]>();
+        
+        // Group by parent workflow
+        for (const task of tasks) {
+          const workflow = workflowMap.get(task.workflowName);
+          const parentWorkflow = workflow?.parentWorkflow || task.workflowName;
+          
+          if (!groupedByParent.has(parentWorkflow)) {
+            groupedByParent.set(parentWorkflow, []);
+          }
+          groupedByParent.get(parentWorkflow)!.push(task);
+        }
+
+        for (const [parentWorkflow, parentTasks] of groupedByParent) {
+          if (parentTasks.length === 0) continue; // Should never happen, but safety check
+          
+          if (parentTasks.length === 1) {
+            // Only one task from this parent, keep it as is
+            const task = parentTasks[0]!;
+            resolvedTasks.set(task.id, task);
+          } else {
+            // Multiple tasks from same parent, check if they're identical
+            const firstTask = parentTasks[0]!;
+            let allIdentical = true;
+            
+            for (let i = 1; i < parentTasks.length; i++) {
+              const currentTask = parentTasks[i]!;
+              if (!this.areTasksIdentical(firstTask, currentTask)) {
+                allIdentical = false;
+                break;
+              }
+            }
+            
+            if (allIdentical) {
+              // All tasks are identical, deduplicate using parent workflow name
+              const deduplicatedTaskId = `${parentWorkflow}:${taskName}`;
+              const deduplicatedTask: ResolvedTask = {
+                id: deduplicatedTaskId,
+                name: firstTask.name,
+                workflowName: parentWorkflow,
+                implementation: firstTask.implementation,
+                parameters: firstTask.parameters,
+                inputs: firstTask.inputs,
+                outputs: firstTask.outputs,
+                dynamicParameters: firstTask.dynamicParameters,
+                staticParameters: firstTask.staticParameters
+              };
+              
+              resolvedTasks.set(deduplicatedTaskId, deduplicatedTask);
+              
+              // Add mappings for all original task IDs
+              for (const task of parentTasks) {
+                taskIdMapping.set(task.id, deduplicatedTaskId);
+              }
+            } else {
+              // Tasks are different, keep them separate
+              for (const task of parentTasks) {
+                resolvedTasks.set(task.id, task);
+              }
+            }
+          }
+        }
+      }
+    }
+
+    // Store the mapping for use by other components
+    this.taskIdMapping = taskIdMapping;
+    return resolvedTasks;
+  }
+
+  private areTasksIdentical(task1: ResolvedTask, task2: ResolvedTask): boolean {
+    // Compare all relevant properties to determine if tasks are identical
+    if (task1.name !== task2.name) return false;
+    if (task1.implementation !== task2.implementation) return false;
+    
+    // Compare inputs and outputs arrays
+    if (task1.inputs.length !== task2.inputs.length ||
+        !task1.inputs.every((input, i) => input === task2.inputs[i])) return false;
+    if (task1.outputs.length !== task2.outputs.length ||
+        !task1.outputs.every((output, i) => output === task2.outputs[i])) return false;
+    
+    // Compare dynamic parameters arrays
+    if (task1.dynamicParameters.length !== task2.dynamicParameters.length ||
+        !task1.dynamicParameters.every((param, i) => param === task2.dynamicParameters[i])) return false;
+    
+    // Compare static parameters objects
+    const staticKeys1 = Object.keys(task1.staticParameters).sort();
+    const staticKeys2 = Object.keys(task2.staticParameters).sort();
+    if (staticKeys1.length !== staticKeys2.length ||
+        !staticKeys1.every((key, i) => key === staticKeys2[i])) return false;
+    
+    for (const key of staticKeys1) {
+      if (task1.staticParameters[key] !== task2.staticParameters[key]) return false;
+    }
+    
+    return true;
+  }
+
+  // Store task ID mapping for use by SpaceGenerator
+  private taskIdMapping = new Map<string, string>();
+  
+  getTaskIdMapping(): Map<string, string> {
+    return this.taskIdMapping;
   }
 }

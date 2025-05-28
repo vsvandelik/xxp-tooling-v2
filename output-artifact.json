@@ -4,8 +4,8 @@
   "tasks": [
     [
       {
-        "taskId": "A:task1",
-        "workflow": "A",
+        "taskId": "A1:task1",
+        "workflow": "A1",
         "implementation": "path/to/task1.py",
         "dynamicParameters": [
           "secondParam",
@@ -21,9 +21,7 @@
           "task1Output1",
           "task1Output2"
         ]
-      }
-    ],
-    [
+      },
       {
         "taskId": "A1:task2",
         "workflow": "A1",
@@ -67,8 +65,8 @@
     {
       "spaceId": "One",
       "tasksOrder": [
-        "A1:task2",
-        "A:task1"
+        "A1:task1",
+        "A1:task2"
       ],
       "parameters": [
         {
@@ -151,8 +149,8 @@
     {
       "spaceId": "Two",
       "tasksOrder": [
-        "A1:task2",
-        "A:task1"
+        "A1:task1",
+        "A1:task2"
       ],
       "parameters": [
         {
@@ -200,8 +198,8 @@
     {
       "spaceId": "Three",
       "tasksOrder": [
-        "A2:task2",
-        "A:task1"
+        "A2:task1",
+        "A2:task2"
       ],
       "parameters": [
         {

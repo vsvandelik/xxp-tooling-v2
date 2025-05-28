@@ -60,7 +60,7 @@ export class ArtifactGenerator {
     this.dataFlowResolver.validate(experiment, workflows, resolvedTasks);
 
     const tasks = this.taskGenerator.generate(resolvedTasks);
-    const spaces = this.spaceGenerator.generate(experiment, resolvedParameters, resolvedTasks);
+    const spaces = this.spaceGenerator.generate(experiment, resolvedParameters, resolvedTasks, this.taskResolver, workflows);
     const control = this.controlFlowGenerator.generate(experiment);
 
     return new ArtifactModel(experiment.name, '1.0', tasks, spaces, control);
