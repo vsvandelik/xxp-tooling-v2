@@ -52,3 +52,4 @@ coverage/
 .antlr/
 
 test-files/
+*.db

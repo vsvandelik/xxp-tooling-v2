@@ -1,11 +1,11 @@
 /** @type {import('jest').Config} */
 export default {
-  displayName: '@extremexp/vs-code-extension',
+  displayName: '@extremexp/experiment-runner',
   
   // Use ts-jest preset for TypeScript
   preset: 'ts-jest/presets/default-esm',
   
-  // Set test environment (Node.js for VS Code extension testing)
+  // Set test environment
   testEnvironment: 'node',
   
   // Root directory for this package
@@ -20,16 +20,15 @@ export default {
   // Ignore patterns
   testPathIgnorePatterns: [
     '<rootDir>/node_modules/',
-    '<rootDir>/dist/',
-    '<rootDir>/test-files/' // Ignore sample test files
+    '<rootDir>/dist/'
   ],
   
   // Module name mapping for internal imports
   moduleNameMapper: {
     '^@extremexp/core$': '<rootDir>/../core/src/index.ts',
     '^@extremexp/core/(.*)$': '<rootDir>/../core/src/$1',
-    '^@extremexp/artifact-generator$': '<rootDir>/../artifact-generator/src/index.ts',
-    '^@extremexp/artifact-generator/(.*)$': '<rootDir>/../artifact-generator/src/$1',
+    '^@extremexp/experiment-runner$': '<rootDir>/src/index.ts',
+    '^@extremexp/experiment-runner/(.*)$': '<rootDir>/src/$1',
     '^(\\.{1,2}/.*)\\.js$': '$1' // Map .js extensions to .ts for imports
   },
   

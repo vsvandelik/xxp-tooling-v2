@@ -51,11 +51,11 @@ export class WorkflowModelVisitor extends XXPVisitor<any> {
     // TODO: Add validations not to configure not existing task. And that there is just one task chain.
 
     return new WorkflowModel(
-      this.workflowName!, 
-      parentWorkflow, 
-      tasks, 
-      data, 
-      taskChain, 
+      this.workflowName!,
+      parentWorkflow,
+      tasks,
+      data,
+      taskChain,
       Array.from(taskConfigurations.values())
     );
   };
@@ -94,12 +94,12 @@ export class WorkflowModelVisitor extends XXPVisitor<any> {
     if (!taskNameRead) {
       throw new Error('TaskNameRead is null/undefined in task configuration');
     }
-    
+
     const identifier = taskNameRead.IDENTIFIER();
     if (!identifier) {
       throw new Error('IDENTIFIER is null/undefined in task configuration');
     }
-    
+
     const taskName = identifier.getText();
 
     let implementation: string | null = null;
@@ -138,7 +138,13 @@ export class WorkflowModelVisitor extends XXPVisitor<any> {
       }
     }
 
-    const result = new TaskConfigurationModel(taskName, implementation, parameters, inputs, outputs);
+    const result = new TaskConfigurationModel(
+      taskName,
+      implementation,
+      parameters,
+      inputs,
+      outputs
+    );
     return result;
   };
 

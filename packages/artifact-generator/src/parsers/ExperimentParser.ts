@@ -16,7 +16,7 @@ export class ExperimentParser {
     // Remove default error listeners and add our custom one
     parser.removeErrorListeners();
     lexer.removeErrorListeners();
-    
+
     const errorListener = new ParsingErrorListener(espaceFileName);
     parser.addErrorListener(errorListener);
     lexer.addErrorListener(errorListener);

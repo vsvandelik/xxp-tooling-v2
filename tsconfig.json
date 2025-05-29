@@ -52,6 +52,9 @@
             "path": "./packages/artifact-generator"
         },
         {
+            "path": "./packages/experiment-runner"
+        },
+        {
             "path": "./packages/vs-code-extension"
         }
     ]

@@ -29,7 +29,12 @@ export class SpaceGenerator {
     return spaceDefinitions;
   }
 
-  private getTasksOrder(space: SpaceModel, resolvedTasks: Map<string, ResolvedTask>, taskResolver: TaskResolver, workflows: WorkflowModel[]): string[] {
+  private getTasksOrder(
+    space: SpaceModel,
+    resolvedTasks: Map<string, ResolvedTask>,
+    taskResolver: TaskResolver,
+    workflows: WorkflowModel[]
+  ): string[] {
     const workflow = workflows.find(w => w.name === space.workflowName);
     if (!workflow) {
       throw new Error(`Workflow '${space.workflowName}' not found`);
@@ -38,11 +43,11 @@ export class SpaceGenerator {
     // First try to get execution order from the workflow's task chain
     let executionOrder: string[] = [];
     let sourceWorkflow = workflow;
-    
+
     // If the workflow has its own task chain, use it
     if (workflow.taskChain) {
       executionOrder = workflow.taskChain.getExecutionOrder();
-    } 
+    }
     // If it's a child workflow without its own task chain, use the parent's task chain
     else if (workflow.parentWorkflow) {
       const parentWorkflow = workflows.find(w => w.name === workflow.parentWorkflow);
@@ -60,7 +65,7 @@ export class SpaceGenerator {
         }
       }
     }
-    
+
     const taskIdMapping = taskResolver.getTaskIdMapping();
     const tasksOrder: string[] = [];
 
@@ -69,21 +74,20 @@ export class SpaceGenerator {
       // First try to find the task in the current workflow
       let rawTaskId = `${space.workflowName}:${taskName}`;
       let resolvedTask = resolvedTasks.get(rawTaskId);
-      
+
       // If not found and we're using a parent workflow's task chain,
       // check if the task exists in the parent workflow
       if (!resolvedTask && sourceWorkflow.name !== space.workflowName) {
         rawTaskId = `${sourceWorkflow.name}:${taskName}`;
         resolvedTask = resolvedTasks.get(rawTaskId);
-        
+
         // If found in parent, use the mapped ID for the space's workflow
         if (resolvedTask) {
           // Create the proper ID as it would appear in the space's workflow
           const spaceWorkflowTaskId = `${space.workflowName}:${taskName}`;
           // Use the mapped task ID if available
-          const mappedTaskId = taskIdMapping.get(spaceWorkflowTaskId) || 
-                              taskIdMapping.get(rawTaskId) || 
-                              rawTaskId;
+          const mappedTaskId =
+            taskIdMapping.get(spaceWorkflowTaskId) || taskIdMapping.get(rawTaskId) || rawTaskId;
           tasksOrder.push(mappedTaskId);
         }
       } else if (resolvedTask) {
