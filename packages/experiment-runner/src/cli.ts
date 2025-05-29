@@ -31,8 +31,9 @@ class CLIProgressCallback implements ProgressCallback {
     params: Record<string, Expression>,
     outputs: Record<string, string>
   ): void {
-    this.spinner?.succeed(`Task ${chalk.blue(taskId)} completed`);
-    console.log(chalk.gray(`  Outputs: ${Object.keys(outputs).join(', ')}`));
+    this.spinner?.succeed(
+      `Task ${chalk.blue(taskId)} completed  ${chalk.gray(`Outputs: ${Object.keys(outputs).join(', ')}`)}`
+    );
   }
 
   onSpaceStart(spaceId: string): void {
@@ -48,7 +49,7 @@ class CLIProgressCallback implements ProgressCallback {
   }
 
   onParameterSetComplete(spaceId: string, index: number): void {
-    console.log(chalk.gray(`    ✓ Parameter set ${index + 1} completed`));
+    //console.log(chalk.gray(`    ✓ Parameter set ${index + 1} completed`));
   }
 
   onUserInputRequired(prompt: string): void {
@@ -98,6 +99,16 @@ program
       console.log(`  - Completed tasks: ${result.summary.completedTasks}`);
       console.log(`  - Failed tasks: ${result.summary.failedTasks}`);
       console.log(`  - Skipped tasks: ${result.summary.skippedTasks}`);
+
+      if (Object.keys(result.outputs).length > 0) {
+        console.log('\nOutputs:');
+        for (const [spaceId, spaceOutputs] of Object.entries(result.outputs)) {
+          console.log(`  ${chalk.cyan(spaceId)}:`);
+          for (const [key, value] of Object.entries(spaceOutputs)) {
+            console.log(`    - ${key}: ${value}`);
+          }
+        }
+      }
     } catch (error) {
       console.error(chalk.bold.red('\n✗ Experiment failed!'));
       console.error(chalk.red((error as Error).message));

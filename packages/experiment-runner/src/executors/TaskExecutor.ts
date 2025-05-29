@@ -152,7 +152,7 @@ export class TaskExecutor {
       for (const inputName of task.inputData) {
         const inputValue = inputData[inputName];
         if (inputValue) {
-          inputValues.push(`"${inputValue}"`);
+          inputValues.push(inputValue);
         }
       }
       if (inputValues.length > 0) {
@@ -166,12 +166,10 @@ export class TaskExecutor {
 
       proc.stdout.on('data', data => {
         stdout += data.toString();
-        console.log(data.toString().trim());
       });
 
       proc.stderr.on('data', data => {
         stderr += data.toString();
-        console.error(data.toString().trim());
       });
 
       proc.on('close', code => {
