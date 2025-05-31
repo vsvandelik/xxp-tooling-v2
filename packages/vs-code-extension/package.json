@@ -82,6 +82,33 @@
                 "scopeName": "source.espace",
                 "path": "./src/language-configuration/espace.tmLanguage.json"
             }
+        ],
+        "commands": [
+            {
+                "command": "extremexp.generateArtifact",
+                "title": "Generate Artifact",
+                "category": "ExtremeXP"
+            },
+            {
+                "command": "extremexp.runExperiment",
+                "title": "Run Experiment",
+                "category": "ExtremeXP"
+            },
+            {
+                "command": "extremexp.showProgress",
+                "title": "Show Progress",
+                "category": "ExtremeXP"
+            },
+            {
+                "command": "extremexp.stopServer",
+                "title": "Stop Server",
+                "category": "ExtremeXP"
+            },
+            {
+                "command": "extremexp.restartServer",
+                "title": "Restart Server",
+                "category": "ExtremeXP"
+            }
         ]
     },
     "dependencies": {
