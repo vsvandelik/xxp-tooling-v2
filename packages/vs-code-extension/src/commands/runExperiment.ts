@@ -25,7 +25,7 @@ export class RunExperimentCommand {
           'The selected artifact file contains errors and cannot be run.',
           'Show Errors'
         );
-        
+
         if (action === 'Show Errors') {
           this.showValidationErrors(validation);
         }
@@ -82,12 +82,12 @@ export class RunExperimentCommand {
       // Start the experiment
       const experimentId = await this.experimentService.startExperiment(artifactPath, {
         resume,
-        onProgress: (progress) => {
+        onProgress: progress => {
           panel.updateProgress(progress);
         },
-        onComplete: async (result) => {
+        onComplete: async result => {
           panel.setCompleted(result);
-          
+
           // Show completion notification
           const action = await vscode.window.showInformationMessage(
             `Experiment completed! ${result.summary.completedTasks} tasks completed.`,
@@ -101,7 +101,7 @@ export class RunExperimentCommand {
             panel.show();
           }
         },
-        onError: (error) => {
+        onError: error => {
           panel.setError(error);
           vscode.window.showErrorMessage(`Experiment failed: ${error.message}`);
         },
@@ -111,7 +111,6 @@ export class RunExperimentCommand {
       vscode.window.showInformationMessage(
         `Experiment ${resume ? 'resumed' : 'started'}: ${artifactInfo.experiment} v${artifactInfo.version}`
       );
-
     } catch (error) {
       vscode.window.showErrorMessage(`Failed to run experiment: ${error}`);
     }
@@ -126,7 +125,7 @@ export class RunExperimentCommand {
         'Yes',
         'Choose Different File'
       );
-      
+
       if (useActive === 'Yes') {
         return activeEditor.document.fileName;
       }
@@ -140,13 +139,13 @@ export class RunExperimentCommand {
     }
 
     const artifactFiles = await this.findArtifactFiles();
-    
+
     if (artifactFiles.length === 0) {
       const action = await vscode.window.showErrorMessage(
         'No artifact.json files found in workspace',
         'Browse...'
       );
-      
+
       if (action === 'Browse...') {
         return this.browseForArtifact();
       }
@@ -159,7 +158,7 @@ export class RunExperimentCommand {
         'Yes',
         'Browse...'
       );
-      
+
       if (useDefault === 'Yes') {
         return artifactFiles[0];
       } else if (useDefault === 'Browse...') {
@@ -199,7 +198,7 @@ export class RunExperimentCommand {
       vscode.workspace.workspaceFolders![0]!,
       '**/artifact.json'
     );
-    
+
     const files = await vscode.workspace.findFiles(pattern, '**/node_modules/**');
     return files.map(uri => uri.fsPath);
   }
@@ -231,12 +230,9 @@ export class RunExperimentCommand {
     };
   }
 
-  private showValidationErrors(validation: {
-    errors: string[];
-    warnings: string[];
-  }): void {
+  private showValidationErrors(validation: { errors: string[]; warnings: string[] }): void {
     const outputChannel = vscode.window.createOutputChannel('ExtremeXP Artifact Validation');
-    
+
     if (validation.errors.length > 0) {
       outputChannel.appendLine('ERRORS:');
       outputChannel.appendLine('=======');
@@ -260,7 +256,7 @@ export class RunExperimentCommand {
   private async openOutputs(outputs: Record<string, Record<string, string>>): Promise<void> {
     // Create a quick pick to select which output to view
     const items: vscode.QuickPickItem[] = [];
-    
+
     for (const [spaceId, spaceOutputs] of Object.entries(outputs)) {
       for (const [outputName, outputValue] of Object.entries(spaceOutputs)) {
         items.push({
@@ -283,9 +279,11 @@ export class RunExperimentCommand {
 
     if (selected && selected.detail) {
       // If the output is a file path, try to open it
-      if (selected.detail.endsWith('.json') || 
-          selected.detail.endsWith('.txt') || 
-          selected.detail.endsWith('.csv')) {
+      if (
+        selected.detail.endsWith('.json') ||
+        selected.detail.endsWith('.txt') ||
+        selected.detail.endsWith('.csv')
+      ) {
         try {
           const doc = await vscode.workspace.openTextDocument(selected.detail);
           await vscode.window.showTextDocument(doc);

@@ -22,7 +22,7 @@ export class ExperimentService {
   private userInputCallbacks: Map<string, (request: UserInputRequest) => void> = new Map();
 
   constructor(private serverManager: ServerManager) {
-    this.serverManager.onStatusChange((status) => {
+    this.serverManager.onStatusChange(status => {
       if (status === 'running') {
         this.connect();
       } else {
@@ -137,7 +137,7 @@ export class ExperimentService {
     }
 
     // Set up user input handler
-    this.userInputCallbacks.set(experimentId, async (request) => {
+    this.userInputCallbacks.set(experimentId, async request => {
       await this.handleUserInput(request);
     });
 
@@ -168,10 +168,7 @@ export class ExperimentService {
     return true;
   }
 
-  async getExperimentStatus(
-    experimentName: string,
-    version: string
-  ): Promise<any> {
+  async getExperimentStatus(experimentName: string, version: string): Promise<any> {
     const serverUrl = await this.serverManager.getServerUrl();
     if (!serverUrl) {
       return null;
@@ -212,9 +209,7 @@ export class ExperimentService {
     if (options.spaceId) params.set('spaceId', options.spaceId);
     if (options.taskId) params.set('taskId', options.taskId);
 
-    const response = await fetch(
-      `${serverUrl}/api/experiments/${experimentId}/history?${params}`
-    );
+    const response = await fetch(`${serverUrl}/api/experiments/${experimentId}/history?${params}`);
 
     if (!response.ok) {
       throw new Error('Failed to fetch experiment history');

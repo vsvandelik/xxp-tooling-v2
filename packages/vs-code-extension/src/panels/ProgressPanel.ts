@@ -38,7 +38,7 @@ export class ProgressPanel {
     });
 
     // Register user input handler
-    this.experimentService.registerUserInputHandler(experimentId, (request) => {
+    this.experimentService.registerUserInputHandler(experimentId, request => {
       this.handleUserInputRequest(request);
     });
   }
@@ -91,7 +91,7 @@ export class ProgressPanel {
   }
 
   private setupMessageHandlers(): void {
-    this.panel.webview.onDidReceiveMessage(async (message) => {
+    this.panel.webview.onDidReceiveMessage(async message => {
       switch (message.type) {
         case 'terminate':
           await this.handleTerminate();
@@ -152,10 +152,7 @@ export class ProgressPanel {
     });
   }
 
-  private async handleUserInputResponse(data: {
-    requestId: string;
-    value: string;
-  }): Promise<void> {
+  private async handleUserInputResponse(data: { requestId: string; value: string }): Promise<void> {
     if (!this.experimentId) return;
 
     const serverManager = (this.experimentService as any).serverManager;

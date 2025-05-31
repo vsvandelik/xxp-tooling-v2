@@ -4,8 +4,11 @@ import { ExperimentService } from './services/ExperimentService.js';
 import { ProgressPanelManager } from './panels/ProgressPanelManager.js';
 import { GenerateArtifactCommand } from './commands/generateArtifact.js';
 import { RunExperimentCommand } from './commands/runExperiment.js';
+import { ToolResolver } from './services/ToolResolver.js';
+import { ToolExecutor } from './services/ToolExecutor.js';
 
 let serverManager: ServerManager;
+let toolExecutor: ToolExecutor;
 let experimentService: ExperimentService;
 let progressPanelManager: ProgressPanelManager;
 
@@ -27,7 +30,10 @@ export async function activate(context: vscode.ExtensionContext) {
  * Initialize core services
  */
 async function initializeServices(context: vscode.ExtensionContext): Promise<void> {
-  serverManager = new ServerManager(context);
+  const toolResolver = new ToolResolver(context);
+  toolExecutor = new ToolExecutor(toolResolver);
+
+  serverManager = new ServerManager(context, toolExecutor);
   await serverManager.ensureServerRunning();
 
   experimentService = new ExperimentService(serverManager);
@@ -38,7 +44,7 @@ async function initializeServices(context: vscode.ExtensionContext): Promise<voi
  * Register all extension commands
  */
 function registerCommands(context: vscode.ExtensionContext): void {
-  const generateArtifactCommand = new GenerateArtifactCommand();
+  const generateArtifactCommand = new GenerateArtifactCommand(toolExecutor);
   const runExperimentCommand = new RunExperimentCommand(experimentService, progressPanelManager);
 
   registerCommand(context, 'extremexp.generateArtifact', () => generateArtifactCommand.execute());
@@ -90,10 +96,7 @@ function setupStatusBar(context: vscode.ExtensionContext): void {
  * Create status bar item
  */
 function createStatusBarItem(): vscode.StatusBarItem {
-  const statusBarItem = vscode.window.createStatusBarItem(
-    vscode.StatusBarAlignment.Right,
-    100
-  );
+  const statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
   statusBarItem.text = '$(beaker) ExtremeXP';
   statusBarItem.tooltip = 'ExtremeXP Experiment Runner';
   statusBarItem.command = 'extremexp.showProgress';
@@ -105,7 +108,7 @@ function createStatusBarItem(): vscode.StatusBarItem {
  * Setup status bar change listener
  */
 function setupStatusBarListener(statusBarItem: vscode.StatusBarItem): void {
-  serverManager.onStatusChange((status) => {
+  serverManager.onStatusChange(status => {
     updateStatusBarItem(statusBarItem, status);
   });
 }
@@ -135,7 +138,7 @@ function updateStatusBarItem(statusBarItem: vscode.StatusBarItem, status: string
  */
 function setupConfigurationListener(context: vscode.ExtensionContext): void {
   context.subscriptions.push(
-    vscode.workspace.onDidChangeConfiguration((e) => {
+    vscode.workspace.onDidChangeConfiguration(e => {
       if (e.affectsConfiguration('extremexp')) {
         serverManager.reloadConfiguration();
       }
@@ -186,7 +189,7 @@ function registerESPACELanguageFeatures(_context: vscode.ExtensionContext): void
  */
 export async function deactivate() {
   console.log('ExtremeXP extension is being deactivated');
-  
+
   await cleanupServices();
 }
 

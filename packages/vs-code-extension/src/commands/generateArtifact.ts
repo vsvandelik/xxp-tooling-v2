@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
-import { spawn } from 'child_process';
+import { ToolExecutor } from '../services/ToolExecutor';
 
 interface ValidationResult {
   errors: string[];
@@ -8,6 +8,8 @@ interface ValidationResult {
 }
 
 export class GenerateArtifactCommand {
+  constructor(private toolExecutor: ToolExecutor) {}
+
   async execute(): Promise<void> {
     // Check if active editor has .espace file
     const activeEditor = vscode.window.activeTextEditor;
@@ -18,7 +20,9 @@ export class GenerateArtifactCommand {
 
     const document = activeEditor.document;
     if (!document.fileName.endsWith('.espace')) {
-      vscode.window.showErrorMessage('Active file is not an ESPACE file. Please open an ESPACE file first.');
+      vscode.window.showErrorMessage(
+        'Active file is not an ESPACE file. Please open an ESPACE file first.'
+      );
       return;
     }
 
@@ -33,27 +37,30 @@ export class GenerateArtifactCommand {
 
     const espacePath = document.fileName;
     const workspaceFolder = vscode.workspace.getWorkspaceFolder(document.uri);
-    
-    // Create progress notification
-    await vscode.window.withProgress({
-      location: vscode.ProgressLocation.Notification,
-      title: 'Generating Artifact',
-      cancellable: true,
-    }, async (progress, token) => {
-      progress.report({ increment: 0, message: 'Starting artifact generation...' });
 
-      try {
-        const result = await this.runArtifactGenerator(espacePath, token);
-        
-        if (result.success) {
-          await this.handleSuccess(result, workspaceFolder);
-        } else {
-          await this.handleFailure(result);
+    // Create progress notification
+    await vscode.window.withProgress(
+      {
+        location: vscode.ProgressLocation.Notification,
+        title: 'Generating Artifact',
+        cancellable: true,
+      },
+      async (progress, token) => {
+        progress.report({ increment: 0, message: 'Starting artifact generation...' });
+
+        try {
+          const result = await this.runArtifactGenerator(espacePath, token);
+
+          if (result.success) {
+            await this.handleSuccess(result, workspaceFolder);
+          } else {
+            await this.handleFailure(result);
+          }
+        } catch (error) {
+          vscode.window.showErrorMessage(`Artifact generation failed: ${error}`);
         }
-      } catch (error) {
-        vscode.window.showErrorMessage(`Artifact generation failed: ${error}`);
       }
-    });
+    );
   }
 
   private async runArtifactGenerator(
@@ -65,75 +72,33 @@ export class GenerateArtifactCommand {
     validation: ValidationResult;
     error?: string;
   }> {
-    return new Promise((resolve) => {
-      const args = [espacePath];
-      const cwd = path.dirname(espacePath);
-
-      const proc = spawn('artifact-generator', args, {
-        cwd,
-        shell: true,
-      });
-
-      let stdout = '';
-      let stderr = '';
-      let cancelled = false;
-
-      // Handle cancellation
-      cancellationToken.onCancellationRequested(() => {
-        cancelled = true;
-        proc.kill();
-      });
-
-      proc.stdout.on('data', (data) => {
-        stdout += data.toString();
-      });
-
-      proc.stderr.on('data', (data) => {
-        stderr += data.toString();
-      });
-
-      proc.on('close', (code) => {
-        if (cancelled) {
-          resolve({
-            success: false,
-            validation: { errors: ['Generation cancelled'], warnings: [] },
-            error: 'Cancelled by user',
-          });
-          return;
-        }
-
-        const validation = this.parseValidationOutput(stdout + stderr);
-
-        if (code === 0) {
-          // Extract artifact path from output
-          const pathMatch = stdout.match(/Artifact generated successfully:\s*(.+)/);
-          const artifactPath = pathMatch ? pathMatch[1]!.trim() : path.join(cwd, 'artifact.json');
-
-          resolve({
-            success: true,
-            artifactPath,
-            validation,
-          });
-        } else {
-          resolve({
-            success: false,
-            validation,
-            error: stderr || 'Unknown error',
-          });
-        }
-      });
-
-      proc.on('error', (error) => {
-        resolve({
-          success: false,
-          validation: {
-            errors: [`Failed to run artifact generator: ${error.message}`],
-            warnings: [],
-          },
-          error: error.message,
-        });
-      });
+    const result = await this.toolExecutor.execute('artifact-generator', {
+      args: [espacePath],
+      cwd: path.dirname(espacePath),
+      cancellationToken,
     });
+
+    const validation = this.parseValidationOutput(result.stdout + result.stderr);
+
+    if (result.success) {
+      // Extract artifact path from output
+      const pathMatch = result.stdout.match(/Artifact generated successfully:\s*(.+)/);
+      const artifactPath = pathMatch
+        ? pathMatch[1]!.trim()
+        : path.join(path.dirname(espacePath), 'artifact.json');
+
+      return {
+        success: true,
+        artifactPath,
+        validation,
+      };
+    } else {
+      return {
+        success: false,
+        validation,
+        error: result.stderr || result.stdout || 'Unknown error',
+      };
+    }
   }
 
   private parseValidationOutput(output: string): ValidationResult {
@@ -189,15 +154,13 @@ export class GenerateArtifactCommand {
     }
   }
 
-  private async handleFailure(
-    result: { validation: ValidationResult; error?: string }
-  ): Promise<void> {
+  private async handleFailure(result: {
+    validation: ValidationResult;
+    error?: string;
+  }): Promise<void> {
     if (result.validation.errors.length > 0) {
       const errorMessage = `Artifact generation failed with ${result.validation.errors.length} error(s)`;
-      const action = await vscode.window.showErrorMessage(
-        errorMessage,
-        'Show Details'
-      );
+      const action = await vscode.window.showErrorMessage(errorMessage, 'Show Details');
 
       if (action === 'Show Details') {
         await this.showValidationResults(result.validation);
@@ -212,7 +175,7 @@ export class GenerateArtifactCommand {
   private async showValidationResults(validation: ValidationResult): Promise<void> {
     // Create output channel for validation results
     const outputChannel = vscode.window.createOutputChannel('ExtremeXP Artifact Validation');
-    
+
     if (validation.errors.length > 0) {
       outputChannel.appendLine('ERRORS:');
       outputChannel.appendLine('=======');
