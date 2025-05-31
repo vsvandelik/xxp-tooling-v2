@@ -1,0 +1,47 @@
+{
+    "name": "@extremexp/experiment-runner-server",
+    "version": "1.0.0",
+    "description": "Artifact generation utilities for extremexp",
+    "main": "./dist/server.js",
+    "types": "./dist/server.d.ts",
+    "type": "module",
+    "bin": {
+        "experiment-runner": "./dist/server.js"
+    },
+    "exports": {
+        ".": {
+            "types": "./dist/server.d.ts",
+            "default": "./dist/server.js"
+        }
+    },
+    "scripts": {
+        "build": "tsc --build",
+        "build:watch": "tsc --build --watch",
+        "clean": "tsc --build --clean",
+        "test": "jest",
+        "test:watch": "jest --watch",
+        "test:coverage": "jest --coverage"
+    },
+    "files": [
+        "dist/**/*",
+        "src/**/*"
+    ],
+    "keywords": [
+        "extremexp",
+        "experiment",
+        "runner"
+    ],
+    "author": "",
+    "license": "MIT",
+    "dependencies": {
+        "@extremexp/core": "^1.0.0",
+        "@extremexp/experiment-runner": "^1.0.0",
+        "socket.io": "^4.8.1"
+    },
+    "devDependencies": {
+        "@types/cors": "^2.8.18",
+        "@types/express": "^5.0.2",
+        "@types/node": "^22.15.28",
+        "typescript": "^5.4.5"
+    }
+}

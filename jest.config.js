@@ -4,7 +4,8 @@ export default {
   projects: [
     '<rootDir>/packages/core',
     '<rootDir>/packages/artifact-generator', 
-    '<rootDir>/packages/experiment-runner', 
+    '<rootDir>/packages/experiment-runner',
+    '<rootDir>/packages/experiment-runner-server', 
     '<rootDir>/packages/vs-code-extension'
   ],
   
