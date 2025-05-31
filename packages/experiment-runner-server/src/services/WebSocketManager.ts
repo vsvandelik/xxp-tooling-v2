@@ -1,10 +1,7 @@
 import { Server as SocketIOServer, Socket } from 'socket.io';
 import { ExperimentService } from './ExperimentService.js';
-import {
-  ExperimentProgress,
-  UserInputRequest,
-  UserInputResponse,
-} from '../types/server.types.js';
+import { ExperimentProgress, UserInputRequest, UserInputResponse } from '../types/server.types.js';
+import { RunResult } from '@extremexp/experiment-runner';
 
 interface ClientConnection {
   socketId: string;
@@ -21,9 +18,9 @@ export class WebSocketManager {
   ) {}
 
   initialize(): void {
-    this.io.on('connection', (socket) => {
+    this.io.on('connection', socket => {
       console.log(`Client connected: ${socket.id}`);
-      
+
       this.connections.set(socket.id, {
         socketId: socket.id,
         experimentIds: new Set(),
@@ -44,13 +41,13 @@ export class WebSocketManager {
       const connection = this.connections.get(socket.id);
       if (connection) {
         connection.experimentIds.add(experimentId);
-        
+
         // Add socket to experiment's socket set
         if (!this.experimentSockets.has(experimentId)) {
           this.experimentSockets.set(experimentId, new Set());
         }
         this.experimentSockets.get(experimentId)!.add(socket.id);
-        
+
         socket.join(`experiment:${experimentId}`);
         socket.emit('subscribed', { experimentId });
       }
@@ -61,7 +58,7 @@ export class WebSocketManager {
       const connection = this.connections.get(socket.id);
       if (connection) {
         connection.experimentIds.delete(experimentId);
-        
+
         // Remove socket from experiment's socket set
         const sockets = this.experimentSockets.get(experimentId);
         if (sockets) {
@@ -70,7 +67,7 @@ export class WebSocketManager {
             this.experimentSockets.delete(experimentId);
           }
         }
-        
+
         socket.leave(`experiment:${experimentId}`);
         socket.emit('unsubscribed', { experimentId });
       }
@@ -79,9 +76,9 @@ export class WebSocketManager {
     // Handle user input responses
     socket.on('userInput', (response: UserInputResponse) => {
       const success = this.experimentService.submitUserInput(response);
-      socket.emit('userInputAck', { 
-        requestId: response.requestId, 
-        success 
+      socket.emit('userInputAck', {
+        requestId: response.requestId,
+        success,
       });
     });
 
@@ -92,37 +89,40 @@ export class WebSocketManager {
     });
 
     // Request task history
-    socket.on('requestHistory', async (data: {
-      experimentId: string;
-      limit?: number;
-      offset?: number;
-      spaceId?: string;
-      taskId?: string;
-    }) => {
-      const historyOptions: {
+    socket.on(
+      'requestHistory',
+      async (data: {
+        experimentId: string;
         limit?: number;
         offset?: number;
         spaceId?: string;
         taskId?: string;
-      } = {};
-      
-      if (data.limit !== undefined) historyOptions.limit = data.limit;
-      if (data.offset !== undefined) historyOptions.offset = data.offset;
-      if (data.spaceId) historyOptions.spaceId = data.spaceId;
-      if (data.taskId) historyOptions.taskId = data.taskId;
-      
-      const history = await this.experimentService.getExperimentHistory(
-        data.experimentId,
-        historyOptions
-      );
-      
-      socket.emit('history', {
-        experimentId: data.experimentId,
-        tasks: history,
-        total: history.length,
-        hasMore: false, // Would be determined by actual implementation
-      });
-    });
+      }) => {
+        const historyOptions: {
+          limit?: number;
+          offset?: number;
+          spaceId?: string;
+          taskId?: string;
+        } = {};
+
+        if (data.limit !== undefined) historyOptions.limit = data.limit;
+        if (data.offset !== undefined) historyOptions.offset = data.offset;
+        if (data.spaceId) historyOptions.spaceId = data.spaceId;
+        if (data.taskId) historyOptions.taskId = data.taskId;
+
+        const history = await this.experimentService.getExperimentHistory(
+          data.experimentId,
+          historyOptions
+        );
+
+        socket.emit('history', {
+          experimentId: data.experimentId,
+          tasks: history,
+          total: history.length,
+          hasMore: false, // Would be determined by actual implementation
+        });
+      }
+    );
   }
 
   private handleDisconnect(socketId: string): void {
@@ -138,7 +138,7 @@ export class WebSocketManager {
           }
         }
       }
-      
+
       this.connections.delete(socketId);
     }
   }
@@ -153,12 +153,12 @@ export class WebSocketManager {
     this.io.to(`experiment:${experimentId}`).emit('inputRequired', request);
   }
 
-  emitExperimentComplete(experimentId: string, result: any): void {
+  emitExperimentComplete(experimentId: string, result: RunResult): void {
     this.io.to(`experiment:${experimentId}`).emit('complete', {
       experimentId,
       result,
     });
-    
+
     // Clean up subscriptions
     const sockets = this.experimentSockets.get(experimentId);
     if (sockets) {
@@ -182,11 +182,14 @@ export class WebSocketManager {
     });
   }
 
-  emitValidationResult(socketId: string, validation: {
-    errors: string[];
-    warnings: string[];
-    isValid: boolean;
-  }): void {
+  emitValidationResult(
+    socketId: string,
+    validation: {
+      errors: string[];
+      warnings: string[];
+      isValid: boolean;
+    }
+  ): void {
     this.io.to(socketId).emit('validationResult', validation);
   }
 

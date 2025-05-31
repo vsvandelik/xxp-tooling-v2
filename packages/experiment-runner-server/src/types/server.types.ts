@@ -1,4 +1,4 @@
-import { Expression, RunStatus } from "@extremexp/experiment-runner";
+import { Expression, RunStatus } from '@extremexp/experiment-runner';
 
 export interface ServerConfig {
   port: number;

@@ -48,6 +48,7 @@ class CLIProgressCallback implements ProgressCallback {
     console.log(chalk.cyan(`  Parameter set ${index + 1}: ${JSON.stringify(params)}`));
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   onParameterSetComplete(spaceId: string, index: number): void {
     //console.log(chalk.gray(`    ✓ Parameter set ${index + 1} completed`));
   }

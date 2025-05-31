@@ -1,5 +1,5 @@
-import { TaskExecutor } from '../TaskExecutor.js';
-import { Task, ParameterSet } from '../../types/artifact.types.js';
+import { TaskExecutor } from '../src/executors/TaskExecutor.js';
+import { Task, ParameterSet } from '../src/types/artifact.types.js';
 import { spawn } from 'child_process';
 import { EventEmitter } from 'events';
 

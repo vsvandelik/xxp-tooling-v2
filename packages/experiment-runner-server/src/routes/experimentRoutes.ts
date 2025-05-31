@@ -38,16 +38,16 @@ export function createExperimentRoutes(
 
       const experimentId = await experimentService.startExperiment(artifactPath, {
         resume: resume ?? false,
-        onProgress: (progress) => {
+        onProgress: progress => {
           wsManager.emitProgress(experimentId, progress);
         },
-        onInputRequired: (request) => {
+        onInputRequired: request => {
           wsManager.emitUserInputRequest(experimentId, request);
         },
-        onComplete: (result) => {
+        onComplete: result => {
           wsManager.emitExperimentComplete(experimentId, result);
         },
-        onError: (error) => {
+        onError: error => {
           wsManager.emitExperimentError(experimentId, error);
         },
       });
@@ -67,119 +67,130 @@ export function createExperimentRoutes(
   });
 
   // Get experiment status
-  router.get('/:experimentId/status', async (req: Request<{ experimentId: string }>, res: Response): Promise<void> => {
-    try {
-      const { experimentId } = req.params;
-      const status = await experimentService.getExperimentStatus(experimentId);
+  router.get(
+    '/:experimentId/status',
+    async (req: Request<{ experimentId: string }>, res: Response): Promise<void> => {
+      try {
+        const { experimentId } = req.params;
+        const status = await experimentService.getExperimentStatus(experimentId);
 
-      if (!status) {
-        res.status(404).json({
-          error: 'Experiment not found',
+        if (!status) {
+          res.status(404).json({
+            error: 'Experiment not found',
+          });
+          return;
+        }
+
+        res.json(status);
+      } catch (error) {
+        res.status(500).json({
+          error: 'Failed to get experiment status',
+          message: (error as Error).message,
         });
-        return;
       }
-
-      res.json(status);
-    } catch (error) {
-      res.status(500).json({
-        error: 'Failed to get experiment status',
-        message: (error as Error).message,
-      });
     }
-  });
+  );
 
   // Terminate experiment
-  router.post('/:experimentId/terminate', async (req: Request<{ experimentId: string }>, res: Response): Promise<void> => {
-    try {
-      const { experimentId } = req.params;
-      const terminated = await experimentService.terminateExperiment(experimentId);
+  router.post(
+    '/:experimentId/terminate',
+    async (req: Request<{ experimentId: string }>, res: Response): Promise<void> => {
+      try {
+        const { experimentId } = req.params;
+        const terminated = await experimentService.terminateExperiment(experimentId);
 
-      if (!terminated) {
-        res.status(404).json({
-          error: 'Experiment not found or not running',
+        if (!terminated) {
+          res.status(404).json({
+            error: 'Experiment not found or not running',
+          });
+          return;
+        }
+
+        res.json({ success: true });
+      } catch (error) {
+        res.status(500).json({
+          error: 'Failed to terminate experiment',
+          message: (error as Error).message,
         });
-        return;
       }
-
-      res.json({ success: true });
-    } catch (error) {
-      res.status(500).json({
-        error: 'Failed to terminate experiment',
-        message: (error as Error).message,
-      });
     }
-  });
+  );
 
   // Submit user input
-  router.post('/:experimentId/input', async (req: Request<{ experimentId: string }>, res: Response): Promise<void> => {
-    try {
-      const { experimentId } = req.params;
-      const { requestId, value } = req.body;
+  router.post(
+    '/:experimentId/input',
+    async (req: Request<{ experimentId: string }>, res: Response): Promise<void> => {
+      try {
+        const { requestId, value } = req.body;
 
-      if (!requestId || value === undefined) {
-        res.status(400).json({
-          error: 'Missing required fields: requestId, value',
+        if (!requestId || value === undefined) {
+          res.status(400).json({
+            error: 'Missing required fields: requestId, value',
+          });
+          return;
+        }
+
+        const success = experimentService.submitUserInput({
+          requestId,
+          value,
         });
-        return;
-      }
 
-      const success = experimentService.submitUserInput({
-        requestId,
-        value,
-      });
+        if (!success) {
+          res.status(404).json({
+            error: 'Input request not found or expired',
+          });
+          return;
+        }
 
-      if (!success) {
-        res.status(404).json({
-          error: 'Input request not found or expired',
+        res.json({ success: true });
+      } catch (error) {
+        res.status(500).json({
+          error: 'Failed to submit user input',
+          message: (error as Error).message,
         });
-        return;
       }
-
-      res.json({ success: true });
-    } catch (error) {
-      res.status(500).json({
-        error: 'Failed to submit user input',
-        message: (error as Error).message,
-      });
     }
-  });
+  );
 
   // Get experiment history
-  router.get('/:experimentId/history', async (req: Request<{ experimentId: string }>, res: Response): Promise<void> => {
-    try {
-      const { experimentId } = req.params;
-      const { limit, offset, spaceId, taskId } = req.query;
+  router.get(
+    '/:experimentId/history',
+    async (req: Request<{ experimentId: string }>, res: Response): Promise<void> => {
+      try {
+        const { experimentId } = req.params;
+        const { limit, offset, spaceId, taskId } = req.query;
 
-      const parsedLimit = limit ? parseInt(limit as string) : undefined;
-      const parsedOffset = offset ? parseInt(offset as string) : undefined;
+        const parsedLimit = limit ? parseInt(limit as string) : undefined;
+        const parsedOffset = offset ? parseInt(offset as string) : undefined;
 
-      const historyOptions: {
-        limit?: number;
-        offset?: number;
-        spaceId?: string;
-        taskId?: string;
-      } = {};
+        const historyOptions: {
+          limit?: number;
+          offset?: number;
+          spaceId?: string;
+          taskId?: string;
+        } = {};
 
-      if (parsedLimit !== undefined) historyOptions.limit = parsedLimit;
-      if (parsedOffset !== undefined) historyOptions.offset = parsedOffset;
-      if (spaceId) historyOptions.spaceId = spaceId as string;
-      if (taskId) historyOptions.taskId = taskId as string;
+        if (parsedLimit !== undefined) historyOptions.limit = parsedLimit;
+        if (parsedOffset !== undefined) historyOptions.offset = parsedOffset;
+        if (spaceId) historyOptions.spaceId = spaceId as string;
+        if (taskId) historyOptions.taskId = taskId as string;
 
-      const history = await experimentService.getExperimentHistory(experimentId, historyOptions);
+        const history = await experimentService.getExperimentHistory(experimentId, historyOptions);
 
-      res.json({
-        experimentId,
-        tasks: history,
-        total: history.length,
-        hasMore: false, // Would be determined by actual implementation
-      });
-    } catch (error) {
-      res.status(500).json({
-        error: 'Failed to get experiment history',
-        message: (error as Error).message,
-      });
+        res.json({
+          experimentId,
+          tasks: history,
+          total: history.length,
+          hasMore: false, // Would be determined by actual implementation
+        });
+      } catch (error) {
+        res.status(500).json({
+          error: 'Failed to get experiment history',
+          message: (error as Error).message,
+        });
+      }
     }
-  });
+  );
 
   // Get all active experiments
   router.get('/active', async (req: Request, res: Response): Promise<void> => {
@@ -218,7 +229,7 @@ export function createExperimentRoutes(
       }
 
       const result = await experimentService.generateArtifact(espacePath, outputPath);
-      
+
       res.json(result);
     } catch (error) {
       res.status(500).json({

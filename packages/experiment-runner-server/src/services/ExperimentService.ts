@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { spawn } from 'child_process';
 import * as path from 'path';
 import { ExperimentExecutor } from '../../../experiment-runner/src/executors/ExperimentExecutor.js';
@@ -65,13 +66,11 @@ export class ExperimentService {
   ): Promise<string> {
     // Check concurrent limit
     const runningCount = Array.from(this.activeExperiments.values()).filter(
-      (exp) => exp.status.status === 'running'
+      exp => exp.status.status === 'running'
     ).length;
 
     if (runningCount >= this.config.maxConcurrent) {
-      throw new Error(
-        `Maximum concurrent experiments (${this.config.maxConcurrent}) reached`
-      );
+      throw new Error(`Maximum concurrent experiments (${this.config.maxConcurrent}) reached`);
     }
 
     const experimentId = this.generateExperimentId();
@@ -84,10 +83,10 @@ export class ExperimentService {
       onTaskComplete: (taskId, params, outputs) => {
         // Progress will be updated by onProgress callback
       },
-      onSpaceStart: (spaceId) => {
+      onSpaceStart: spaceId => {
         this.updateProgress(experimentId, { currentSpace: spaceId });
       },
-      onSpaceComplete: (spaceId) => {
+      onSpaceComplete: spaceId => {
         // Progress will be updated by onProgress callback
       },
       onError: (error, context) => {
@@ -136,12 +135,15 @@ export class ExperimentService {
           });
 
           // Timeout after 5 minutes
-          setTimeout(() => {
-            if (this.pendingInputs.has(request.requestId)) {
-              this.pendingInputs.delete(request.requestId);
-              reject(new Error('User input timeout'));
-            }
-          }, 5 * 60 * 1000);
+          setTimeout(
+            () => {
+              if (this.pendingInputs.has(request.requestId)) {
+                this.pendingInputs.delete(request.requestId);
+                reject(new Error('User input timeout'));
+              }
+            },
+            5 * 60 * 1000
+          );
         });
       },
     };
@@ -176,10 +178,7 @@ export class ExperimentService {
       const artifact = await this.loadArtifact(artifactPath);
 
       // Get initial status
-      const status = await this.executor.getStatus(
-        artifact.experiment,
-        artifact.version
-      );
+      const status = await this.executor.getStatus(artifact.experiment, artifact.version);
 
       // Create active experiment record
       const activeExperiment: ActiveExperiment = {
@@ -197,7 +196,8 @@ export class ExperimentService {
             totalSpaces: artifact.spaces.length,
             completedParameterSets: 0,
             totalParameterSets: artifact.spaces.reduce(
-              (sum: number, space: { parameters: string | Expression[]; }) => sum + space.parameters.length,
+              (sum: number, space: { parameters: string | Expression[] }) =>
+                sum + space.parameters.length,
               0
             ),
           },
@@ -257,10 +257,7 @@ export class ExperimentService {
       return null;
     }
 
-    return this.executor.getStatus(
-      experiment.experimentName,
-      experiment.experimentVersion
-    );
+    return this.executor.getStatus(experiment.experimentName, experiment.experimentVersion);
   }
 
   async getExperimentHistory(
@@ -314,6 +311,7 @@ export class ExperimentService {
     return `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private async loadArtifact(artifactPath: string): Promise<any> {
     const fs = await import('fs');
     const content = fs.readFileSync(path.resolve(artifactPath), 'utf-8');
@@ -323,7 +321,7 @@ export class ExperimentService {
   async validateArtifact(artifactPath: string): Promise<ValidationResult> {
     try {
       const artifact = await this.loadArtifact(artifactPath);
-      
+
       const errors: string[] = [];
       const warnings: string[] = [];
 
@@ -370,7 +368,7 @@ export class ExperimentService {
     espacePath: string,
     outputPath?: string
   ): Promise<GenerateArtifactResponse> {
-    return new Promise((resolve) => {
+    return new Promise(resolve => {
       const args = [espacePath];
       if (outputPath) {
         args.push('-o', outputPath);
@@ -383,15 +381,15 @@ export class ExperimentService {
       let stdout = '';
       let stderr = '';
 
-      proc.stdout.on('data', (data) => {
+      proc.stdout.on('data', data => {
         stdout += data.toString();
       });
 
-      proc.stderr.on('data', (data) => {
+      proc.stderr.on('data', data => {
         stderr += data.toString();
       });
 
-      proc.on('close', (code) => {
+      proc.on('close', code => {
         const errors: string[] = [];
         const warnings: string[] = [];
 
@@ -406,7 +404,7 @@ export class ExperimentService {
         }
 
         const validation: ValidationResult = {
-          errors: code === 0 ? errors : (errors.length > 0 ? errors : ['Artifact generation failed']),
+          errors: code === 0 ? errors : errors.length > 0 ? errors : ['Artifact generation failed'],
           warnings,
           isValid: code === 0 && errors.length === 0,
         };
@@ -420,7 +418,7 @@ export class ExperimentService {
             success: true,
             validation,
           };
-          
+
           if (artifactPath) {
             result.artifactPath = artifactPath;
           }
@@ -431,7 +429,7 @@ export class ExperimentService {
             success: false,
             validation,
           };
-          
+
           const errorMsg = stderr || 'Unknown error';
           if (errorMsg) {
             result.error = errorMsg;
@@ -441,7 +439,7 @@ export class ExperimentService {
         }
       });
 
-      proc.on('error', (error) => {
+      proc.on('error', error => {
         resolve({
           success: false,
           validation: {

@@ -59,18 +59,19 @@ export class ExperimentRunnerServer {
     });
 
     // Experiment routes
-    this.app.use('/api/experiments', createExperimentRoutes(this.experimentService, this.wsManager));
+    this.app.use(
+      '/api/experiments',
+      createExperimentRoutes(this.experimentService, this.wsManager)
+    );
 
     // Error handling middleware
-    this.app.use(
-      (err: Error, req: express.Request, res: express.Response, next: express.NextFunction) => {
-        console.error('Error:', err);
-        res.status(500).json({
-          error: 'Internal server error',
-          message: err.message,
-        });
-      }
-    );
+    this.app.use((err: Error, req: express.Request, res: express.Response) => {
+      console.error('Error:', err);
+      res.status(500).json({
+        error: 'Internal server error',
+        message: err.message,
+      });
+    });
   }
 
   private setupWebSocket(): void {
@@ -80,7 +81,7 @@ export class ExperimentRunnerServer {
   async start(): Promise<void> {
     await this.experimentService.initialize();
 
-    return new Promise((resolve) => {
+    return new Promise(resolve => {
       this.httpServer.listen(this.config.port, () => {
         console.log(`ExtremeXP Experiment Runner Server listening on port ${this.config.port}`);
         resolve();
@@ -91,8 +92,8 @@ export class ExperimentRunnerServer {
   async stop(): Promise<void> {
     await this.experimentService.shutdown();
     this.io.close();
-    
-    return new Promise((resolve) => {
+
+    return new Promise(resolve => {
       this.httpServer.close(() => {
         console.log('Server stopped');
         resolve();
@@ -111,8 +112,8 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   };
 
   const server = new ExperimentRunnerServer(config);
-  
-  server.start().catch((error) => {
+
+  server.start().catch(error => {
     console.error('Failed to start server:', error);
     process.exit(1);
   });
