@@ -1,11 +1,14 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { spawn } from 'child_process';
 import * as path from 'path';
-import { ExperimentExecutor } from '../../../experiment-runner/src/executors/ExperimentExecutor.js';
-import { ProgressCallback } from '../../../experiment-runner/src/types/progress.types.js';
-import { UserInputProvider } from '../../../experiment-runner/src/userInput/UserInputProvider.js';
-import { RunResult, RunStatus } from '../../../experiment-runner/src/types/run.types.js';
-import { Expression } from '../../../experiment-runner/src/types/artifact.types.js';
+import { 
+  ExperimentExecutor,
+  ProgressCallback,
+  UserInputProvider,
+  RunResult,
+  RunStatus,
+  Expression
+} from '@extremexp/experiment-runner';
 import {
   ActiveExperiment,
   ExperimentProgress,

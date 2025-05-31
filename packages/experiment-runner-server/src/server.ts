@@ -6,6 +6,8 @@ import { ExperimentService } from './services/ExperimentService.js';
 import { WebSocketManager } from './services/WebSocketManager.js';
 import { ServerConfig } from './types/server.types.js';
 import { createExperimentRoutes } from './routes/experimentRoutes.js';
+import { fileURLToPath } from 'url';
+import * as path from 'path';
 
 export class ExperimentRunnerServer {
   private app: express.Application;
@@ -103,7 +105,10 @@ export class ExperimentRunnerServer {
 }
 
 // CLI entry point
-if (import.meta.url === `file://${process.argv[1]}`) {
+const __filename = fileURLToPath(import.meta.url);
+const isMainModule = process.argv[1] && path.resolve(process.argv[1]) === __filename;
+
+if (isMainModule) {
   const config: ServerConfig = {
     port: parseInt(process.env['PORT'] || '3000'),
     verbose: process.env['VERBOSE'] === 'true',

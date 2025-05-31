@@ -36,7 +36,9 @@
     "dependencies": {
         "@extremexp/core": "^1.0.0",
         "@extremexp/experiment-runner": "^1.0.0",
-        "socket.io": "^4.8.1"
+        "socket.io": "^4.8.1",
+        "express": "^4.18.2",
+        "cors": "^2.8.5"
     },
     "devDependencies": {
         "@types/cors": "^2.8.18",

@@ -1,9 +1,9 @@
 import * as vscode from 'vscode';
-import { ServerManager } from './services/ServerManager';
-import { ExperimentService } from './services/ExperimentService';
-import { ProgressPanelManager } from './panels/ProgressPanelManager';
-import { GenerateArtifactCommand } from './commands/generateArtifact';
-import { RunExperimentCommand } from './commands/runExperiment';
+import { ServerManager } from './services/ServerManager.js';
+import { ExperimentService } from './services/ExperimentService.js';
+import { ProgressPanelManager } from './panels/ProgressPanelManager.js';
+import { GenerateArtifactCommand } from './commands/generateArtifact.js';
+import { RunExperimentCommand } from './commands/runExperiment.js';
 
 let serverManager: ServerManager;
 let experimentService: ExperimentService;

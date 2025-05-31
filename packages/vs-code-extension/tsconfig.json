@@ -17,6 +17,10 @@
         "node_modules",
         "**/*.test.ts",
         "**/*.spec.ts"
-    ],    "references": [
+    ],    
+    "references": [
+        {
+            "path": "../experiment-runner-server"
+        }
     ]
 }

@@ -1,17 +1,18 @@
 import * as vscode from 'vscode';
 import { io, Socket } from 'socket.io-client';
-import { ServerManager } from './ServerManager';
+import { ServerManager } from './ServerManager.js';
 import {
   ExperimentProgress,
   StartExperimentResponse,
   UserInputRequest,
   ValidationResult,
   TaskHistoryItem,
-} from '../types/experiment.types';
+} from '../types/experiment.types.js';
+import { RunResult } from '@extremexp/experiment-runner';
 
 export interface ExperimentCallbacks {
   onProgress?: (progress: ExperimentProgress) => void;
-  onComplete?: (result: any) => void;
+  onComplete?: (result: RunResult) => void;
   onError?: (error: Error) => void;
 }
 
@@ -94,7 +95,7 @@ export class ExperimentService {
     options: {
       resume?: boolean;
       onProgress?: (progress: ExperimentProgress) => void;
-      onComplete?: (result: any) => void;
+      onComplete?: (result: RunResult) => void;
       onError?: (error: Error) => void;
     } = {}
   ): Promise<string> {

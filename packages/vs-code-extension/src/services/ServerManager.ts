@@ -197,29 +197,41 @@ export class ServerManager {
       server.listen(port);
     });
   }
-
-  private async findServerModule(): Promise<string | null> {
+    private async findServerModule(): Promise<string | null> {
     // Try different possible locations
+    const workspacePath = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath || '';
+    const extensionPath = this.context.extensionPath;
+    
     const possiblePaths = [
       // In development (workspace)
-      path.join(vscode.workspace.workspaceFolders?.[0]?.uri.fsPath || '', 
-        'packages/experiment-runner-server/dist/server.js'),
-      path.join(vscode.workspace.workspaceFolders?.[0]?.uri.fsPath || '', 
-        'packages/experiment-runner-server/src/server.ts'),
+      path.join(workspacePath, 'packages/experiment-runner-server/dist/server.js'),
+      path.join(workspacePath, 'packages/experiment-runner-server/src/server.ts'),
       
-      // In extension installation
-      path.join(this.context.extensionPath, 
-        'node_modules/@extremexp/experiment-runner-server/dist/server.js'),
-      path.join(this.context.extensionPath, 
-        'dist/server.js'),
+      // In development (relative to extension path - for monorepo development)
+      path.join(extensionPath, '../experiment-runner-server/dist/server.js'),
+      path.join(extensionPath, '../experiment-runner-server/src/server.ts'),
+      
+      // Go up two levels from extension to find packages folder
+      path.join(extensionPath, '../../packages/experiment-runner-server/dist/server.js'),
+      path.join(extensionPath, '../../packages/experiment-runner-server/src/server.ts'),
+      
+      // In extension installation (bundled with extension)
+      path.join(extensionPath, 'node_modules/@extremexp/experiment-runner-server/dist/server.js'),
+      path.join(extensionPath, 'dist/server.js'),
     ];
 
+    this.outputChannel.appendLine(`Workspace path: ${workspacePath}`);
+    this.outputChannel.appendLine(`Extension path: ${extensionPath}`);
+    this.outputChannel.appendLine('Checking server paths:');
+
     for (const serverPath of possiblePaths) {
+      this.outputChannel.appendLine(`  Checking: ${serverPath}`);
       try {
         await vscode.workspace.fs.stat(vscode.Uri.file(serverPath));
+        this.outputChannel.appendLine(`  ✓ Found: ${serverPath}`);
         return serverPath;
-      } catch {
-        // File doesn't exist, try next
+      } catch (error) {
+        this.outputChannel.appendLine(`  ✗ Not found: ${error}`);
       }
     }
 

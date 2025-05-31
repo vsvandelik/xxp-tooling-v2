@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
-import { ProgressPanel } from './ProgressPanel';
-import { ExperimentService } from '../services/ExperimentService';
+import { ProgressPanel } from './ProgressPanel.js';
+import { ExperimentService } from '../services/ExperimentService.js';
 
 export class ProgressPanelManager {
   private panels: Map<string, ProgressPanel> = new Map();

@@ -1,8 +1,8 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
 import * as fs from 'fs';
-import { ExperimentService } from '../services/ExperimentService';
-import { ProgressPanelManager } from '../panels/ProgressPanelManager';
+import { ExperimentService } from '../services/ExperimentService.js';
+import { ProgressPanelManager } from '../panels/ProgressPanelManager.js';
 
 export class RunExperimentCommand {
   constructor(

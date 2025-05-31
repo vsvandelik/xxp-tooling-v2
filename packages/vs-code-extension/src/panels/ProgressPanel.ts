@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
-import { ExperimentService } from '../services/ExperimentService';
-import { ExperimentProgress, UserInputRequest } from '../types/experiment.types';
+import { ExperimentService } from '../services/ExperimentService.js';
+import { ExperimentProgress, UserInputRequest } from '../types/experiment.types.js';
+import { RunResult } from '@extremexp/experiment-runner';
 
 export class ProgressPanel {
   private panel: vscode.WebviewPanel;
@@ -49,7 +50,7 @@ export class ProgressPanel {
     });
   }
 
-  setCompleted(result: any): void {
+  setCompleted(result: RunResult): void {
     this.panel.webview.postMessage({
       type: 'completed',
       data: result,
@@ -570,7 +571,7 @@ export class ProgressPanel {
                 const outputs = Object.entries(task.outputs)
                     .map(([k, v]) => {
                         if (v.endsWith('.json') || v.endsWith('.txt') || v.endsWith('.csv')) {
-                            return k + ': <span class="output-link" onclick="openOutput(\'' + v + '\')">' + v + '</span>';
+                            return k + ': <span class="output-link" onclick="openOutput(''' + v + ''')">' + v + '</span>';
                         }
                         return k + '=' + v;
                     })
