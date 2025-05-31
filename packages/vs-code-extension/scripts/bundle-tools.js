@@ -4,6 +4,21 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { fileURLToPath } from 'url';
 
+function validateToolExists(tool) {
+  const distPath = path.join(tool.packagePath, 'dist');
+  const entryPath = path.join(distPath, tool.entryPoint);
+  
+  if (!fs.existsSync(distPath)) {
+    throw new Error(`Build directory not found for ${tool.name}: ${distPath}\nMake sure to run 'npm run build' first.`);
+  }
+  
+  if (!fs.existsSync(entryPath)) {
+    throw new Error(`Entry point not found for ${tool.name}: ${entryPath}`);
+  }
+  
+  return true;
+}
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -27,6 +42,18 @@ const tools = [
 async function bundleTools() {
   console.log('Bundling tools for VS Code extension...');
   
+  // Validate all tools exist before bundling
+  console.log('Validating tools...');
+  for (const tool of tools) {
+    try {
+      validateToolExists(tool);
+      console.log(`✓ ${tool.name} validated`);
+    } catch (error) {
+      console.error(`✗ ${error.message}`);
+      process.exit(1);
+    }
+  }
+  
   // Clean bundled tools directory
   if (fs.existsSync(bundledToolsDir)) {
     fs.rmSync(bundledToolsDir, { recursive: true, force: true });
@@ -41,11 +68,7 @@ async function bundleTools() {
 
     // Copy built files
     const distDir = path.join(tool.packagePath, 'dist');
-    if (fs.existsSync(distDir)) {
-      copyRecursively(distDir, toolBundleDir);
-    } else {
-      console.warn(`Warning: dist directory not found for ${tool.name}. Make sure to build packages first.`);
-    }
+    copyRecursively(distDir, toolBundleDir);
 
     // Copy package.json for dependency information
     const packageJsonPath = path.join(tool.packagePath, 'package.json');
@@ -53,15 +76,11 @@ async function bundleTools() {
       fs.copyFileSync(packageJsonPath, path.join(toolBundleDir, 'package.json'));
     }
 
-    // Copy node_modules if they exist and are needed
-    const nodeModulesPath = path.join(tool.packagePath, 'node_modules');
-    if (fs.existsSync(nodeModulesPath)) {
-      const targetNodeModules = path.join(toolBundleDir, 'node_modules');
-      copyRecursively(nodeModulesPath, targetNodeModules);
-    }
+    console.log(`✓ ${tool.name} bundled successfully`);
   }
 
-  console.log('Tools bundled successfully!');
+  console.log('All tools bundled successfully!');
+  console.log(`Bundle location: ${bundledToolsDir}`);
 }
 
 function copyRecursively(src, dest) {

@@ -7,14 +7,15 @@ import { RunExperimentCommand } from './commands/runExperiment.js';
 import { ToolResolver } from './services/ToolResolver.js';
 import { ToolExecutor } from './services/ToolExecutor.js';
 
+// Global service instances
 let serverManager: ServerManager;
-let toolExecutor: ToolExecutor;
 let experimentService: ExperimentService;
 let progressPanelManager: ProgressPanelManager;
+let toolResolver: ToolResolver;
+let toolExecutor: ToolExecutor;
 
 /**
  * This method is called when your extension is activated
- * Your extension is activated the very first time the command is executed
  */
 export async function activate(context: vscode.ExtensionContext) {
   console.log('ExtremeXP extension is now active!');
@@ -30,12 +31,15 @@ export async function activate(context: vscode.ExtensionContext) {
  * Initialize core services
  */
 async function initializeServices(context: vscode.ExtensionContext): Promise<void> {
-  const toolResolver = new ToolResolver(context);
+  // Initialize tool resolution system
+  toolResolver = new ToolResolver(context);
   toolExecutor = new ToolExecutor(toolResolver);
 
+  // Initialize server manager with tool executor
   serverManager = new ServerManager(context, toolExecutor);
   await serverManager.ensureServerRunning();
 
+  // Initialize other services
   experimentService = new ExperimentService(serverManager);
   progressPanelManager = new ProgressPanelManager(context, experimentService);
 }
@@ -52,6 +56,12 @@ function registerCommands(context: vscode.ExtensionContext): void {
   registerCommand(context, 'extremexp.showProgress', () => progressPanelManager.showPanel());
   registerCommand(context, 'extremexp.stopServer', handleStopServer);
   registerCommand(context, 'extremexp.restartServer', handleRestartServer);
+
+  // Add command to clear tool cache
+  registerCommand(context, 'extremexp.clearToolCache', () => {
+    toolResolver.clearCache();
+    vscode.window.showInformationMessage('Tool cache cleared');
+  });
 }
 
 /**
@@ -141,6 +151,7 @@ function setupConfigurationListener(context: vscode.ExtensionContext): void {
     vscode.workspace.onDidChangeConfiguration(e => {
       if (e.affectsConfiguration('extremexp')) {
         serverManager.reloadConfiguration();
+        toolResolver.clearCache(); // Clear cache when configuration changes
       }
     })
   );

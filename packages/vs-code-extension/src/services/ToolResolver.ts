@@ -27,7 +27,8 @@ export class ToolResolver {
   private async findTool(toolName: string): Promise<ToolInfo> {
     // Check user configuration first
     const config = vscode.workspace.getConfiguration('extremexp');
-    const userPath = config.get<string>(`tools.${toolName}.path`);
+    const configKey = `tools.${toolName.replace('-', '')}.path`; // Remove hyphens for config key
+    const userPath = config.get<string>(configKey);
     if (userPath && (await this.pathExists(userPath))) {
       return {
         name: toolName,
@@ -36,7 +37,7 @@ export class ToolResolver {
       };
     }
 
-    // Try different locations in order of preference
+    // Rest of the method remains the same...
     const searchPaths = this.getSearchPaths(toolName);
 
     for (const searchPath of searchPaths) {
@@ -91,8 +92,8 @@ export class ToolResolver {
 
   private async pathExists(filePath: string): Promise<boolean> {
     try {
-      await vscode.workspace.fs.stat(vscode.Uri.file(filePath));
-      return true;
+      const stat = await vscode.workspace.fs.stat(vscode.Uri.file(filePath));
+      return stat.type === vscode.FileType.File;
     } catch {
       return false;
     }

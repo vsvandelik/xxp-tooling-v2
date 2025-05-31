@@ -17,6 +17,7 @@
         "build:watch": "tsc --build --watch",
         "clean": "tsc --build --clean",
         "test": "jest",
+        "test-tools": "node scripts/test-tool-resolution.js",
         "test:watch": "jest --watch",
         "test:coverage": "jest --coverage",
         "bundle-tools": "node scripts/bundle-tools.js",
@@ -109,8 +110,48 @@
                 "command": "extremexp.restartServer",
                 "title": "Restart Server",
                 "category": "ExtremeXP"
+            },
+            {
+                "command": "extremexp.clearToolCache",
+                "title": "Clear Tool Cache",
+                "category": "ExtremeXP"
             }
-        ]
+        ],
+        "configuration": {
+            "title": "ExtremeXP",
+            "properties": {
+                "extremexp.tools.artifactgenerator.path": {
+                    "type": "string",
+                    "description": "Custom path to artifact-generator tool",
+                    "default": ""
+                },
+                "extremexp.tools.experimentrunnerserver.path": {
+                    "type": "string",
+                    "description": "Custom path to experiment-runner-server tool",
+                    "default": ""
+                },
+                "extremexp.tools.useBuiltIn": {
+                    "type": "boolean",
+                    "description": "Use built-in tools bundled with extension",
+                    "default": true
+                },
+                "extremexp.server.port": {
+                    "type": "number",
+                    "description": "Port for experiment runner server",
+                    "default": 3000
+                },
+                "extremexp.server.autoStart": {
+                    "type": "boolean",
+                    "description": "Automatically start server when extension activates",
+                    "default": true
+                },
+                "extremexp.experiments.defaultDatabase": {
+                    "type": "string",
+                    "description": "Default database path for experiments",
+                    "default": ""
+                }
+            }
+        }
     },
     "dependencies": {
         "socket.io-client": "^4.8.1",
@@ -120,5 +161,6 @@
         "@types/vscode": "^1.85.0",
         "@vscode/vsce": "^2.24.0",
         "typescript": "^5.4.5"
-    }
+    },
+    "type": "module"
 }

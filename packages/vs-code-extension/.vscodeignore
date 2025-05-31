@@ -10,9 +10,14 @@ vsc-extension-quickstart.md
 .nyc_output
 coverage
 **/*.ts
+!bundled-tools/**/*.js
+!bundled-tools/**/package.json
 !dist/**/*.d.ts
 node_modules/**
 test-files/**
 ../**
 ../../**
 **/tsconfig.tsbuildinfo
+scripts/**
+*.md
+!README.md
