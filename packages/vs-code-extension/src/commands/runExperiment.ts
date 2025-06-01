@@ -57,12 +57,12 @@ export class RunExperimentCommand {
       );
 
       let resume = false;
-      if (existingStatus && existingStatus.status === 'running') {
+      if (existingStatus && existingStatus === 'running') {
         vscode.window.showErrorMessage(
           'This experiment is already running. Please terminate it first.'
         );
         return;
-      } else if (existingStatus && existingStatus.status !== 'completed') {
+      } else if (existingStatus && existingStatus !== 'completed') {
         const action = await vscode.window.showInformationMessage(
           'An incomplete run of this experiment was found. Do you want to resume or start fresh?',
           'Resume',

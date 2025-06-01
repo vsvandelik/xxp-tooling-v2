@@ -11,7 +11,7 @@ import { ExperimentRunner, ExperimentRunnerOptions } from '../types/runner.types
 import { ConsoleInputProvider } from '../userInput/ConsoleInputProvider.js';
 import { SpaceExecutor } from './SpaceExecutor.js';
 import { TaskExecutor } from './TaskExecutor.js';
-import { resolve } from 'path';
+import path, { resolve } from 'path';
 
 export class ExperimentExecutor implements ExperimentRunner {
   private repository: DatabaseRepository;
@@ -81,7 +81,7 @@ export class ExperimentExecutor implements ExperimentRunner {
         });
       }
       // Create components
-      const taskExecutor = new TaskExecutor(this.repository, progress);
+      const taskExecutor = new TaskExecutor(this.repository, path.dirname(artifactPath), progress);
       const spaceExecutor = new SpaceExecutor(this.repository, taskExecutor, progress);
       const controlFlow = new ControlFlowManager(this.repository, progress, userInputProvider);
       const dataManager = new DataManager(this.repository);

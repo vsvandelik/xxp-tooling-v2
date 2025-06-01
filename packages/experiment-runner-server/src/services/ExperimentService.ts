@@ -96,6 +96,7 @@ export class ExperimentService {
         options.onError?.(error);
       },
       onProgress: (progress, message) => {
+        console.log(`Progress callback triggered: ${progress * 100}% - ${message}`);
         const experiment = this.activeExperiments.get(experimentId);
         if (experiment) {
           const progressData: ExperimentProgress = {
@@ -113,6 +114,7 @@ export class ExperimentService {
             },
             timestamp: Date.now(),
           };
+          console.log(`Calling onProgress with data:`, progressData);
           options.onProgress?.(progressData);
         }
       },

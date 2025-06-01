@@ -6,6 +6,7 @@ import { Task, ParameterSet, Expression } from '../types/artifact.types.js';
 export class TaskExecutor {
   constructor(
     private repository: DatabaseRepository,
+    private artifactFolder: string,
     private progress: ProgressEmitter
   ) {}
 
@@ -133,6 +134,7 @@ export class TaskExecutor {
 
     return inputs;
   }
+
   private async runPythonScript(
     scriptPath: string,
     params: Record<string, Expression>,
@@ -159,7 +161,9 @@ export class TaskExecutor {
         args.push(inputValues.join(','));
       }
 
-      const proc = spawn('python', [scriptPath, ...args]);
+      const proc = spawn('python', [scriptPath, ...args], {
+        cwd: this.artifactFolder
+      });
 
       let stdout = '';
       let stderr = '';
@@ -180,7 +184,7 @@ export class TaskExecutor {
             // Parse the first line of stdout to get output data strings
             const firstLine = stdout.split('\n')[0]?.trim();
             if (!firstLine) {
-              reject(new Error('No output received from Python script'));
+              reject(new Error(`No output received from Python script ${scriptPath}`));
               return;
             }
 

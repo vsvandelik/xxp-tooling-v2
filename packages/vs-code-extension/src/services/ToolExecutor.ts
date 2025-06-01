@@ -44,10 +44,23 @@ export class ToolExecutor {
       const workingDirectory = cwd || toolInfo.cwd || process.cwd();
       const processEnv = { ...process.env, ...env };
 
+      // On Windows, when using shell mode, we need to properly quote arguments that contain spaces
+      const useShell = process.platform === 'win32';
+      if (useShell) {
+        // Quote arguments that contain spaces or special characters
+        commandArgs = commandArgs.map(arg => {
+          if (arg.includes(' ') || arg.includes('"') || arg.includes("'")) {
+            // Escape any existing quotes and wrap in quotes
+            return `"${arg.replace(/"/g, '\\"')}"`;
+          }
+          return arg;
+        });
+      }
+
       const proc = spawn(command, commandArgs, {
         cwd: workingDirectory,
         env: processEnv,
-        shell: process.platform === 'win32', // Use shell on Windows for better compatibility
+        shell: useShell,
       });
 
       let stdout = '';

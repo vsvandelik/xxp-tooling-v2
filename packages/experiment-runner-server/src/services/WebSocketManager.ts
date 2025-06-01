@@ -38,6 +38,7 @@ export class WebSocketManager {
   private setupSocketHandlers(socket: Socket): void {
     // Subscribe to experiment updates
     socket.on('subscribe', (experimentId: string) => {
+      console.log(`Client ${socket.id} subscribing to experiment: ${experimentId}`);
       const connection = this.connections.get(socket.id);
       if (connection) {
         connection.experimentIds.add(experimentId);
@@ -50,6 +51,7 @@ export class WebSocketManager {
 
         socket.join(`experiment:${experimentId}`);
         socket.emit('subscribed', { experimentId });
+        console.log(`Client ${socket.id} successfully subscribed to experiment: ${experimentId}`);
       }
     });
 
@@ -146,6 +148,7 @@ export class WebSocketManager {
   // Methods called by ExperimentService
 
   emitProgress(experimentId: string, progress: ExperimentProgress): void {
+    console.log(`Emitting progress for experiment ${experimentId}:`, progress);
     this.io.to(`experiment:${experimentId}`).emit('progress', progress);
   }
 

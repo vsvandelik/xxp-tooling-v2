@@ -34,51 +34,87 @@ export class ExperimentService {
   private async connect(): Promise<void> {
     const serverUrl = await this.serverManager.getServerUrl();
     if (!serverUrl) {
+      console.log('No server URL available for WebSocket connection');
       return;
     }
 
+    // If already connected, don't reconnect
+    if (this.socket && this.socket.connected) {
+      console.log('Already connected to WebSocket');
+      return;
+    }
+
+    console.log(`Attempting to connect to WebSocket at: ${serverUrl}`);
     this.socket = io(serverUrl, {
       reconnection: true,
       reconnectionAttempts: 5,
       reconnectionDelay: 1000,
     });
 
-    this.socket.on('connect', () => {
-      console.log('Connected to ExtremeXP server');
-    });
+    // Return a promise that resolves when connected or rejects on error
+    return new Promise<void>((resolve, reject) => {
+      const timeout = setTimeout(() => {
+        reject(new Error('WebSocket connection timeout'));
+      }, 10000); // 10 second timeout
 
-    this.socket.on('disconnect', () => {
-      console.log('Disconnected from ExtremeXP server');
-    });
+      this.socket!.on('connect', () => {
+        console.log('Connected to ExtremeXP server');
+        clearTimeout(timeout);
+        resolve();
+      });
 
-    // Set up event handlers
-    this.socket.on('progress', (data: ExperimentProgress) => {
-      const callbacks = this.activeExperiments.get(data.experimentId);
-      callbacks?.onProgress?.(data);
-    });
+      this.socket!.on('connect_error', (error) => {
+        console.log('WebSocket connection error:', error);
+        clearTimeout(timeout);
+        reject(error);
+      });
 
-    this.socket.on('complete', (data: { experimentId: string; result: any }) => {
-      const callbacks = this.activeExperiments.get(data.experimentId);
-      callbacks?.onComplete?.(data.result);
-      this.activeExperiments.delete(data.experimentId);
-      this.socket?.emit('unsubscribe', data.experimentId);
-    });
+      this.socket!.on('disconnect', () => {
+        console.log('Disconnected from ExtremeXP server');
+      });
 
-    this.socket.on('error', (data: { experimentId: string; error: any }) => {
-      const callbacks = this.activeExperiments.get(data.experimentId);
-      callbacks?.onError?.(new Error(data.error.message || 'Unknown error'));
-      this.activeExperiments.delete(data.experimentId);
-      this.socket?.emit('unsubscribe', data.experimentId);
-    });
+      this.socket!.on('reconnect_error', (error) => {
+        console.log('WebSocket reconnection error:', error);
+      });
 
-    this.socket.on('inputRequired', async (request: UserInputRequest) => {
-      const inputCallback = this.userInputCallbacks.get(request.experimentId);
-      if (inputCallback) {
-        inputCallback(request);
-      } else {
-        // Handle input directly if no callback registered
-        await this.handleUserInput(request);
-      }
+      this.socket!.on('subscribed', (data: { experimentId: string }) => {
+        console.log(`Subscribed to experiment: ${data.experimentId}`);
+      });
+
+      this.socket!.on('unsubscribed', (data: { experimentId: string }) => {
+        console.log(`Unsubscribed from experiment: ${data.experimentId}`);
+      });
+
+      // Set up event handlers
+      this.socket!.on('progress', (data: ExperimentProgress) => {
+        console.log('Received progress event:', data);
+        const callbacks = this.activeExperiments.get(data.experimentId);
+        callbacks?.onProgress?.(data);
+      });
+
+      this.socket!.on('complete', (data: { experimentId: string; result: RunResult }) => {
+        const callbacks = this.activeExperiments.get(data.experimentId);
+        callbacks?.onComplete?.(data.result);
+        this.activeExperiments.delete(data.experimentId);
+        this.socket?.emit('unsubscribe', data.experimentId);
+      });
+
+      this.socket!.on('error', (data: { experimentId: string; error: { message?: string } }) => {
+        const callbacks = this.activeExperiments.get(data.experimentId);
+        callbacks?.onError?.(new Error(data.error.message || 'Unknown error'));
+        this.activeExperiments.delete(data.experimentId);
+        this.socket?.emit('unsubscribe', data.experimentId);
+      });
+
+      this.socket!.on('inputRequired', async (request: UserInputRequest) => {
+        const inputCallback = this.userInputCallbacks.get(request.experimentId);
+        if (inputCallback) {
+          inputCallback(request);
+        } else {
+          // Handle input directly if no callback registered
+          await this.handleUserInput(request);
+        }
+      });
     });
   }
 
@@ -102,6 +138,12 @@ export class ExperimentService {
     const serverUrl = await this.serverManager.getServerUrl();
     if (!serverUrl) {
       throw new Error('Server not running');
+    }
+
+    // Ensure WebSocket connection is established
+    if (!this.socket || !this.socket.connected) {
+      console.log('WebSocket not connected, attempting to connect...');
+      await this.connect();
     }
 
     // Make API call to start experiment
@@ -131,13 +173,17 @@ export class ExperimentService {
     if (options.onError) callbacks.onError = options.onError;
     this.activeExperiments.set(experimentId, callbacks);
 
-    // Subscribe to updates
-    if (this.socket) {
+    // Subscribe to updates - connection should be established by now
+    if (this.socket && this.socket.connected) {
+      console.log(`Subscribing to experiment: ${experimentId}`);
       this.socket.emit('subscribe', experimentId);
+    } else {
+      console.log('No socket connection available for subscription');
+      throw new Error('WebSocket connection not available');
     }
 
     // Set up user input handler
-    this.userInputCallbacks.set(experimentId, async request => {
+    this.userInputCallbacks.set(experimentId, async (request: UserInputRequest) => {
       await this.handleUserInput(request);
     });
 
@@ -168,7 +214,7 @@ export class ExperimentService {
     return true;
   }
 
-  async getExperimentStatus(experimentName: string, version: string): Promise<any> {
+  async getExperimentStatus(experimentName: string, version: string): Promise<string | null> {
     const serverUrl = await this.serverManager.getServerUrl();
     if (!serverUrl) {
       return null;
@@ -179,7 +225,7 @@ export class ExperimentService {
     if (activeResponse.ok) {
       const { experiments } = await activeResponse.json();
       const active = experiments.find(
-        (exp: any) => exp.experimentName === experimentName && exp.experimentVersion === version
+        (exp: { experimentName: string; experimentVersion: string; status: string }) => exp.experimentName === experimentName && exp.experimentVersion === version
       );
       if (active) {
         return active.status;

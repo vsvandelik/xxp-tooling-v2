@@ -120,13 +120,16 @@ export class ServerManager {
         onStdout: data => this.outputChannel.append(data),
         onStderr: data => this.outputChannel.append(`[ERROR] ${data}`),
       };
-      
+
       const workspacePath = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
       if (workspacePath) {
         options.cwd = workspacePath;
       }
-      
-      this.serverProcess = await this.toolExecutor.executeStreaming('experiment-runner-server', options);
+
+      this.serverProcess = await this.toolExecutor.executeStreaming(
+        'experiment-runner-server',
+        options
+      );
 
       this.serverProcess.on('close', code => {
         this.outputChannel.appendLine(`Server process exited with code ${code}`);
