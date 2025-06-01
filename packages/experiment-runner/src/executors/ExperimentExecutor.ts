@@ -24,6 +24,10 @@ export class ExperimentExecutor implements ExperimentRunner {
     }
   }
 
+  getRepository(): DatabaseRepository {
+    return this.repository;
+  }
+
   async run(artifactPath: string, options: ExperimentRunnerOptions = {}): Promise<RunResult> {
     const {
       progressCallback = {},

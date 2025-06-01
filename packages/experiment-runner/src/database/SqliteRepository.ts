@@ -452,6 +452,54 @@ export class SqliteRepository implements DatabaseRepository {
     }
   }
 
+  async getTaskExecutionHistory(
+    runId: string,
+    options?: {
+      limit?: number;
+      offset?: number;
+      spaceId?: string;
+      taskId?: string;
+    }
+  ): Promise<TaskExecutionRecord[]> {
+    const db = this.ensureInitialized();
+
+    try {
+      let query = 'SELECT * FROM task_executions WHERE run_id = ?';
+      const params: (string | number)[] = [runId];
+
+      // Add filters
+      if (options?.spaceId) {
+        query += ' AND space_id = ?';
+        params.push(options.spaceId);
+      }
+
+      if (options?.taskId) {
+        query += ' AND task_id = ?';
+        params.push(options.taskId);
+      }
+
+      // Order by start time (most recent first)
+      query += ' ORDER BY start_time DESC';
+
+      // Add pagination
+      if (options?.limit) {
+        query += ' LIMIT ?';
+        params.push(options.limit);
+
+        if (options?.offset) {
+          query += ' OFFSET ?';
+          params.push(options.offset);
+        }
+      }
+
+      return await db.all<TaskExecutionRecord[]>(query, params);
+    } catch (error) {
+      throw new Error(
+        `Failed to get task execution history: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
+    }
+  }
+
   // Data mapping operations
   async createDataMapping(record: DataMappingRecord): Promise<void> {
     const db = this.ensureInitialized();

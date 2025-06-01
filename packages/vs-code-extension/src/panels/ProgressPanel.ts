@@ -569,20 +569,19 @@ export class ProgressPanel {
                 const outputs = Object.entries(task.outputs)
                     .map(([k, v]) => {
                         if (v.endsWith('.json') || v.endsWith('.txt') || v.endsWith('.csv')) {
-                            return k + ': <span class="output-link" onclick="openOutput(''' + v + ''')">' + v + '</span>';
+                            return k + ': <span class="output-link" onclick="openOutput(&quot;' + v + '&quot;)">' + v + '</span>';
                         }
                         return k + '=' + v;
                     })
                     .join(', ');
                 
-                item.innerHTML = \`
-                    <div class="task-header">
-                        \${task.taskId} (Space: \${task.spaceId})
-                        <span class="task-status \${task.status}">\${task.status}</span>
-                    </div>
-                    <div class="task-params">Parameters: \${params}</div>
-                    <div class="task-outputs">Outputs: \${outputs}</div>
-                \`;
+                item.innerHTML = 
+                    '<div class="task-header">' +
+                        task.taskId + ' (Space: ' + task.spaceId + ')' +
+                        '<span class="task-status ' + task.status + '">' + task.status + '</span>' +
+                    '</div>' +
+                    '<div class="task-params">Parameters: ' + params + '</div>' +
+                    '<div class="task-outputs">Outputs: ' + outputs + '</div>';
                 
                 panel.appendChild(item);
             });

@@ -58,6 +58,15 @@ export interface DatabaseRepository {
     taskId: string
   ): Promise<TaskExecutionRecord | null>;
   getTaskStats(runId: string): Promise<{ status: string; count: number }[]>;
+  getTaskExecutionHistory(
+    runId: string,
+    options?: {
+      limit?: number;
+      offset?: number;
+      spaceId?: string;
+      taskId?: string;
+    }
+  ): Promise<TaskExecutionRecord[]>;
 
   // Data mapping operations
   createDataMapping(record: DataMappingRecord): Promise<void>;
