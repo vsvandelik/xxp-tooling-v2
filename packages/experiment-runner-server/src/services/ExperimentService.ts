@@ -60,6 +60,7 @@ export class ExperimentService {
   async startExperiment(
     artifactPath: string,
     options: {
+      experimentId?: string;
       resume?: boolean;
       onProgress?: (progress: ExperimentProgress) => void;
       onInputRequired?: (request: UserInputRequest) => void;
@@ -76,7 +77,7 @@ export class ExperimentService {
       throw new Error(`Maximum concurrent experiments (${this.config.maxConcurrent}) reached`);
     }
 
-    const experimentId = this.generateExperimentId();
+    const experimentId = options.experimentId || this.generateExperimentId();
 
     // Create progress callback
     const progressCallback: ProgressCallback = {

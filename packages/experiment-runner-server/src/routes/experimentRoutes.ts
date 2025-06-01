@@ -17,7 +17,7 @@ export function createExperimentRoutes(
   // Start a new experiment
   router.post('/run', async (req: Request, res: Response): Promise<void> => {
     try {
-      const { artifactPath, resume } = req.body as StartExperimentRequest;
+      const { artifactPath, experimentId: providedId, resume } = req.body as StartExperimentRequest;
 
       if (!artifactPath) {
         res.status(400).json({
@@ -37,6 +37,7 @@ export function createExperimentRoutes(
       }
 
       const experimentId = await experimentService.startExperiment(artifactPath, {
+        ...(providedId && { experimentId: providedId }),
         resume: resume ?? false,
         onProgress: progress => {
           wsManager.emitProgress(experimentId, progress);

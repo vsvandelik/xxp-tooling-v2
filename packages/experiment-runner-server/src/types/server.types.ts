@@ -9,6 +9,7 @@ export interface ServerConfig {
 
 export interface StartExperimentRequest {
   artifactPath: string;
+  experimentId?: string;
   resume?: boolean;
 }
 

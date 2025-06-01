@@ -88,9 +88,15 @@ export class ExperimentExecutor implements ExperimentRunner {
 
       const taskMap = this.buildTaskMap(artifact.tasks);
 
+      // Emit initial progress
+      progress.emitProgress(0, `Starting experiment ${artifact.experiment} v${artifact.version}`);
+
       // Execute experiment
       let currentSpace = artifact.control.START;
       const completedSpaces: string[] = [];
+
+      // Calculate total spaces for progress tracking
+      const totalSpaces = artifact.spaces.length;
 
       // If resuming, get the current space
       if (isResuming) {
@@ -113,6 +119,13 @@ export class ExperimentExecutor implements ExperimentRunner {
 
         completedSpaces.push(currentSpace);
         progress.emitSpaceComplete(currentSpace);
+
+        // Emit overall experiment progress after space completion
+        const overallProgress = completedSpaces.length / totalSpaces;
+        progress.emitProgress(
+          overallProgress,
+          `Completed space ${currentSpace} (${completedSpaces.length}/${totalSpaces} spaces)`
+        );
 
         // Determine next space
         currentSpace = await controlFlow.getNextSpace(
@@ -147,6 +160,9 @@ export class ExperimentExecutor implements ExperimentRunner {
 
       // Update run status
       await this.repository.updateRunStatus(runId, 'completed', Date.now());
+
+      // Emit final progress
+      progress.emitProgress(1.0, `Experiment completed successfully: ${completedTasks} tasks completed`);
 
       return {
         runId,

@@ -24,6 +24,11 @@ export class SpaceExecutor {
       });
     }
 
+    // Get total tasks for progress calculation
+    const totalParameterSets = space.parameters.length;
+    const tasksPerParameterSet = space.tasksOrder.length;
+    const totalTasksInSpace = totalParameterSets * tasksPerParameterSet;
+
     // Execute each parameter set
     for (let i = 0; i < space.parameters.length; i++) {
       const paramSet = space.parameters[i];
@@ -53,6 +58,7 @@ export class SpaceExecutor {
 
       try {
         // Execute tasks in order
+        let completedTasksInParameterSet = 0;
         for (const taskId of space.tasksOrder) {
           const task = taskMap.get(taskId);
           if (!task) {
@@ -60,6 +66,15 @@ export class SpaceExecutor {
           }
 
           await this.taskExecutor.execute(runId, space.spaceId, i, task, paramSet);
+          completedTasksInParameterSet++;
+
+          // Emit progress after each task completion
+          const completedTasksInSpace = (i * tasksPerParameterSet) + completedTasksInParameterSet;
+          const progressPercentage = completedTasksInSpace / totalTasksInSpace;
+          this.progress.emitProgress(
+            progressPercentage,
+            `Completed task ${taskId} in parameter set ${i + 1}/${totalParameterSets} of space ${space.spaceId}`
+          );
         }
 
         // Mark parameter set as completed
@@ -72,6 +87,15 @@ export class SpaceExecutor {
         );
 
         this.progress.emitParameterSetComplete(space.spaceId, i);
+
+        // Emit progress after parameter set completion
+        const completedParameterSets = i + 1;
+        const overallProgress = completedParameterSets / totalParameterSets;
+        this.progress.emitProgress(
+          overallProgress,
+          `Completed parameter set ${completedParameterSets}/${totalParameterSets} in space ${space.spaceId}`
+        );
+
       } catch (error) {
         // Mark parameter set as failed
         await this.repository.updateParamSetExecution(

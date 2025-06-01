@@ -45,7 +45,7 @@ describe('TaskExecutor', () => {
       emitTaskComplete: jest.fn(),
       emitError: jest.fn(),
     };
-    taskExecutor = new TaskExecutor(mockRepository, mockProgress);
+    taskExecutor = new TaskExecutor(mockRepository, '/mock/artifact/folder', mockProgress);
 
     // Create a mock process
     mockProcess = new EventEmitter();
