@@ -106,7 +106,7 @@ export class ArtifactGenerator {
           // Check if implementation file exists
           const implementationPath = this.fileResolver!.resolveImplementationPath(task.implementation);
           if (!fs.existsSync(implementationPath)) {
-            errors.push(
+            warnings.push(
               `Implementation file '${task.implementation}' for task '${task.name}' in workflow '${task.workflowName}' not found`
             );
           }

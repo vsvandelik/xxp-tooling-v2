@@ -20,5 +20,44 @@ experiment TestExperiment {
     }
 }
 
-=== ERRORS ===
+=== WARNINGS ===
 - Implementation file 'scripts/divide_two.py' for task 'testTask' in workflow 'TestWorkflow' not found
+
+=== OUTPUT ===
+{
+  "experiment": "TestExperiment",
+  "version": "1.0",
+  "tasks": [
+    [
+      {
+        "taskId": "TestWorkflow:testTask",
+        "workflow": "TestWorkflow",
+        "implementation": "scripts/divide_two.py",
+        "dynamicParameters": [],
+        "staticParameters": {},
+        "inputData": [],
+        "outputData": []
+      }
+    ]
+  ],
+  "spaces": [
+    {
+      "spaceId": "TestSpace",
+      "tasksOrder": [
+        "TestWorkflow:testTask"
+      ],
+      "parameters": [
+        {}
+      ]
+    }
+  ],
+  "control": {
+    "START": "TestSpace",
+    "transitions": [
+      {
+        "from": "TestSpace",
+        "to": "END"
+      }
+    ]
+  }
+}
