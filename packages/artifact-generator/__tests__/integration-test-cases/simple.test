@@ -20,6 +20,11 @@ experiment E1 {
     }
 }
 
+=== script.py ===
+
+# This is a simple Python script
+print("Hello, World!")
+
 === OUTPUT ===
 
 {
