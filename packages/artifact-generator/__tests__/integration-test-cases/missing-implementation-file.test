@@ -1,0 +1,63 @@
+=== testWorkflow.xxp ===
+
+workflow TestWorkflow {
+    define task testTask;
+    START -> testTask -> END;
+
+    configure task testTask {
+        implementation "scripts/divide_two.py";
+    }
+}
+
+=== experiment.espace ===
+
+experiment TestExperiment {
+    space TestSpace of TestWorkflow {
+        strategy gridsearch;
+    }
+    control {
+        START -> TestSpace -> END;
+    }
+}
+
+=== WARNINGS ===
+- Implementation file 'scripts/divide_two.py' for task 'testTask' in workflow 'TestWorkflow' not found
+
+=== OUTPUT ===
+{
+  "experiment": "TestExperiment",
+  "version": "1.0",
+  "tasks": [
+    [
+      {
+        "taskId": "TestWorkflow:testTask",
+        "workflow": "TestWorkflow",
+        "implementation": "scripts/divide_two.py",
+        "dynamicParameters": [],
+        "staticParameters": {},
+        "inputData": [],
+        "outputData": []
+      }
+    ]
+  ],
+  "spaces": [
+    {
+      "spaceId": "TestSpace",
+      "tasksOrder": [
+        "TestWorkflow:testTask"
+      ],
+      "parameters": [
+        {}
+      ]
+    }
+  ],
+  "control": {
+    "START": "TestSpace",
+    "transitions": [
+      {
+        "from": "TestSpace",
+        "to": "END"
+      }
+    ]
+  }
+}
