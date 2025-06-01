@@ -1,0 +1,73 @@
+=== firstWorkflow.xxp ===
+
+workflow FirstWorkflow {
+    define task preProcessing;
+    START -> preProcessing -> END;
+
+    configure task preProcessing {
+        implementation "scripts/divide_two.py";
+    }
+}
+
+=== experiment.espace ===
+
+experiment TestExperiment {
+    space TestSpace of FirstWorkflow {
+        strategy gridsearch;
+    }
+    control {
+        START -> TestSpace -> END;
+    }
+}
+
+=== scripts/divide_two.py ===
+
+# This is a Python script that divides input by a parameter
+import sys
+import json
+
+def main():
+    print("Hello from subdirectory script!")
+
+if __name__ == "__main__":
+    main()
+
+=== OUTPUT ===
+
+{
+  "experiment": "TestExperiment",
+  "version": "1.0",
+  "tasks": [
+    [
+      {
+        "taskId": "FirstWorkflow:preProcessing",
+        "workflow": "FirstWorkflow",
+        "implementation": "scripts/divide_two.py",
+        "dynamicParameters": [],
+        "staticParameters": {},
+        "inputData": [],
+        "outputData": []
+      }
+    ]
+  ],
+  "spaces": [
+    {
+      "spaceId": "TestSpace",
+      "tasksOrder": [
+        "FirstWorkflow:preProcessing"
+      ],
+      "parameters": [
+        {}
+      ]
+    }
+  ],
+  "control": {
+    "START": "TestSpace",
+    "transitions": [
+      {
+        "from": "TestSpace",
+        "to": "END"
+      }
+    ]
+  }
+}

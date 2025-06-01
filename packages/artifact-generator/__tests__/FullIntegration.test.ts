@@ -53,6 +53,11 @@ describe('Integration Tests', () => {
       try {
         for (const [fileName, content] of testCase.files) {
           const filePath = path.join(tempDir, fileName);
+          // Create directory if it doesn't exist
+          const dirPath = path.dirname(filePath);
+          if (!fs.existsSync(dirPath)) {
+            fs.mkdirSync(dirPath, { recursive: true });
+          }
           fs.writeFileSync(filePath, content, 'utf8');
           createdFiles.set(fileName, filePath);
         }

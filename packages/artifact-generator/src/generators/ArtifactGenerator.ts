@@ -8,6 +8,7 @@ import { ParameterResolver } from '../resolvers/ParameterResolver.js';
 import { TaskResolver } from '../resolvers/TaskResolver.js';
 import { WorkflowParser } from '../parsers/WorkflowParser.js';
 import path from 'path';
+import * as fs from 'fs';
 import { ControlFlowGenerator } from './ControlFlowGenerator.js';
 import { SpaceGenerator } from './SpaceGenerator.js';
 import { TaskGenerator } from './TaskGenerator.js';
@@ -101,6 +102,14 @@ export class ArtifactGenerator {
           errors.push(
             `Abstract task '${task.name}' in workflow '${task.workflowName}' has no implementation`
           );
+        } else {
+          // Check if implementation file exists
+          const implementationPath = this.fileResolver!.resolveImplementationPath(task.implementation);
+          if (!fs.existsSync(implementationPath)) {
+            errors.push(
+              `Implementation file '${task.implementation}' for task '${task.name}' in workflow '${task.workflowName}' not found`
+            );
+          }
         }
       }
 

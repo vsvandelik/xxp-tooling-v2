@@ -1,0 +1,24 @@
+=== testWorkflow.xxp ===
+
+workflow TestWorkflow {
+    define task testTask;
+    START -> testTask -> END;
+
+    configure task testTask {
+        implementation "scripts/divide_two.py";
+    }
+}
+
+=== experiment.espace ===
+
+experiment TestExperiment {
+    space TestSpace of TestWorkflow {
+        strategy gridsearch;
+    }
+    control {
+        START -> TestSpace -> END;
+    }
+}
+
+=== ERRORS ===
+- Implementation file 'scripts/divide_two.py' for task 'testTask' in workflow 'TestWorkflow' not found
