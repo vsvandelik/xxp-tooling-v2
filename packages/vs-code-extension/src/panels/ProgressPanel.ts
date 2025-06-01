@@ -6,6 +6,7 @@ import { RunResult } from '@extremexp/experiment-runner';
 export class ProgressPanel {
   private panel: vscode.WebviewPanel;
   private experimentId: string | null = null;
+  private artifactPath: string | null = null;
   private disposed = false;
 
   constructor(
@@ -41,6 +42,10 @@ export class ProgressPanel {
     this.experimentService.registerUserInputHandler(experimentId, request => {
       this.handleUserInputRequest(request);
     });
+  }
+
+  setArtifactPath(artifactPath: string): void {
+    this.artifactPath = artifactPath;
   }
 
   updateProgress(progress: ExperimentProgress): void {
@@ -96,6 +101,9 @@ export class ProgressPanel {
         case 'terminate':
           await this.handleTerminate();
           break;
+        case 'resume':
+          await this.handleResume();
+          break;
         case 'showHistory':
           await this.handleShowHistory();
           break;
@@ -128,6 +136,64 @@ export class ProgressPanel {
     }
   }
 
+  private async handleResume(): Promise<void> {
+    if (!this.experimentId) return;
+
+    try {
+      let artifactFilePath: string;
+
+      // Use stored artifact path if available, otherwise ask user to select
+      if (this.artifactPath) {
+        artifactFilePath = this.artifactPath;
+        vscode.window.showInformationMessage(`Resuming experiment with ${this.artifactPath}`);
+      } else {
+        // Ask the user to select the artifact file
+        const artifactPath = await vscode.window.showOpenDialog({
+          canSelectFiles: true,
+          canSelectMany: false,
+          filters: { 
+            'Artifact Files': ['json']
+          },
+          title: 'Select the artifact file to resume'
+        });
+
+        if (!artifactPath || artifactPath.length === 0) {
+          return;
+        }
+
+        artifactFilePath = artifactPath[0]!.fsPath;
+        // Store the path for future resumes
+        this.artifactPath = artifactFilePath;
+      }
+
+      // Start the experiment with resume flag
+      const newExperimentId = await this.experimentService.startExperiment(artifactFilePath, {
+        resume: true,
+        onProgress: progress => {
+          this.updateProgress(progress);
+        },
+        onComplete: result => {
+          this.setCompleted(result);
+        },
+        onError: error => {
+          this.setError(error);
+        },
+      });
+
+      // Update the experiment ID and notify the webview
+      this.experimentId = newExperimentId;
+      this.panel.webview.postMessage({
+        type: 'setExperimentId',
+        experimentId: newExperimentId,
+      });
+
+      vscode.window.showInformationMessage('Experiment resumed successfully');
+
+    } catch (error) {
+      vscode.window.showErrorMessage(`Failed to resume experiment: ${error}`);
+    }
+  }
+
   private async handleShowHistory(): Promise<void> {
     if (!this.experimentId) return;
 
@@ -155,8 +221,7 @@ export class ProgressPanel {
   private async handleUserInputResponse(data: { requestId: string; value: string }): Promise<void> {
     if (!this.experimentId) return;
 
-    const serverManager = (this.experimentService as any).serverManager;
-    const serverUrl = await serverManager.getServerUrl();
+    const serverUrl = await this.experimentService['serverManager'].getServerUrl();
     if (!serverUrl) return;
 
     await fetch(`${serverUrl}/api/experiments/${this.experimentId}/input`, {
@@ -429,6 +494,7 @@ export class ProgressPanel {
     
     <div class="controls">
         <button id="terminateBtn" onclick="terminate()">Terminate</button>
+        <button id="resumeBtn" onclick="resume()">Resume</button>
         <button id="historyBtn" onclick="toggleHistory()">Show History</button>
         <button id="logsBtn" onclick="toggleLogs()">Show Logs</button>
     </div>
@@ -454,6 +520,10 @@ export class ProgressPanel {
         
         function terminate() {
             vscode.postMessage({ type: 'terminate' });
+        }
+        
+        function resume() {
+            vscode.postMessage({ type: 'resume' });
         }
         
         function toggleHistory() {
@@ -530,8 +600,25 @@ export class ProgressPanel {
             logsDiv.scrollTop = logsDiv.scrollHeight;
         }
         
+        function updateButtonStates(status) {
+            const terminateBtn = document.getElementById('terminateBtn');
+            const resumeBtn = document.getElementById('resumeBtn');
+            
+            console.log('Updating button states for status:', status);
+            
+            // Terminate button: enabled only when running
+            terminateBtn.disabled = status !== 'running';
+            
+            // Resume button: enabled when failed or idle (to allow resuming previous experiments)
+            const statusLower = status.toLowerCase();
+            resumeBtn.disabled = !(statusLower === 'failed' || statusLower === 'idle' || statusLower === 'terminated' || statusLower === 'completed');
+            
+            console.log('Resume button disabled:', resumeBtn.disabled, 'for status:', statusLower);
+        }
+        
         function updateProgress(progress) {
             console.log('WebView updateProgress called with:', progress);
+            console.log('Progress status:', progress.status);
             const percentage = Math.round(progress.progress.percentage * 100);
             document.getElementById('progressFill').style.width = percentage + '%';
             document.getElementById('progressText').textContent = percentage + '%';
@@ -546,7 +633,10 @@ export class ProgressPanel {
             // Update status
             const statusEl = document.getElementById('status');
             statusEl.textContent = progress.status;
-            statusEl.className = 'status ' + progress.status;
+            statusEl.className = 'status ' + progress.status.toLowerCase();
+            
+            // Update button states based on status
+            updateButtonStates(progress.status);
             
             // Add log entry
             if (progress.currentTask) {
@@ -600,6 +690,7 @@ export class ProgressPanel {
                 case 'setExperimentId':
                     currentExperimentId = message.experimentId;
                     document.getElementById('experimentName').textContent = 'Experiment: ' + message.experimentId;
+                    updateButtonStates('running'); // Assume running when experiment starts
                     addLog('Experiment started: ' + message.experimentId);
                     break;
                     
@@ -612,21 +703,21 @@ export class ProgressPanel {
                     experimentData = message.data;
                     document.getElementById('status').textContent = 'Completed';
                     document.getElementById('status').className = 'status completed';
-                    document.getElementById('terminateBtn').disabled = true;
+                    updateButtonStates('completed');
                     addLog('Experiment completed successfully');
                     break;
                     
                 case 'error':
                     document.getElementById('status').textContent = 'Failed';
                     document.getElementById('status').className = 'status failed';
-                    document.getElementById('terminateBtn').disabled = true;
+                    updateButtonStates('failed'); // Use lowercase to match the logic
                     addLog('ERROR: ' + message.data.message);
                     break;
                     
                 case 'terminated':
                     document.getElementById('status').textContent = 'Terminated';
                     document.getElementById('status').className = 'status terminated';
-                    document.getElementById('terminateBtn').disabled = true;
+                    updateButtonStates('terminated');
                     addLog('Experiment terminated by user');
                     break;
                     
@@ -646,6 +737,10 @@ export class ProgressPanel {
                 submitUserInput();
             }
         });
+        
+        // Set initial button states - resume should be enabled initially for testing
+        // In a real scenario, this would depend on whether there's a previous failed experiment
+        updateButtonStates('idle');
     </script>
 </body>
 </html>`;

@@ -108,6 +108,7 @@ export class RunExperimentCommand {
       });
 
       panel.setExperimentId(experimentId);
+      panel.setArtifactPath(artifactPath);
       vscode.window.showInformationMessage(
         `Experiment ${resume ? 'resumed' : 'started'}: ${artifactInfo.experiment} v${artifactInfo.version}`
       );
