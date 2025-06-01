@@ -87,9 +87,10 @@ export class ExperimentService {
 
       // Set up event handlers
       this.socket!.on('progress', (data: ExperimentProgress) => {
-        console.log('Received progress event:', data);
         const callbacks = this.activeExperiments.get(data.experimentId);
-        callbacks?.onProgress?.(data);
+        if (callbacks?.onProgress) {
+          callbacks.onProgress(data);
+        }
       });
 
       this.socket!.on('complete', (data: { experimentId: string; result: RunResult }) => {
@@ -142,9 +143,11 @@ export class ExperimentService {
 
     // Ensure WebSocket connection is established
     if (!this.socket || !this.socket.connected) {
-      console.log('WebSocket not connected, attempting to connect...');
       await this.connect();
     }
+
+    // Generate a unique experiment ID
+    const experimentId = `exp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
     // Make API call to start experiment
     const response = await fetch(`${serverUrl}/api/experiments/run`, {
@@ -154,6 +157,7 @@ export class ExperimentService {
       },
       body: JSON.stringify({
         artifactPath,
+        experimentId,
         resume: options.resume,
       }),
     });
@@ -164,30 +168,36 @@ export class ExperimentService {
     }
 
     const data: StartExperimentResponse = await response.json();
-    const experimentId = data.experimentId;
+    // Server should return the same experimentId we provided
+    const returnedExperimentId = data.experimentId;
+    
+    console.log(`Generated experiment ID: ${experimentId}, Server returned: ${returnedExperimentId}`);
+    
+    // Use the returned experiment ID (should be the same as what we sent)
+    const finalExperimentId = returnedExperimentId;
 
     // Register callbacks
     const callbacks: ExperimentCallbacks = {};
     if (options.onProgress) callbacks.onProgress = options.onProgress;
     if (options.onComplete) callbacks.onComplete = options.onComplete;
     if (options.onError) callbacks.onError = options.onError;
-    this.activeExperiments.set(experimentId, callbacks);
+    this.activeExperiments.set(finalExperimentId, callbacks);
 
     // Subscribe to updates - connection should be established by now
     if (this.socket && this.socket.connected) {
-      console.log(`Subscribing to experiment: ${experimentId}`);
-      this.socket.emit('subscribe', experimentId);
+      console.log(`Subscribing to experiment: ${finalExperimentId}`);
+      this.socket.emit('subscribe', finalExperimentId);
     } else {
       console.log('No socket connection available for subscription');
       throw new Error('WebSocket connection not available');
     }
 
     // Set up user input handler
-    this.userInputCallbacks.set(experimentId, async (request: UserInputRequest) => {
+    this.userInputCallbacks.set(finalExperimentId, async (request: UserInputRequest) => {
       await this.handleUserInput(request);
     });
 
-    return experimentId;
+    return finalExperimentId;
   }
 
   async terminateExperiment(experimentId: string): Promise<boolean> {

@@ -67,7 +67,7 @@ export class ExperimentRunnerServer {
     );
 
     // Error handling middleware
-    this.app.use((err: Error, req: express.Request, res: express.Response) => {
+    this.app.use((err: Error, req: express.Request, res: express.Response, _next: express.NextFunction) => {
       console.error('Error:', err);
       res.status(500).json({
         error: 'Internal server error',

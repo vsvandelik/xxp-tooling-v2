@@ -531,6 +531,7 @@ export class ProgressPanel {
         }
         
         function updateProgress(progress) {
+            console.log('WebView updateProgress called with:', progress);
             const percentage = Math.round(progress.progress.percentage * 100);
             document.getElementById('progressFill').style.width = percentage + '%';
             document.getElementById('progressText').textContent = percentage + '%';
@@ -593,6 +594,7 @@ export class ProgressPanel {
         
         // Handle messages from extension
         window.addEventListener('message', event => {
+            console.log('WebView received message:', event.data);
             const message = event.data;
             
             switch (message.type) {
@@ -603,6 +605,7 @@ export class ProgressPanel {
                     break;
                     
                 case 'progress':
+                    console.log('WebView handling progress message:', message.data);
                     updateProgress(message.data);
                     break;
                     
