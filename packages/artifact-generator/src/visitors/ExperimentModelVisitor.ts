@@ -55,6 +55,7 @@ export class ExperimentModelVisitor extends ESPACEVisitor<any> {
 
     const parameters: ParameterDefinition[] = [];
     const taskConfigurations: TaskConfiguration[] = [];
+    const dataDefinitions: DataDefinition[] = [];
     let strategy = 'gridsearch';
 
     for (const content of body.spaceContent()) {
@@ -64,10 +65,19 @@ export class ExperimentModelVisitor extends ESPACEVisitor<any> {
         parameters.push(this.visit(content.paramDefinition()!));
       } else if (content.taskConfiguration()) {
         taskConfigurations.push(this.visit(content.taskConfiguration()!));
+      } else if (content.dataDefinition()) {
+        dataDefinitions.push(this.visit(content.dataDefinition()!));
       }
     }
 
-    return new SpaceModel(spaceName, workflowName, strategy, parameters, taskConfigurations);
+    return new SpaceModel(
+      spaceName,
+      workflowName,
+      strategy,
+      parameters,
+      taskConfigurations,
+      dataDefinitions
+    );
   };
 
   override visitParamDefinition = (ctx: ParamDefinitionContext): ParameterDefinition => {

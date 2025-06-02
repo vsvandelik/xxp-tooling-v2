@@ -1,14 +1,20 @@
 import { spawn } from 'child_process';
 import { DatabaseRepository } from '../database/DatabaseRepository.js';
 import { ProgressEmitter } from '../progress/ProgressEmitter.js';
-import { Task, ParameterSet, Expression } from '../types/artifact.types.js';
+import { Task, ParameterSet, Expression, Artifact } from '../types/artifact.types.js';
 
 export class TaskExecutor {
+  private artifact: Artifact | null = null;
+
   constructor(
     private repository: DatabaseRepository,
     private artifactFolder: string,
     private progress: ProgressEmitter
   ) {}
+
+  setArtifact(artifact: Artifact): void {
+    this.artifact = artifact;
+  }
 
   async execute(
     runId: string,
@@ -75,7 +81,7 @@ export class TaskExecutor {
           space_id: spaceId,
           param_set_index: paramSetIndex,
           data_name: outputName,
-          data_value: outputValue, // Stores string data in the new column
+          data_value: outputValue,
         });
       }
       // Update task execution record - outputs are determined by script
@@ -114,6 +120,7 @@ export class TaskExecutor {
 
     return params;
   }
+
   private async resolveInputData(
     runId: string,
     spaceId: string,
@@ -123,16 +130,43 @@ export class TaskExecutor {
     const inputs: Record<string, string> = {};
 
     for (const inputName of inputNames) {
+      // First try to get from database (previous task output)
       const value = await this.repository.getDataMapping(runId, spaceId, paramSetIndex, inputName);
       if (value) {
         inputs[inputName] = value;
       } else {
-        // Assume it's an initial input provided as a string
-        inputs[inputName] = inputName;
+        const initialValue = this.getInitialInputValue(inputName, spaceId);
+        if (initialValue) {
+          inputs[inputName] = initialValue;
+        } else {
+          throw new Error(
+            `No value found for input '${inputName}' in space '${spaceId}'. ` +
+              `Please ensure it's defined in the experiment or space configuration.`
+          );
+        }
       }
     }
 
     return inputs;
+  }
+
+  private getInitialInputValue(inputName: string, spaceId: string): string | null {
+    if (!this.artifact) {
+      return null;
+    }
+
+    // First check space-level overrides
+    const space = this.artifact.spaces.find(s => s.spaceId === spaceId);
+    if (space && space.inputData && inputName in space.inputData) {
+      return space.inputData[inputName]!;
+    }
+
+    // Then check experiment-level defaults
+    if (this.artifact.inputData && inputName in this.artifact.inputData) {
+      return this.artifact.inputData[inputName]!;
+    }
+
+    return null;
   }
 
   private async runPythonScript(
@@ -158,11 +192,11 @@ export class TaskExecutor {
         }
       }
       if (inputValues.length > 0) {
-        args.push(inputValues.join(','));
+        args.push(inputValues.map(val => `"${val}"`).join(','));
       }
 
       const proc = spawn('python', [scriptPath, ...args], {
-        cwd: this.artifactFolder
+        cwd: this.artifactFolder,
       });
 
       let stdout = '';

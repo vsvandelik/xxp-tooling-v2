@@ -151,10 +151,10 @@ export class ProgressPanel {
         const artifactPath = await vscode.window.showOpenDialog({
           canSelectFiles: true,
           canSelectMany: false,
-          filters: { 
-            'Artifact Files': ['json']
+          filters: {
+            'Artifact Files': ['json'],
           },
-          title: 'Select the artifact file to resume'
+          title: 'Select the artifact file to resume',
         });
 
         if (!artifactPath || artifactPath.length === 0) {
@@ -188,7 +188,6 @@ export class ProgressPanel {
       });
 
       vscode.window.showInformationMessage('Experiment resumed successfully');
-
     } catch (error) {
       vscode.window.showErrorMessage(`Failed to resume experiment: ${error}`);
     }

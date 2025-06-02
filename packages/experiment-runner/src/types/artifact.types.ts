@@ -18,6 +18,7 @@ export interface Space {
   spaceId: string;
   tasksOrder: string[];
   parameters: ParameterSet[];
+  inputData?: Record<string, string>;
 }
 
 export interface Transition {
@@ -37,4 +38,5 @@ export interface Artifact {
   tasks: Task[][];
   spaces: Space[];
   control: Control;
+  inputData?: Record<string, string>;
 }

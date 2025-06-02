@@ -7,7 +7,7 @@ export class WorkflowModel {
     public tasks: TaskModel[],
     public data: DataModel[],
     public taskChain: TaskChain | null,
-    public taskConfigurations: TaskConfigurationModel[] = [] // TODO: This should  be merged with tasks
+    public taskConfigurations: TaskConfigurationModel[] = []
   ) {}
 }
 
@@ -53,7 +53,10 @@ export class ParameterModel {
 }
 
 export class DataModel {
-  constructor(public name: string) {}
+  constructor(
+    public name: string,
+    public value: string | null = null
+  ) {}
 }
 
 export class TaskChain {

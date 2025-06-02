@@ -63,7 +63,7 @@ export class ExperimentService {
         resolve();
       });
 
-      this.socket!.on('connect_error', (error) => {
+      this.socket!.on('connect_error', error => {
         console.log('WebSocket connection error:', error);
         clearTimeout(timeout);
         reject(error);
@@ -73,7 +73,7 @@ export class ExperimentService {
         console.log('Disconnected from ExtremeXP server');
       });
 
-      this.socket!.on('reconnect_error', (error) => {
+      this.socket!.on('reconnect_error', error => {
         console.log('WebSocket reconnection error:', error);
       });
 
@@ -170,9 +170,11 @@ export class ExperimentService {
     const data: StartExperimentResponse = await response.json();
     // Server should return the same experimentId we provided
     const returnedExperimentId = data.experimentId;
-    
-    console.log(`Generated experiment ID: ${experimentId}, Server returned: ${returnedExperimentId}`);
-    
+
+    console.log(
+      `Generated experiment ID: ${experimentId}, Server returned: ${returnedExperimentId}`
+    );
+
     // Use the returned experiment ID (should be the same as what we sent)
     const finalExperimentId = returnedExperimentId;
 
@@ -235,7 +237,8 @@ export class ExperimentService {
     if (activeResponse.ok) {
       const { experiments } = await activeResponse.json();
       const active = experiments.find(
-        (exp: { experimentName: string; experimentVersion: string; status: string }) => exp.experimentName === experimentName && exp.experimentVersion === version
+        (exp: { experimentName: string; experimentVersion: string; status: string }) =>
+          exp.experimentName === experimentName && exp.experimentVersion === version
       );
       if (active) {
         return active.status;

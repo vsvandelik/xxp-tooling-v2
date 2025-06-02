@@ -86,6 +86,9 @@ export class ExperimentExecutor implements ExperimentRunner {
       }
       // Create components
       const taskExecutor = new TaskExecutor(this.repository, path.dirname(artifactPath), progress);
+
+      taskExecutor.setArtifact(artifact);
+
       const spaceExecutor = new SpaceExecutor(this.repository, taskExecutor, progress);
       const controlFlow = new ControlFlowManager(this.repository, progress, userInputProvider);
       const dataManager = new DataManager(this.repository);
@@ -166,7 +169,10 @@ export class ExperimentExecutor implements ExperimentRunner {
       await this.repository.updateRunStatus(runId, 'completed', Date.now());
 
       // Emit final progress
-      progress.emitProgress(1.0, `Experiment completed successfully: ${completedTasks} tasks completed`);
+      progress.emitProgress(
+        1.0,
+        `Experiment completed successfully: ${completedTasks} tasks completed`
+      );
 
       return {
         runId,
@@ -264,7 +270,7 @@ export class ExperimentExecutor implements ExperimentRunner {
       throw new Error(`Error reading artifact file: ${(error as Error).message}`);
     }
 
-    let parsedArtifact: unknown; // Changed from any to unknown
+    let parsedArtifact: unknown;
     try {
       parsedArtifact = JSON.parse(artifactString);
     } catch (error) {
@@ -274,14 +280,14 @@ export class ExperimentExecutor implements ExperimentRunner {
     // Validate artifact structure (basic check)
     if (
       !parsedArtifact ||
-      typeof parsedArtifact !== 'object' || // Ensure parsedArtifact is an object
-      parsedArtifact === null || // Ensure parsedArtifact is not null
+      typeof parsedArtifact !== 'object' ||
+      parsedArtifact === null ||
       typeof (parsedArtifact as Artifact).experiment !== 'string' ||
       typeof (parsedArtifact as Artifact).version !== 'string' ||
       !Array.isArray((parsedArtifact as Artifact).tasks) ||
       !Array.isArray((parsedArtifact as Artifact).spaces) ||
       typeof (parsedArtifact as Artifact).control !== 'object' ||
-      !(parsedArtifact as Artifact).control || // Ensure control is not null
+      !(parsedArtifact as Artifact).control ||
       typeof (parsedArtifact as Artifact).control.START !== 'string' ||
       !Array.isArray((parsedArtifact as Artifact).control.transitions)
     ) {

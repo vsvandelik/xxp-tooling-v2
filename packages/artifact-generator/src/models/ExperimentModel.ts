@@ -13,7 +13,8 @@ export class SpaceModel {
     public workflowName: string,
     public strategy: string,
     public parameters: ParameterDefinition[],
-    public taskConfigurations: TaskConfiguration[]
+    public taskConfigurations: TaskConfiguration[],
+    public dataDefinitions: DataDefinition[] = []
   ) {}
 }
 

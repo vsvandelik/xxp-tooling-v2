@@ -314,11 +314,11 @@ export class ExperimentService {
 
         // Get output data for this task execution
         const outputs: Record<string, string> = {};
-        
+
         // Find the task to get its output data names
         const allTasks = artifact.tasks.flat();
         const task = allTasks.find((t: Task) => t.taskId === execution.task_id);
-        
+
         if (task) {
           // Retrieve each output data mapping
           for (const outputName of task.outputData) {

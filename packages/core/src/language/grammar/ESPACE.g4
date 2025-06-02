@@ -18,7 +18,8 @@ spaceBody: LBRACE spaceContent* RBRACE;
 spaceContent:
     strategyStatement
     | paramDefinition
-    | taskConfiguration;
+    | taskConfiguration
+    | dataDefinition;
 
 strategyStatement: STRATEGY IDENTIFIER SEMICOLON;
 paramDefinition: PARAM IDENTIFIER EQUALS paramValue SEMICOLON;
@@ -50,7 +51,7 @@ conditionalTransitionHeader: spaceNameRead CONDITION_ARROW spaceNameRead;
 conditionalTransitionBody: LBRACE condition* RBRACE;
 condition: CONDITION STRING SEMICOLON;
 
-// Data definition
+// Data definition - Available at both experiment and space levels
 dataDefinition: DEFINE DATA IDENTIFIER EQUALS STRING SEMICOLON;
 
 // Variables read rules

@@ -67,7 +67,13 @@ export class WorkflowModelVisitor extends XXPVisitor<any> {
 
   override visitDataDefinition = (ctx: DataDefinitionContext): DataModel => {
     const dataName = ctx.IDENTIFIER().getText();
-    return new DataModel(dataName);
+
+    if (ctx.STRING()) {
+      const value = ctx.STRING()!.getText().slice(1, -1); // Remove quotes
+      return new DataModel(dataName, value);
+    } else {
+      return new DataModel(dataName, null);
+    }
   };
 
   override visitTaskChain = (ctx: TaskChainContext): TaskChain => {

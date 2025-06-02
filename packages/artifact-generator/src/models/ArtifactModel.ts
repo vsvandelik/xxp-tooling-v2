@@ -6,7 +6,8 @@ export class ArtifactModel {
     public version: string,
     public tasks: TaskDefinition[][],
     public spaces: SpaceDefinition[],
-    public control: ControlDefinition
+    public control: ControlDefinition,
+    public inputData: Record<string, string> = {}
   ) {}
 }
 
@@ -26,7 +27,8 @@ export class SpaceDefinition {
   constructor(
     public spaceId: string,
     public tasksOrder: string[],
-    public parameters: Record<string, ExpressionType>[]
+    public parameters: Record<string, ExpressionType>[],
+    public inputData: Record<string, string> = {}
   ) {}
 }
 

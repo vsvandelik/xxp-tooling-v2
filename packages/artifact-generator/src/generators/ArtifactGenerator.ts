@@ -2,6 +2,7 @@ import { ArtifactModel } from '../models/ArtifactModel.js';
 import { ExperimentModel } from '../models/ExperimentModel.js';
 import { WorkflowModel } from '../models/WorkflowModel.js';
 import { DataFlowResolver } from '../parsers/DataFlowResolver.js';
+import { DataResolver } from '../resolvers/DataResolver.js';
 import { ExperimentParser } from '../parsers/ExperimentParser.js';
 import { FileResolver } from '../resolvers/FileResolver.js';
 import { ParameterResolver } from '../resolvers/ParameterResolver.js';
@@ -36,6 +37,7 @@ export class ArtifactGenerator {
   private taskResolver = new TaskResolver();
   private parameterResolver = new ParameterResolver();
   private dataFlowResolver = new DataFlowResolver();
+  private dataResolver = new DataResolver();
   private taskGenerator = new TaskGenerator();
   private spaceGenerator = new SpaceGenerator();
   private controlFlowGenerator = new ControlFlowGenerator();
@@ -60,6 +62,9 @@ export class ArtifactGenerator {
 
     const resolvedTasks = this.taskResolver.resolve(experiment, workflows);
     const resolvedParameters = this.parameterResolver.resolve(experiment);
+
+    const resolvedData = this.dataResolver.resolve(experiment, workflows, resolvedTasks);
+
     this.dataFlowResolver.validate(experiment, workflows, resolvedTasks);
 
     const tasks = this.taskGenerator.generate(resolvedTasks);
@@ -68,11 +73,20 @@ export class ArtifactGenerator {
       resolvedParameters,
       resolvedTasks,
       this.taskResolver,
-      workflows
+      workflows,
+      resolvedData.spaceLevelData
     );
     const control = this.controlFlowGenerator.generate(experiment);
 
-    const artifact = new ArtifactModel(experiment.name, '1.0', tasks, spaces, control);
+    const artifact = new ArtifactModel(
+      experiment.name,
+      '1.0',
+      tasks,
+      spaces,
+      control,
+      resolvedData.experimentLevelData
+    );
+
     return { artifact, validation };
   }
 
@@ -104,12 +118,22 @@ export class ArtifactGenerator {
           );
         } else {
           // Check if implementation file exists
-          const implementationPath = this.fileResolver!.resolveImplementationPath(task.implementation);
+          const implementationPath = this.fileResolver!.resolveImplementationPath(
+            task.implementation
+          );
           if (!fs.existsSync(implementationPath)) {
             warnings.push(
               `Implementation file '${task.implementation}' for task '${task.name}' in workflow '${task.workflowName}' not found`
             );
           }
+        }
+      }
+
+      try {
+        this.dataResolver.resolve(experiment, workflows, resolvedTasks);
+      } catch (error) {
+        if (error instanceof Error) {
+          errors.push(...error.message.split('\n').filter(line => line.startsWith('Required')));
         }
       }
 

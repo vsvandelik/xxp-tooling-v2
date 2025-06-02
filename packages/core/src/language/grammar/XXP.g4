@@ -12,8 +12,8 @@ workflowContent:
     | taskChain
     | taskConfiguration;
 
-// Data
-dataDefinition: DEFINE DATA IDENTIFIER SEMICOLON;
+// Data 
+dataDefinition: DEFINE DATA IDENTIFIER (EQUALS STRING)? SEMICOLON;
 
 // Tasks
 taskDefinition: DEFINE TASK IDENTIFIER SEMICOLON;

@@ -10,7 +10,8 @@ export class SpaceGenerator {
     parameterCombinations: ParameterCombination[],
     resolvedTasks: Map<string, ResolvedTask>,
     taskResolver: TaskResolver,
-    workflows: WorkflowModel[]
+    workflows: WorkflowModel[],
+    spaceLevelData: Map<string, Record<string, string>> = new Map()
   ): SpaceDefinition[] {
     const spaceDefinitions: SpaceDefinition[] = [];
 
@@ -21,7 +22,15 @@ export class SpaceGenerator {
       }
 
       const tasksOrder = this.getTasksOrder(space, resolvedTasks, taskResolver, workflows);
-      const spaceDefinition = new SpaceDefinition(space.name, tasksOrder, paramCombo.combinations);
+
+      const spaceInputData = spaceLevelData.get(space.name) || {};
+
+      const spaceDefinition = new SpaceDefinition(
+        space.name,
+        tasksOrder,
+        paramCombo.combinations,
+        spaceInputData
+      );
 
       spaceDefinitions.push(spaceDefinition);
     }

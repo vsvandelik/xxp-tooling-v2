@@ -69,7 +69,7 @@ export class SpaceExecutor {
           completedTasksInParameterSet++;
 
           // Emit progress after each task completion
-          const completedTasksInSpace = (i * tasksPerParameterSet) + completedTasksInParameterSet;
+          const completedTasksInSpace = i * tasksPerParameterSet + completedTasksInParameterSet;
           const progressPercentage = completedTasksInSpace / totalTasksInSpace;
           this.progress.emitProgress(
             progressPercentage,
@@ -95,7 +95,6 @@ export class SpaceExecutor {
           overallProgress,
           `Completed parameter set ${completedParameterSets}/${totalParameterSets} in space ${space.spaceId}`
         );
-
       } catch (error) {
         // Mark parameter set as failed
         await this.repository.updateParamSetExecution(
