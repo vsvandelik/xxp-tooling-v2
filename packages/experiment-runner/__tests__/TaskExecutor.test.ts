@@ -8,7 +8,7 @@ jest.mock('child_process');
 const mockSpawn = spawn as jest.MockedFunction<typeof spawn>;
 
 // Mock dependencies
-jest.mock('../../database/DatabaseRepository.js', () => ({
+jest.mock('../src/database/DatabaseRepository.js', () => ({
   DatabaseRepository: jest.fn().mockImplementation(() => ({
     getTaskExecution: jest.fn(),
     createTaskExecution: jest.fn(),
@@ -18,7 +18,7 @@ jest.mock('../../database/DatabaseRepository.js', () => ({
   })),
 }));
 
-jest.mock('../../progress/ProgressEmitter.js', () => ({
+jest.mock('../src/progress/ProgressEmitter.js', () => ({
   ProgressEmitter: jest.fn().mockImplementation(() => ({
     emitTaskStart: jest.fn(),
     emitTaskComplete: jest.fn(),
