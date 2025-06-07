@@ -196,6 +196,14 @@ describe('ExperimentExecutor', () => {
       expect(mockRepository.close).toHaveBeenCalled();
     });
 
+    it('should run experiment with default options', async () => {
+      const result = await experimentExecutor.run('/path/to/artifact.json');
+
+      expect(result.status).toBe('completed');
+      expect(mockRepository.initialize).toHaveBeenCalled();
+      expect(mockRepository.close).toHaveBeenCalled();
+    });
+
     it('should handle resume mode with existing run', async () => {
       const existingRun = {
         id: 'existing-run-id',
@@ -210,6 +218,31 @@ describe('ExperimentExecutor', () => {
 
       expect(result.runId).toBe('existing-run-id');
       expect(mockRepository.createRun).not.toHaveBeenCalled();
+    });
+
+    it('should create new run when resuming but no existing run found', async () => {
+      mockRepository.getRun.mockResolvedValue(null);
+
+      const result = await experimentExecutor.run('/path/to/artifact.json', { resume: true });
+
+      expect(result.runId).toMatch(/^run_\d+_[a-z0-9]+$/);
+      expect(mockRepository.createRun).toHaveBeenCalled();
+    });
+
+    it('should create new run when resuming but existing run is completed', async () => {
+      const existingRun = {
+        id: 'completed-run-id',
+        experiment_name: 'test-experiment',
+        experiment_version: '1.0.0',
+        status: 'completed'
+      };
+      
+      mockRepository.getRun.mockResolvedValue(existingRun);
+
+      const result = await experimentExecutor.run('/path/to/artifact.json', { resume: true });
+
+      expect(result.runId).not.toBe('completed-run-id');
+      expect(mockRepository.createRun).toHaveBeenCalled();
     });
 
     it('should delete existing completed run when not resuming', async () => {
@@ -249,9 +282,76 @@ describe('ExperimentExecutor', () => {
         .rejects.toThrow('Error parsing artifact JSON:');
     });
 
-    it('should validate artifact structure', async () => {
-      const invalidArtifact = { experiment: 'test' }; // Missing required fields
+    it('should validate artifact structure - missing experiment', async () => {
+      const invalidArtifact = { version: '1.0.0' };
       mockFs.readFileSync.mockReturnValue(JSON.stringify(invalidArtifact));
+
+      await expect(experimentExecutor.run('/path/to/artifact.json'))
+        .rejects.toThrow('Invalid artifact structure. Missing required fields.');
+    });
+
+    it('should validate artifact structure - missing version', async () => {
+      const invalidArtifact = { experiment: 'test' };
+      mockFs.readFileSync.mockReturnValue(JSON.stringify(invalidArtifact));
+
+      await expect(experimentExecutor.run('/path/to/artifact.json'))
+        .rejects.toThrow('Invalid artifact structure. Missing required fields.');
+    });
+
+    it('should validate artifact structure - missing tasks array', async () => {
+      const invalidArtifact = { experiment: 'test', version: '1.0.0' };
+      mockFs.readFileSync.mockReturnValue(JSON.stringify(invalidArtifact));
+
+      await expect(experimentExecutor.run('/path/to/artifact.json'))
+        .rejects.toThrow('Invalid artifact structure. Missing required fields.');
+    });
+
+    it('should validate artifact structure - missing spaces array', async () => {
+      const invalidArtifact = { experiment: 'test', version: '1.0.0', tasks: [] };
+      mockFs.readFileSync.mockReturnValue(JSON.stringify(invalidArtifact));
+
+      await expect(experimentExecutor.run('/path/to/artifact.json'))
+        .rejects.toThrow('Invalid artifact structure. Missing required fields.');
+    });
+
+    it('should validate artifact structure - missing control object', async () => {
+      const invalidArtifact = { experiment: 'test', version: '1.0.0', tasks: [], spaces: [] };
+      mockFs.readFileSync.mockReturnValue(JSON.stringify(invalidArtifact));
+
+      await expect(experimentExecutor.run('/path/to/artifact.json'))
+        .rejects.toThrow('Invalid artifact structure. Missing required fields.');
+    });
+
+    it('should validate artifact structure - missing control.START', async () => {
+      const invalidArtifact = { 
+        experiment: 'test', 
+        version: '1.0.0', 
+        tasks: [], 
+        spaces: [], 
+        control: { transitions: [] }
+      };
+      mockFs.readFileSync.mockReturnValue(JSON.stringify(invalidArtifact));
+
+      await expect(experimentExecutor.run('/path/to/artifact.json'))
+        .rejects.toThrow('Invalid artifact structure. Missing required fields.');
+    });
+
+    it('should validate artifact structure - missing control.transitions', async () => {
+      const invalidArtifact = { 
+        experiment: 'test', 
+        version: '1.0.0', 
+        tasks: [], 
+        spaces: [], 
+        control: { START: 'space1' }
+      };
+      mockFs.readFileSync.mockReturnValue(JSON.stringify(invalidArtifact));
+
+      await expect(experimentExecutor.run('/path/to/artifact.json'))
+        .rejects.toThrow('Invalid artifact structure. Missing required fields.');
+    });
+
+    it('should validate artifact structure - null artifact', async () => {
+      mockFs.readFileSync.mockReturnValue('null');
 
       await expect(experimentExecutor.run('/path/to/artifact.json'))
         .rejects.toThrow('Invalid artifact structure. Missing required fields.');
@@ -266,6 +366,73 @@ describe('ExperimentExecutor', () => {
         .rejects.toThrow('Database error');
 
       expect(mockRepository.close).toHaveBeenCalled();
+    });
+
+    it('should handle complex artifact with multiple spaces and task stats', async () => {
+      const complexArtifact = {
+        ...mockArtifact,
+        spaces: [
+          {
+            spaceId: 'space1',
+            tasksOrder: ['task1', 'task2'],
+            parameters: [{ param1: 'value1' }, { param1: 'value2' }],
+          },
+          {
+            spaceId: 'space2',
+            tasksOrder: ['task3'],
+            parameters: [{ param2: 'value3' }],
+          }
+        ]
+      };
+
+      mockFs.readFileSync.mockReturnValue(JSON.stringify(complexArtifact));
+      mockRepository.getTaskStats.mockResolvedValue([
+        { status: 'completed', count: 4 },
+        { status: 'failed', count: 1 },
+        { status: 'skipped', count: 0 }
+      ]);
+
+      const result = await experimentExecutor.run('/path/to/artifact.json');
+
+      expect(result.summary).toEqual({
+        totalTasks: 5, // (2 tasks * 2 params) + (1 task * 1 param)
+        completedTasks: 4,
+        failedTasks: 1,
+        skippedTasks: 0,
+      });
+    });
+
+    it('should handle artifact with input data', async () => {
+      const artifactWithInputData = {
+        ...mockArtifact,
+        inputData: { globalInput: 'globalValue' }
+      };
+
+      mockFs.readFileSync.mockReturnValue(JSON.stringify(artifactWithInputData));
+
+      const result = await experimentExecutor.run('/path/to/artifact.json');
+
+      expect(result.status).toBe('completed');
+    });
+
+    it('should generate unique run IDs', async () => {
+      const result1 = await experimentExecutor.run('/path/to/artifact.json');
+      
+      // Reset mocks for second run
+      jest.clearAllMocks();
+      mockFs.readFileSync.mockReturnValue(JSON.stringify(mockArtifact));
+      mockRepository.getRun.mockResolvedValue(null);
+      mockRepository.getTaskStats.mockResolvedValue([
+        { status: 'completed', count: 1 },
+        { status: 'failed', count: 0 },
+        { status: 'skipped', count: 0 }
+      ]);
+      
+      const result2 = await experimentExecutor.run('/path/to/artifact.json');
+
+      expect(result1.runId).not.toBe(result2.runId);
+      expect(result1.runId).toMatch(/^run_\d+_[a-z0-9]+$/);
+      expect(result2.runId).toMatch(/^run_\d+_[a-z0-9]+$/);
     });
   });
 
@@ -348,11 +515,70 @@ describe('ExperimentExecutor', () => {
       expect(result!.currentParameterSet).toBeUndefined();
     });
 
+    it('should handle different status types', async () => {
+      const statuses = ['running', 'completed', 'failed', 'terminated'] as const;
+      
+      for (const status of statuses) {
+        const mockRun = {
+          id: 'run-id',
+          experiment_name: 'test-experiment',
+          experiment_version: '1.0.0',
+          status: status,
+        };
+
+        mockRepository.getRun.mockResolvedValue(mockRun);
+
+        const result = await experimentExecutor.getStatus('test-experiment', '1.0.0');
+
+        expect(result!.status).toBe(status);
+      }
+    });
+
+    it('should handle zero progress stats', async () => {
+      mockRepository.getSpaceStats.mockResolvedValue({ completed: 0, total: 0 });
+      mockRepository.getParamSetStats.mockResolvedValue({ completed: 0, total: 0 });
+
+      const mockRun = {
+        id: 'run-id',
+        experiment_name: 'test-experiment',
+        experiment_version: '1.0.0',
+        status: 'running',
+      };
+
+      mockRepository.getRun.mockResolvedValue(mockRun);
+
+      const result = await experimentExecutor.getStatus('test-experiment', '1.0.0');
+
+      expect(result!.progress).toEqual({
+        completedSpaces: 0,
+        totalSpaces: 0,
+        completedParameterSets: 0,
+        totalParameterSets: 0,
+      });
+    });
+
     it('should ensure repository is closed even on error', async () => {
       mockRepository.getRun.mockRejectedValue(new Error('Database error'));
 
       await expect(experimentExecutor.getStatus('test-experiment', '1.0.0'))
         .rejects.toThrow('Database error');
+
+      expect(mockRepository.close).toHaveBeenCalled();
+    });
+
+    it('should handle database stats retrieval errors', async () => {
+      const mockRun = {
+        id: 'run-id',
+        experiment_name: 'test-experiment',
+        experiment_version: '1.0.0',
+        status: 'running',
+      };
+
+      mockRepository.getRun.mockResolvedValue(mockRun);
+      mockRepository.getSpaceStats.mockRejectedValue(new Error('Stats error'));
+
+      await expect(experimentExecutor.getStatus('test-experiment', '1.0.0'))
+        .rejects.toThrow('Stats error');
 
       expect(mockRepository.close).toHaveBeenCalled();
     });
@@ -390,7 +616,7 @@ describe('ExperimentExecutor', () => {
       expect(mockRepository.updateRunStatus).not.toHaveBeenCalled();
     });
 
-    it('should not terminate non-running experiment', async () => {
+    it('should not terminate completed experiment', async () => {
       const mockRun = {
         id: 'run-id',
         experiment_name: 'test-experiment',
@@ -406,11 +632,60 @@ describe('ExperimentExecutor', () => {
       expect(mockRepository.updateRunStatus).not.toHaveBeenCalled();
     });
 
+    it('should not terminate failed experiment', async () => {
+      const mockRun = {
+        id: 'run-id',
+        experiment_name: 'test-experiment',
+        experiment_version: '1.0.0',
+        status: 'failed'
+      };
+
+      mockRepository.getRun.mockResolvedValue(mockRun);
+
+      const result = await experimentExecutor.terminate('test-experiment', '1.0.0');
+
+      expect(result).toBe(false);
+      expect(mockRepository.updateRunStatus).not.toHaveBeenCalled();
+    });
+
+    it('should not terminate already terminated experiment', async () => {
+      const mockRun = {
+        id: 'run-id',
+        experiment_name: 'test-experiment',
+        experiment_version: '1.0.0',
+        status: 'terminated'
+      };
+
+      mockRepository.getRun.mockResolvedValue(mockRun);
+
+      const result = await experimentExecutor.terminate('test-experiment', '1.0.0');
+
+      expect(result).toBe(false);
+      expect(mockRepository.updateRunStatus).not.toHaveBeenCalled();
+    });
+
     it('should ensure repository is closed even on error', async () => {
       mockRepository.getRun.mockRejectedValue(new Error('Database error'));
 
       await expect(experimentExecutor.terminate('test-experiment', '1.0.0'))
         .rejects.toThrow('Database error');
+
+      expect(mockRepository.close).toHaveBeenCalled();
+    });
+
+    it('should handle update status errors', async () => {
+      const mockRun = {
+        id: 'run-id',
+        experiment_name: 'test-experiment',
+        experiment_version: '1.0.0',
+        status: 'running'
+      };
+
+      mockRepository.getRun.mockResolvedValue(mockRun);
+      mockRepository.updateRunStatus.mockRejectedValue(new Error('Update error'));
+
+      await expect(experimentExecutor.terminate('test-experiment', '1.0.0'))
+        .rejects.toThrow('Update error');
 
       expect(mockRepository.close).toHaveBeenCalled();
     });
