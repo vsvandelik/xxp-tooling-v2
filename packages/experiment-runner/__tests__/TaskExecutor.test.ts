@@ -1,5 +1,5 @@
 import { TaskExecutor } from '../src/executors/TaskExecutor.js';
-import { Task, ParameterSet } from '../src/types/artifact.types.js';
+import { Task, ParameterSet, Artifact } from '../src/types/artifact.types.js';
 import { spawn } from 'child_process';
 import { EventEmitter } from 'events';
 
@@ -8,7 +8,7 @@ jest.mock('child_process');
 const mockSpawn = spawn as jest.MockedFunction<typeof spawn>;
 
 // Mock dependencies
-jest.mock('../../database/DatabaseRepository.js', () => ({
+jest.mock('../src/database/DatabaseRepository.js', () => ({
   DatabaseRepository: jest.fn().mockImplementation(() => ({
     getTaskExecution: jest.fn(),
     createTaskExecution: jest.fn(),
@@ -18,7 +18,7 @@ jest.mock('../../database/DatabaseRepository.js', () => ({
   })),
 }));
 
-jest.mock('../../progress/ProgressEmitter.js', () => ({
+jest.mock('../src/progress/ProgressEmitter.js', () => ({
   ProgressEmitter: jest.fn().mockImplementation(() => ({
     emitTaskStart: jest.fn(),
     emitTaskComplete: jest.fn(),
@@ -31,6 +31,7 @@ describe('TaskExecutor', () => {
   let mockRepository: any;
   let mockProgress: any;
   let mockProcess: any;
+  let mockArtifact: Artifact;
 
   beforeEach(() => {
     mockRepository = {
@@ -46,6 +47,34 @@ describe('TaskExecutor', () => {
       emitError: jest.fn(),
     };
     taskExecutor = new TaskExecutor(mockRepository, '/mock/artifact/folder', mockProgress);
+    
+    // Set up a mock artifact with input data
+    mockArtifact = {
+      experiment: 'test-experiment',
+      version: '1.0.0',
+      tasks: [],
+      spaces: [
+        {
+          spaceId: 'space1',
+          tasksOrder: ['test-task'],
+          parameters: [],
+          inputData: {
+            input1: 'space_input1_value',
+            input2: 'space_input2_value',
+          },
+        }
+      ],
+      control: {
+        START: 'space1',
+        transitions: [],
+      },
+      inputData: {
+        input1: 'default_input1_value',
+        input2: 'default_input2_value',
+      },
+    };
+    
+    taskExecutor.setArtifact(mockArtifact);
 
     // Create a mock process
     mockProcess = new EventEmitter();
@@ -117,7 +146,9 @@ describe('TaskExecutor', () => {
         '--param2',
         'value2',
         '"input_value_1","input_value_2"',
-      ]);
+      ], {
+        cwd: '/mock/artifact/folder',
+      });
 
       // Verify database operations
       expect(mockRepository.createTaskExecution).toHaveBeenCalledWith({
@@ -170,15 +201,17 @@ describe('TaskExecutor', () => {
 
       await executePromise;
 
-      // Verify spawn was called with input names as fallback values
+      // Verify spawn was called with space input values since no data mapping exists
       expect(mockSpawn).toHaveBeenCalledWith('python', [
         'test_script.py',
         '--param1',
         'value1',
         '--param2',
         'value2',
-        '"input1","input2"',
-      ]);
+        '"space_input1_value","space_input2_value"',
+      ], {
+        cwd: '/mock/artifact/folder',
+      });
     });
 
     it('should handle tasks with no inputs', async () => {
@@ -206,10 +239,17 @@ describe('TaskExecutor', () => {
         'value1',
         '--param2',
         'value2',
-      ]);
+      ], {
+        cwd: '/mock/artifact/folder',
+      });
     });
 
     it('should handle script failure with non-zero exit code', async () => {
+      // Mock data mapping for inputs to allow the test to proceed to script execution
+      mockRepository.getDataMapping
+        .mockResolvedValueOnce('input_value_1') // for input1
+        .mockResolvedValueOnce('input_value_2'); // for input2
+      
       const executePromise = taskExecutor.execute('run1', 'space1', 0, mockTask, mockParamSet);
 
       setTimeout(() => {
@@ -236,6 +276,11 @@ describe('TaskExecutor', () => {
     });
 
     it('should handle missing output from script', async () => {
+      // Mock data mapping for inputs to allow the test to proceed to script execution
+      mockRepository.getDataMapping
+        .mockResolvedValueOnce('input_value_1') // for input1
+        .mockResolvedValueOnce('input_value_2'); // for input2
+      
       const executePromise = taskExecutor.execute('run1', 'space1', 0, mockTask, mockParamSet);
 
       setTimeout(() => {
@@ -247,6 +292,11 @@ describe('TaskExecutor', () => {
     });
 
     it('should handle insufficient outputs from script', async () => {
+      // Mock data mapping for inputs to allow the test to proceed to script execution
+      mockRepository.getDataMapping
+        .mockResolvedValueOnce('input_value_1') // for input1
+        .mockResolvedValueOnce('input_value_2'); // for input2
+      
       const executePromise = taskExecutor.execute('run1', 'space1', 0, mockTask, mockParamSet);
 
       setTimeout(() => {
@@ -261,6 +311,11 @@ describe('TaskExecutor', () => {
     });
 
     it('should handle malformed output from script', async () => {
+      // Mock data mapping for inputs to allow the test to proceed to script execution
+      mockRepository.getDataMapping
+        .mockResolvedValueOnce('input_value_1') // for input1
+        .mockResolvedValueOnce('input_value_2'); // for input2
+      
       const executePromise = taskExecutor.execute('run1', 'space1', 0, mockTask, mockParamSet);
 
       setTimeout(() => {
