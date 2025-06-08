@@ -27,5 +27,9 @@ experiment CircularInheritanceTest {
     }
 }
 
+=== a.py ===
+
+=== b.py ===
+
 === ERRORS ===
 - Circular inheritance detected in workflow hierarchy

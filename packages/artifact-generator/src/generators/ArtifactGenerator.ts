@@ -99,6 +99,14 @@ export class ArtifactGenerator {
     try {
       const { experiment, workflows } = await this.parseFiles(espaceFilePath);
 
+      // Validate workflow inheritance early (before task resolution)
+      this.validateWorkflowInheritance(workflows, errors, warnings);
+      
+      // Early exit if there are critical errors that would cause stack overflow
+      if (errors.length > 0) {
+        return { errors, warnings };
+      }
+
       // Validate workflow references
       for (const space of experiment.spaces) {
         const workflow = workflows.find(w => w.name === space.workflowName);
@@ -172,6 +180,18 @@ export class ArtifactGenerator {
       if (experiment.controlFlow) {
         this.validateControlFlow(experiment, errors, warnings);
       }
+
+      // Validate workflows
+      this.validateWorkflows(workflows, errors, warnings);
+
+      // Validate task chains
+      this.validateTaskChains(workflows, errors, warnings);
+
+      // Validate circular task dependencies
+      this.validateCircularTaskDependencies(workflows, errors, warnings);
+
+      // Validate strategies
+      this.validateStrategies(experiment, errors, warnings);
     } catch (error) {
       errors.push(error instanceof Error ? error.message : String(error));
     }
@@ -304,5 +324,162 @@ export class ArtifactGenerator {
         }
       }
     }
+  }
+
+  private validateWorkflows(workflows: WorkflowModel[], errors: string[], warnings: string[]): void {
+    for (const workflow of workflows) {
+      // Check for empty workflows
+      if (workflow.tasks.length === 0) {
+        warnings.push(`Workflow '${workflow.name}' has no tasks defined`);
+      }
+
+      // Check for duplicate task definitions
+      const taskNames = workflow.tasks.map(task => task.name);
+      const duplicates = taskNames.filter((name, index) => taskNames.indexOf(name) !== index);
+      for (const duplicate of [...new Set(duplicates)]) {
+        errors.push(`Duplicate task definition '${duplicate}' in workflow '${workflow.name}'`);
+      }
+    }
+  }
+
+  private validateStrategies(experiment: ExperimentModel, errors: string[], warnings: string[]): void {
+    const validStrategies = ['gridsearch', 'randomsearch'];
+    
+    for (const space of experiment.spaces) {
+      if (!validStrategies.includes(space.strategy)) {
+        errors.push(`Unknown strategy: ${space.strategy}`);
+      }
+    }
+  }
+
+  private validateWorkflowInheritance(workflows: WorkflowModel[], errors: string[], warnings: string[]): void {
+    const workflowMap = new Map<string, WorkflowModel>();
+    for (const workflow of workflows) {
+      workflowMap.set(workflow.name, workflow);
+    }
+
+    // Check for circular inheritance
+    for (const workflow of workflows) {
+      if (workflow.parentWorkflow) {
+        const visited = new Set<string>();
+        if (this.hasCircularInheritance(workflow.name, workflowMap, visited)) {
+          errors.push('Circular inheritance detected in workflow hierarchy');
+          break; // Only report this error once
+        }
+      }
+    }
+  }
+
+  private hasCircularInheritance(workflowName: string, workflowMap: Map<string, WorkflowModel>, visited: Set<string>): boolean {
+    if (visited.has(workflowName)) {
+      return true;
+    }
+
+    const workflow = workflowMap.get(workflowName);
+    if (!workflow || !workflow.parentWorkflow) {
+      return false;
+    }
+
+    visited.add(workflowName);
+    const result = this.hasCircularInheritance(workflow.parentWorkflow, workflowMap, visited);
+    visited.delete(workflowName);
+    return result;
+  }
+
+  private validateTaskChains(workflows: WorkflowModel[], errors: string[], warnings: string[]): void {
+    for (const workflow of workflows) {
+      if (workflow.taskChain) {
+        const definedTasks = new Set(workflow.tasks.map(task => task.name));
+        const executionOrder = workflow.taskChain.getExecutionOrder();
+        
+        // Check if all tasks in the chain are defined
+        for (const taskName of executionOrder) {
+          if (!definedTasks.has(taskName)) {
+            errors.push(`Task '${taskName}' referenced in workflow chain but not found in workflow '${workflow.name}'`);
+          }
+        }
+        
+        // Check for unused tasks (warning)
+        for (const task of workflow.tasks) {
+          if (!executionOrder.includes(task.name)) {
+            warnings.push(`Task '${task.name}' is defined but not used in execution chain`);
+          }
+        }
+      }
+    }
+  }
+
+  private validateCircularTaskDependencies(workflows: WorkflowModel[], errors: string[], warnings: string[]): void {
+    for (const workflow of workflows) {
+      // Build dependency graph based on input/output data relationships
+      const dependencyGraph = new Map<string, string[]>();
+      const taskMap = new Map<string, any>();
+      
+      for (const task of workflow.tasks) {
+        taskMap.set(task.name, task);
+        dependencyGraph.set(task.name, []);
+      }
+      
+      // Build dependencies: if task A outputs data that task B inputs, then B depends on A
+      for (const task of workflow.tasks) {
+        for (const output of task.outputs) {
+          for (const otherTask of workflow.tasks) {
+            if (otherTask.name !== task.name && otherTask.inputs.includes(output)) {
+              if (!dependencyGraph.has(otherTask.name)) {
+                dependencyGraph.set(otherTask.name, []);
+              }
+              dependencyGraph.get(otherTask.name)!.push(task.name);
+            }
+          }
+        }
+      }
+      
+      // Check for circular dependencies using DFS
+      for (const taskName of dependencyGraph.keys()) {
+        const visited = new Set<string>();
+        const recursionStack = new Set<string>();
+        const path: string[] = [];
+        
+        if (this.hasCircularDependency(taskName, dependencyGraph, visited, recursionStack, path)) {
+          // Find the actual cycle in the path
+          const cycleStart = path.indexOf(taskName);
+          const cycle = path.slice(cycleStart);
+          cycle.push(taskName); // Complete the cycle
+          errors.push(`Circular data dependency detected: ${cycle.join(' -> ')}`);
+          return; // Report only the first circular dependency found
+        }
+      }
+    }
+  }
+
+  private hasCircularDependency(
+    taskName: string,
+    dependencyGraph: Map<string, string[]>,
+    visited: Set<string>,
+    recursionStack: Set<string>,
+    path: string[]
+  ): boolean {
+    if (recursionStack.has(taskName)) {
+      return true;
+    }
+    
+    if (visited.has(taskName)) {
+      return false;
+    }
+    
+    visited.add(taskName);
+    recursionStack.add(taskName);
+    path.push(taskName);
+    
+    const dependencies = dependencyGraph.get(taskName) || [];
+    for (const dependency of dependencies) {
+      if (this.hasCircularDependency(dependency, dependencyGraph, visited, recursionStack, path)) {
+        return true;
+      }
+    }
+    
+    recursionStack.delete(taskName);
+    path.pop();
+    return false;
   }
 }

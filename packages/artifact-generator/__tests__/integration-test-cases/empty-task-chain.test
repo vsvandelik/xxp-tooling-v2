@@ -20,6 +20,8 @@ experiment EmptyTaskChainTest {
     }
 }
 
+=== task1.py ===
+
 === WARNINGS ===
 - Task 'task1' is defined but not used in execution chain
 

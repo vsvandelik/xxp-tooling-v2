@@ -39,5 +39,11 @@ experiment CircularTaskDependencyTest {
     }
 }
 
+=== taskA.py ===
+
+=== taskB.py ===
+
+=== taskC.py ===
+
 === ERRORS ===
-- Circular data dependency detected: taskA -> taskB -> taskC -> taskA
+- Circular data dependency detected: taskA -> taskC -> taskB -> taskA
