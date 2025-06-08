@@ -90,7 +90,29 @@ export class ParameterResolver {
 
   private resolveWorkflowInheritance(workflow: WorkflowModel, workflowMap: Map<string, WorkflowModel>): WorkflowModel {
     if (!workflow.parentWorkflow) {
-      return workflow;
+      // Apply configurations to workflows without parents  
+      const result = {
+        ...workflow,
+        tasks: [...workflow.tasks]
+      };
+      
+      for (const config of workflow.taskConfigurations) {
+        const task = result.tasks.find(t => t.name === config.name);
+        if (task) {
+          if (config.implementation !== null) {
+            task.implementation = config.implementation;
+          }
+          task.parameters = [...task.parameters, ...config.parameters];
+          if (config.inputs.length > 0) {
+            task.inputs = config.inputs;
+          }
+          if (config.outputs.length > 0) {
+            task.outputs = config.outputs;
+          }
+        }
+      }
+      
+      return result;
     }
 
     const parentWorkflow = workflowMap.get(workflow.parentWorkflow);

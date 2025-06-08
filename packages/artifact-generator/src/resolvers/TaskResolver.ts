@@ -25,20 +25,20 @@ export class TaskResolver {
     const workflowMap = this.buildWorkflowMap(workflows);
     const tempTasks = new Map<string, ResolvedTask>();
 
-    // Create a map of space name to parameter names for quick lookup
-    const spaceParameterNames = new Map<string, Set<string>>();
+    // Create a map of space name to used parameter names for filtering dynamic parameters
+    const spaceUsedParameters = new Map<string, Set<string>>();
     if (resolvedParameters) {
       for (const paramCombination of resolvedParameters) {
-        const paramNames = new Set<string>();
+        const usedParamNames = new Set<string>();
         if (paramCombination.combinations.length > 0 && paramCombination.combinations[0]) {
           for (const paramName of Object.keys(paramCombination.combinations[0])) {
             // Skip task-prefixed parameters, only include space-level ones
             if (!paramName.includes(':')) {
-              paramNames.add(paramName);
+              usedParamNames.add(paramName);
             }
           }
         }
-        spaceParameterNames.set(paramCombination.spaceId, paramNames);
+        spaceUsedParameters.set(paramCombination.spaceId, usedParamNames);
       }
     }
 
@@ -55,8 +55,9 @@ export class TaskResolver {
         const taskId = `${space.workflowName}:${task.name}`;
 
         if (!tempTasks.has(taskId)) {
-          const spaceParameters = this.getSpaceParametersForTask(space, task.name, spaceParameterNames.get(space.name));
-          const resolvedTask = this.resolveTask(task, spaceParameters);
+          const spaceParameters = this.getSpaceParametersForTask(space, task.name);
+          const usedParameters = spaceUsedParameters.get(space.name);
+          const resolvedTask = this.resolveTask(task, spaceParameters, usedParameters);
           tempTasks.set(taskId, resolvedTask);
         }
       }
@@ -164,16 +165,13 @@ export class TaskResolver {
 
   private getSpaceParametersForTask(
     space: SpaceModel,
-    taskName: string,
-    filteredParameterNames?: Set<string>
+    taskName: string
   ): Map<string, ParameterDefinition> {
     const parameters = new Map<string, ParameterDefinition>();
 
-    // Add space-level parameters (only include filtered ones if provided)
+    // Add space-level parameters
     for (const param of space.parameters) {
-      if (!filteredParameterNames || filteredParameterNames.has(param.name)) {
-        parameters.set(param.name, param);
-      }
+      parameters.set(param.name, param);
     }
 
     // Add task-specific parameters (override space-level)
@@ -191,7 +189,8 @@ export class TaskResolver {
 
   private resolveTask(
     task: TaskModel,
-    spaceParameters: Map<string, ParameterDefinition>
+    spaceParameters: Map<string, ParameterDefinition>,
+    usedParameters?: Set<string>
   ): ResolvedTask {
     const dynamicParameters: string[] = [];
     const staticParameters: Record<string, ExpressionType> = {};
@@ -207,13 +206,16 @@ export class TaskResolver {
     // Create a set of parameter names that the task actually defines
     const taskParameterNames = new Set(task.parameters.map(p => p.name));
 
-    // Apply all space parameters to the task (space parameters are already filtered to only used ones)
+    // Apply all space parameters to the task
     for (const [paramName, paramDef] of spaceParameters) {
-      if (paramDef.type === 'value') {
-        staticParameters[paramName] = paramDef.values[0]!;
-        allParameters.set(paramName, paramDef.values[0]!);
-      } else {
-        dynamicParameters.push(paramName);
+      // Only include parameters that are actually used (if filtering is provided)
+      if (!usedParameters || usedParameters.has(paramName)) {
+        if (paramDef.type === 'value') {
+          staticParameters[paramName] = paramDef.values[0]!;
+          allParameters.set(paramName, paramDef.values[0]!);
+        } else {
+          dynamicParameters.push(paramName);
+        }
       }
     }
     
