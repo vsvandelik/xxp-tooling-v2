@@ -38,6 +38,7 @@ class MockChildProcess extends EventEmitter {
 describe('ToolExecutor', () => {
   let toolExecutor: ToolExecutor;
   let mockProcess: MockChildProcess;
+  const expectedShell = process.platform === 'win32';
 
   beforeEach(() => {
     toolExecutor = new ToolExecutor(mockToolResolver);
@@ -91,7 +92,7 @@ describe('ToolExecutor', () => {
       expect(mockSpawn).toHaveBeenCalledWith('node', ['/mock/path/to/tool', '--version'], {
         cwd: '/custom/dir',
         env: process.env,
-        shell: false,
+        shell: expectedShell,
       });
     });
 
@@ -122,7 +123,7 @@ describe('ToolExecutor', () => {
       expect(mockSpawn).toHaveBeenCalledWith('/usr/bin/binary-tool', ['--help'], {
         cwd: '/usr/bin',
         env: process.env,
-        shell: false,
+        shell: expectedShell,
       });
     });
 
@@ -231,7 +232,7 @@ describe('ToolExecutor', () => {
       expect(mockSpawn).toHaveBeenCalledWith('node', ['/mock/path/to/tool'], {
         cwd: '/mock/working/dir',
         env: { ...process.env, ...customEnv },
-        shell: false,
+        shell: expectedShell,
       });
     });
 
@@ -275,7 +276,7 @@ describe('ToolExecutor', () => {
       expect(mockSpawn).toHaveBeenCalledWith('node', ['/mock/path/to/tool', '--watch'], {
         cwd: '/mock/working/dir',
         env: process.env,
-        shell: false,
+        shell: expectedShell,
       });
 
       // Simulate streaming data
