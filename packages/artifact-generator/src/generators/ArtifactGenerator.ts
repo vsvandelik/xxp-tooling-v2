@@ -181,8 +181,8 @@ export class ArtifactGenerator {
         this.validateControlFlow(experiment, errors, warnings);
       }
 
-      // Validate workflows
-      this.validateWorkflows(workflows, errors, warnings);
+      // Validate workflows (check for empty workflows after inheritance resolution)
+      this.validateWorkflowsAfterInheritance(experiment, workflows, errors, warnings);
 
       // Validate task chains
       this.validateTaskChains(workflows, errors, warnings);
@@ -328,16 +328,32 @@ export class ArtifactGenerator {
 
   private validateWorkflows(workflows: WorkflowModel[], errors: string[], warnings: string[]): void {
     for (const workflow of workflows) {
-      // Check for empty workflows
-      if (workflow.tasks.length === 0) {
-        warnings.push(`Workflow '${workflow.name}' has no tasks defined`);
-      }
-
       // Check for duplicate task definitions
       const taskNames = workflow.tasks.map(task => task.name);
       const duplicates = taskNames.filter((name, index) => taskNames.indexOf(name) !== index);
       for (const duplicate of [...new Set(duplicates)]) {
         errors.push(`Duplicate task definition '${duplicate}' in workflow '${workflow.name}'`);
+      }
+    }
+  }
+
+  private validateWorkflowsAfterInheritance(experiment: ExperimentModel, workflows: WorkflowModel[], errors: string[], warnings: string[]): void {
+    // First do basic validations
+    this.validateWorkflows(workflows, errors, warnings);
+    
+    // Check for empty workflows after inheritance resolution
+    const workflowMap = this.taskResolver.buildWorkflowMap(workflows);
+    
+    // Only validate workflows that are actually used in the experiment
+    const usedWorkflows = new Set(experiment.spaces.map(space => space.workflowName));
+    
+    for (const workflowName of usedWorkflows) {
+      const workflow = workflowMap.get(workflowName);
+      if (workflow) {
+        const resolvedWorkflow = this.taskResolver.resolveWorkflowInheritance(workflow, workflowMap);
+        if (resolvedWorkflow.tasks.length === 0) {
+          warnings.push(`Workflow '${workflowName}' has no tasks defined`);
+        }
       }
     }
   }
