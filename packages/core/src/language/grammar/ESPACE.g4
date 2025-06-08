@@ -94,10 +94,10 @@ fragment LETTER: [a-zA-Z_];
 fragment DIGIT: [0-9];
 
 // Lexer Rules
+BOOLEAN: 'true' | 'false';
 IDENTIFIER: LETTER (LETTER | DIGIT)*;
 STRING: '"' ~["]* '"';
 NUMBER: DIGIT+ ('.' DIGIT+)?;
-BOOLEAN: 'true' | 'false';
 
 // Ignored tokens
 WS: [ \t\r\n]+ -> channel(HIDDEN);

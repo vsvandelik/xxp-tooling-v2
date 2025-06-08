@@ -160,6 +160,8 @@ export class WorkflowModelVisitor extends XXPVisitor<any> {
       return text.includes('.') ? parseFloat(text) : parseInt(text);
     } else if (ctx.STRING()) {
       return ctx.STRING()!.getText().slice(1, -1); // Remove quotes
+    } else if (ctx.BOOLEAN()) {
+      return ctx.BOOLEAN()!.getText() === 'true';
     }
     return null;
   }
