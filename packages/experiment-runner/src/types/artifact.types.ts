@@ -1,4 +1,4 @@
-export type Expression = string | number;
+export type Expression = string | number | boolean;
 
 export interface Task {
   taskId: string;
