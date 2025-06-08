@@ -25,7 +25,7 @@ export interface ValidationResult {
 }
 
 export interface ArtifactGeneratorOutput {
-  artifact?: ArtifactModel;
+  artifact?: any;
   validation: ValidationResult;
 }
 
@@ -64,8 +64,8 @@ export class ArtifactGenerator {
     const reachableSpaces = this.getReachableSpaces(experiment);
     const filteredExperiment = this.filterExperimentSpaces(experiment, reachableSpaces);
 
-    const resolvedTasks = this.taskResolver.resolve(filteredExperiment, workflows);
-    const resolvedParameters = this.parameterResolver.resolve(filteredExperiment);
+    const resolvedParameters = this.parameterResolver.resolve(filteredExperiment, workflows);
+    const resolvedTasks = this.taskResolver.resolve(filteredExperiment, workflows, resolvedParameters);
     const resolvedData = this.dataResolver.resolve(filteredExperiment, workflows, resolvedTasks);
 
     this.dataFlowResolver.validate(filteredExperiment, workflows, resolvedTasks);
@@ -99,7 +99,7 @@ export class ArtifactGenerator {
       resolvedData.experimentLevelData
     );
 
-    return { artifact, validation };
+    return { artifact: artifact.toJSON(), validation };
   }
 
   async validate(espaceFilePath: string): Promise<ValidationResult> {
@@ -129,8 +129,31 @@ export class ArtifactGenerator {
         }
       }
 
-      // Validate task implementations
+      // Validate control flow (check if experiment has control flow first)
+      if (experiment.controlFlow) {
+        this.validateControlFlow(experiment, errors, warnings);
+      } else {
+        // Check if experiment has spaces but no control flow
+        if (experiment.spaces.length > 0) {
+          errors.push(`The control flow of the experiment \`${experiment.name}\` is not defined.`);
+        }
+      }
+
+      // Validate task chains (check for missing task chains)
+      this.validateTaskChains(workflows, errors, warnings);
+
+      // Validate strategies
+      this.validateStrategies(experiment, errors, warnings);
+
+      // If there are critical errors, don't bother with file-level validations
+      if (errors.length > 0) {
+        return { errors, warnings };
+      }
+
+      // Resolve tasks (needed for further validations)
       const resolvedTasks = this.taskResolver.resolve(experiment, workflows);
+      
+      // Validate task implementations
       for (const task of resolvedTasks.values()) {
         if (!task.implementation) {
           errors.push(
@@ -157,58 +180,108 @@ export class ArtifactGenerator {
         }
       }
 
-      // Check for unused parameters
+      // Check for unused parameters using the same inheritance resolution as parameter resolver
       const usedParams = new Set<string>();
+      const definedParams = new Set<string>();
+      
+      // Use the parameter resolver's inheritance logic to get accurate used parameters
       for (const space of experiment.spaces) {
-        space.parameters.forEach(param => usedParams.add(param.name));
+        const workflow = workflows.find(w => w.name === space.workflowName);
+        if (workflow) {
+          // Resolve the complete inheritance chain
+          const workflowMap = new Map<string, WorkflowModel>();
+          workflows.forEach(w => workflowMap.set(w.name, w));
+          
+          const resolvedWorkflow = this.resolveWorkflowInheritance(workflow, workflowMap);
+          
+          // Collect all parameter names defined by tasks in the resolved workflow
+          for (const task of resolvedWorkflow.tasks) {
+            for (const param of task.parameters) {
+              usedParams.add(param.name);
+            }
+          }
+        }
+        
+        // Collect all parameters defined in experiment spaces  
+        space.parameters.forEach(param => {
+          definedParams.add(param.name);
+        });
+        // Also check task configuration parameters (these override workflow defaults)
         space.taskConfigurations.forEach(config =>
-          config.parameters.forEach(param => usedParams.add(param.name))
+          config.parameters.forEach(param => {
+            definedParams.add(param.name);
+          })
         );
       }
 
-      const definedParams = new Set<string>();
-      const staticParams = new Set<string>();
-      workflows.forEach(workflow =>
-        workflow.tasks.forEach(task =>
-          task.parameters.forEach(param => {
-            definedParams.add(param.name);
-            // Parameters with static values (non-null) are considered "used"
-            if (param.value !== null) {
-              staticParams.add(param.name);
-            }
-          })
-        )
-      );
-
+      // Check for parameters defined in spaces but not used by any workflow task
       for (const param of definedParams) {
-        // A parameter is considered "used" if it's either used in experiment spaces
-        // or has a static value defined in the workflow
-        if (!usedParams.has(param) && !staticParams.has(param)) {
+        if (!usedParams.has(param)) {
           warnings.push(`Parameter '${param}' is defined but never used`);
         }
-      }
-
-      // Validate control flow
-      if (experiment.controlFlow) {
-        this.validateControlFlow(experiment, errors, warnings);
       }
 
       // Validate workflows (check for empty workflows after inheritance resolution)
       this.validateWorkflowsAfterInheritance(experiment, workflows, errors, warnings);
 
-      // Validate task chains
-      this.validateTaskChains(workflows, errors, warnings);
-
       // Validate circular task dependencies
       this.validateCircularTaskDependencies(workflows, errors, warnings);
 
-      // Validate strategies
-      this.validateStrategies(experiment, errors, warnings);
     } catch (error) {
       errors.push(error instanceof Error ? error.message : String(error));
     }
 
     return { errors, warnings };
+  }
+
+  private resolveWorkflowInheritance(workflow: WorkflowModel, workflowMap: Map<string, WorkflowModel>): WorkflowModel {
+    if (!workflow.parentWorkflow) {
+      return workflow;
+    }
+
+    const parentWorkflow = workflowMap.get(workflow.parentWorkflow);
+    if (!parentWorkflow) {
+      throw new Error(`Parent workflow '${workflow.parentWorkflow}' not found`);
+    }
+
+    const resolvedParent = this.resolveWorkflowInheritance(parentWorkflow, workflowMap);
+
+    // Merge parent tasks with current workflow tasks
+    const mergedTasks = [...resolvedParent.tasks];
+
+    // Apply task configurations to merge parameters
+    for (const config of workflow.taskConfigurations) {
+      const existingTask = mergedTasks.find(t => t.name === config.name);
+      if (existingTask) {
+        // Merge parameters (current config parameters override parent)
+        existingTask.parameters = [...existingTask.parameters, ...config.parameters];
+        if (config.implementation !== null) {
+          existingTask.implementation = config.implementation;
+        }
+        if (config.inputs.length > 0) {
+          existingTask.inputs = config.inputs;
+        }
+        if (config.outputs.length > 0) {
+          existingTask.outputs = config.outputs;
+        }
+      }
+    }
+
+    // Add new tasks from current workflow
+    for (const task of workflow.tasks) {
+      if (!mergedTasks.find(t => t.name === task.name)) {
+        mergedTasks.push(task);
+      }
+    }
+
+    return {
+      name: workflow.name,
+      parentWorkflow: workflow.parentWorkflow,
+      tasks: mergedTasks,
+      data: [...resolvedParent.data, ...workflow.data],
+      taskChain: workflow.taskChain || resolvedParent.taskChain,
+      taskConfigurations: workflow.taskConfigurations,
+    };
   }
 
   private async parseFiles(
@@ -265,7 +338,15 @@ export class ArtifactGenerator {
     // Process transitions in order to maintain deterministic error reporting
     const transitions = experiment.controlFlow.transitions;
     
+    // Check for multiple START transitions (highest priority)
+    const startTransitions = transitions.filter(t => t.from === 'START');
+    if (startTransitions.length > 1) {
+      errors.push('Multiple transitions from START are not allowed');
+      return; // Stop validation early for this critical error
+    }
+    
     // First pass: check for invalid transitions from END and missing spaces
+    let hasMissingSpaces = false;
     for (const transition of transitions) {
       // Check for invalid transitions from END first (highest priority)
       if (transition.from === 'END') {
@@ -275,9 +356,11 @@ export class ArtifactGenerator {
       // Check if referenced spaces exist
       if (transition.from !== 'START' && transition.from !== 'END' && !definedSpaces.has(transition.from)) {
         errors.push(`Space '${transition.from}' referenced in control flow but not found`);
+        hasMissingSpaces = true;
       }
       if (transition.to !== 'START' && transition.to !== 'END' && !definedSpaces.has(transition.to)) {
         errors.push(`Space '${transition.to}' referenced in control flow but not found`);
+        hasMissingSpaces = true;
       }
       
       // Track referenced spaces
@@ -305,14 +388,25 @@ export class ArtifactGenerator {
       transitionMap.get(transition.from)!.push(transition.to);
     }
     
+    // Check if END is reachable from START (detect infinite loops)
+    // Only check for infinite loops if all referenced spaces exist
+    if (!hasMissingSpaces) {
+      const visited = new Set<string>();
+      const canReachEnd = this.canReachEnd('START', transitionMap, visited);
+      if (!canReachEnd) {
+        errors.push('Control flow does not reach END - infinite loop detected');
+        return; // Stop validation early for this critical error
+      }
+    }
+    
     // Find all spaces reachable from START
     const queue = ['START'];
-    const visited = new Set<string>();
+    const visitedForReachability = new Set<string>();
     
     while (queue.length > 0) {
       const current = queue.shift()!;
-      if (visited.has(current)) continue;
-      visited.add(current);
+      if (visitedForReachability.has(current)) continue;
+      visitedForReachability.add(current);
       
       if (current !== 'START' && current !== 'END') {
         reachableSpaces.add(current);
@@ -320,7 +414,7 @@ export class ArtifactGenerator {
       
       const nextSpaces = transitionMap.get(current) || [];
       for (const next of nextSpaces) {
-        if (!visited.has(next)) {
+        if (!visitedForReachability.has(next)) {
           queue.push(next);
         }
       }
@@ -336,6 +430,28 @@ export class ArtifactGenerator {
         }
       }
     }
+  }
+
+  // Helper method to check if END is reachable from a given starting point
+  private canReachEnd(current: string, transitionMap: Map<string, string[]>, visited: Set<string>): boolean {
+    if (current === 'END') {
+      return true;
+    }
+    
+    if (visited.has(current)) {
+      return false; // Cycle detected, can't reach END
+    }
+    
+    visited.add(current);
+    
+    const nextSpaces = transitionMap.get(current) || [];
+    for (const next of nextSpaces) {
+      if (this.canReachEnd(next, transitionMap, new Set(visited))) {
+        return true;
+      }
+    }
+    
+    return false;
   }
 
   private validateWorkflows(workflows: WorkflowModel[], errors: string[], warnings: string[]): void {
@@ -436,6 +552,11 @@ export class ArtifactGenerator {
           if (!executionOrder.includes(task.name)) {
             warnings.push(`Task '${task.name}' is defined but not used in execution chain`);
           }
+        }
+      } else {
+        // Check if workflow has tasks but no task chain
+        if (workflow.tasks.length > 0) {
+          errors.push(`Workflow '${workflow.name}' has no task execution chain defined`);
         }
       }
     }

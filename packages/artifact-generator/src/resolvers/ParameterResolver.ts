@@ -4,6 +4,7 @@ import {
   ParameterDefinition,
   ExpressionType,
 } from '../models/ExperimentModel.js';
+import { WorkflowModel } from '../models/WorkflowModel.js';
 
 export interface ParameterCombination {
   spaceId: string;
@@ -11,11 +12,11 @@ export interface ParameterCombination {
 }
 
 export class ParameterResolver {
-  resolve(experiment: ExperimentModel): ParameterCombination[] {
+  resolve(experiment: ExperimentModel, workflows?: WorkflowModel[]): ParameterCombination[] {
     const results: ParameterCombination[] = [];
 
     for (const space of experiment.spaces) {
-      const combinations = this.generateParameterCombinations(space);
+      const combinations = this.generateParameterCombinations(space, workflows);
       results.push({
         spaceId: space.name,
         combinations,
@@ -25,8 +26,8 @@ export class ParameterResolver {
     return results;
   }
 
-  private generateParameterCombinations(space: SpaceModel): Record<string, ExpressionType>[] {
-    const parameterSets = this.collectParameterSets(space);
+  private generateParameterCombinations(space: SpaceModel, workflows?: WorkflowModel[]): Record<string, ExpressionType>[] {
+    const parameterSets = this.collectParameterSets(space, workflows);
 
     if (space.strategy === 'gridsearch') {
       return this.generateGridSearchCombinations(parameterSets);
@@ -37,12 +38,20 @@ export class ParameterResolver {
     }
   }
 
-  private collectParameterSets(space: SpaceModel): Map<string, ExpressionType[]> {
+  private collectParameterSets(space: SpaceModel, workflows?: WorkflowModel[]): Map<string, ExpressionType[]> {
     const parameterSets = new Map<string, ExpressionType[]>();
 
-    // Collect space-level parameters
+    // If workflows are provided, filter parameters to only include those used by tasks
+    let usedParameterNames: Set<string> | undefined;
+    if (workflows) {
+      usedParameterNames = this.getUsedParameterNames(space, workflows);
+    }
+
+    // Collect space-level parameters (filter if workflows provided)
     for (const param of space.parameters) {
-      parameterSets.set(param.name, this.expandParameterValues(param));
+      if (!usedParameterNames || usedParameterNames.has(param.name)) {
+        parameterSets.set(param.name, this.expandParameterValues(param));
+      }
     }
 
     // Collect task-level parameters with prefixed names
@@ -54,6 +63,101 @@ export class ParameterResolver {
     }
 
     return parameterSets;
+  }
+
+  private getUsedParameterNames(space: SpaceModel, workflows: WorkflowModel[]): Set<string> {
+    const usedParameterNames = new Set<string>();
+    
+    // Find the workflow for this space
+    const workflow = workflows.find(w => w.name === space.workflowName);
+    if (workflow) {
+      // Resolve the complete inheritance chain first
+      const workflowMap = new Map<string, WorkflowModel>();
+      workflows.forEach(w => workflowMap.set(w.name, w));
+      
+      const resolvedWorkflow = this.resolveWorkflowInheritance(workflow, workflowMap);
+      
+      // Collect all parameter names defined by tasks in the resolved workflow
+      for (const task of resolvedWorkflow.tasks) {
+        for (const param of task.parameters) {
+          usedParameterNames.add(param.name);
+        }
+      }
+    }
+    
+    return usedParameterNames;
+  }
+
+  private resolveWorkflowInheritance(workflow: WorkflowModel, workflowMap: Map<string, WorkflowModel>): WorkflowModel {
+    if (!workflow.parentWorkflow) {
+      // Apply configurations to workflows without parents  
+      const result = {
+        ...workflow,
+        tasks: [...workflow.tasks]
+      };
+      
+      for (const config of workflow.taskConfigurations) {
+        const task = result.tasks.find(t => t.name === config.name);
+        if (task) {
+          if (config.implementation !== null) {
+            task.implementation = config.implementation;
+          }
+          task.parameters = [...task.parameters, ...config.parameters];
+          if (config.inputs.length > 0) {
+            task.inputs = config.inputs;
+          }
+          if (config.outputs.length > 0) {
+            task.outputs = config.outputs;
+          }
+        }
+      }
+      
+      return result;
+    }
+
+    const parentWorkflow = workflowMap.get(workflow.parentWorkflow);
+    if (!parentWorkflow) {
+      throw new Error(`Parent workflow '${workflow.parentWorkflow}' not found`);
+    }
+
+    const resolvedParent = this.resolveWorkflowInheritance(parentWorkflow, workflowMap);
+
+    // Merge parent tasks with current workflow tasks
+    const mergedTasks = [...resolvedParent.tasks];
+
+    // Apply task configurations to merge parameters
+    for (const config of workflow.taskConfigurations) {
+      const existingTask = mergedTasks.find(t => t.name === config.name);
+      if (existingTask) {
+        // Merge parameters (current config parameters override parent)
+        existingTask.parameters = [...existingTask.parameters, ...config.parameters];
+        if (config.implementation !== null) {
+          existingTask.implementation = config.implementation;
+        }
+        if (config.inputs.length > 0) {
+          existingTask.inputs = config.inputs;
+        }
+        if (config.outputs.length > 0) {
+          existingTask.outputs = config.outputs;
+        }
+      }
+    }
+
+    // Add new tasks from current workflow
+    for (const task of workflow.tasks) {
+      if (!mergedTasks.find(t => t.name === task.name)) {
+        mergedTasks.push(task);
+      }
+    }
+
+    return {
+      name: workflow.name,
+      parentWorkflow: workflow.parentWorkflow,
+      tasks: mergedTasks,
+      data: [...resolvedParent.data, ...workflow.data],
+      taskChain: workflow.taskChain || resolvedParent.taskChain,
+      taskConfigurations: workflow.taskConfigurations,
+    };
   }
 
   private expandParameterValues(param: ParameterDefinition): ExpressionType[] {

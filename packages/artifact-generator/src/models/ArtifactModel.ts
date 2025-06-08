@@ -9,6 +9,17 @@ export class ArtifactModel {
     public control: ControlDefinition,
     public inputData: Record<string, string> = {}
   ) {}
+
+  toJSON(): any {
+    return {
+      experiment: this.experiment,
+      version: this.version,
+      tasks: this.tasks.map(taskGroup => taskGroup.map(task => task.toJSON())),
+      spaces: this.spaces.map(space => space.toJSON()),
+      control: this.control.toJSON(),
+      inputData: this.inputData
+    };
+  }
 }
 
 export class TaskDefinition {
@@ -21,6 +32,18 @@ export class TaskDefinition {
     public inputData: string[],
     public outputData: string[]
   ) {}
+
+  toJSON(): any {
+    return {
+      taskId: this.taskId,
+      workflow: this.workflow,
+      implementation: this.implementation,
+      dynamicParameters: [...this.dynamicParameters],
+      staticParameters: { ...this.staticParameters },
+      inputData: [...this.inputData],
+      outputData: [...this.outputData]
+    };
+  }
 }
 
 export class SpaceDefinition {
@@ -30,6 +53,15 @@ export class SpaceDefinition {
     public parameters: Record<string, ExpressionType>[],
     public inputData: Record<string, string> = {}
   ) {}
+
+  toJSON(): any {
+    return {
+      spaceId: this.spaceId,
+      tasksOrder: [...this.tasksOrder],
+      parameters: this.parameters.map(param => ({ ...param })),
+      inputData: { ...this.inputData }
+    };
+  }
 }
 
 export class ControlDefinition {
@@ -37,6 +69,13 @@ export class ControlDefinition {
     public START: string,
     public transitions: TransitionDefinition[]
   ) {}
+
+  toJSON(): any {
+    return {
+      START: this.START,
+      transitions: this.transitions.map(transition => transition.toJSON())
+    };
+  }
 }
 
 export class TransitionDefinition {
@@ -45,4 +84,12 @@ export class TransitionDefinition {
     public to: string,
     public condition?: string
   ) {}
+
+  toJSON(): any {
+    return {
+      from: this.from,
+      to: this.to,
+      ...(this.condition !== undefined && { condition: this.condition })
+    };
+  }
 }
