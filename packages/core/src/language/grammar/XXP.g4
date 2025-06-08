@@ -46,7 +46,7 @@ dataNameRead: IDENTIFIER;
 taskNameRead: IDENTIFIER;
 
 // Expressions
-expression: NUMBER | STRING;
+expression: NUMBER | STRING | BOOLEAN;
 
 // Symbols
 SEMICOLON: ';';
@@ -78,6 +78,7 @@ fragment DIGIT: [0-9];
 IDENTIFIER: LETTER (LETTER | DIGIT)*;
 STRING: '"' ~["]* '"';
 NUMBER: DIGIT+ ('.' DIGIT+)?;
+BOOLEAN: 'true' | 'false';
 
 // Ignored tokens
 WS: [ \t\r\n]+ -> channel(HIDDEN);

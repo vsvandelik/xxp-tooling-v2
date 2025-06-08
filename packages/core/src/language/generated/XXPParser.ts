@@ -33,8 +33,9 @@ export class XXPParser extends antlr.Parser {
     public static readonly IDENTIFIER = 19;
     public static readonly STRING = 20;
     public static readonly NUMBER = 21;
-    public static readonly WS = 22;
-    public static readonly COMMENT = 23;
+    public static readonly BOOLEAN = 22;
+    public static readonly WS = 23;
+    public static readonly COMMENT = 24;
     public static readonly RULE_program = 0;
     public static readonly RULE_workflowDeclaration = 1;
     public static readonly RULE_workflowHeader = 2;
@@ -68,7 +69,7 @@ export class XXPParser extends antlr.Parser {
         null, "SEMICOLON", "ARROW", "LBRACE", "RBRACE", "EQUALS", "COMMA", 
         "WORKFLOW", "FROM", "DATA", "DEFINE", "IMPLEMENTATION", "PARAM", 
         "TASK", "CONFIGURE", "INPUT", "OUTPUT", "START", "END", "IDENTIFIER", 
-        "STRING", "NUMBER", "WS", "COMMENT"
+        "STRING", "NUMBER", "BOOLEAN", "WS", "COMMENT"
     ];
     public static readonly ruleNames = [
         "program", "workflowDeclaration", "workflowHeader", "workflowBody", 
@@ -810,7 +811,7 @@ export class XXPParser extends antlr.Parser {
             {
             this.state = 154;
             _la = this.tokenStream.LA(1);
-            if(!(_la === 20 || _la === 21)) {
+            if(!((((_la) & ~0x1F) === 0 && ((1 << _la) & 7340032) !== 0))) {
             this.errorHandler.recoverInline(this);
             }
             else {
@@ -834,7 +835,7 @@ export class XXPParser extends antlr.Parser {
     }
 
     public static readonly _serializedATN: number[] = [
-        4,1,23,157,2,0,7,0,2,1,7,1,2,2,7,2,2,3,7,3,2,4,7,4,2,5,7,5,2,6,7,
+        4,1,24,157,2,0,7,0,2,1,7,1,2,2,7,2,2,3,7,3,2,4,7,4,2,5,7,5,2,6,7,
         6,2,7,7,7,2,8,7,8,2,9,7,9,2,10,7,10,2,11,7,11,2,12,7,12,2,13,7,13,
         2,14,7,14,2,15,7,15,2,16,7,16,2,17,7,17,2,18,7,18,2,19,7,19,2,20,
         7,20,2,21,7,21,1,0,1,0,1,1,1,1,1,1,1,2,1,2,1,2,1,2,3,2,54,8,2,1,
@@ -847,7 +848,7 @@ export class XXPParser extends antlr.Parser {
         1,15,1,15,1,16,1,16,1,16,1,16,1,17,1,17,1,17,5,17,144,8,17,10,17,
         12,17,147,9,17,1,18,1,18,1,19,1,19,1,20,1,20,1,21,1,21,1,21,0,0,
         22,0,2,4,6,8,10,12,14,16,18,20,22,24,26,28,30,32,34,36,38,40,42,
-        0,1,1,0,20,21,149,0,44,1,0,0,0,2,46,1,0,0,0,4,49,1,0,0,0,6,55,1,
+        0,1,1,0,20,22,149,0,44,1,0,0,0,2,46,1,0,0,0,4,49,1,0,0,0,6,55,1,
         0,0,0,8,68,1,0,0,0,10,70,1,0,0,0,12,79,1,0,0,0,14,84,1,0,0,0,16,
         96,1,0,0,0,18,98,1,0,0,0,20,101,1,0,0,0,22,105,1,0,0,0,24,118,1,
         0,0,0,26,120,1,0,0,0,28,124,1,0,0,0,30,132,1,0,0,0,32,136,1,0,0,
@@ -1699,6 +1700,9 @@ export class ExpressionContext extends antlr.ParserRuleContext {
     }
     public STRING(): antlr.TerminalNode | null {
         return this.getToken(XXPParser.STRING, 0);
+    }
+    public BOOLEAN(): antlr.TerminalNode | null {
+        return this.getToken(XXPParser.BOOLEAN, 0);
     }
     public override get ruleIndex(): number {
         return XXPParser.RULE_expression;
