@@ -2,9 +2,8 @@
 workflow BrokenChainWorkflow {
     define task task1;
     define task task2;
-    define task nonExistentTask;
     
-    START -> task1 -> task2;
+    START -> task1 -> task2 -> nonExistentTask -> END;
     
     configure task task1 {
         implementation "task1.py";
@@ -13,9 +12,6 @@ workflow BrokenChainWorkflow {
     configure task task2 {
         implementation "task2.py";
     }
-    
-    // nonExistentTask is not referenced, should not expect configuration
-    // missing END
 }
 
 === broken-task-chain.espace ===

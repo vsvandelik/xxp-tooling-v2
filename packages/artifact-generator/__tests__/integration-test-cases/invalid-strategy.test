@@ -18,5 +18,7 @@ experiment InvalidStrategyTest {
     }
 }
 
+=== task1.py ===
+
 === ERRORS ===
 - Unknown strategy: invalidsearch

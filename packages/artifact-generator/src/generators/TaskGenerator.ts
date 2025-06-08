@@ -2,8 +2,15 @@ import { TaskDefinition } from '../models/ArtifactModel.js';
 import { ResolvedTask } from '../resolvers/TaskResolver.js';
 
 export class TaskGenerator {
-  generate(resolvedTasks: Map<string, ResolvedTask>): TaskDefinition[][] {
+  generate(resolvedTasks: Map<string, ResolvedTask>, workflowsInUse?: Set<string>): TaskDefinition[][] {
     const taskGroups = new Map<string, TaskDefinition[]>();
+
+    // Initialize empty groups for workflows in use
+    if (workflowsInUse) {
+      for (const workflowName of workflowsInUse) {
+        taskGroups.set(workflowName, []);
+      }
+    }
 
     // Group tasks by workflow
     for (const resolvedTask of resolvedTasks.values()) {

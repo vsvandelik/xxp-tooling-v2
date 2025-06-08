@@ -24,6 +24,8 @@ experiment BrokenSpaceChainTest {
     }
 }
 
+=== simple.py ===
+
 === ERRORS ===
 - Space 'NonExistentSpace' referenced in control flow but not found
 - Space 'Space2' is defined but unreachable in control flow

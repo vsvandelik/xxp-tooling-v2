@@ -48,7 +48,7 @@ export class TaskResolver {
     return this.deduplicateTasks(tempTasks, workflowMap);
   }
 
-  private buildWorkflowMap(workflows: WorkflowModel[]): Map<string, WorkflowModel> {
+  public buildWorkflowMap(workflows: WorkflowModel[]): Map<string, WorkflowModel> {
     const workflowMap = new Map<string, WorkflowModel>();
     for (const workflow of workflows) {
       workflowMap.set(workflow.name, workflow);
@@ -56,7 +56,7 @@ export class TaskResolver {
     return workflowMap;
   }
 
-  private resolveWorkflowInheritance(
+  public resolveWorkflowInheritance(
     workflow: WorkflowModel,
     workflowMap: Map<string, WorkflowModel>
   ): WorkflowModel {
