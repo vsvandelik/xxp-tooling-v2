@@ -174,22 +174,32 @@ export class TaskResolver {
   ): ResolvedTask {
     const dynamicParameters: string[] = [];
     const staticParameters: Record<string, ExpressionType> = {};
-    const allParameters = new Map<string, ExpressionType>(); // Start with task's own parameters that have values
+    const allParameters = new Map<string, ExpressionType>();
+    
+    // Start with task's own parameters that have values
     for (const param of task.parameters) {
       if (param.value !== null) {
         allParameters.set(param.name, param.value);
       }
     }
 
-    // Apply space parameters
+    // Create a set of parameter names that the task actually defines
+    const taskParameterNames = new Set(task.parameters.map(p => p.name));
+
+    // Apply space parameters only if the task actually defines them
     for (const [paramName, paramDef] of spaceParameters) {
-      if (paramDef.type === 'value') {
-        staticParameters[paramName] = paramDef.values[0]!;
-        allParameters.set(paramName, paramDef.values[0]!);
-      } else {
-        dynamicParameters.push(paramName);
+      // Only apply space parameters that the task actually defines
+      if (taskParameterNames.has(paramName)) {
+        if (paramDef.type === 'value') {
+          staticParameters[paramName] = paramDef.values[0]!;
+          allParameters.set(paramName, paramDef.values[0]!);
+        } else {
+          dynamicParameters.push(paramName);
+        }
       }
-    } // Check for remaining required parameters
+    }
+    
+    // Check for remaining required parameters
     for (const param of task.parameters) {
       const isProvided = allParameters.has(param.name) || dynamicParameters.includes(param.name);
       if (param.isRequired && !isProvided) {

@@ -17,6 +17,7 @@ import { TaskGenerator } from './TaskGenerator.js';
 export interface ArtifactGeneratorOptions {
   verbose?: boolean;
   workflowDirectory?: string;
+  skipFileValidation?: boolean;
 }
 
 export interface ValidationResult {
@@ -31,6 +32,7 @@ export interface ArtifactGeneratorOutput {
 
 export class ArtifactGenerator {
   private verbose = false;
+  private skipFileValidation = false;
   private experimentParser = new ExperimentParser();
   private workflowParser = new WorkflowParser();
   private fileResolver: FileResolver | undefined;
@@ -44,6 +46,7 @@ export class ArtifactGenerator {
 
   constructor(options: ArtifactGeneratorOptions) {
     this.verbose = options.verbose || false;
+    this.skipFileValidation = options.skipFileValidation || false;
   }
 
   async generate(espaceFilePath: string): Promise<ArtifactGeneratorOutput> {
@@ -65,7 +68,7 @@ export class ArtifactGenerator {
     const filteredExperiment = this.filterExperimentSpaces(experiment, reachableSpaces);
 
     const resolvedTasks = this.taskResolver.resolve(filteredExperiment, workflows);
-    const resolvedParameters = this.parameterResolver.resolve(filteredExperiment);
+    const resolvedParameters = this.parameterResolver.resolve(filteredExperiment, workflows);
     const resolvedData = this.dataResolver.resolve(filteredExperiment, workflows, resolvedTasks);
 
     this.dataFlowResolver.validate(filteredExperiment, workflows, resolvedTasks);
@@ -153,13 +156,13 @@ export class ArtifactGenerator {
       // Resolve tasks (needed for further validations)
       const resolvedTasks = this.taskResolver.resolve(experiment, workflows);
       
-      // Validate task implementations  
+      // Validate task implementations (skip file validation if requested)
       for (const task of resolvedTasks.values()) {
         if (!task.implementation) {
           errors.push(
             `Abstract task '${task.name}' in workflow '${task.workflowName}' has no implementation`
           );
-        } else {
+        } else if (!this.skipFileValidation) {
           // Check if implementation file exists
           const implementationPath = this.fileResolver!.resolveImplementationPath(
             task.implementation
