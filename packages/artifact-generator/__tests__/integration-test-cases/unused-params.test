@@ -24,6 +24,8 @@ experiment UnusedParamsTest {
     }
 }
 
+=== simple.py ===
+
 === WARNINGS ===
 - Parameter 'unusedParam' is defined but never used
 - Parameter 'anotherUnusedParam' is defined but never used

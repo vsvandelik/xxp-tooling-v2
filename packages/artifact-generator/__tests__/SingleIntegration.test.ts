@@ -209,11 +209,7 @@ async function runArtifactGenerationWithNoConsoleOutput(espaceFilePath: string):
     consoleOutput.push(args.join(' '));
   };
 
-  // Skip file validation for specific test cases that focus on logical validation
-  const testCaseName = process.env['TEST_CASE'];
-  const skipFileValidation = ['missing-task-chain', 'multiple-start-spaces', 'no-control-flow', 'unreachable-end', 'unused-params'].includes(testCaseName || '');
-  
-  const generator = new ArtifactGenerator({ verbose: false, skipFileValidation });
+  const generator = new ArtifactGenerator({ verbose: false });
   const output = await generator.generate(espaceFilePath);
 
   // Restore original console functions

@@ -71,27 +71,71 @@ export class ParameterResolver {
     // Find the workflow for this space
     const workflow = workflows.find(w => w.name === space.workflowName);
     if (workflow) {
-      // Collect all parameter names defined by tasks in the workflow
-      for (const task of workflow.tasks) {
+      // Resolve the complete inheritance chain first
+      const workflowMap = new Map<string, WorkflowModel>();
+      workflows.forEach(w => workflowMap.set(w.name, w));
+      
+      const resolvedWorkflow = this.resolveWorkflowInheritance(workflow, workflowMap);
+      
+      // Collect all parameter names defined by tasks in the resolved workflow
+      for (const task of resolvedWorkflow.tasks) {
         for (const param of task.parameters) {
           usedParameterNames.add(param.name);
-        }
-      }
-      
-      // Also check parent workflows if inheritance is used
-      if (workflow.parentWorkflow) {
-        const parentWorkflow = workflows.find(w => w.name === workflow.parentWorkflow);
-        if (parentWorkflow) {
-          for (const task of parentWorkflow.tasks) {
-            for (const param of task.parameters) {
-              usedParameterNames.add(param.name);
-            }
-          }
         }
       }
     }
     
     return usedParameterNames;
+  }
+
+  private resolveWorkflowInheritance(workflow: WorkflowModel, workflowMap: Map<string, WorkflowModel>): WorkflowModel {
+    if (!workflow.parentWorkflow) {
+      return workflow;
+    }
+
+    const parentWorkflow = workflowMap.get(workflow.parentWorkflow);
+    if (!parentWorkflow) {
+      throw new Error(`Parent workflow '${workflow.parentWorkflow}' not found`);
+    }
+
+    const resolvedParent = this.resolveWorkflowInheritance(parentWorkflow, workflowMap);
+
+    // Merge parent tasks with current workflow tasks
+    const mergedTasks = [...resolvedParent.tasks];
+
+    // Apply task configurations to merge parameters
+    for (const config of workflow.taskConfigurations) {
+      const existingTask = mergedTasks.find(t => t.name === config.name);
+      if (existingTask) {
+        // Merge parameters (current config parameters override parent)
+        existingTask.parameters = [...existingTask.parameters, ...config.parameters];
+        if (config.implementation !== null) {
+          existingTask.implementation = config.implementation;
+        }
+        if (config.inputs.length > 0) {
+          existingTask.inputs = config.inputs;
+        }
+        if (config.outputs.length > 0) {
+          existingTask.outputs = config.outputs;
+        }
+      }
+    }
+
+    // Add new tasks from current workflow
+    for (const task of workflow.tasks) {
+      if (!mergedTasks.find(t => t.name === task.name)) {
+        mergedTasks.push(task);
+      }
+    }
+
+    return {
+      name: workflow.name,
+      parentWorkflow: workflow.parentWorkflow,
+      tasks: mergedTasks,
+      data: [...resolvedParent.data, ...workflow.data],
+      taskChain: workflow.taskChain || resolvedParent.taskChain,
+      taskConfigurations: workflow.taskConfigurations,
+    };
   }
 
   private expandParameterValues(param: ParameterDefinition): ExpressionType[] {

@@ -17,7 +17,6 @@ import { TaskGenerator } from './TaskGenerator.js';
 export interface ArtifactGeneratorOptions {
   verbose?: boolean;
   workflowDirectory?: string;
-  skipFileValidation?: boolean;
 }
 
 export interface ValidationResult {
@@ -26,13 +25,12 @@ export interface ValidationResult {
 }
 
 export interface ArtifactGeneratorOutput {
-  artifact?: ArtifactModel;
+  artifact?: any;
   validation: ValidationResult;
 }
 
 export class ArtifactGenerator {
   private verbose = false;
-  private skipFileValidation = false;
   private experimentParser = new ExperimentParser();
   private workflowParser = new WorkflowParser();
   private fileResolver: FileResolver | undefined;
@@ -46,7 +44,6 @@ export class ArtifactGenerator {
 
   constructor(options: ArtifactGeneratorOptions) {
     this.verbose = options.verbose || false;
-    this.skipFileValidation = options.skipFileValidation || false;
   }
 
   async generate(espaceFilePath: string): Promise<ArtifactGeneratorOutput> {
@@ -102,7 +99,7 @@ export class ArtifactGenerator {
       resolvedData.experimentLevelData
     );
 
-    return { artifact, validation };
+    return { artifact: artifact.toJSON(), validation };
   }
 
   async validate(espaceFilePath: string): Promise<ValidationResult> {
@@ -156,13 +153,13 @@ export class ArtifactGenerator {
       // Resolve tasks (needed for further validations)
       const resolvedTasks = this.taskResolver.resolve(experiment, workflows);
       
-      // Validate task implementations (skip file validation if requested)
+      // Validate task implementations
       for (const task of resolvedTasks.values()) {
         if (!task.implementation) {
           errors.push(
             `Abstract task '${task.name}' in workflow '${task.workflowName}' has no implementation`
           );
-        } else if (!this.skipFileValidation) {
+        } else {
           // Check if implementation file exists
           const implementationPath = this.fileResolver!.resolveImplementationPath(
             task.implementation
@@ -183,21 +180,29 @@ export class ArtifactGenerator {
         }
       }
 
-      // Check for unused parameters
+      // Check for unused parameters using the same inheritance resolution as parameter resolver
       const usedParams = new Set<string>();
       const definedParams = new Set<string>();
       
-      // Collect all parameters defined in workflow tasks
-      workflows.forEach(workflow =>
-        workflow.tasks.forEach(task =>
-          task.parameters.forEach(param => {
-            usedParams.add(param.name);
-          })
-        )
-      );
-      
-      // Collect all parameters defined in experiment spaces  
-      experiment.spaces.forEach(space => {
+      // Use the parameter resolver's inheritance logic to get accurate used parameters
+      for (const space of experiment.spaces) {
+        const workflow = workflows.find(w => w.name === space.workflowName);
+        if (workflow) {
+          // Resolve the complete inheritance chain
+          const workflowMap = new Map<string, WorkflowModel>();
+          workflows.forEach(w => workflowMap.set(w.name, w));
+          
+          const resolvedWorkflow = this.resolveWorkflowInheritance(workflow, workflowMap);
+          
+          // Collect all parameter names defined by tasks in the resolved workflow
+          for (const task of resolvedWorkflow.tasks) {
+            for (const param of task.parameters) {
+              usedParams.add(param.name);
+            }
+          }
+        }
+        
+        // Collect all parameters defined in experiment spaces  
         space.parameters.forEach(param => {
           definedParams.add(param.name);
         });
@@ -207,7 +212,7 @@ export class ArtifactGenerator {
             definedParams.add(param.name);
           })
         );
-      });
+      }
 
       // Check for parameters defined in spaces but not used by any workflow task
       for (const param of definedParams) {
@@ -227,6 +232,56 @@ export class ArtifactGenerator {
     }
 
     return { errors, warnings };
+  }
+
+  private resolveWorkflowInheritance(workflow: WorkflowModel, workflowMap: Map<string, WorkflowModel>): WorkflowModel {
+    if (!workflow.parentWorkflow) {
+      return workflow;
+    }
+
+    const parentWorkflow = workflowMap.get(workflow.parentWorkflow);
+    if (!parentWorkflow) {
+      throw new Error(`Parent workflow '${workflow.parentWorkflow}' not found`);
+    }
+
+    const resolvedParent = this.resolveWorkflowInheritance(parentWorkflow, workflowMap);
+
+    // Merge parent tasks with current workflow tasks
+    const mergedTasks = [...resolvedParent.tasks];
+
+    // Apply task configurations to merge parameters
+    for (const config of workflow.taskConfigurations) {
+      const existingTask = mergedTasks.find(t => t.name === config.name);
+      if (existingTask) {
+        // Merge parameters (current config parameters override parent)
+        existingTask.parameters = [...existingTask.parameters, ...config.parameters];
+        if (config.implementation !== null) {
+          existingTask.implementation = config.implementation;
+        }
+        if (config.inputs.length > 0) {
+          existingTask.inputs = config.inputs;
+        }
+        if (config.outputs.length > 0) {
+          existingTask.outputs = config.outputs;
+        }
+      }
+    }
+
+    // Add new tasks from current workflow
+    for (const task of workflow.tasks) {
+      if (!mergedTasks.find(t => t.name === task.name)) {
+        mergedTasks.push(task);
+      }
+    }
+
+    return {
+      name: workflow.name,
+      parentWorkflow: workflow.parentWorkflow,
+      tasks: mergedTasks,
+      data: [...resolvedParent.data, ...workflow.data],
+      taskChain: workflow.taskChain || resolvedParent.taskChain,
+      taskConfigurations: workflow.taskConfigurations,
+    };
   }
 
   private async parseFiles(
@@ -291,6 +346,7 @@ export class ArtifactGenerator {
     }
     
     // First pass: check for invalid transitions from END and missing spaces
+    let hasMissingSpaces = false;
     for (const transition of transitions) {
       // Check for invalid transitions from END first (highest priority)
       if (transition.from === 'END') {
@@ -300,9 +356,11 @@ export class ArtifactGenerator {
       // Check if referenced spaces exist
       if (transition.from !== 'START' && transition.from !== 'END' && !definedSpaces.has(transition.from)) {
         errors.push(`Space '${transition.from}' referenced in control flow but not found`);
+        hasMissingSpaces = true;
       }
       if (transition.to !== 'START' && transition.to !== 'END' && !definedSpaces.has(transition.to)) {
         errors.push(`Space '${transition.to}' referenced in control flow but not found`);
+        hasMissingSpaces = true;
       }
       
       // Track referenced spaces
@@ -331,11 +389,14 @@ export class ArtifactGenerator {
     }
     
     // Check if END is reachable from START (detect infinite loops)
-    const visited = new Set<string>();
-    const canReachEnd = this.canReachEnd('START', transitionMap, visited);
-    if (!canReachEnd) {
-      errors.push('Control flow does not reach END - infinite loop detected');
-      return; // Stop validation early for this critical error
+    // Only check for infinite loops if all referenced spaces exist
+    if (!hasMissingSpaces) {
+      const visited = new Set<string>();
+      const canReachEnd = this.canReachEnd('START', transitionMap, visited);
+      if (!canReachEnd) {
+        errors.push('Control flow does not reach END - infinite loop detected');
+        return; // Stop validation early for this critical error
+      }
     }
     
     // Find all spaces reachable from START

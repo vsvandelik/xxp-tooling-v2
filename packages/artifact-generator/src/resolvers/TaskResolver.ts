@@ -186,16 +186,13 @@ export class TaskResolver {
     // Create a set of parameter names that the task actually defines
     const taskParameterNames = new Set(task.parameters.map(p => p.name));
 
-    // Apply space parameters only if the task actually defines them
+    // Apply all space parameters to the task (space parameters are already filtered to only used ones)
     for (const [paramName, paramDef] of spaceParameters) {
-      // Only apply space parameters that the task actually defines
-      if (taskParameterNames.has(paramName)) {
-        if (paramDef.type === 'value') {
-          staticParameters[paramName] = paramDef.values[0]!;
-          allParameters.set(paramName, paramDef.values[0]!);
-        } else {
-          dynamicParameters.push(paramName);
-        }
+      if (paramDef.type === 'value') {
+        staticParameters[paramName] = paramDef.values[0]!;
+        allParameters.set(paramName, paramDef.values[0]!);
+      } else {
+        dynamicParameters.push(paramName);
       }
     }
     
