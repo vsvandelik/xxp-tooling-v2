@@ -64,8 +64,8 @@ export class ArtifactGenerator {
     const reachableSpaces = this.getReachableSpaces(experiment);
     const filteredExperiment = this.filterExperimentSpaces(experiment, reachableSpaces);
 
-    const resolvedTasks = this.taskResolver.resolve(filteredExperiment, workflows);
     const resolvedParameters = this.parameterResolver.resolve(filteredExperiment, workflows);
+    const resolvedTasks = this.taskResolver.resolve(filteredExperiment, workflows, resolvedParameters);
     const resolvedData = this.dataResolver.resolve(filteredExperiment, workflows, resolvedTasks);
 
     this.dataFlowResolver.validate(filteredExperiment, workflows, resolvedTasks);

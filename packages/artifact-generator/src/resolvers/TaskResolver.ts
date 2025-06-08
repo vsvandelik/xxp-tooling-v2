@@ -6,6 +6,7 @@ import {
   TaskConfiguration,
 } from '../models/ExperimentModel.js';
 import { WorkflowModel, TaskModel } from '../models/WorkflowModel.js';
+import { ParameterCombination } from './ParameterResolver.js';
 
 export interface ResolvedTask {
   id: string;
@@ -20,9 +21,26 @@ export interface ResolvedTask {
 }
 
 export class TaskResolver {
-  resolve(experiment: ExperimentModel, workflows: WorkflowModel[]): Map<string, ResolvedTask> {
+  resolve(experiment: ExperimentModel, workflows: WorkflowModel[], resolvedParameters?: ParameterCombination[]): Map<string, ResolvedTask> {
     const workflowMap = this.buildWorkflowMap(workflows);
     const tempTasks = new Map<string, ResolvedTask>();
+
+    // Create a map of space name to parameter names for quick lookup
+    const spaceParameterNames = new Map<string, Set<string>>();
+    if (resolvedParameters) {
+      for (const paramCombination of resolvedParameters) {
+        const paramNames = new Set<string>();
+        if (paramCombination.combinations.length > 0 && paramCombination.combinations[0]) {
+          for (const paramName of Object.keys(paramCombination.combinations[0])) {
+            // Skip task-prefixed parameters, only include space-level ones
+            if (!paramName.includes(':')) {
+              paramNames.add(paramName);
+            }
+          }
+        }
+        spaceParameterNames.set(paramCombination.spaceId, paramNames);
+      }
+    }
 
     // First pass: resolve all tasks with their child workflow names
     for (const space of experiment.spaces) {
@@ -37,7 +55,7 @@ export class TaskResolver {
         const taskId = `${space.workflowName}:${task.name}`;
 
         if (!tempTasks.has(taskId)) {
-          const spaceParameters = this.getSpaceParametersForTask(space, task.name);
+          const spaceParameters = this.getSpaceParametersForTask(space, task.name, spaceParameterNames.get(space.name));
           const resolvedTask = this.resolveTask(task, spaceParameters);
           tempTasks.set(taskId, resolvedTask);
         }
@@ -146,13 +164,16 @@ export class TaskResolver {
 
   private getSpaceParametersForTask(
     space: SpaceModel,
-    taskName: string
+    taskName: string,
+    filteredParameterNames?: Set<string>
   ): Map<string, ParameterDefinition> {
     const parameters = new Map<string, ParameterDefinition>();
 
-    // Add space-level parameters
+    // Add space-level parameters (only include filtered ones if provided)
     for (const param of space.parameters) {
-      parameters.set(param.name, param);
+      if (!filteredParameterNames || filteredParameterNames.has(param.name)) {
+        parameters.set(param.name, param);
+      }
     }
 
     // Add task-specific parameters (override space-level)
