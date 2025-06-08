@@ -194,6 +194,35 @@ npm install --save-dev <package-name>
 npm install --save <package-name> --workspace=@extremexp/core
 ```
 
+## Troubleshooting
+
+### TypeScript Compilation Errors with Generated Files
+
+If you encounter TypeScript compilation errors related to ANTLR generated files (like `ESPACEParser` or `XXPParser` type conflicts), this is usually due to stale build artifacts. Follow these steps:
+
+1. **Clean all build outputs**:
+   ```bash
+   npm run clean
+   ```
+
+2. **Regenerate ANTLR parser files** (if needed):
+   ```bash
+   cd packages/core
+   npm run antlr
+   ```
+
+3. **Rebuild everything**:
+   ```bash
+   npm run build
+   ```
+
+4. **Run tests to verify**:
+   ```bash
+   npm test
+   ```
+
+This resolves type conflicts between source TypeScript files and compiled JavaScript artifacts in the `dist` directories.
+
 ## License
 
 MIT
