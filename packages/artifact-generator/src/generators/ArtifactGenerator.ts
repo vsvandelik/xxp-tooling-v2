@@ -6,7 +6,7 @@ import { DataResolver } from '../resolvers/DataResolver.js';
 import { ExperimentParser } from '../parsers/ExperimentParser.js';
 import { FileResolver } from '../resolvers/FileResolver.js';
 import { ParameterResolver } from '../resolvers/ParameterResolver.js';
-import { TaskResolver } from '../resolvers/TaskResolver.js';
+import { TaskResolver, ResolvedTask } from '../resolvers/TaskResolver.js';
 import { WorkflowParser } from '../parsers/WorkflowParser.js';
 import path from 'path';
 import * as fs from 'fs';
@@ -60,26 +60,38 @@ export class ArtifactGenerator {
 
     const { experiment, workflows } = await this.parseFiles(espaceFilePath);
 
-    const resolvedTasks = this.taskResolver.resolve(experiment, workflows);
-    const resolvedParameters = this.parameterResolver.resolve(experiment);
+    // Filter out unreachable spaces
+    const reachableSpaces = this.getReachableSpaces(experiment);
+    const filteredExperiment = this.filterExperimentSpaces(experiment, reachableSpaces);
 
-    const resolvedData = this.dataResolver.resolve(experiment, workflows, resolvedTasks);
+    const resolvedTasks = this.taskResolver.resolve(filteredExperiment, workflows);
+    const resolvedParameters = this.parameterResolver.resolve(filteredExperiment);
+    const resolvedData = this.dataResolver.resolve(filteredExperiment, workflows, resolvedTasks);
 
-    this.dataFlowResolver.validate(experiment, workflows, resolvedTasks);
+    this.dataFlowResolver.validate(filteredExperiment, workflows, resolvedTasks);
 
-    const tasks = this.taskGenerator.generate(resolvedTasks);
+    // Determine which tasks are actually used in execution chains
+    const usedTaskIds = this.getUsedTaskIds(filteredExperiment, workflows, resolvedTasks);
+    const filteredTasks = this.filterTasks(resolvedTasks, usedTaskIds);
+
+    // Generate components - use all resolved tasks for spaces, filtered tasks for final tasks array
+    const workflowsWithTasks = new Set<string>();
+    for (const task of resolvedTasks.values()) {
+      workflowsWithTasks.add(task.workflowName);
+    }
+    const tasks = this.taskGenerator.generate(filteredTasks, workflowsWithTasks);
     const spaces = this.spaceGenerator.generate(
-      experiment,
+      filteredExperiment,
       resolvedParameters,
-      resolvedTasks,
+      resolvedTasks, // Use all resolved tasks here
       this.taskResolver,
       workflows,
       resolvedData.spaceLevelData
     );
-    const control = this.controlFlowGenerator.generate(experiment);
+    const control = this.controlFlowGenerator.generate(filteredExperiment);
 
     const artifact = new ArtifactModel(
-      experiment.name,
+      filteredExperiment.name,
       '1.0',
       tasks,
       spaces,
@@ -403,19 +415,23 @@ export class ArtifactGenerator {
   }
 
   private validateTaskChains(workflows: WorkflowModel[], errors: string[], warnings: string[]): void {
+    const workflowMap = this.taskResolver.buildWorkflowMap(workflows);
+    
     for (const workflow of workflows) {
       if (workflow.taskChain) {
-        const definedTasks = new Set(workflow.tasks.map(task => task.name));
+        // Resolve inheritance to get all available tasks
+        const resolvedWorkflow = this.taskResolver.resolveWorkflowInheritance(workflow, workflowMap);
+        const definedTasks = new Set(resolvedWorkflow.tasks.map(task => task.name));
         const executionOrder = workflow.taskChain.getExecutionOrder();
         
-        // Check if all tasks in the chain are defined
+        // Check if all tasks in the chain are defined (considering inheritance)
         for (const taskName of executionOrder) {
           if (!definedTasks.has(taskName)) {
             errors.push(`Task '${taskName}' referenced in workflow chain but not found in workflow '${workflow.name}'`);
           }
         }
         
-        // Check for unused tasks (warning)
+        // Check for unused tasks (warning) - only consider tasks actually defined in this workflow
         for (const task of workflow.tasks) {
           if (!executionOrder.includes(task.name)) {
             warnings.push(`Task '${task.name}' is defined but not used in execution chain`);
@@ -497,5 +513,103 @@ export class ArtifactGenerator {
     recursionStack.delete(taskName);
     path.pop();
     return false;
+  }
+
+  private getReachableSpaces(experiment: ExperimentModel): Set<string> {
+    if (!experiment.controlFlow) {
+      // If there's no control flow, all spaces are considered reachable
+      return new Set(experiment.spaces.map(space => space.name));
+    }
+
+    const reachableSpaces = new Set<string>();
+    
+    // Build transition map
+    const transitionMap = new Map<string, string[]>();
+    for (const transition of experiment.controlFlow.transitions) {
+      if (!transitionMap.has(transition.from)) {
+        transitionMap.set(transition.from, []);
+      }
+      transitionMap.get(transition.from)!.push(transition.to);
+    }
+    
+    // Find all spaces reachable from START using BFS
+    const queue = ['START'];
+    const visited = new Set<string>();
+    
+    while (queue.length > 0) {
+      const current = queue.shift()!;
+      if (visited.has(current)) continue;
+      visited.add(current);
+      
+      if (current !== 'START' && current !== 'END') {
+        reachableSpaces.add(current);
+      }
+      
+      const nextSpaces = transitionMap.get(current) || [];
+      for (const next of nextSpaces) {
+        if (!visited.has(next)) {
+          queue.push(next);
+        }
+      }
+    }
+    
+    return reachableSpaces;
+  }
+
+  private filterExperimentSpaces(experiment: ExperimentModel, reachableSpaces: Set<string>): ExperimentModel {
+    const filteredSpaces = experiment.spaces.filter(space => reachableSpaces.has(space.name));
+    
+    // Create a new experiment model with filtered spaces
+    return {
+      ...experiment,
+      spaces: filteredSpaces
+    };
+  }
+
+  private getUsedTaskIds(experiment: ExperimentModel, workflows: WorkflowModel[], resolvedTasks: Map<string, ResolvedTask>): Set<string> {
+    const usedTaskIds = new Set<string>();
+    const workflowMap = this.taskResolver.buildWorkflowMap(workflows);
+
+    for (const space of experiment.spaces) {
+      const workflow = workflowMap.get(space.workflowName);
+      if (!workflow) {
+        continue;
+      }
+
+      // Get execution order for this space
+      let executionOrder: string[] = [];
+      
+      if (workflow.taskChain) {
+        executionOrder = workflow.taskChain.getExecutionOrder();
+      } else if (workflow.parentWorkflow) {
+        // Look for task chain in parent workflow
+        const parentWorkflow = workflowMap.get(workflow.parentWorkflow);
+        if (parentWorkflow?.taskChain) {
+          executionOrder = parentWorkflow.taskChain.getExecutionOrder();
+        }
+      }
+
+      // Add task IDs that are used in this space's execution order
+      for (const taskName of executionOrder) {
+        const taskId = `${space.workflowName}:${taskName}`;
+        if (resolvedTasks.has(taskId)) {
+          usedTaskIds.add(taskId);
+        }
+      }
+    }
+
+    return usedTaskIds;
+  }
+
+  private filterTasks(resolvedTasks: Map<string, ResolvedTask>, usedTaskIds: Set<string>): Map<string, ResolvedTask> {
+    const filteredTasks = new Map<string, ResolvedTask>();
+    
+    for (const [taskId, task] of resolvedTasks) {
+      if (usedTaskIds.has(taskId)) {
+        filteredTasks.set(taskId, task);
+      }
+    }
+    
+    return filteredTasks;
   }
 }
