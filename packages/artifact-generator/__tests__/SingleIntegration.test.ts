@@ -91,7 +91,7 @@ describe('Single Integration Test', () => {
       // Compare with expected output
       expect(artifact).toEqual(testCase.expectedOutput);
 
-      // Check validation results
+      // Check validation results  
       expect(validation.errors).toEqual(testCase.expectedErrors);
       expect(validation.warnings).toEqual(testCase.expectedWarnings);
 

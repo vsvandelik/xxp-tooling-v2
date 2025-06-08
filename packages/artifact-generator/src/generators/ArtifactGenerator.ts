@@ -167,6 +167,11 @@ export class ArtifactGenerator {
           warnings.push(`Parameter '${param}' is defined but never used`);
         }
       }
+
+      // Validate control flow
+      if (experiment.controlFlow) {
+        this.validateControlFlow(experiment, errors, warnings);
+      }
     } catch (error) {
       errors.push(error instanceof Error ? error.message : String(error));
     }
@@ -211,6 +216,93 @@ export class ArtifactGenerator {
     this.fileResolver = new FileResolver(workspaceDir);
     if (this.verbose) {
       console.log(`File resolver initialized with directory: ${workspaceDir}`);
+    }
+  }
+
+  private validateControlFlow(experiment: ExperimentModel, errors: string[], warnings: string[]): void {
+    if (!experiment.controlFlow) {
+      return;
+    }
+
+    const definedSpaces = new Set(experiment.spaces.map(space => space.name));
+    const referencedSpaces = new Set<string>();
+    
+    // Track spaces that can be reached from START
+    const reachableSpaces = new Set<string>();
+    
+    // Process transitions in order to maintain deterministic error reporting
+    const transitions = experiment.controlFlow.transitions;
+    
+    // First pass: check for invalid transitions from END and missing spaces
+    for (const transition of transitions) {
+      // Check for invalid transitions from END first (highest priority)
+      if (transition.from === 'END') {
+        errors.push('Invalid control flow: transition from END is not allowed');
+      }
+      
+      // Check if referenced spaces exist
+      if (transition.from !== 'START' && transition.from !== 'END' && !definedSpaces.has(transition.from)) {
+        errors.push(`Space '${transition.from}' referenced in control flow but not found`);
+      }
+      if (transition.to !== 'START' && transition.to !== 'END' && !definedSpaces.has(transition.to)) {
+        errors.push(`Space '${transition.to}' referenced in control flow but not found`);
+      }
+      
+      // Track referenced spaces
+      if (transition.from !== 'START' && transition.from !== 'END') {
+        referencedSpaces.add(transition.from);
+      }
+      if (transition.to !== 'START' && transition.to !== 'END') {
+        referencedSpaces.add(transition.to);
+      }
+    }
+    
+    // Second pass: check for self-loops (after END validation)
+    for (const transition of transitions) {
+      if (transition.from === transition.to && transition.from !== 'START' && transition.from !== 'END') {
+        errors.push(`Self-loop detected in space '${transition.from}'`);
+      }
+    }
+    
+    // Build reachability graph
+    const transitionMap = new Map<string, string[]>();
+    for (const transition of experiment.controlFlow.transitions) {
+      if (!transitionMap.has(transition.from)) {
+        transitionMap.set(transition.from, []);
+      }
+      transitionMap.get(transition.from)!.push(transition.to);
+    }
+    
+    // Find all spaces reachable from START
+    const queue = ['START'];
+    const visited = new Set<string>();
+    
+    while (queue.length > 0) {
+      const current = queue.shift()!;
+      if (visited.has(current)) continue;
+      visited.add(current);
+      
+      if (current !== 'START' && current !== 'END') {
+        reachableSpaces.add(current);
+      }
+      
+      const nextSpaces = transitionMap.get(current) || [];
+      for (const next of nextSpaces) {
+        if (!visited.has(next)) {
+          queue.push(next);
+        }
+      }
+    }
+    
+    // Check for unreachable spaces
+    for (const space of experiment.spaces) {
+      if (!reachableSpaces.has(space.name)) {
+        if (referencedSpaces.has(space.name)) {
+          errors.push(`Space '${space.name}' is defined but unreachable in control flow`);
+        } else {
+          warnings.push(`Space '${space.name}' is defined but not reachable in control flow`);
+        }
+      }
     }
   }
 }

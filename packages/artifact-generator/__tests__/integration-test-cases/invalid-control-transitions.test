@@ -21,6 +21,8 @@ experiment InvalidControlTransitionsTest {
     }
 }
 
+=== task1.py ===
+
 === ERRORS ===
 - Invalid control flow: transition from END is not allowed
 - Self-loop detected in space 'ValidSpace'
