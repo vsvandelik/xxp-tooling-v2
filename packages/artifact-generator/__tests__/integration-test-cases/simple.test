@@ -51,7 +51,8 @@ print("Hello, World!")
       ],
       "parameters": [
         {}
-      ]
+      ],
+      "inputData": {}
     }
   ],
   "control": {
@@ -62,5 +63,6 @@ print("Hello, World!")
         "to": "END"
       }
     ]
-  }
+  },
+  "inputData": {}
 }

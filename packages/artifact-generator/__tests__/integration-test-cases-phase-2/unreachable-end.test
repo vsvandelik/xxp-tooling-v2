@@ -1,0 +1,28 @@
+=== unreachableEndWorkflow.xxp ===
+workflow UnreachableEndWorkflow {
+    define task task1;
+    START -> task1 -> END;
+    configure task task1 {
+        implementation "task1.py";
+    }
+}
+
+=== unreachable-end.espace ===
+experiment UnreachableEndTest {
+    space Space1 of UnreachableEndWorkflow {
+        strategy gridsearch;
+    }
+    
+    space Space2 of UnreachableEndWorkflow {
+        strategy gridsearch;
+    }
+    
+    control {
+        START -> Space1;
+        Space1 -> Space2;
+        Space2 -> Space1;  // Infinite loop - END is unreachable
+    }
+}
+
+=== ERRORS ===
+- Control flow does not reach END - infinite loop detected

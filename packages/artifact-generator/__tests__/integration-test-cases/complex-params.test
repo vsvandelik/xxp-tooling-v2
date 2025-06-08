@@ -1,0 +1,119 @@
+=== complexParamWorkflow.xxp ===
+workflow ComplexParamWorkflow {
+    define task complexTask;
+    
+    START -> complexTask -> END;
+    
+    configure task complexTask {
+        implementation "complex.py";
+        param enumParam;
+        param rangeParam;
+        param valueParam;
+    }
+}
+
+=== complex-params.espace ===
+experiment ComplexParamsTest {
+    space TestSpace of ComplexParamWorkflow {
+        strategy gridsearch;
+        param enumParam = enum("A", "B", "C");
+        param rangeParam = range(1.0, 2.0, 0.5);
+        param valueParam = enum("fixed_value");
+    }
+    
+    control {
+        START -> TestSpace -> END;
+    }
+}
+
+=== complex.py ===
+
+=== OUTPUT ===
+
+{
+  "experiment": "ComplexParamsTest",
+  "version": "1.0",
+  "tasks": [
+    [
+      {
+        "taskId": "ComplexParamWorkflow:complexTask",
+        "workflow": "ComplexParamWorkflow",
+        "implementation": "complex.py",
+        "dynamicParameters": [
+          "enumParam",
+          "rangeParam",
+          "valueParam"
+        ],
+        "staticParameters": {},
+        "inputData": [],
+        "outputData": []
+      }
+    ]
+  ],
+  "spaces": [
+    {
+      "spaceId": "TestSpace",
+      "tasksOrder": [
+        "ComplexParamWorkflow:complexTask"
+      ],
+      "parameters": [
+        {
+          "enumParam": "A",
+          "rangeParam": 1,
+          "valueParam": "fixed_value"
+        },
+        {
+          "enumParam": "A",
+          "rangeParam": 1.5,
+          "valueParam": "fixed_value"
+        },
+        {
+          "enumParam": "A",
+          "rangeParam": 2,
+          "valueParam": "fixed_value"
+        },
+        {
+          "enumParam": "B",
+          "rangeParam": 1,
+          "valueParam": "fixed_value"
+        },
+        {
+          "enumParam": "B",
+          "rangeParam": 1.5,
+          "valueParam": "fixed_value"
+        },
+        {
+          "enumParam": "B",
+          "rangeParam": 2,
+          "valueParam": "fixed_value"
+        },
+        {
+          "enumParam": "C",
+          "rangeParam": 1,
+          "valueParam": "fixed_value"
+        },
+        {
+          "enumParam": "C",
+          "rangeParam": 1.5,
+          "valueParam": "fixed_value"
+        },
+        {
+          "enumParam": "C",
+          "rangeParam": 2,
+          "valueParam": "fixed_value"
+        }
+      ],
+      "inputData": {}
+    }
+  ],
+  "control": {
+    "START": "TestSpace",
+    "transitions": [
+      {
+        "from": "TestSpace",
+        "to": "END"
+      }
+    ]
+  },
+  "inputData": {}
+}

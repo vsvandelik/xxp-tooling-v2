@@ -1,0 +1,22 @@
+=== strategyWorkflow.xxp ===
+workflow StrategyWorkflow {
+    define task task1;
+    START -> task1 -> END;
+    configure task task1 {
+        implementation "task1.py";
+    }
+}
+
+=== invalid-strategy.espace ===
+experiment InvalidStrategyTest {
+    space TestSpace of StrategyWorkflow {
+        strategy invalidsearch;  // Invalid strategy
+    }
+    
+    control {
+        START -> TestSpace -> END;
+    }
+}
+
+=== ERRORS ===
+- Unknown strategy: invalidsearch

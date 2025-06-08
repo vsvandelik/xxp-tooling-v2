@@ -1,0 +1,25 @@
+=== duplicateTaskWorkflow.xxp ===
+workflow DuplicateTaskWorkflow {
+    define task duplicateTask;
+    define task duplicateTask;  // Duplicate definition
+    
+    START -> duplicateTask -> END;
+    
+    configure task duplicateTask {
+        implementation "duplicate.py";
+    }
+}
+
+=== duplicate-tasks.espace ===
+experiment DuplicateTasksTest {
+    space TestSpace of DuplicateTaskWorkflow {
+        strategy gridsearch;
+    }
+    
+    control {
+        START -> TestSpace -> END;
+    }
+}
+
+=== ERRORS ===
+- Duplicate task definition 'duplicateTask' in workflow 'DuplicateTaskWorkflow'

@@ -1,0 +1,42 @@
+=== missingOutputWorkflow.xxp ===
+workflow MissingOutputWorkflow {
+    define task producer1;
+    define task producer2;
+    define task consumer;
+    define data data1;
+    define data data2;
+    define data data3;
+    
+    START -> producer1 -> producer2 -> consumer -> END;
+    
+    configure task producer1 {
+        implementation "producer1.py";
+        output data1;  // Produces data1
+        // Missing: output data2 (but consumer expects it)
+    }
+    
+    configure task producer2 {
+        implementation "producer2.py";
+        input data1;
+        output data3;  // Produces data3, but consumer expects data2
+    }
+    
+    configure task consumer {
+        implementation "consumer.py";
+        input data1, data2, data3;  // Expects data2 which is never produced
+    }
+}
+
+=== missing-task-output.espace ===
+experiment MissingTaskOutputTest {
+    space TestSpace of MissingOutputWorkflow {
+        strategy gridsearch;
+    }
+    
+    control {
+        START -> TestSpace -> END;
+    }
+}
+
+=== ERRORS ===
+- Input data 'data2' for task 'consumer' in space 'TestSpace' is not available

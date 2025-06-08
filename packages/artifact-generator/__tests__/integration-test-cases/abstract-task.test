@@ -1,0 +1,29 @@
+=== abstractWorkflow.xxp ===
+workflow AbstractWorkflow {
+    define task implementedTask;
+    define task abstractTask;
+    
+    START -> implementedTask -> abstractTask -> END;
+    
+    configure task implementedTask {
+        implementation "implemented.py";
+    }
+    
+    // abstractTask has no implementation
+}
+
+=== abstract-task.espace ===
+experiment AbstractTaskTest {
+    space TestSpace of AbstractWorkflow {
+        strategy gridsearch;
+    }
+    
+    control {
+        START -> TestSpace -> END;
+    }
+}
+
+=== implemented.py ===
+
+=== ERRORS ===
+- Abstract task 'abstractTask' in workflow 'AbstractWorkflow' has no implementation

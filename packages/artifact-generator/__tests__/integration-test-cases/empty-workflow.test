@@ -1,0 +1,46 @@
+=== emptyWorkflow.xxp ===
+workflow EmptyWorkflow {
+    // No tasks defined
+}
+
+=== empty-workflow.espace ===
+experiment EmptyWorkflowTest {
+    space TestSpace of EmptyWorkflow {
+        strategy gridsearch;
+    }
+    
+    control {
+        START -> TestSpace -> END;
+    }
+}
+
+=== WARNINGS ===
+- Workflow 'EmptyWorkflow' has no tasks defined
+
+=== OUTPUT ===
+
+{
+  "experiment": "EmptyWorkflowTest",
+  "version": "1.0",
+  "tasks": [],
+  "spaces": [
+    {
+      "spaceId": "TestSpace",
+      "tasksOrder": [],
+      "parameters": [
+        {}
+      ],
+      "inputData": {}
+    }
+  ],
+  "control": {
+    "START": "TestSpace",
+    "transitions": [
+      {
+        "from": "TestSpace",
+        "to": "END"
+      }
+    ]
+  },
+  "inputData": {}
+}

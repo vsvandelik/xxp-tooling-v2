@@ -1,0 +1,78 @@
+=== unusedParamWorkflow.xxp ===
+workflow UnusedParamWorkflow {
+    define task simpleTask;
+    
+    START -> simpleTask -> END;
+    
+    configure task simpleTask {
+        implementation "simple.py";
+        param usedParam = 1;
+    }
+}
+
+=== unused-params.espace ===
+experiment UnusedParamsTest {
+    space TestSpace of UnusedParamWorkflow {
+        strategy gridsearch;
+        param usedParam = enum(10, 20);
+        param unusedParam = enum(10);
+        param anotherUnusedParam = enum(20);
+    }
+    
+    control {
+        START -> TestSpace -> END;
+    }
+}
+
+=== WARNINGS ===
+- Parameter 'unusedParam' is defined but never used
+- Parameter 'anotherUnusedParam' is defined but never used
+
+=== OUTPUT ===
+
+{
+  "experiment": "UnusedParamsTest",
+  "version": "1.0",
+  "tasks": [
+    [
+      {
+        "taskId": "UnusedParamWorkflow:simpleTask",
+        "workflow": "UnusedParamWorkflow",
+        "implementation": "simple.py",
+        "dynamicParameters": [
+          "usedParam"
+        ],
+        "staticParameters": {},
+        "inputData": [],
+        "outputData": []
+      }
+    ]
+  ],
+  "spaces": [
+    {
+      "spaceId": "TestSpace",
+      "tasksOrder": [
+        "UnusedParamWorkflow:simpleTask"
+      ],
+      "parameters": [
+        {
+          "usedParam": 10
+        },
+        {
+          "usedParam": 20
+        }
+      ],
+      "inputData": {}
+    }
+  ],
+  "control": {
+    "START": "TestSpace",
+    "transitions": [
+      {
+        "from": "TestSpace",
+        "to": "END"
+      }
+    ]
+  },
+  "inputData": {}
+}

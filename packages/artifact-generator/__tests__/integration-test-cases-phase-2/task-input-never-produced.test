@@ -1,0 +1,46 @@
+=== neverProducedWorkflow.xxp ===
+workflow NeverProducedWorkflow {
+    define task initialTask;
+    define task middleTask;
+    define task finalTask;
+    define data initialData;
+    define data middleData;
+    define data phantomData;
+    define data finalData;
+    
+    START -> initialTask -> middleTask -> finalTask -> END;
+    
+    configure task initialTask {
+        implementation "initial.py";
+        input initialData;  // External input
+        output middleData;
+    }
+    
+    configure task middleTask {
+        implementation "middle.py";
+        input middleData;
+        // Missing: should output phantomData
+        output finalData;
+    }
+    
+    configure task finalTask {
+        implementation "final.py";
+        input phantomData, finalData;  // phantomData is never produced
+    }
+}
+
+=== task-input-never-produced.espace ===
+experiment TaskInputNeverProducedTest {
+    space TestSpace of NeverProducedWorkflow {
+        strategy gridsearch;
+    }
+    
+    control {
+        START -> TestSpace -> END;
+    }
+    
+    define data initialData = "initial.txt";
+}
+
+=== ERRORS ===
+- Input data 'phantomData' for task 'finalTask' in space 'TestSpace' is not available

@@ -1,0 +1,24 @@
+=== simpleSequentialWorkflow.xxp ===
+workflow SimpleSequentialWorkflow {
+    define task first;
+    define task second;
+    
+    START -> first -> second -> END;
+    
+    configure task first {
+        implementation "first.py";
+    }
+    
+    configure task second {
+        implementation "second.py";
+    }
+}
+
+=== no-control-flow.espace ===
+experiment NoControlFlowTest {
+    space OnlySpace of SimpleSequentialWorkflow {
+        strategy gridsearch;
+    }
+    
+    // No control block - should generate default control flow
+}

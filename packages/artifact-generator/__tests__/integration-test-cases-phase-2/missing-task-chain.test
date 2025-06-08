@@ -1,0 +1,29 @@
+=== noChainWorkflow.xxp ===
+workflow NoChainWorkflow {
+    define task task1;
+    define task task2;
+    
+    // Missing: START -> task1 -> task2 -> END;
+    
+    configure task task1 {
+        implementation "task1.py";
+    }
+    
+    configure task task2 {
+        implementation "task2.py";
+    }
+}
+
+=== missing-task-chain.espace ===
+experiment MissingTaskChainTest {
+    space TestSpace of NoChainWorkflow {
+        strategy gridsearch;
+    }
+    
+    control {
+        START -> TestSpace -> END;
+    }
+}
+
+=== ERRORS ===
+- Workflow 'NoChainWorkflow' has no task execution chain defined

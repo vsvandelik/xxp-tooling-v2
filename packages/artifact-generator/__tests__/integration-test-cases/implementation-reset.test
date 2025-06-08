@@ -1,0 +1,93 @@
+=== originalWorkflow.xxp ===
+workflow OriginalWorkflow {
+    define task task1;
+    define task task2;
+    
+    START -> task1 -> task2 -> END;
+    
+    configure task task1 {
+        implementation "original1.py";
+    }
+    
+    configure task task2 {
+        implementation "original2.py";
+    }
+}
+
+=== overrideWorkflow.xxp ===
+workflow OverrideWorkflow from OriginalWorkflow {
+    configure task task1 {
+        implementation "new1.py";
+    }
+    
+    configure task task2 {
+        implementation "new2.py";
+    }
+}
+
+=== implementation-reset.espace ===
+experiment ImplementationResetTest {
+    space TestSpace of OverrideWorkflow {
+        strategy gridsearch;
+    }
+    
+    control {
+        START -> TestSpace -> END;
+    }
+}
+
+=== new1.py ===
+
+=== new2.py ===
+
+=== OUTPUT ===
+
+{
+  "experiment": "ImplementationResetTest",
+  "version": "1.0",
+  "tasks": [
+    [
+      {
+        "taskId": "OverrideWorkflow:task1",
+        "workflow": "OverrideWorkflow",
+        "implementation": "new1.py",
+        "dynamicParameters": [],
+        "staticParameters": {},
+        "inputData": [],
+        "outputData": []
+      },
+      {
+        "taskId": "OverrideWorkflow:task2",
+        "workflow": "OverrideWorkflow",
+        "implementation": "new2.py",
+        "dynamicParameters": [],
+        "staticParameters": {},
+        "inputData": [],
+        "outputData": []
+      }
+    ]
+  ],
+  "spaces": [
+    {
+      "spaceId": "TestSpace",
+      "tasksOrder": [
+        "OverrideWorkflow:task1",
+        "OverrideWorkflow:task2"
+      ],
+      "parameters": [
+        {}
+      ],
+      "inputData": {}
+    }
+  ],
+  "control": {
+    "START": "TestSpace",
+    "transitions": [
+      {
+        "from": "TestSpace",
+        "to": "END"
+      }
+    ]
+  },
+  "inputData": {}
+}

@@ -1,0 +1,43 @@
+=== circularDependencyWorkflow.xxp ===
+workflow CircularDependencyWorkflow {
+    define task taskA;
+    define task taskB;
+    define task taskC;
+    define data dataAB;
+    define data dataBC;
+    define data dataCA;
+    
+    START -> taskA -> taskB -> taskC -> END;
+    
+    configure task taskA {
+        implementation "taskA.py";
+        input dataCA;  // Circular: needs output from taskC
+        output dataAB;
+    }
+    
+    configure task taskB {
+        implementation "taskB.py";
+        input dataAB;
+        output dataBC;
+    }
+    
+    configure task taskC {
+        implementation "taskC.py";
+        input dataBC;
+        output dataCA;  // Circular: produces input for taskA
+    }
+}
+
+=== circular-task-dependency.espace ===
+experiment CircularTaskDependencyTest {
+    space TestSpace of CircularDependencyWorkflow {
+        strategy gridsearch;
+    }
+    
+    control {
+        START -> TestSpace -> END;
+    }
+}
+
+=== ERRORS ===
+- Circular data dependency detected: taskA -> taskB -> taskC -> taskA

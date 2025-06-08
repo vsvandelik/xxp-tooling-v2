@@ -48,7 +48,8 @@ experiment TestExperiment {
       ],
       "parameters": [
         {}
-      ]
+      ],
+      "inputData": {}
     }
   ],
   "control": {
@@ -59,5 +60,6 @@ experiment TestExperiment {
         "to": "END"
       }
     ]
-  }
+  },
+  "inputData": {}
 }

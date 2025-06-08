@@ -58,7 +58,8 @@ if __name__ == "__main__":
       ],
       "parameters": [
         {}
-      ]
+      ],
+      "inputData": {}
     }
   ],
   "control": {
@@ -69,5 +70,6 @@ if __name__ == "__main__":
         "to": "END"
       }
     ]
-  }
+  },
+  "inputData": {}
 }

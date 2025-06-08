@@ -1,0 +1,28 @@
+=== needsInputWorkflow.xxp ===
+workflow NeedsInputWorkflow {
+    define task processor;
+    define data requiredInput;
+    
+    START -> processor -> END;
+    
+    configure task processor {
+        implementation "process.py";
+        input requiredInput;
+    }
+}
+
+=== missing-single-input.espace ===
+experiment MissingInputTest {
+    space TestSpace of NeedsInputWorkflow {
+        strategy gridsearch;
+    }
+    
+    control {
+        START -> TestSpace -> END;
+    }
+    
+    // Missing: define data requiredInput = "input.txt";
+}
+
+=== ERRORS ===
+- Required data 'requiredInput' in space 'TestSpace' is not defined

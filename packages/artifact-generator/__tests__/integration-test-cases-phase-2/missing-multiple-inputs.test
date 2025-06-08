@@ -1,0 +1,32 @@
+=== multiInputWorkflow.xxp ===
+workflow MultiInputWorkflow {
+    define task merger;
+    define data input1;
+    define data input2;
+    define data input3;
+    
+    START -> merger -> END;
+    
+    configure task merger {
+        implementation "merge.py";
+        input input1, input2, input3;
+    }
+}
+
+=== missing-multiple-inputs.espace ===
+experiment MissingMultipleInputsTest {
+    space TestSpace of MultiInputWorkflow {
+        strategy gridsearch;
+    }
+    
+    control {
+        START -> TestSpace -> END;
+    }
+    
+    define data input1 = "file1.txt";
+    // Missing: input2 and input3
+}
+
+=== ERRORS ===
+- Required data 'input2' in space 'TestSpace' is not defined
+- Required data 'input3' in space 'TestSpace' is not defined

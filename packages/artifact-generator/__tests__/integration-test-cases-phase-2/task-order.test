@@ -1,0 +1,121 @@
+=== orderWorkflow.xxp ===
+workflow OrderWorkflow {
+    define task zebra;
+    define task alpha;
+    define task beta;
+    define data inputData;
+    define data zebraOutput;
+    define data alphaOutput;
+    
+    START -> zebra -> alpha -> beta -> END;
+    
+    configure task zebra {
+        implementation "zebra.py";
+        input inputData;
+        output zebraOutput;
+    }
+    
+    configure task alpha {
+        implementation "alpha.py";
+        input zebraOutput;
+        output alphaOutput;
+    }
+    
+    configure task beta {
+        implementation "beta.py";
+        input alphaOutput;
+    }
+}
+
+=== task-order.espace ===
+experiment TaskOrderTest {
+    space TestSpace of OrderWorkflow {
+        strategy gridsearch;
+    }
+    
+    control {
+        START -> TestSpace -> END;
+    }
+    
+    define data inputData = "input.txt";
+}
+
+=== zebra.py ===
+
+=== alpha.py ====
+
+=== beta.py ====
+
+=== OUTPUT ===
+
+{
+  "experiment": "TaskOrderTest",
+  "version": "1.0",
+  "tasks": [
+    [
+      {
+        "taskId": "OrderWorkflow:zebra",
+        "workflow": "OrderWorkflow",
+        "implementation": "zebra.py",
+        "dynamicParameters": [],
+        "staticParameters": {},
+        "inputData": [
+          "inputData"
+        ],
+        "outputData": [
+          "zebraOutput"
+        ]
+      },
+      {
+        "taskId": "OrderWorkflow:alpha",
+        "workflow": "OrderWorkflow",
+        "implementation": "alpha.py",
+        "dynamicParameters": [],
+        "staticParameters": {},
+        "inputData": [
+          "zebraOutput"
+        ],
+        "outputData": [
+          "alphaOutput"
+        ]
+      },
+      {
+        "taskId": "OrderWorkflow:beta",
+        "workflow": "OrderWorkflow",
+        "implementation": "beta.py",
+        "dynamicParameters": [],
+        "staticParameters": {},
+        "inputData": [
+          "alphaOutput"
+        ],
+        "outputData": []
+      }
+    ]
+  ],
+  "spaces": [
+    {
+      "spaceId": "TestSpace",
+      "tasksOrder": [
+        "OrderWorkflow:zebra",
+        "OrderWorkflow:alpha",
+        "OrderWorkflow:beta"
+      ],
+      "parameters": [
+        {}
+      ],
+      "inputData": {}
+    }
+  ],
+  "control": {
+    "START": "TestSpace",
+    "transitions": [
+      {
+        "from": "TestSpace",
+        "to": "END"
+      }
+    ]
+  },
+  "inputData": {
+    "inputData": "input.txt"
+  }
+}

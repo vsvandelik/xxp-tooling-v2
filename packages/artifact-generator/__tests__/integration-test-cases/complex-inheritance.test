@@ -1,0 +1,182 @@
+=== grandparentWorkflow.xxp ===
+workflow GrandparentWorkflow {
+    define task baseTask;
+    define task inheritedTask;
+    define data baseData;
+    
+    START -> baseTask -> inheritedTask -> END;
+    
+    configure task baseTask {
+        param grandparentParam = "original";
+        input baseData;
+    }
+    
+    configure task inheritedTask {
+        param sharedParam = 1;
+    }
+}
+
+=== parentWorkflow.xxp ===
+workflow ParentWorkflow from GrandparentWorkflow {
+    define task parentTask;
+    define data parentData;
+    
+    START -> baseTask -> parentTask -> inheritedTask -> END;
+    
+    configure task baseTask {
+        implementation "base.py";
+        param parentParam = "added";
+        output parentData;
+    }
+    
+    configure task parentTask {
+        implementation "parent.py";
+        input parentData;
+        param sharedParam = 2;
+    }
+    
+    configure task inheritedTask {
+        implementation "inherited.py";
+        param sharedParam = 3;
+    }
+}
+
+=== childWorkflow.xxp ===
+workflow ChildWorkflow from ParentWorkflow {
+    configure task parentTask {
+        param childParam = "final";
+        param sharedParam = 4;
+    }
+    
+    configure task inheritedTask {
+        param grandparentParam = "overridden";
+    }
+}
+
+=== complex-inheritance.espace ===
+experiment ComplexInheritanceTest {
+    space TestSpace of ChildWorkflow {
+        strategy gridsearch;
+        param sharedParam = enum(10, 20);
+        param childParam = enum("A", "B");
+        
+        configure task baseTask {
+            param grandparentParam = "space_override";
+        }
+    }
+    
+    control {
+        START -> TestSpace -> END;
+    }
+    
+    define data baseData = "base_input.txt";
+}
+
+=== base.py ===
+
+=== inherited.py ===
+
+=== parent.py ===
+
+=== OUTPUT ===
+
+{
+  "experiment": "ComplexInheritanceTest",
+  "version": "1.0",
+  "tasks": [
+    [
+      {
+        "taskId": "ChildWorkflow:baseTask",
+        "workflow": "ChildWorkflow",
+        "implementation": "base.py",
+        "dynamicParameters": [
+          "sharedParam",
+          "childParam"
+        ],
+        "staticParameters": {
+          "grandparentParam": "space_override",
+          "parentParam": "added"
+        },
+        "inputData": [
+          "baseData"
+        ],
+        "outputData": [
+          "parentData"
+        ]
+      },
+      {
+        "taskId": "ChildWorkflow:inheritedTask",
+        "workflow": "ChildWorkflow",
+        "implementation": "inherited.py",
+        "dynamicParameters": [
+          "sharedParam",
+          "childParam"
+        ],
+        "staticParameters": {
+          "grandparentParam": "overridden"
+        },
+        "inputData": [],
+        "outputData": []
+      },
+      {
+        "taskId": "ChildWorkflow:parentTask",
+        "workflow": "ChildWorkflow",
+        "implementation": "parent.py",
+        "dynamicParameters": [
+          "sharedParam",
+          "childParam"
+        ],
+        "staticParameters": {},
+        "inputData": [
+          "parentData"
+        ],
+        "outputData": []
+      }
+    ]
+  ],
+  "spaces": [
+    {
+      "spaceId": "TestSpace",
+      "tasksOrder": [
+        "ChildWorkflow:baseTask",
+        "ChildWorkflow:parentTask",
+        "ChildWorkflow:inheritedTask"
+      ],
+      "parameters": [
+        {
+          "sharedParam": 10,
+          "childParam": "A",
+          "baseTask:grandparentParam": "space_override"
+        },
+        {
+          "sharedParam": 10,
+          "childParam": "B",
+          "baseTask:grandparentParam": "space_override"
+        },
+        {
+          "sharedParam": 20,
+          "childParam": "A",
+          "baseTask:grandparentParam": "space_override"
+        },
+        {
+          "sharedParam": 20,
+          "childParam": "B",
+          "baseTask:grandparentParam": "space_override"
+        }
+      ],
+      "inputData": {}
+    }
+  ],
+  "control": {
+    "START": "TestSpace",
+    "transitions": [
+      {
+        "from": "TestSpace",
+        "to": "END"
+      }
+    ]
+  },
+  "inputData": {
+    "baseData": "base_input.txt"
+  }
+}

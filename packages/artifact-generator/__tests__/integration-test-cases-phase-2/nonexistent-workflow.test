@@ -1,0 +1,22 @@
+=== existingWorkflow.xxp ===
+workflow ExistingWorkflow {
+    define task task1;
+    START -> task1 -> END;
+    configure task task1 {
+        implementation "task1.py";
+    }
+}
+
+=== nonexistent-workflow.espace ===
+experiment NonExistentWorkflowTest {
+    space TestSpace of NonExistentWorkflow {
+        strategy gridsearch;
+    }
+    
+    control {
+        START -> TestSpace -> END;
+    }
+}
+
+=== ERRORS ===
+- Workflow 'NonExistentWorkflow' referenced in space 'TestSpace' not found

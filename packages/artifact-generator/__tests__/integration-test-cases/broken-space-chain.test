@@ -1,0 +1,29 @@
+=== simpleWorkflow.xxp ===
+workflow SimpleWorkflow {
+    define task simpleTask;
+    START -> simpleTask -> END;
+    configure task simpleTask {
+        implementation "simple.py";
+    }
+}
+
+=== broken-space-chain.espace ===
+experiment BrokenSpaceChainTest {
+    space Space1 of SimpleWorkflow {
+        strategy gridsearch;
+    }
+    
+    space Space2 of SimpleWorkflow {
+        strategy gridsearch;
+    }
+    
+    control {
+        START -> Space1;
+        Space1 -> NonExistentSpace;  // Reference to non-existent space
+        Space2 -> END;  // Space2 is unreachable
+    }
+}
+
+=== ERRORS ===
+- Space 'NonExistentSpace' referenced in control flow but not found
+- Space 'Space2' is defined but unreachable in control flow

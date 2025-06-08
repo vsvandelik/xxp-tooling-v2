@@ -1,0 +1,77 @@
+=== staticParam1Workflow.xxp ===
+workflow staticParam1Workflow {
+    define task simpleTask;
+    
+    START -> simpleTask -> END;
+    
+    configure task simpleTask {
+        implementation "simple.py";
+        param usedParam = 1;
+        param staticParam1 = 2;
+        param staticParam2 = 3;
+    }
+}
+
+=== unused-params.espace ===
+experiment staticParam1sTest {
+    space TestSpace of staticParam1Workflow {
+        strategy gridsearch;
+        param usedParam = enum(10, 20);
+    }
+    
+    control {
+        START -> TestSpace -> END;
+    }
+}
+
+=== OUTPUT ===
+
+{
+  "experiment": "staticParam1sTest",
+  "version": "1.0",
+  "tasks": [
+    [
+      {
+        "taskId": "staticParam1Workflow:simpleTask",
+        "workflow": "staticParam1Workflow",
+        "implementation": "simple.py",
+        "dynamicParameters": [
+          "usedParam"
+        ],
+        "staticParameters": {
+          "staticParam1": 2,
+          "staticParam2": 3
+        },
+        "inputData": [],
+        "outputData": []
+      }
+    ]
+  ],
+  "spaces": [
+    {
+      "spaceId": "TestSpace",
+      "tasksOrder": [
+        "staticParam1Workflow:simpleTask"
+      ],
+      "parameters": [
+        {
+          "usedParam": 10
+        },
+        {
+          "usedParam": 20
+        }
+      ],
+      "inputData": {}
+    }
+  ],
+  "control": {
+    "START": "TestSpace",
+    "transitions": [
+      {
+        "from": "TestSpace",
+        "to": "END"
+      }
+    ]
+  },
+  "inputData": {}
+}

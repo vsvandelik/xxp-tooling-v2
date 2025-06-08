@@ -1,0 +1,36 @@
+=== dataFlowWorkflow.xxp ===
+workflow DataFlowWorkflow {
+    define task producer;
+    define task consumer;
+    define data intermediateData;
+    
+    START -> producer -> consumer -> END;
+    
+    configure task producer {
+        implementation "produce.py";
+        // Missing: output intermediateData;
+    }
+    
+    configure task consumer {
+        implementation "consume.py";
+        input intermediateData;
+    }
+}
+
+=== data-flow-error.espace ===
+experiment DataFlowErrorTest {
+    space TestSpace of DataFlowWorkflow {
+        strategy gridsearch;
+    }
+    
+    control {
+        START -> TestSpace -> END;
+    }
+}
+
+=== produce.py ===
+
+=== consume.py ===
+
+=== ERRORS ===
+- Required initial input 'intermediateData' is not defined for space 'TestSpace'. Please define it at experiment level or space level.

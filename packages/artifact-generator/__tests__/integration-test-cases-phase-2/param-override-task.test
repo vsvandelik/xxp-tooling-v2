@@ -1,0 +1,29 @@
+=== taskParamWorkflow.xxp ===
+workflow TaskParamWorkflow {
+    define task taskWithParams;
+    
+    START -> taskWithParams -> END;
+    
+    configure task taskWithParams {
+        implementation "task.py";
+        param sharedParam = 10;
+        param taskOnlyParam = 20;
+    }
+}
+
+=== param-override-task.espace ===
+experiment TaskParamOverrideTest {
+    space TestSpace of TaskParamWorkflow {
+        strategy gridsearch;
+        param sharedParam = enum(100, 200);
+        
+        configure task taskWithParams {
+            param sharedParam = 999;
+            param taskOnlyParam = enum(30, 40);
+        }
+    }
+    
+    control {
+        START -> TestSpace -> END;
+    }
+}

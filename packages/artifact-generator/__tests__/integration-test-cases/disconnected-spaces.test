@@ -1,0 +1,77 @@
+=== disconnectedWorkflow.xxp ===
+workflow DisconnectedWorkflow {
+    define task task1;
+    START -> task1 -> END;
+    configure task task1 {
+        implementation "task1.py";
+    }
+}
+
+=== disconnected-spaces.espace ===
+experiment DisconnectedSpacesTest {
+    space Space1 of DisconnectedWorkflow {
+        strategy gridsearch;
+    }
+    
+    space Space2 of DisconnectedWorkflow {
+        strategy gridsearch;
+    }
+    
+    space Space3 of DisconnectedWorkflow {
+        strategy gridsearch;
+    }
+    
+    control {
+        START -> Space1;
+        Space1 -> END;
+        // Space2 and Space3 are disconnected from main flow
+    }
+}
+
+=== task1.py ===
+
+=== WARNINGS ===
+- Space 'Space2' is defined but not reachable in control flow
+- Space 'Space3' is defined but not reachable in control flow
+
+=== OUTPUT ===
+
+{
+  "experiment": "DisconnectedSpacesTest",
+  "version": "1.0",
+  "tasks": [
+    [
+      {
+        "taskId": "DisconnectedWorkflow:task1",
+        "workflow": "DisconnectedWorkflow",
+        "implementation": "task1.py",
+        "dynamicParameters": [],
+        "staticParameters": {},
+        "inputData": [],
+        "outputData": []
+      }
+    ]
+  ],
+  "spaces": [
+    {
+      "spaceId": "Space1",
+      "tasksOrder": [
+        "DisconnectedWorkflow:task1"
+      ],
+      "parameters": [
+        {}
+      ],
+      "inputData": {}
+    }
+  ],
+  "control": {
+    "START": "Space1",
+    "transitions": [
+      {
+        "from": "Space1",
+        "to": "END"
+      }
+    ]
+  },
+  "inputData": {}
+}

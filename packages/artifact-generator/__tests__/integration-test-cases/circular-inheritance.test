@@ -1,0 +1,31 @@
+=== workflowA.xxp ===
+workflow WorkflowA from WorkflowB {
+    define task taskA;
+    START -> taskA -> END;
+    configure task taskA {
+        implementation "a.py";
+    }
+}
+
+=== workflowB.xxp ===
+workflow WorkflowB from WorkflowA {
+    define task taskB;
+    START -> taskB -> END;
+    configure task taskB {
+        implementation "b.py";
+    }
+}
+
+=== circular-inheritance.espace ===
+experiment CircularInheritanceTest {
+    space TestSpace of WorkflowA {
+        strategy gridsearch;
+    }
+    
+    control {
+        START -> TestSpace -> END;
+    }
+}
+
+=== ERRORS ===
+- Circular inheritance detected in workflow hierarchy

@@ -13,7 +13,7 @@ interface TestCase {
   isNegativeTest: boolean;
 }
 
-describe('Integration Tests', () => {
+describe('Single Integration Test', () => {
   let tempDir: string;
 
   beforeEach(() => {
@@ -28,86 +28,88 @@ describe('Integration Tests', () => {
     }
   });
 
-  const testCasesDir = path.join(__dirname, 'integration-test-cases');
-
-  // Dynamically discover and parse test case files
-  const testCaseFiles = fs.readdirSync(testCasesDir)
-    .filter(file => file.endsWith('.test'))
-    .map(file => path.join(testCasesDir, file));
-
-  if (testCaseFiles.length === 0) {
-    it('should find at least one test case file', () => {
-      expect(testCaseFiles.length).toBeGreaterThan(0);
+  const testCaseName = process.env['TEST_CASE'];
+  
+  if (!testCaseName) {
+    it('should have TEST_CASE environment variable set', () => {
+      throw new Error('TEST_CASE environment variable must be set to specify which test case to run');
     });
     return;
   }
 
-  // Parse each test case file and create dynamic tests
-  testCaseFiles.forEach(testCaseFile => {
-    const testCase = parseTestCaseFile(testCaseFile);
+  const testCasesDir = path.join(__dirname, 'integration-test-cases');
+  const testCaseFile = path.join(testCasesDir, `${testCaseName}.test`);
 
-    it(`should ${testCase.isNegativeTest ? 'fail with expected errors/warnings' : 'generate correct artifact'} for ${testCase.name}`, async () => {
-      // Create temporary files for this test case
-      const createdFiles = new Map<string, string>();
-
-      try {
-        for (const [fileName, content] of testCase.files) {
-          const filePath = path.join(tempDir, fileName);
-          // Create directory if it doesn't exist
-          const dirPath = path.dirname(filePath);
-          if (!fs.existsSync(dirPath)) {
-            fs.mkdirSync(dirPath, { recursive: true });
-          }
-          fs.writeFileSync(filePath, content, 'utf8');
-          createdFiles.set(fileName, filePath);
-        }
-
-        // Find the .espace file (should be exactly one)
-        const espaceFiles = Array.from(createdFiles.entries())
-          .filter(([fileName]) => fileName.endsWith('.espace'));
-
-        expect(espaceFiles).toHaveLength(1);
-        const espaceFile = espaceFiles[0];
-        if (!espaceFile) {
-          throw new Error('No .espace file found in test case');
-        }
-        const [, espaceFilePath] = espaceFile;
-
-        const { artifact, validation } = await runArtifactGenerationWithNoConsoleOutput(espaceFilePath);
-
-        // Store artifact to JSON file in outputs folder
-        if (artifact) {
-          const outputsDir = path.join(__dirname, 'outputs');
-          if (!fs.existsSync(outputsDir)) {
-            fs.mkdirSync(outputsDir, { recursive: true });
-          }
-          const outputFilePath = path.join(outputsDir, `${testCase.name}.json`);
-          fs.writeFileSync(outputFilePath, JSON.stringify(artifact, null, 2), 'utf8');
-        }
-
-        // Compare with expected output
-        expect(artifact).toEqual(testCase.expectedOutput);
-
-        // Check validation results
-        expect(validation.errors).toEqual(testCase.expectedErrors);
-        expect(validation.warnings).toEqual(testCase.expectedWarnings);
-
-        if (testCase.isNegativeTest) {
-          // For negative tests, artifact should be undefined
-          expect(artifact).toBeUndefined();
-        } else {
-          // For positive tests, artifact should match expected output
-          expect(artifact).toEqual(testCase.expectedOutput);
-        }
-
-      } catch (error) {
-        // Enhanced error reporting
-        console.error(`Test case '${testCase.name}' failed:`);
-        console.error(`Temp directory: ${tempDir}`);
-        console.error(`Created files: ${Array.from(createdFiles.keys()).join(', ')}`);
-        throw error;
-      }
+  if (!fs.existsSync(testCaseFile)) {
+    it(`should find test case file: ${testCaseName}.test`, () => {
+      expect(fs.existsSync(testCaseFile)).toBe(true);
     });
+    return;
+  }
+
+  const testCase = parseTestCaseFile(testCaseFile);
+
+  it(`should ${testCase.isNegativeTest ? 'fail with expected errors/warnings' : 'generate correct artifact'} for ${testCase.name}`, async () => {
+    // Create temporary files for this test case
+    const createdFiles = new Map<string, string>();
+
+    try {
+      for (const [fileName, content] of testCase.files) {
+        const filePath = path.join(tempDir, fileName);
+        // Create directory if it doesn't exist
+        const dirPath = path.dirname(filePath);
+        if (!fs.existsSync(dirPath)) {
+          fs.mkdirSync(dirPath, { recursive: true });
+        }
+        fs.writeFileSync(filePath, content, 'utf8');
+        createdFiles.set(fileName, filePath);
+      }
+
+      // Find the .espace file (should be exactly one)
+      const espaceFiles = Array.from(createdFiles.entries())
+        .filter(([fileName]) => fileName.endsWith('.espace'));
+
+      expect(espaceFiles).toHaveLength(1);
+      const espaceFile = espaceFiles[0];
+      if (!espaceFile) {
+        throw new Error('No .espace file found in test case');
+      }
+      const [, espaceFilePath] = espaceFile;
+
+      const { artifact, validation } = await runArtifactGenerationWithNoConsoleOutput(espaceFilePath);
+
+      // Store artifact to JSON file in outputs folder
+      if (artifact) {
+        const outputsDir = path.join(__dirname, 'outputs');
+        if (!fs.existsSync(outputsDir)) {
+          fs.mkdirSync(outputsDir, { recursive: true });
+        }
+        const outputFilePath = path.join(outputsDir, `${testCase.name}.json`);
+        fs.writeFileSync(outputFilePath, JSON.stringify(artifact, null, 2), 'utf8');
+      }
+
+      // Compare with expected output
+      expect(artifact).toEqual(testCase.expectedOutput);
+
+      // Check validation results
+      expect(validation.errors).toEqual(testCase.expectedErrors);
+      expect(validation.warnings).toEqual(testCase.expectedWarnings);
+
+      if (testCase.isNegativeTest) {
+        // For negative tests, artifact should be undefined
+        expect(artifact).toBeUndefined();
+      } else {
+        // For positive tests, artifact should match expected output
+        expect(artifact).toEqual(testCase.expectedOutput);
+      }
+
+    } catch (error) {
+      // Enhanced error reporting
+      console.error(`Test case '${testCase.name}' failed:`);
+      console.error(`Temp directory: ${tempDir}`);
+      console.error(`Created files: ${Array.from(createdFiles.keys()).join(', ')}`);
+      throw error;
+    }
   });
 });
 
@@ -220,4 +222,3 @@ async function runArtifactGenerationWithNoConsoleOutput(espaceFilePath: string):
 
   return output;
 }
-

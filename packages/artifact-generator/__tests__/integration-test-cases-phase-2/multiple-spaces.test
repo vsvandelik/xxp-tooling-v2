@@ -1,0 +1,30 @@
+=== sharedWorkflow.xxp ===
+workflow SharedWorkflow {
+    define task sharedTask;
+    
+    START -> sharedTask -> END;
+    
+    configure task sharedTask {
+        implementation "shared.py";
+        param configParam;
+    }
+}
+
+=== multiple-spaces.espace ===
+experiment MultipleSpacesTest {
+    space Space1 of SharedWorkflow {
+        strategy gridsearch;
+        param configParam = enum(1, 2);
+    }
+    
+    space Space2 of SharedWorkflow {
+        strategy gridsearch;
+        param configParam = enum(3, 4);
+    }
+    
+    control {
+        START -> Space1;
+        Space1 -> Space2;
+        Space2 -> END;
+    }
+}

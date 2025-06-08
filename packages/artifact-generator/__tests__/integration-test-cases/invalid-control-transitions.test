@@ -1,0 +1,26 @@
+=== controlWorkflow.xxp ===
+workflow ControlWorkflow {
+    define task task1;
+    START -> task1 -> END;
+    configure task task1 {
+        implementation "task1.py";
+    }
+}
+
+=== invalid-control-transitions.espace ===
+experiment InvalidControlTransitionsTest {
+    space ValidSpace of ControlWorkflow {
+        strategy gridsearch;
+    }
+    
+    control {
+        START -> ValidSpace;
+        ValidSpace -> END;
+        ValidSpace -> ValidSpace;  // Self-loop
+        END -> ValidSpace;  // Invalid: transition from END
+    }
+}
+
+=== ERRORS ===
+- Invalid control flow: transition from END is not allowed
+- Self-loop detected in space 'ValidSpace'

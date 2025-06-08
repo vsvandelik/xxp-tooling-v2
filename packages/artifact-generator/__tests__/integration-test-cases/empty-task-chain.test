@@ -1,0 +1,56 @@
+=== emptyChainWorkflow.xxp ===
+workflow EmptyChainWorkflow {
+    define task task1;
+    
+    START -> END;  // Empty chain - no tasks executed
+    
+    configure task task1 {
+        implementation "task1.py";
+    }
+}
+
+=== empty-task-chain.espace ===
+experiment EmptyTaskChainTest {
+    space TestSpace of EmptyChainWorkflow {
+        strategy gridsearch;
+    }
+    
+    control {
+        START -> TestSpace -> END;
+    }
+}
+
+=== WARNINGS ===
+- Task 'task1' is defined but not used in execution chain
+
+=== OUTPUT ===
+
+{
+  "experiment": "EmptyTaskChainTest",
+  "version": "1.0",
+  "tasks": [
+    []
+  ],
+  "spaces": [
+    {
+      "spaceId": "TestSpace",
+      "tasksOrder": [
+        "EmptyChainWorkflow:task1"
+      ],
+      "parameters": [
+        {}
+      ],
+      "inputData": {}
+    }
+  ],
+  "control": {
+    "START": "TestSpace",
+    "transitions": [
+      {
+        "from": "TestSpace",
+        "to": "END"
+      }
+    ]
+  },
+  "inputData": {}
+}

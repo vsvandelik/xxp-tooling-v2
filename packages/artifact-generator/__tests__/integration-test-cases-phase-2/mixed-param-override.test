@@ -1,0 +1,40 @@
+=== mixedParamWorkflow.xxp ===
+workflow MixedParamWorkflow {
+    define task task1;
+    define task task2;
+    
+    START -> task1 -> task2 -> END;
+    
+    configure task task1 {
+        implementation "task1.py";
+        param globalParam = 1;
+        param task1Param = 2;
+    }
+    
+    configure task task2 {
+        implementation "task2.py";
+        param globalParam = 3;
+        param task2Param = 4;
+    }
+}
+
+=== mixed-param-override.espace ===
+experiment MixedParamOverrideTest {
+    space TestSpace of MixedParamWorkflow {
+        strategy gridsearch;
+        param globalParam = enum(100, 200);
+        
+        configure task task1 {
+            param task1Param = enum(300, 400);
+        }
+        
+        configure task task2 {
+            param globalParam = 999;
+            param task2Param = enum(500, 600);
+        }
+    }
+    
+    control {
+        START -> TestSpace -> END;
+    }
+}

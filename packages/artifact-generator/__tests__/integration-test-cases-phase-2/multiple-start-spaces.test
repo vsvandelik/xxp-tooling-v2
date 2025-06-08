@@ -1,0 +1,29 @@
+=== multiStartWorkflow.xxp ===
+workflow MultiStartWorkflow {
+    define task task1;
+    START -> task1 -> END;
+    configure task task1 {
+        implementation "task1.py";
+    }
+}
+
+=== multiple-start-spaces.espace ===
+experiment MultipleStartSpacesTest {
+    space Space1 of MultiStartWorkflow {
+        strategy gridsearch;
+    }
+    
+    space Space2 of MultiStartWorkflow {
+        strategy gridsearch;
+    }
+    
+    control {
+        START -> Space1;
+        START -> Space2;  // Multiple START transitions
+        Space1 -> END;
+        Space2 -> END;
+    }
+}
+
+=== ERRORS ===
+- Multiple transitions from START are not allowed

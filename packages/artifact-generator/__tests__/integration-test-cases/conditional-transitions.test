@@ -1,0 +1,115 @@
+=== conditionalWorkflow.xxp ===
+workflow ConditionalWorkflow {
+    define task mainTask;
+    
+    START -> mainTask -> END;
+    
+    configure task mainTask {
+        implementation "main.py";
+    }
+}
+
+=== conditional-transitions.espace ===
+experiment ConditionalTest {
+    space MainSpace of ConditionalWorkflow {
+        strategy gridsearch;
+    }
+    
+    space PathA of ConditionalWorkflow {
+        strategy gridsearch;
+    }
+    
+    space PathB of ConditionalWorkflow {
+        strategy gridsearch;
+    }
+    
+    control {
+        START -> MainSpace;
+        MainSpace -?> PathA {
+            condition "input('Go to A? (yes/no): ') == 'yes'";
+        }
+        MainSpace -?> PathB {
+            condition "input('Go to B? (yes/no): ') == 'yes'";
+        }
+        PathA -> END;
+        PathB -> END;
+    }
+}
+
+=== main.py ===
+
+=== OUTPUT ===
+
+{
+  "experiment": "ConditionalTest",
+  "version": "1.0",
+  "tasks": [
+    [
+      {
+        "taskId": "ConditionalWorkflow:mainTask",
+        "workflow": "ConditionalWorkflow",
+        "implementation": "main.py",
+        "dynamicParameters": [],
+        "staticParameters": {},
+        "inputData": [],
+        "outputData": []
+      }
+    ]
+  ],
+  "spaces": [
+    {
+      "spaceId": "MainSpace",
+      "tasksOrder": [
+        "ConditionalWorkflow:mainTask"
+      ],
+      "parameters": [
+        {}
+      ],
+      "inputData": {}
+    },
+    {
+      "spaceId": "PathA",
+      "tasksOrder": [
+        "ConditionalWorkflow:mainTask"
+      ],
+      "parameters": [
+        {}
+      ],
+      "inputData": {}
+    },
+    {
+      "spaceId": "PathB",
+      "tasksOrder": [
+        "ConditionalWorkflow:mainTask"
+      ],
+      "parameters": [
+        {}
+      ],
+      "inputData": {}
+    }
+  ],
+  "control": {
+    "START": "MainSpace",
+    "transitions": [
+      {
+        "from": "MainSpace",
+        "to": "PathA",
+        "condition": "input('Go to A? (yes/no): ') == 'yes'"
+      },
+      {
+        "from": "MainSpace",
+        "to": "PathB",
+        "condition": "input('Go to B? (yes/no): ') == 'yes'"
+      },
+      {
+        "from": "PathA",
+        "to": "END"
+      },
+      {
+        "from": "PathB",
+        "to": "END"
+      }
+    ]
+  },
+  "inputData": {}
+}
