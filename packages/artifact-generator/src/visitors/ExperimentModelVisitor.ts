@@ -105,6 +105,9 @@ export class ExperimentModelVisitor extends ESPACEVisitor<any> {
       const max = parseFloat(numbers[1]!.getText());
       const step = parseFloat(numbers[2]!.getText());
       return { type: 'range', values: [min, max, step] };
+    } else if (ctx.expression()) {
+      const value = this.parseExpression(ctx.expression()!);
+      return { type: 'value', values: [value] };
     }
 
     throw new Error('Unknown parameter value type');
@@ -121,9 +124,8 @@ export class ExperimentModelVisitor extends ESPACEVisitor<any> {
       if (content.paramAssignment()) {
         const paramAssignment = content.paramAssignment();
         const paramName = paramAssignment.IDENTIFIER().getText();
-        const expression = paramAssignment.expression();
-        const value = this.parseExpression(expression);
-        parameters.push(new ParameterDefinition(paramName, 'value', [value]));
+        const paramValue = this.visit(paramAssignment.paramValue());
+        parameters.push(new ParameterDefinition(paramName, paramValue.type, paramValue.values));
       }
     }
 
@@ -191,6 +193,8 @@ export class ExperimentModelVisitor extends ESPACEVisitor<any> {
       return text.includes('.') ? parseFloat(text) : parseInt(text);
     } else if (ctx.STRING()) {
       return ctx.STRING()!.getText().slice(1, -1); // Remove quotes
+    } else if (ctx.BOOLEAN()) {
+      return ctx.BOOLEAN()!.getText() === 'true';
     }
     throw new Error('Unknown expression type');
   }

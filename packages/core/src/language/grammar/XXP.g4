@@ -46,7 +46,7 @@ dataNameRead: IDENTIFIER;
 taskNameRead: IDENTIFIER;
 
 // Expressions
-expression: NUMBER | STRING;
+expression: NUMBER | STRING | BOOLEAN;
 
 // Symbols
 SEMICOLON: ';';
@@ -75,6 +75,7 @@ fragment LETTER: [a-zA-Z_];
 fragment DIGIT: [0-9];
 
 // Lexer Rules
+BOOLEAN: 'true' | 'false';
 IDENTIFIER: LETTER (LETTER | DIGIT)*;
 STRING: '"' ~["]* '"';
 NUMBER: DIGIT+ ('.' DIGIT+)?;

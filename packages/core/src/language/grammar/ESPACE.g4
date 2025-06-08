@@ -26,7 +26,8 @@ paramDefinition: PARAM IDENTIFIER EQUALS paramValue SEMICOLON;
 
 paramValue:
     enumFunction
-    | rangeFunction;
+    | rangeFunction
+    | expression;
 
 enumFunction: ENUM LPAREN expression (COMMA expression)* RPAREN;
 rangeFunction: RANGE LPAREN NUMBER COMMA NUMBER COMMA NUMBER RPAREN;
@@ -36,7 +37,7 @@ taskConfiguration: taskConfigurationHeader taskConfigurationBody;
 taskConfigurationHeader: CONFIGURE TASK taskNameRead;
 taskConfigurationBody: LBRACE configurationContent* RBRACE;
 configurationContent: paramAssignment;
-paramAssignment: PARAM IDENTIFIER EQUALS expression SEMICOLON;
+paramAssignment: PARAM IDENTIFIER EQUALS paramValue SEMICOLON;
 
 // Control block
 controlBlock: CONTROL controlBody;
@@ -60,7 +61,7 @@ taskNameRead: IDENTIFIER;
 spaceNameRead: IDENTIFIER;
 
 // Expressions
-expression: NUMBER | STRING;
+expression: NUMBER | STRING | BOOLEAN;
 
 // Symbols
 SEMICOLON: ';';
@@ -93,6 +94,7 @@ fragment LETTER: [a-zA-Z_];
 fragment DIGIT: [0-9];
 
 // Lexer Rules
+BOOLEAN: 'true' | 'false';
 IDENTIFIER: LETTER (LETTER | DIGIT)*;
 STRING: '"' ~["]* '"';
 NUMBER: DIGIT+ ('.' DIGIT+)?;

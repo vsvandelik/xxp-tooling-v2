@@ -18,7 +18,7 @@ export class SpaceModel {
   ) {}
 }
 
-export type ExpressionType = number | string;
+export type ExpressionType = number | string | boolean;
 
 export class ParameterDefinition {
   constructor(
