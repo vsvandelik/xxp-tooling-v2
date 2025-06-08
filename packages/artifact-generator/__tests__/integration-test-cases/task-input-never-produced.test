@@ -42,5 +42,9 @@ experiment TaskInputNeverProducedTest {
     define data initialData = "initial.txt";
 }
 
+=== initial.py ===
+=== middle.py ===
+=== final.py ===
+
 === ERRORS ===
-- Input data 'phantomData' for task 'finalTask' in space 'TestSpace' is not available
+- Required initial input 'phantomData' is not defined for space 'TestSpace'. Please define it at experiment level or space level.

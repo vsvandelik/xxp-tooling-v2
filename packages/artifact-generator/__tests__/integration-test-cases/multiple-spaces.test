@@ -1,0 +1,100 @@
+=== sharedWorkflow.xxp ===
+workflow SharedWorkflow {
+    define task sharedTask;
+    
+    START -> sharedTask -> END;
+    
+    configure task sharedTask {
+        implementation "shared.py";
+        param configParam;
+    }
+}
+
+=== multiple-spaces.espace ===
+experiment MultipleSpacesTest {
+    space Space1 of SharedWorkflow {
+        strategy gridsearch;
+        param configParam = enum(1, 2);
+    }
+    
+    space Space2 of SharedWorkflow {
+        strategy gridsearch;
+        param configParam = enum(3, 4);
+    }
+    
+    control {
+        START -> Space1;
+        Space1 -> Space2;
+        Space2 -> END;
+    }
+}
+
+=== shared.py ===
+
+=== OUTPUT ===
+
+{
+  "experiment": "MultipleSpacesTest",
+  "version": "1.0",
+  "tasks": [
+    [
+      {
+        "taskId": "SharedWorkflow:sharedTask",
+        "workflow": "SharedWorkflow",
+        "implementation": "shared.py",
+        "dynamicParameters": [
+          "configParam"
+        ],
+        "staticParameters": {},
+        "inputData": [],
+        "outputData": []
+      }
+    ]
+  ],
+  "spaces": [
+    {
+      "spaceId": "Space1",
+      "tasksOrder": [
+        "SharedWorkflow:sharedTask"
+      ],
+      "parameters": [
+        {
+          "configParam": 1
+        },
+        {
+          "configParam": 2
+        }
+      ],
+      "inputData": {}
+    },
+    {
+      "spaceId": "Space2",
+      "tasksOrder": [
+        "SharedWorkflow:sharedTask"
+      ],
+      "parameters": [
+        {
+          "configParam": 3
+        },
+        {
+          "configParam": 4
+        }
+      ],
+      "inputData": {}
+    }
+  ],
+  "control": {
+    "START": "Space1",
+    "transitions": [
+      {
+        "from": "Space1",
+        "to": "Space2"
+      },
+      {
+        "from": "Space2",
+        "to": "END"
+      }
+    ]
+  },
+  "inputData": {}
+}

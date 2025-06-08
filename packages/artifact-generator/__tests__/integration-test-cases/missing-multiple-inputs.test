@@ -27,6 +27,8 @@ experiment MissingMultipleInputsTest {
     // Missing: input2 and input3
 }
 
+=== merge.py ===
+
 === ERRORS ===
-- Required data 'input2' in space 'TestSpace' is not defined
-- Required data 'input3' in space 'TestSpace' is not defined
+- Required initial input 'input2' is not defined for space 'TestSpace'. Please define it at experiment level or space level.
+- Required initial input 'input3' is not defined for space 'TestSpace'. Please define it at experiment level or space level.

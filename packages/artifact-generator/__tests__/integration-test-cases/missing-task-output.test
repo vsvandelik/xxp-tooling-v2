@@ -38,5 +38,11 @@ experiment MissingTaskOutputTest {
     }
 }
 
+=== producer1.py ===
+
+=== producer2.py ===
+
+=== consumer.py ===
+
 === ERRORS ===
-- Input data 'data2' for task 'consumer' in space 'TestSpace' is not available
+- Required initial input 'data2' is not defined for space 'TestSpace'. Please define it at experiment level or space level.

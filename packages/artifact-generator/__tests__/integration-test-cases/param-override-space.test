@@ -1,0 +1,95 @@
+=== paramWorkflow.xxp ===
+workflow ParamWorkflow {
+    define task paramTask;
+    
+    START -> paramTask -> END;
+    
+    configure task paramTask {
+        implementation "param.py";
+        param globalParam = 100;
+        param spaceParam = 200;
+    }
+}
+
+=== param-override-space.espace ===
+experiment ParamOverrideTest {
+    space TestSpace of ParamWorkflow {
+        strategy gridsearch;
+        param globalParam = enum(1, 2, 3);
+        param spaceParam = range(0.1, 0.3, 0.1);
+    }
+    
+    control {
+        START -> TestSpace -> END;
+    }
+}
+
+=== param.py ===
+
+=== OUTPUT ===
+
+{
+  "experiment": "ParamOverrideTest",
+  "version": "1.0",
+  "tasks": [
+    [
+      {
+        "taskId": "ParamWorkflow:paramTask",
+        "workflow": "ParamWorkflow",
+        "implementation": "param.py",
+        "dynamicParameters": [
+          "globalParam",
+          "spaceParam"
+        ],
+        "staticParameters": {},
+        "inputData": [],
+        "outputData": []
+      }
+    ]
+  ],
+  "spaces": [
+    {
+      "spaceId": "TestSpace",
+      "tasksOrder": [
+        "ParamWorkflow:paramTask"
+      ],
+      "parameters": [
+        {
+          "globalParam": 1,
+          "spaceParam": 0.1
+        },
+        {
+          "globalParam": 1,
+          "spaceParam": 0.2
+        },
+        {
+          "globalParam": 2,
+          "spaceParam": 0.1
+        },
+        {
+          "globalParam": 2,
+          "spaceParam": 0.2
+        },
+        {
+          "globalParam": 3,
+          "spaceParam": 0.1
+        },
+        {
+          "globalParam": 3,
+          "spaceParam": 0.2
+        }
+      ],
+      "inputData": {}
+    }
+  ],
+  "control": {
+    "START": "TestSpace",
+    "transitions": [
+      {
+        "from": "TestSpace",
+        "to": "END"
+      }
+    ]
+  },
+  "inputData": {}
+}

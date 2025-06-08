@@ -19,4 +19,4 @@ experiment NonExistentWorkflowTest {
 }
 
 === ERRORS ===
-- Workflow 'NonExistentWorkflow' referenced in space 'TestSpace' not found
+- Workflow file not found: C:\\Users\\vojte\\AppData\\Local\\Temp\\integration-test-dGXU2L\\nonExistentWorkflow.xxp

@@ -24,6 +24,8 @@ experiment staticParam1sTest {
     }
 }
 
+=== simple.py ===
+
 === OUTPUT ===
 
 {

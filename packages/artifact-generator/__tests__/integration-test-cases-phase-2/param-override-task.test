@@ -8,6 +8,14 @@ workflow TaskParamWorkflow {
         implementation "task.py";
         param sharedParam = 10;
         param taskOnlyParam = 20;
+        param thirdParam;
+        param fourthParam;
+        param expressionParamString1;
+        param expressionParamString2;
+        param expressionParamNumber1;
+        param expressionParamNumber2;
+        param expressionParamBool1;
+        param expressionParamBool2;
     }
 }
 
@@ -16,10 +24,19 @@ experiment TaskParamOverrideTest {
     space TestSpace of TaskParamWorkflow {
         strategy gridsearch;
         param sharedParam = enum(100, 200);
+        param thirdPram = range(5, 15, 5);
+        param fifthParam = true;
+        param expressionParamString1 = "hello";
+        param expressionParamNumber1 = 5.123;
+        param expressionParamBool1 = false;
         
         configure task taskWithParams {
             param sharedParam = 999;
             param taskOnlyParam = enum(30, 40);
+            param fourthParam = range(1, 10, 6);
+            param expressionParamString2 = "world";
+            param expressionParamNumber2 = 9999;
+            param expressionParamBool2 = true;
         }
     }
     

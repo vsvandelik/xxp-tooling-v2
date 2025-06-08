@@ -24,5 +24,7 @@ experiment MissingInputTest {
     // Missing: define data requiredInput = "input.txt";
 }
 
+=== process.py ===
+
 === ERRORS ===
-- Required data 'requiredInput' in space 'TestSpace' is not defined
+- Required initial input 'requiredInput' is not defined for space 'TestSpace'. Please define it at experiment level or space level.

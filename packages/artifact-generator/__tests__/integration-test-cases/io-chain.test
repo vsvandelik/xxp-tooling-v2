@@ -1,0 +1,125 @@
+=== chainWorkflow.xxp ===
+workflow ChainWorkflow {
+    define task step1;
+    define task step2;
+    define task step3;
+    define data inputFile;
+    define data step1Out;
+    define data step2Out;
+    define data finalOut;
+    
+    START -> step1 -> step2 -> step3 -> END;
+    
+    configure task step1 {
+        implementation "step1.py";
+        input inputFile;
+        output step1Out;
+    }
+    
+    configure task step2 {
+        implementation "step2.py";
+        input step1Out;
+        output step2Out;
+    }
+    
+    configure task step3 {
+        implementation "step3.py";
+        input step2Out;
+        output finalOut;
+    }
+}
+
+=== io-chain.espace ===
+experiment IOChainTest {
+    space TestSpace of ChainWorkflow {
+        strategy gridsearch;
+    }
+    
+    control {
+        START -> TestSpace -> END;
+    }
+    
+    define data inputFile = "input.txt";
+}
+
+=== step1.py ===
+
+=== step2.py ===
+
+=== step3.py ===
+
+=== OUTPUT ===
+
+{
+  "experiment": "IOChainTest",
+  "version": "1.0",
+  "tasks": [
+    [
+      {
+        "taskId": "ChainWorkflow:step1",
+        "workflow": "ChainWorkflow",
+        "implementation": "step1.py",
+        "dynamicParameters": [],
+        "staticParameters": {},
+        "inputData": [
+          "inputFile"
+        ],
+        "outputData": [
+          "step1Out"
+        ]
+      },
+      {
+        "taskId": "ChainWorkflow:step2",
+        "workflow": "ChainWorkflow",
+        "implementation": "step2.py",
+        "dynamicParameters": [],
+        "staticParameters": {},
+        "inputData": [
+          "step1Out"
+        ],
+        "outputData": [
+          "step2Out"
+        ]
+      },
+      {
+        "taskId": "ChainWorkflow:step3",
+        "workflow": "ChainWorkflow",
+        "implementation": "step3.py",
+        "dynamicParameters": [],
+        "staticParameters": {},
+        "inputData": [
+          "step2Out"
+        ],
+        "outputData": [
+          "finalOut"
+        ]
+      }
+    ]
+  ],
+  "spaces": [
+    {
+      "spaceId": "TestSpace",
+      "tasksOrder": [
+        "ChainWorkflow:step1",
+        "ChainWorkflow:step2",
+        "ChainWorkflow:step3"
+      ],
+      "parameters": [
+        {}
+      ],
+      "inputData": {}
+    }
+  ],
+  "control": {
+    "START": "TestSpace",
+    "transitions": [
+      {
+        "from": "TestSpace",
+        "to": "END"
+      }
+    ]
+  },
+  "inputData": {
+    "inputFile": "input.txt"
+  }
+}

@@ -20,5 +20,8 @@ experiment NoControlFlowTest {
         strategy gridsearch;
     }
     
-    // No control block - should generate default control flow
+    // No control block - should throw an error
 }
+
+=== ERRORS ===
+- The control flow of the experiment `NoControlFlowTest` is not defined.
