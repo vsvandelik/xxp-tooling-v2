@@ -127,7 +127,7 @@ describe('ExperimentService', () => {
         control: { START: 'task1' },
       };
 
-      mockReadFileSync.mockReturnValue(JSON.stringify(mockArtifact));
+      mockReadFileSync.mockReturnValue(JSON.stringify(mockArtifact) as any);
       mockExperimentExecutor.getStatus.mockResolvedValue({
         runId: 'test-exp-id',
         experimentName: 'test-exp',
@@ -141,16 +141,28 @@ describe('ExperimentService', () => {
         },
       });
 
-      const terminateSpy = jest.spyOn(experimentService, 'terminateExperiment');
-      terminateSpy.mockResolvedValue(true);
+      // Make the executor.run never complete to keep experiment running
+      mockExperimentExecutor.run.mockImplementation(() => new Promise(() => {}));
 
       // Start an experiment to create active state
       await experimentService.startExperiment(artifactPath);
 
+      // Wait for experiment to be set up
+      await new Promise(resolve => setTimeout(resolve, 10));
+
+      // Verify we have an active experiment in running state
+      const activeExperiments = experimentService.getActiveExperiments();
+      expect(activeExperiments).toHaveLength(1);
+      expect(activeExperiments[0]?.status.status).toBe('running');
+
       // Now shutdown should terminate the active experiment
       await experimentService.shutdown();
 
-      expect(terminateSpy).toHaveBeenCalled();
+      // Verify termination was called
+      expect(mockExperimentExecutor.terminate).toHaveBeenCalledWith('test-exp', '1.0.0');
+
+      // Reset mock for other tests
+      mockExperimentExecutor.run.mockResolvedValue(mockRunResult);
     });
   });
 
@@ -256,6 +268,10 @@ describe('ExperimentService', () => {
       const experimentId = await experimentService.startExperiment(artifactPath);
 
       expect(experimentId).toMatch(/^exp_/);
+      
+      // Wait for the async runExperiment to complete
+      await new Promise(resolve => setTimeout(resolve, 10));
+      
       expect(mockExperimentExecutor.run).toHaveBeenCalledWith(
         artifactPath,
         expect.objectContaining({
@@ -276,21 +292,33 @@ describe('ExperimentService', () => {
     });
 
     it('should respect maxConcurrent limit', async () => {
+      // Make the executor.run never resolve to simulate running experiments
+      mockExperimentExecutor.run.mockImplementation(() => new Promise(() => {}));
+      
       // Start 3 experiments (up to the limit)
-      await experimentService.startExperiment(artifactPath);
-      await experimentService.startExperiment(artifactPath);
-      await experimentService.startExperiment(artifactPath);
+      const exp1 = await experimentService.startExperiment(artifactPath);
+      const exp2 = await experimentService.startExperiment(artifactPath);  
+      const exp3 = await experimentService.startExperiment(artifactPath);
+
+      // Wait for experiments to start  
+      await new Promise(resolve => setTimeout(resolve, 10));
 
       // Fourth should throw error
       await expect(experimentService.startExperiment(artifactPath)).rejects.toThrow(
         'Maximum concurrent experiments (3) reached'
       );
+
+      // Reset the mock for other tests
+      mockExperimentExecutor.run.mockResolvedValue(mockRunResult);
     });
 
     it('should handle progress callbacks', async () => {
       const onProgress = jest.fn();
       
       await experimentService.startExperiment(artifactPath, { onProgress });
+
+      // Wait for the async runExperiment to start
+      await new Promise(resolve => setTimeout(resolve, 10));
 
       // Simulate progress callback
       const activeExperiments = experimentService.getActiveExperiments();
@@ -301,6 +329,9 @@ describe('ExperimentService', () => {
       const onInputRequired = jest.fn();
       
       await experimentService.startExperiment(artifactPath, { onInputRequired });
+
+      // Wait for the async runExperiment to start 
+      await new Promise(resolve => setTimeout(resolve, 10));
 
       // The user input provider should be set up correctly
       expect(mockExperimentExecutor.run).toHaveBeenCalledWith(
@@ -317,6 +348,9 @@ describe('ExperimentService', () => {
       const onComplete = jest.fn();
       
       await experimentService.startExperiment(artifactPath, { onComplete });
+
+      // Wait for the async runExperiment to start
+      await new Promise(resolve => setTimeout(resolve, 10));
 
       expect(mockExperimentExecutor.run).toHaveBeenCalled();
     });
@@ -355,6 +389,10 @@ describe('ExperimentService', () => {
       mockExperimentExecutor.terminate.mockResolvedValue(true);
 
       const experimentId = await experimentService.startExperiment(artifactPath);
+      
+      // Wait for experiment to be set up
+      await new Promise(resolve => setTimeout(resolve, 10));
+      
       const result = await experimentService.terminateExperiment(experimentId);
 
       expect(result).toBe(true);
@@ -397,6 +435,10 @@ describe('ExperimentService', () => {
       mockExperimentExecutor.run.mockResolvedValue(mockRunResult);
 
       const experimentId = await experimentService.startExperiment(artifactPath);
+      
+      // Wait for experiment to be set up
+      await new Promise(resolve => setTimeout(resolve, 10));
+      
       const status = await experimentService.getExperimentStatus(experimentId);
 
       expect(status).toEqual(mockStatus);
@@ -444,11 +486,15 @@ describe('ExperimentService', () => {
         control: { START: 'task1' },
       };
 
-      mockReadFileSync.mockReturnValue(JSON.stringify(mockArtifact));
+      mockReadFileSync.mockReturnValue(JSON.stringify(mockArtifact) as any);
       mockExperimentExecutor.getStatus.mockResolvedValue(null);
       mockExperimentExecutor.run.mockResolvedValue(mockRunResult);
 
       await experimentService.startExperiment(artifactPath);
+      
+      // Wait for the async experiment setup
+      await new Promise(resolve => setTimeout(resolve, 10));
+      
       const experiments = experimentService.getActiveExperiments();
 
       expect(experiments).toHaveLength(1);
@@ -484,6 +530,10 @@ describe('ExperimentService', () => {
       mockRepository.getRun.mockResolvedValue(null);
 
       const experimentId = await experimentService.startExperiment(artifactPath);
+      
+      // Wait for experiment to be set up
+      await new Promise(resolve => setTimeout(resolve, 10));
+      
       const history = await experimentService.getExperimentHistory(experimentId);
 
       expect(history).toEqual([]);
@@ -502,26 +552,22 @@ describe('ExperimentService', () => {
 
       const promise = experimentService.generateArtifact('/path/to/espace.espace');
 
-      // Simulate successful process completion
+      // Simulate successful process completion immediately
       const stdout = 'Artifact generated successfully: /path/to/artifact.json';
-      mockProcess.stdout.on.mockImplementation((...args: any[]) => {
-        const [event, callback] = args;
-        if (event === 'data') {
-          callback(stdout);
-        }
-      });
-      mockProcess.stderr.on.mockImplementation((...args: any[]) => {
-        const [event, callback] = args;
-        if (event === 'data') {
-          callback('');
-        }
-      });
-      mockProcess.on.mockImplementation((...args: any[]) => {
-        const [event, callback] = args;
-        if (event === 'close') {
-          callback(0); // success
-        }
-      });
+      
+      // Trigger callbacks immediately  
+      setTimeout(() => {
+        // Simulate data events
+        const stdoutCallback = mockProcess.stdout.on.mock.calls.find(call => call[0] === 'data')?.[1] as Function;
+        if (stdoutCallback) stdoutCallback(stdout);
+        
+        const stderrCallback = mockProcess.stderr.on.mock.calls.find(call => call[0] === 'data')?.[1] as Function;
+        if (stderrCallback) stderrCallback('');
+        
+        // Simulate close event
+        const closeCallback = mockProcess.on.mock.calls.find(call => call[0] === 'close')?.[1] as Function;
+        if (closeCallback) closeCallback(0);
+      }, 0);
 
       const result = await promise;
 
@@ -547,26 +593,21 @@ describe('ExperimentService', () => {
 
       const promise = experimentService.generateArtifact('/path/to/espace.espace');
 
-      // Simulate process failure
+      // Simulate process failure immediately
       const stderr = 'Generation failed: Invalid ESPACE file';
-      mockProcess.stdout.on.mockImplementation((...args: any[]) => {
-        const [event, callback] = args;
-        if (event === 'data') {
-          callback('');
-        }
-      });
-      mockProcess.stderr.on.mockImplementation((...args: any[]) => {
-        const [event, callback] = args;
-        if (event === 'data') {
-          callback(stderr);
-        }
-      });
-      mockProcess.on.mockImplementation((...args: any[]) => {
-        const [event, callback] = args;
-        if (event === 'close') {
-          callback(1); // failure
-        }
-      });
+      
+      setTimeout(() => {
+        // Simulate data events
+        const stdoutCallback = mockProcess.stdout.on.mock.calls.find(call => call[0] === 'data')?.[1] as Function;
+        if (stdoutCallback) stdoutCallback('');
+        
+        const stderrCallback = mockProcess.stderr.on.mock.calls.find(call => call[0] === 'data')?.[1] as Function;
+        if (stderrCallback) stderrCallback(stderr);
+        
+        // Simulate close event with failure
+        const closeCallback = mockProcess.on.mock.calls.find(call => call[0] === 'close')?.[1] as Function;
+        if (closeCallback) closeCallback(1);
+      }, 0);
 
       const result = await promise;
 
@@ -585,13 +626,11 @@ describe('ExperimentService', () => {
 
       const promise = experimentService.generateArtifact('/path/to/espace.espace');
 
-      // Simulate spawn error
-      mockProcess.on.mockImplementation((...args: any[]) => {
-        const [event, callback] = args;
-        if (event === 'error') {
-          callback(new Error('Command not found'));
-        }
-      });
+      // Simulate spawn error immediately
+      setTimeout(() => {
+        const errorCallback = mockProcess.on.mock.calls.find(call => call[0] === 'error')?.[1] as Function;
+        if (errorCallback) errorCallback(new Error('Command not found'));
+      }, 0);
 
       const result = await promise;
 
