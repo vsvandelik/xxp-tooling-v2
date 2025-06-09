@@ -1,7 +1,5 @@
 import { Request, Response } from 'express';
 import multer from 'multer';
-import { WorkflowStorageService } from '../services/WorkflowStorageService.js';
-import { UserService } from '../services/UserService.js';
 import {
   ApiResponse,
   UploadWorkflowRequest,
@@ -10,8 +8,12 @@ import {
   WorkflowListResponse,
   TreeResponse,
   TagsResponse,
-  AuthorsResponse
-} from './ApiTypes.js';
+  AuthorsResponse,
+  WorkflowContent,
+  WorkflowSearchOptions,
+} from '@extremexp/workflow-repository';
+import { WorkflowStorageService } from '../services/WorkflowStorageService';
+import { UserService } from '../services/UserService.js';
 
 export class WorkflowController {
   private upload = multer({ storage: multer.memoryStorage() });
@@ -20,20 +22,21 @@ export class WorkflowController {
     private storageService: WorkflowStorageService,
     private userService: UserService
   ) {}
-
   listWorkflows = async (req: Request, res: Response): Promise<void> => {
     try {
       const query: SearchWorkflowRequest = req.query;
       const repository = this.storageService.getRepository();
-      
-      const workflows = await repository.search({
-        query: query.query,
-        tags: query.tags,
-        author: query.author,
-        path: query.path,
-        limit: query.limit ? parseInt(query.limit.toString()) : undefined,
-        offset: query.offset ? parseInt(query.offset.toString()) : undefined
-      });
+
+      const searchOptions: WorkflowSearchOptions = {
+        ...(query.query && { query: query.query }),
+        ...(query.tags && { tags: query.tags }),
+        ...(query.author && { author: query.author }),
+        ...(query.path && { path: query.path }),
+        ...(query.limit && { limit: parseInt(query.limit.toString()) }),
+        ...(query.offset && { offset: parseInt(query.offset.toString()) }),
+      };
+
+      const workflows = await repository.search(searchOptions);
 
       const response: ApiResponse<WorkflowListResponse> = {
         success: true,
@@ -41,30 +44,38 @@ export class WorkflowController {
           workflows: [...workflows],
           total: workflows.length,
           offset: query.offset ? parseInt(query.offset.toString()) : 0,
-          limit: query.limit ? parseInt(query.limit.toString()) : workflows.length
-        }
+          limit: query.limit ? parseInt(query.limit.toString()) : workflows.length,
+        },
       };
 
       res.json(response);
     } catch (error) {
       const response: ApiResponse = {
         success: false,
-        error: error instanceof Error ? error.message : 'Unknown error'
+        error: error instanceof Error ? error.message : 'Unknown error',
       };
       res.status(500).json(response);
     }
   };
-
   getWorkflow = async (req: Request, res: Response): Promise<void> => {
     try {
       const { id } = req.params;
+      if (!id) {
+        const response: ApiResponse = {
+          success: false,
+          error: 'Workflow ID is required',
+        };
+        res.status(400).json(response);
+        return;
+      }
+
       const repository = this.storageService.getRepository();
       const workflow = await repository.get(id);
 
       if (!workflow) {
         const response: ApiResponse = {
           success: false,
-          error: 'Workflow not found'
+          error: 'Workflow not found',
         };
         res.status(404).json(response);
         return;
@@ -72,28 +83,36 @@ export class WorkflowController {
 
       const response: ApiResponse = {
         success: true,
-        data: workflow.metadata
+        data: workflow.metadata,
       };
 
       res.json(response);
     } catch (error) {
       const response: ApiResponse = {
         success: false,
-        error: error instanceof Error ? error.message : 'Unknown error'
+        error: error instanceof Error ? error.message : 'Unknown error',
       };
       res.status(500).json(response);
     }
   };
-
   downloadWorkflow = async (req: Request, res: Response): Promise<void> => {
     try {
       const { id } = req.params;
+      if (!id) {
+        const response: ApiResponse = {
+          success: false,
+          error: 'Workflow ID is required',
+        };
+        res.status(400).json(response);
+        return;
+      }
+
       const zipBuffer = await this.storageService.createWorkflowZip(id);
 
       if (!zipBuffer) {
         const response: ApiResponse = {
           success: false,
-          error: 'Workflow not found'
+          error: 'Workflow not found',
         };
         res.status(404).json(response);
         return;
@@ -105,22 +124,38 @@ export class WorkflowController {
     } catch (error) {
       const response: ApiResponse = {
         success: false,
-        error: error instanceof Error ? error.message : 'Unknown error'
+        error: error instanceof Error ? error.message : 'Unknown error',
       };
       res.status(500).json(response);
     }
   };
-
   downloadWorkflowFile = async (req: Request, res: Response): Promise<void> => {
     try {
       const { id, '*': filePath } = req.params;
+      if (!id) {
+        const response: ApiResponse = {
+          success: false,
+          error: 'Workflow ID is required',
+        };
+        res.status(400).json(response);
+        return;
+      }
+      if (!filePath) {
+        const response: ApiResponse = {
+          success: false,
+          error: 'File path is required',
+        };
+        res.status(400).json(response);
+        return;
+      }
+
       const repository = this.storageService.getRepository();
       const content = await repository.getContent(id);
 
       if (!content) {
         const response: ApiResponse = {
           success: false,
-          error: 'Workflow not found'
+          error: 'Workflow not found',
         };
         res.status(404).json(response);
         return;
@@ -130,7 +165,7 @@ export class WorkflowController {
       if (!workflow) {
         const response: ApiResponse = {
           success: false,
-          error: 'Workflow metadata not found'
+          error: 'Workflow metadata not found',
         };
         res.status(404).json(response);
         return;
@@ -146,7 +181,7 @@ export class WorkflowController {
       if (!attachmentBuffer) {
         const response: ApiResponse = {
           success: false,
-          error: 'File not found'
+          error: 'File not found',
         };
         res.status(404).json(response);
         return;
@@ -157,7 +192,7 @@ export class WorkflowController {
     } catch (error) {
       const response: ApiResponse = {
         success: false,
-        error: error instanceof Error ? error.message : 'Unknown error'
+        error: error instanceof Error ? error.message : 'Unknown error',
       };
       res.status(500).json(response);
     }
@@ -170,7 +205,7 @@ export class WorkflowController {
         if (!req.file) {
           const response: ApiResponse = {
             success: false,
-            error: 'No file uploaded'
+            error: 'No file uploaded',
           };
           res.status(400).json(response);
           return;
@@ -180,18 +215,18 @@ export class WorkflowController {
         if (!extracted) {
           const response: ApiResponse = {
             success: false,
-            error: 'Invalid workflow file'
+            error: 'Invalid workflow file',
           };
           res.status(400).json(response);
           return;
         }
 
         const uploadRequest: UploadWorkflowRequest = req.body;
-        
-        if (!await this.storageService.validateWorkflowPath(uploadRequest.path)) {
+
+        if (!(await this.storageService.validateWorkflowPath(uploadRequest.path))) {
           const response: ApiResponse = {
             success: false,
-            error: 'Invalid workflow path'
+            error: 'Invalid workflow path',
           };
           res.status(400).json(response);
           return;
@@ -205,24 +240,24 @@ export class WorkflowController {
           version: uploadRequest.version,
           tags: uploadRequest.tags,
           path: uploadRequest.path,
-          mainFile: uploadRequest.mainFile
+          mainFile: uploadRequest.mainFile,
         });
 
         const response: ApiResponse = {
           success: true,
           data: metadata,
-          message: 'Workflow uploaded successfully'
+          message: 'Workflow uploaded successfully',
         };
 
         res.status(201).json(response);
       } catch (error) {
         const response: ApiResponse = {
           success: false,
-          error: error instanceof Error ? error.message : 'Unknown error'
+          error: error instanceof Error ? error.message : 'Unknown error',
         };
         res.status(500).json(response);
       }
-    }
+    },
   ];
 
   updateWorkflow = [
@@ -230,16 +265,25 @@ export class WorkflowController {
     async (req: Request, res: Response): Promise<void> => {
       try {
         const { id } = req.params;
+        if (!id) {
+          const response: ApiResponse = {
+            success: false,
+            error: 'Workflow ID is required',
+          };
+          res.status(400).json(response);
+          return;
+        }
+
         const updateRequest: UpdateWorkflowRequest = req.body;
         const repository = this.storageService.getRepository();
 
-        let content: any = undefined;
+        let content: WorkflowContent | undefined = undefined;
         if (req.file) {
           const extracted = await this.storageService.extractWorkflowFromZip(req.file.buffer);
           if (!extracted) {
             const response: ApiResponse = {
               success: false,
-              error: 'Invalid workflow file'
+              error: 'Invalid workflow file',
             };
             res.status(400).json(response);
             return;
@@ -250,7 +294,7 @@ export class WorkflowController {
           if (!existingContent) {
             const response: ApiResponse = {
               success: false,
-              error: 'Workflow not found'
+              error: 'Workflow not found',
             };
             res.status(404).json(response);
             return;
@@ -263,30 +307,38 @@ export class WorkflowController {
         const response: ApiResponse = {
           success: true,
           data: metadata,
-          message: 'Workflow updated successfully'
+          message: 'Workflow updated successfully',
         };
 
         res.json(response);
       } catch (error) {
         const response: ApiResponse = {
           success: false,
-          error: error instanceof Error ? error.message : 'Unknown error'
+          error: error instanceof Error ? error.message : 'Unknown error',
         };
         res.status(500).json(response);
       }
-    }
+    },
   ];
-
   deleteWorkflow = async (req: Request, res: Response): Promise<void> => {
     try {
       const { id } = req.params;
+      if (!id) {
+        const response: ApiResponse = {
+          success: false,
+          error: 'Workflow ID is required',
+        };
+        res.status(400).json(response);
+        return;
+      }
+
       const repository = this.storageService.getRepository();
       const deleted = await repository.delete(id);
 
       if (!deleted) {
         const response: ApiResponse = {
           success: false,
-          error: 'Workflow not found'
+          error: 'Workflow not found',
         };
         res.status(404).json(response);
         return;
@@ -294,14 +346,14 @@ export class WorkflowController {
 
       const response: ApiResponse = {
         success: true,
-        message: 'Workflow deleted successfully'
+        message: 'Workflow deleted successfully',
       };
 
       res.json(response);
     } catch (error) {
       const response: ApiResponse = {
         success: false,
-        error: error instanceof Error ? error.message : 'Unknown error'
+        error: error instanceof Error ? error.message : 'Unknown error',
       };
       res.status(500).json(response);
     }
@@ -315,14 +367,14 @@ export class WorkflowController {
 
       const response: ApiResponse<TreeResponse> = {
         success: true,
-        data: { tree }
+        data: { tree },
       };
 
       res.json(response);
     } catch (error) {
       const response: ApiResponse = {
         success: false,
-        error: error instanceof Error ? error.message : 'Unknown error'
+        error: error instanceof Error ? error.message : 'Unknown error',
       };
       res.status(500).json(response);
     }
@@ -334,14 +386,14 @@ export class WorkflowController {
 
       const response: ApiResponse<TagsResponse> = {
         success: true,
-        data: { tags }
+        data: { tags },
       };
 
       res.json(response);
     } catch (error) {
       const response: ApiResponse = {
         success: false,
-        error: error instanceof Error ? error.message : 'Unknown error'
+        error: error instanceof Error ? error.message : 'Unknown error',
       };
       res.status(500).json(response);
     }
@@ -353,32 +405,33 @@ export class WorkflowController {
 
       const response: ApiResponse<AuthorsResponse> = {
         success: true,
-        data: { authors }
+        data: { authors },
       };
 
       res.json(response);
     } catch (error) {
       const response: ApiResponse = {
         success: false,
-        error: error instanceof Error ? error.message : 'Unknown error'
+        error: error instanceof Error ? error.message : 'Unknown error',
       };
       res.status(500).json(response);
     }
   };
-
   searchWorkflows = async (req: Request, res: Response): Promise<void> => {
     try {
       const query: SearchWorkflowRequest = req.query;
       const repository = this.storageService.getRepository();
-      
-      const workflows = await repository.search({
-        query: query.query,
-        tags: query.tags,
-        author: query.author,
-        path: query.path,
-        limit: query.limit ? parseInt(query.limit.toString()) : undefined,
-        offset: query.offset ? parseInt(query.offset.toString()) : undefined
-      });
+
+      const searchOptions: WorkflowSearchOptions = {
+        ...(query.query && { query: query.query }),
+        ...(query.tags && { tags: query.tags }),
+        ...(query.author && { author: query.author }),
+        ...(query.path && { path: query.path }),
+        ...(query.limit && { limit: parseInt(query.limit.toString()) }),
+        ...(query.offset && { offset: parseInt(query.offset.toString()) }),
+      };
+
+      const workflows = await repository.search(searchOptions);
 
       const response: ApiResponse<WorkflowListResponse> = {
         success: true,
@@ -386,22 +439,24 @@ export class WorkflowController {
           workflows: [...workflows],
           total: workflows.length,
           offset: query.offset ? parseInt(query.offset.toString()) : 0,
-          limit: query.limit ? parseInt(query.limit.toString()) : workflows.length
-        }
+          limit: query.limit ? parseInt(query.limit.toString()) : workflows.length,
+        },
       };
 
       res.json(response);
     } catch (error) {
       const response: ApiResponse = {
         success: false,
-        error: error instanceof Error ? error.message : 'Unknown error'
+        error: error instanceof Error ? error.message : 'Unknown error',
       };
       res.status(500).json(response);
     }
   };
-
   getWorkflowOwner = async (req: Request): Promise<string | null> => {
     const { id } = req.params;
+    if (!id) {
+      return null;
+    }
     return await this.storageService.getWorkflowOwner(id);
   };
 }

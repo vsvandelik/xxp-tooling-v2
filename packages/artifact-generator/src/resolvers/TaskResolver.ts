@@ -21,7 +21,11 @@ export interface ResolvedTask {
 }
 
 export class TaskResolver {
-  resolve(experiment: ExperimentModel, workflows: WorkflowModel[], resolvedParameters?: ParameterCombination[]): Map<string, ResolvedTask> {
+  resolve(
+    experiment: ExperimentModel,
+    workflows: WorkflowModel[],
+    resolvedParameters?: ParameterCombination[]
+  ): Map<string, ResolvedTask> {
     const workflowMap = this.buildWorkflowMap(workflows);
     const tempTasks = new Map<string, ResolvedTask>();
 
@@ -195,7 +199,7 @@ export class TaskResolver {
     const dynamicParameters: string[] = [];
     const staticParameters: Record<string, ExpressionType> = {};
     const allParameters = new Map<string, ExpressionType>();
-    
+
     // Start with task's own parameters that have values
     for (const param of task.parameters) {
       if (param.value !== null) {
@@ -218,7 +222,7 @@ export class TaskResolver {
         }
       }
     }
-    
+
     // Check for remaining required parameters
     for (const param of task.parameters) {
       const isProvided = allParameters.has(param.name) || dynamicParameters.includes(param.name);

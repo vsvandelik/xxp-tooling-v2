@@ -26,7 +26,10 @@ export class ParameterResolver {
     return results;
   }
 
-  private generateParameterCombinations(space: SpaceModel, workflows?: WorkflowModel[]): Record<string, ExpressionType>[] {
+  private generateParameterCombinations(
+    space: SpaceModel,
+    workflows?: WorkflowModel[]
+  ): Record<string, ExpressionType>[] {
     const parameterSets = this.collectParameterSets(space, workflows);
 
     if (space.strategy === 'gridsearch') {
@@ -38,7 +41,10 @@ export class ParameterResolver {
     }
   }
 
-  private collectParameterSets(space: SpaceModel, workflows?: WorkflowModel[]): Map<string, ExpressionType[]> {
+  private collectParameterSets(
+    space: SpaceModel,
+    workflows?: WorkflowModel[]
+  ): Map<string, ExpressionType[]> {
     const parameterSets = new Map<string, ExpressionType[]>();
 
     // If workflows are provided, filter parameters to only include those used by tasks
@@ -67,16 +73,16 @@ export class ParameterResolver {
 
   private getUsedParameterNames(space: SpaceModel, workflows: WorkflowModel[]): Set<string> {
     const usedParameterNames = new Set<string>();
-    
+
     // Find the workflow for this space
     const workflow = workflows.find(w => w.name === space.workflowName);
     if (workflow) {
       // Resolve the complete inheritance chain first
       const workflowMap = new Map<string, WorkflowModel>();
       workflows.forEach(w => workflowMap.set(w.name, w));
-      
+
       const resolvedWorkflow = this.resolveWorkflowInheritance(workflow, workflowMap);
-      
+
       // Collect all parameter names defined by tasks in the resolved workflow
       for (const task of resolvedWorkflow.tasks) {
         for (const param of task.parameters) {
@@ -84,18 +90,21 @@ export class ParameterResolver {
         }
       }
     }
-    
+
     return usedParameterNames;
   }
 
-  private resolveWorkflowInheritance(workflow: WorkflowModel, workflowMap: Map<string, WorkflowModel>): WorkflowModel {
+  private resolveWorkflowInheritance(
+    workflow: WorkflowModel,
+    workflowMap: Map<string, WorkflowModel>
+  ): WorkflowModel {
     if (!workflow.parentWorkflow) {
-      // Apply configurations to workflows without parents  
+      // Apply configurations to workflows without parents
       const result = {
         ...workflow,
-        tasks: [...workflow.tasks]
+        tasks: [...workflow.tasks],
       };
-      
+
       for (const config of workflow.taskConfigurations) {
         const task = result.tasks.find(t => t.name === config.name);
         if (task) {
@@ -111,7 +120,7 @@ export class ParameterResolver {
           }
         }
       }
-      
+
       return result;
     }
 

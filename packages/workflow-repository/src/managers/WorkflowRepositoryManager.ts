@@ -1,6 +1,6 @@
 import { IWorkflowRepository, WorkflowTreeNode } from '../interfaces/IWorkflowRepository.js';
 import { WorkflowMetadata } from '../models/WorkflowMetadata.js';
-import { WorkflowItem, WorkflowContent } from '../models//WorkflowItem.js';
+import { WorkflowItem, WorkflowContent } from '../models/WorkflowItem.js';
 import { RepositoryConfig, WorkflowSearchOptions } from '../models/RepositoryConfig.js';
 import { LocalWorkflowRepository } from '../repositories/LocalWorkflowRepository.js';
 import { RemoteWorkflowRepository } from '../repositories/RemoteWorkflowRepository.js';
@@ -8,42 +8,44 @@ import { RemoteWorkflowRepository } from '../repositories/RemoteWorkflowReposito
 export class WorkflowRepositoryManager {
   private repositories = new Map<string, IWorkflowRepository>();
   private configs = new Map<string, RepositoryConfig>();
-  private defaultRepositoryName?: string;
+  private defaultRepositoryName: string | undefined = undefined;
 
   addRepository(config: RepositoryConfig): void {
     this.configs.set(config.name, config);
-    
+
     if (config.type === 'local') {
       this.repositories.set(config.name, new LocalWorkflowRepository(config.path));
     } else if (config.type === 'remote') {
       if (!config.url) {
         throw new Error('Remote repository requires URL');
       }
-      
+
       const authToken = config.authToken;
       let username: string | undefined;
       let password: string | undefined;
-      
+
       if (authToken && authToken.includes(':')) {
         [username, password] = authToken.split(':', 2);
       }
-      
-      this.repositories.set(config.name, new RemoteWorkflowRepository(config.url, username, password));
+
+      this.repositories.set(
+        config.name,
+        new RemoteWorkflowRepository(config.url, username, password)
+      );
     }
-    
+
     if (config.isDefault) {
       this.defaultRepositoryName = config.name;
     }
   }
-
   removeRepository(name: string): boolean {
     this.repositories.delete(name);
     this.configs.delete(name);
-    
+
     if (this.defaultRepositoryName === name) {
       this.defaultRepositoryName = undefined;
     }
-    
+
     return true;
   }
 
@@ -52,7 +54,7 @@ export class WorkflowRepositoryManager {
     if (!repositoryName) {
       return null;
     }
-    
+
     return this.repositories.get(repositoryName) || null;
   }
 
@@ -64,12 +66,16 @@ export class WorkflowRepositoryManager {
     return Array.from(this.configs.values());
   }
 
-  async listWorkflows(repositoryName?: string, path?: string, options?: WorkflowSearchOptions): Promise<readonly WorkflowMetadata[]> {
+  async listWorkflows(
+    repositoryName?: string,
+    path?: string,
+    options?: WorkflowSearchOptions
+  ): Promise<readonly WorkflowMetadata[]> {
     const repository = this.getRepository(repositoryName);
     if (!repository) {
       throw new Error(`Repository ${repositoryName || 'default'} not found`);
     }
-    
+
     return repository.list(path, options);
   }
 
@@ -78,13 +84,13 @@ export class WorkflowRepositoryManager {
     if (!repository) {
       throw new Error(`Repository ${repositoryName || 'default'} not found`);
     }
-    
+
     return repository.get(workflowId);
   }
 
   async uploadWorkflow(
-    path: string, 
-    content: WorkflowContent, 
+    path: string,
+    content: WorkflowContent,
     metadata: Omit<WorkflowMetadata, 'id' | 'createdAt' | 'modifiedAt' | 'hasAttachments'>,
     repositoryName?: string
   ): Promise<WorkflowMetadata> {
@@ -92,7 +98,7 @@ export class WorkflowRepositoryManager {
     if (!repository) {
       throw new Error(`Repository ${repositoryName || 'default'} not found`);
     }
-    
+
     return repository.upload(path, content, metadata);
   }
 
@@ -106,7 +112,7 @@ export class WorkflowRepositoryManager {
     if (!repository) {
       throw new Error(`Repository ${repositoryName || 'default'} not found`);
     }
-    
+
     return repository.update(workflowId, content, metadata);
   }
 
@@ -115,16 +121,19 @@ export class WorkflowRepositoryManager {
     if (!repository) {
       throw new Error(`Repository ${repositoryName || 'default'} not found`);
     }
-    
+
     return repository.delete(workflowId);
   }
 
-  async searchWorkflows(options: WorkflowSearchOptions, repositoryName?: string): Promise<readonly WorkflowMetadata[]> {
+  async searchWorkflows(
+    options: WorkflowSearchOptions,
+    repositoryName?: string
+  ): Promise<readonly WorkflowMetadata[]> {
     const repository = this.getRepository(repositoryName);
     if (!repository) {
       throw new Error(`Repository ${repositoryName || 'default'} not found`);
     }
-    
+
     return repository.search(options);
   }
 
@@ -133,13 +142,15 @@ export class WorkflowRepositoryManager {
     if (!repository) {
       throw new Error(`Repository ${repositoryName || 'default'} not found`);
     }
-    
+
     return repository.getTreeStructure(path);
   }
 
-  async searchAllRepositories(options: WorkflowSearchOptions): Promise<Map<string, readonly WorkflowMetadata[]>> {
+  async searchAllRepositories(
+    options: WorkflowSearchOptions
+  ): Promise<Map<string, readonly WorkflowMetadata[]>> {
     const results = new Map<string, readonly WorkflowMetadata[]>();
-    
+
     for (const [name, repository] of this.repositories) {
       try {
         const workflows = await repository.search(options);
@@ -149,7 +160,7 @@ export class WorkflowRepositoryManager {
         results.set(name, []);
       }
     }
-    
+
     return results;
   }
 }

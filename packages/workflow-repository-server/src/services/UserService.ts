@@ -1,9 +1,16 @@
 import * as bcrypt from 'bcrypt';
 import * as jwt from 'jsonwebtoken';
-import { User, UserCredentials, AuthToken, CreateUserRequest, UserRole } from '../../../../workflow-repository-server/src/models/User.js';
+import {
+  User,
+  UserCredentials,
+  AuthToken,
+  CreateUserRequest,
+  UserRole,
+} from '@extremexp/workflow-repository';
 
 interface UserData extends User {
   passwordHash: string;
+  lastLogin?: Date; // Make lastLogin mutable in UserData
 }
 
 export class UserService {
@@ -28,12 +35,18 @@ export class UserService {
       email: request.email,
       role: request.role || 'user',
       createdAt: new Date(),
-      passwordHash
+      passwordHash,
     };
-
     this.users.set(request.username, user);
-    
-    const { passwordHash: _, ...publicUser } = user;
+
+    const publicUser: User = {
+      id: user.id,
+      username: user.username,
+      email: user.email,
+      role: user.role,
+      createdAt: user.createdAt,
+      ...(user.lastLogin && { lastLogin: user.lastLogin }),
+    };
     return publicUser;
   }
 
@@ -47,7 +60,6 @@ export class UserService {
     if (!isValid) {
       return null;
     }
-
     user.lastLogin = new Date();
     this.users.set(user.username, user);
 
@@ -60,14 +72,20 @@ export class UserService {
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + 7);
 
-    const { passwordHash: _, ...publicUser } = user;
+    const publicUser: User = {
+      id: user.id,
+      username: user.username,
+      email: user.email,
+      role: user.role,
+      createdAt: user.createdAt,
+      lastLogin: user.lastLogin,
+    };
     return {
       token,
       expiresAt,
-      user: publicUser
+      user: publicUser,
     };
   }
-
   verifyToken(token: string): User | null {
     try {
       const payload = jwt.verify(token, this.jwtSecret) as {
@@ -81,35 +99,55 @@ export class UserService {
         return null;
       }
 
-      const { passwordHash: _, ...publicUser } = user;
+      const publicUser: User = {
+        id: user.id,
+        username: user.username,
+        email: user.email,
+        role: user.role,
+        createdAt: user.createdAt,
+        ...(user.lastLogin && { lastLogin: user.lastLogin }),
+      };
       return publicUser;
     } catch {
       return null;
     }
   }
-
   getUser(username: string): User | null {
     const user = this.users.get(username);
     if (!user) {
       return null;
     }
 
-    const { passwordHash: _, ...publicUser } = user;
+    const publicUser: User = {
+      id: user.id,
+      username: user.username,
+      email: user.email,
+      role: user.role,
+      createdAt: user.createdAt,
+      ...(user.lastLogin && { lastLogin: user.lastLogin }),
+    };
     return publicUser;
   }
-
   listUsers(): User[] {
-    return Array.from(this.users.values()).map(user => {
-      const { passwordHash: _, ...publicUser } = user;
-      return publicUser;
-    });
+    return Array.from(this.users.values()).map(user => ({
+      id: user.id,
+      username: user.username,
+      email: user.email,
+      role: user.role,
+      createdAt: user.createdAt,
+      ...(user.lastLogin && { lastLogin: user.lastLogin }),
+    }));
   }
 
   deleteUser(username: string): boolean {
     return this.users.delete(username);
   }
 
-  canAccess(user: User | null, resourceOwner: string, operation: 'read' | 'write' | 'delete'): boolean {
+  canAccess(
+    user: User | null,
+    resourceOwner: string,
+    operation: 'read' | 'write' | 'delete'
+  ): boolean {
     if (operation === 'read') {
       return true;
     }
@@ -132,7 +170,7 @@ export class UserService {
       email: 'admin@example.com',
       role: 'admin',
       createdAt: new Date(),
-      passwordHash: bcrypt.hashSync('admin123', this.saltRounds)
+      passwordHash: bcrypt.hashSync('admin123', this.saltRounds),
     };
 
     this.users.set('admin', adminUser);

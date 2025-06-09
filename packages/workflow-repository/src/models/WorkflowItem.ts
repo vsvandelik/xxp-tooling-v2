@@ -1,5 +1,5 @@
-import { WorkflowAttachment } from "./WorkflowAttachment.js";
-import { WorkflowMetadata } from "./WorkflowMetadata.js";
+import { WorkflowAttachment } from './WorkflowAttachment.js';
+import { WorkflowMetadata } from './WorkflowMetadata.js';
 
 export interface WorkflowItem {
   readonly metadata: WorkflowMetadata;

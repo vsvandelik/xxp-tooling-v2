@@ -1,47 +1,35 @@
 {
-    "name": "@extremexp/workflow-repository",
-    "version": "1.0.0",
-    "description": "A repository for managing workflows in Extremexp",
-    "main": "./dist/server.js",
-    "types": "./dist/server.d.ts",
-    "type": "module",
-
-    "scripts": {
-        "build": "tsc --build",
-        "build:watch": "tsc --build --watch",
-        "clean": "tsc --build --clean",
-        "test": "jest",
-        "test:watch": "jest --watch",
-        "test:coverage": "jest --coverage"
-    },
-    "files": [
-        "dist/**/*",
-        "src/**/*"
-    ],
-    "keywords": [
-        "extremexp",
-        "artifact",
-        "generator"
-    ],
-    "author": "",
-    "license": "MIT",
-    "dependencies": {
-        "@extremexp/workflow-repository": "^1.0.0",
-        "express": "^4.18.2",
-        "cors": "^2.8.5",
-        "multer": "^1.4.5",
-        "bcrypt": "^5.1.1",
-        "jsonwebtoken": "^9.0.2",
-        "jszip": "^3.10.1"
-    },
-    "devDependencies": {
-        "@types/express": "^4.17.21",
-        "@types/cors": "^2.8.17",
-        "@types/multer": "^1.4.11",
-        "@types/bcrypt": "^5.0.2",
-        "@types/jsonwebtoken": "^9.0.5",
-        "@types/node": "^20.12.7",
-        "tsx": "^4.7.1",
-        "typescript": "^5.8.3"
-    }
+  "name": "@extremexp/workflow-repository-server",
+  "version": "1.0.0",
+  "description": "Server for managing workflow repositories in ExtremeXP",
+  "main": "./dist/server.js",
+  "types": "./dist/server.d.ts",
+  "type": "module",
+  "bin": {
+    "workflow-repository-server": "./dist/server.js"
+  },
+  "scripts": {
+    "build": "tsc --build",
+    "build:watch": "tsc --build --watch",
+    "clean": "tsc --build --clean",
+    "start": "node dist/server.js",
+    "dev": "tsx watch src/server.ts"
+  },
+  "dependencies": {
+    "@extremexp/workflow-repository": "^1.0.0",
+    "express": "^4.18.2",
+    "cors": "^2.8.5",
+    "bcrypt": "^5.1.1",
+    "jsonwebtoken": "^9.0.2"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.21",
+    "@types/cors": "^2.8.17",
+    "@types/multer": "^1.4.11",
+    "@types/bcrypt": "^5.0.2",
+    "@types/jsonwebtoken": "^9.0.5",
+    "@types/node": "^20.12.7",
+    "tsx": "^4.7.1",
+    "typescript": "^5.8.3"
+  }
 }

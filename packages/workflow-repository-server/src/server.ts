@@ -1,10 +1,10 @@
-import { WorkflowRepositoryServer, ServerConfig } from './WorkflowRepositoryServer.js';
+import { WorkflowRepositoryServer, ServerConfig } from './server/WorkflowRepositoryServer.js';
 
 const config: ServerConfig = {
-  port: parseInt(process.env.PORT || '3001'),
-  storagePath: process.env.STORAGE_PATH || './workflow-repository',
-  jwtSecret: process.env.JWT_SECRET || 'your-secret-key-change-in-production',
-  corsOrigin: process.env.CORS_ORIGIN || '*'
+  port: parseInt(process.env['PORT'] || '3001'),
+  storagePath: process.env['STORAGE_PATH'] || './workflow-repository',
+  jwtSecret: process.env['JWT_SECRET'] || 'your-secret-key-change-in-production',
+  corsOrigin: process.env['CORS_ORIGIN'] || '*',
 };
 
 async function startServer(): Promise<void> {
@@ -12,13 +12,13 @@ async function startServer(): Promise<void> {
   console.log('Configuration:', {
     port: config.port,
     storagePath: config.storagePath,
-    corsOrigin: config.corsOrigin
+    corsOrigin: config.corsOrigin,
   });
 
   try {
     const server = new WorkflowRepositoryServer(config);
     await server.start();
-    
+
     console.log('🚀 Server started successfully!');
     console.log(`📂 Storage path: ${config.storagePath}`);
     console.log(`🌐 Server URL: http://localhost:${config.port}`);

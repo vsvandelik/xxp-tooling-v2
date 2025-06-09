@@ -17,7 +17,7 @@ export class ArtifactModel {
       tasks: this.tasks.map(taskGroup => taskGroup.map(task => task.toJSON())),
       spaces: this.spaces.map(space => space.toJSON()),
       control: this.control.toJSON(),
-      inputData: this.inputData
+      inputData: this.inputData,
     };
   }
 }
@@ -41,7 +41,7 @@ export class TaskDefinition {
       dynamicParameters: [...this.dynamicParameters],
       staticParameters: { ...this.staticParameters },
       inputData: [...this.inputData],
-      outputData: [...this.outputData]
+      outputData: [...this.outputData],
     };
   }
 }
@@ -59,7 +59,7 @@ export class SpaceDefinition {
       spaceId: this.spaceId,
       tasksOrder: [...this.tasksOrder],
       parameters: this.parameters.map(param => ({ ...param })),
-      inputData: { ...this.inputData }
+      inputData: { ...this.inputData },
     };
   }
 }
@@ -73,7 +73,7 @@ export class ControlDefinition {
   toJSON(): any {
     return {
       START: this.START,
-      transitions: this.transitions.map(transition => transition.toJSON())
+      transitions: this.transitions.map(transition => transition.toJSON()),
     };
   }
 }
@@ -89,7 +89,7 @@ export class TransitionDefinition {
     return {
       from: this.from,
       to: this.to,
-      ...(this.condition !== undefined && { condition: this.condition })
+      ...(this.condition !== undefined && { condition: this.condition }),
     };
   }
 }

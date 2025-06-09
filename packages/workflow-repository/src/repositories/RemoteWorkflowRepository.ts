@@ -3,16 +3,16 @@ import { WorkflowMetadata } from '../models/WorkflowMetadata.js';
 import { WorkflowItem, WorkflowContent } from '../models/WorkflowItem.js';
 import { WorkflowSearchOptions } from '../models/RepositoryConfig.js';
 import { WorkflowAttachment } from '../models/WorkflowAttachment.js';
-import { 
-  ApiResponse, 
-  LoginRequest, 
+import {
+  ApiResponse,
+  LoginRequest,
   LoginResponse,
   UploadWorkflowRequest,
   UpdateWorkflowRequest,
   WorkflowListResponse,
   TreeResponse,
   TagsResponse,
-  AuthorsResponse
+  AuthorsResponse,
 } from '../interfaces/ApiTypes.js';
 
 export class RemoteWorkflowRepository implements IWorkflowRepository {
@@ -32,19 +32,19 @@ export class RemoteWorkflowRepository implements IWorkflowRepository {
     try {
       const loginRequest: LoginRequest = {
         username: this.username,
-        password: this.password
+        password: this.password,
       };
 
       const response = await fetch(`${this.baseUrl}/auth/login`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
         },
-        body: JSON.stringify(loginRequest)
+        body: JSON.stringify(loginRequest),
       });
 
       const result: ApiResponse<LoginResponse> = await response.json();
-      
+
       if (result.success && result.data) {
         this.authToken = result.data.token;
         return true;
@@ -58,7 +58,7 @@ export class RemoteWorkflowRepository implements IWorkflowRepository {
 
   async list(path?: string, options?: WorkflowSearchOptions): Promise<readonly WorkflowMetadata[]> {
     const params = new URLSearchParams();
-    
+
     if (path) params.set('path', path);
     if (options?.query) params.set('query', options.query);
     if (options?.author) params.set('author', options.author);
@@ -68,7 +68,7 @@ export class RemoteWorkflowRepository implements IWorkflowRepository {
 
     const response = await this.makeRequest(`/workflows?${params}`);
     const result: ApiResponse<WorkflowListResponse> = await response.json();
-    
+
     if (!result.success || !result.data) {
       throw new Error(result.error || 'Failed to list workflows');
     }
@@ -80,7 +80,7 @@ export class RemoteWorkflowRepository implements IWorkflowRepository {
     try {
       const metadataResponse = await this.makeRequest(`/workflows/${id}`);
       const metadataResult: ApiResponse<WorkflowMetadata> = await metadataResponse.json();
-      
+
       if (!metadataResult.success || !metadataResult.data) {
         return null;
       }
@@ -95,7 +95,7 @@ export class RemoteWorkflowRepository implements IWorkflowRepository {
       return {
         metadata: metadataResult.data,
         mainFileContent: content.mainFile,
-        attachments
+        attachments,
       };
     } catch {
       return null;
@@ -105,7 +105,7 @@ export class RemoteWorkflowRepository implements IWorkflowRepository {
   async getContent(id: string): Promise<WorkflowContent | null> {
     try {
       const response = await this.makeRequest(`/workflows/${id}/content`);
-      
+
       if (!response.ok) {
         return null;
       }
@@ -113,7 +113,7 @@ export class RemoteWorkflowRepository implements IWorkflowRepository {
       const arrayBuffer = await response.arrayBuffer();
       const JSZip = await import('jszip');
       const zip = await JSZip.default.loadAsync(arrayBuffer);
-      
+
       const manifestFile = zip.file('workflow.json');
       if (!manifestFile) {
         return null;
@@ -128,7 +128,7 @@ export class RemoteWorkflowRepository implements IWorkflowRepository {
       }
 
       const attachments = new Map<string, Buffer>();
-      
+
       for (const [fileName, file] of Object.entries(zip.files)) {
         if (fileName !== 'workflow.json' && fileName !== metadata.mainFile && !file.dir) {
           const content = await file.async('nodebuffer');
@@ -138,7 +138,7 @@ export class RemoteWorkflowRepository implements IWorkflowRepository {
 
       return {
         mainFile: mainFileContent,
-        attachments
+        attachments,
       };
     } catch {
       return null;
@@ -146,17 +146,17 @@ export class RemoteWorkflowRepository implements IWorkflowRepository {
   }
 
   async upload(
-    path: string, 
-    content: WorkflowContent, 
+    path: string,
+    content: WorkflowContent,
     metadata: Omit<WorkflowMetadata, 'id' | 'createdAt' | 'modifiedAt' | 'hasAttachments'>
   ): Promise<WorkflowMetadata> {
     await this.ensureAuthenticated();
 
     const zipBuffer = await this.createWorkflowZip(content, metadata);
     const formData = new FormData();
-    
+
     formData.append('workflow', new Blob([zipBuffer]), 'workflow.zip');
-    
+
     const uploadRequest: UploadWorkflowRequest = {
       path,
       name: metadata.name,
@@ -164,7 +164,7 @@ export class RemoteWorkflowRepository implements IWorkflowRepository {
       author: metadata.author,
       version: metadata.version,
       tags: [...metadata.tags],
-      mainFile: metadata.mainFile
+      mainFile: metadata.mainFile,
     };
 
     Object.entries(uploadRequest).forEach(([key, value]) => {
@@ -178,11 +178,11 @@ export class RemoteWorkflowRepository implements IWorkflowRepository {
     const response = await this.makeRequest('/workflows', {
       method: 'POST',
       body: formData,
-      skipContentType: true
+      skipContentType: true,
     });
 
     const result: ApiResponse<WorkflowMetadata> = await response.json();
-    
+
     if (!result.success || !result.data) {
       throw new Error(result.error || 'Failed to upload workflow');
     }
@@ -191,22 +191,22 @@ export class RemoteWorkflowRepository implements IWorkflowRepository {
   }
 
   async update(
-    id: string, 
-    content: WorkflowContent, 
+    id: string,
+    content: WorkflowContent,
     metadata: Partial<Omit<WorkflowMetadata, 'id' | 'createdAt' | 'modifiedAt' | 'hasAttachments'>>
   ): Promise<WorkflowMetadata> {
     await this.ensureAuthenticated();
-
     const zipBuffer = await this.createWorkflowZip(content, metadata);
     const formData = new FormData();
-    
+
     formData.append('workflow', new Blob([zipBuffer]), 'workflow.zip');
-    
-    const updateRequest: UpdateWorkflowRequest = {};
-    if (metadata.name) updateRequest.name = metadata.name;
-    if (metadata.description) updateRequest.description = metadata.description;
-    if (metadata.version) updateRequest.version = metadata.version;
-    if (metadata.tags) updateRequest.tags = [...metadata.tags];
+
+    const updateRequest: UpdateWorkflowRequest = {
+      ...(metadata.name && { name: metadata.name }),
+      ...(metadata.description && { description: metadata.description }),
+      ...(metadata.version && { version: metadata.version }),
+      ...(metadata.tags && { tags: [...metadata.tags] }),
+    };
 
     Object.entries(updateRequest).forEach(([key, value]) => {
       if (Array.isArray(value)) {
@@ -219,11 +219,11 @@ export class RemoteWorkflowRepository implements IWorkflowRepository {
     const response = await this.makeRequest(`/workflows/${id}`, {
       method: 'PUT',
       body: formData,
-      skipContentType: true
+      skipContentType: true,
     });
 
     const result: ApiResponse<WorkflowMetadata> = await response.json();
-    
+
     if (!result.success || !result.data) {
       throw new Error(result.error || 'Failed to update workflow');
     }
@@ -236,7 +236,7 @@ export class RemoteWorkflowRepository implements IWorkflowRepository {
 
     try {
       const response = await this.makeRequest(`/workflows/${id}`, {
-        method: 'DELETE'
+        method: 'DELETE',
       });
 
       const result: ApiResponse = await response.json();
@@ -257,7 +257,7 @@ export class RemoteWorkflowRepository implements IWorkflowRepository {
 
   async search(options: WorkflowSearchOptions): Promise<readonly WorkflowMetadata[]> {
     const params = new URLSearchParams();
-    
+
     if (options.query) params.set('query', options.query);
     if (options.author) params.set('author', options.author);
     if (options.tags) params.set('tags', options.tags.join(','));
@@ -267,7 +267,7 @@ export class RemoteWorkflowRepository implements IWorkflowRepository {
 
     const response = await this.makeRequest(`/search?${params}`);
     const result: ApiResponse<WorkflowListResponse> = await response.json();
-    
+
     if (!result.success || !result.data) {
       throw new Error(result.error || 'Failed to search workflows');
     }
@@ -279,7 +279,7 @@ export class RemoteWorkflowRepository implements IWorkflowRepository {
     const url = path ? `/tree/${path}` : '/tree';
     const response = await this.makeRequest(url);
     const result: ApiResponse<TreeResponse> = await response.json();
-    
+
     if (!result.success || !result.data) {
       throw new Error(result.error || 'Failed to get tree structure');
     }
@@ -290,7 +290,7 @@ export class RemoteWorkflowRepository implements IWorkflowRepository {
   async getTags(): Promise<string[]> {
     const response = await this.makeRequest('/tags');
     const result: ApiResponse<TagsResponse> = await response.json();
-    
+
     if (!result.success || !result.data) {
       throw new Error(result.error || 'Failed to get tags');
     }
@@ -301,7 +301,7 @@ export class RemoteWorkflowRepository implements IWorkflowRepository {
   async getAuthors(): Promise<string[]> {
     const response = await this.makeRequest('/authors');
     const result: ApiResponse<AuthorsResponse> = await response.json();
-    
+
     if (!result.success || !result.data) {
       throw new Error(result.error || 'Failed to get authors');
     }
@@ -310,11 +310,11 @@ export class RemoteWorkflowRepository implements IWorkflowRepository {
   }
 
   private async makeRequest(
-    endpoint: string, 
+    endpoint: string,
     options: RequestInit & { skipContentType?: boolean } = {}
   ): Promise<Response> {
     const headers: Record<string, string> = {
-      ...(options.skipContentType ? {} : { 'Content-Type': 'application/json' })
+      ...(options.skipContentType ? {} : { 'Content-Type': 'application/json' }),
     };
 
     if (this.authToken) {
@@ -325,8 +325,8 @@ export class RemoteWorkflowRepository implements IWorkflowRepository {
       ...options,
       headers: {
         ...headers,
-        ...options.headers
-      }
+        ...options.headers,
+      },
     });
 
     if (response.status === 401 && this.username && this.password) {
@@ -337,8 +337,8 @@ export class RemoteWorkflowRepository implements IWorkflowRepository {
           ...options,
           headers: {
             ...headers,
-            ...options.headers
-          }
+            ...options.headers,
+          },
         });
       }
     }
@@ -358,27 +358,37 @@ export class RemoteWorkflowRepository implements IWorkflowRepository {
   private async createWorkflowZip(content: WorkflowContent, metadata: any): Promise<Buffer> {
     const JSZip = await import('jszip');
     const zip = new JSZip.default();
-    
+
     zip.file(metadata.mainFile || 'main.xxp', content.mainFile);
-    
+
     for (const [fileName, fileContent] of content.attachments) {
       zip.file(fileName, fileContent);
     }
 
-    zip.file('workflow.json', JSON.stringify({
-      name: metadata.name,
-      description: metadata.description,
-      author: metadata.author,
-      version: metadata.version,
-      tags: metadata.tags,
-      mainFile: metadata.mainFile || 'main.xxp'
-    }, null, 2));
+    zip.file(
+      'workflow.json',
+      JSON.stringify(
+        {
+          name: metadata.name,
+          description: metadata.description,
+          author: metadata.author,
+          version: metadata.version,
+          tags: metadata.tags,
+          mainFile: metadata.mainFile || 'main.xxp',
+        },
+        null,
+        2
+      )
+    );
 
     const buffer = await zip.generateAsync({ type: 'nodebuffer' });
     return buffer;
   }
 
-  private async loadAttachments(workflowId: string, metadata: WorkflowMetadata): Promise<readonly WorkflowAttachment[]> {
+  private async loadAttachments(
+    workflowId: string,
+    metadata: WorkflowMetadata
+  ): Promise<readonly WorkflowAttachment[]> {
     if (!metadata.hasAttachments) {
       return [];
     }
@@ -390,7 +400,7 @@ export class RemoteWorkflowRepository implements IWorkflowRepository {
       }
 
       const attachments: WorkflowAttachment[] = [];
-      
+
       for (const [fileName] of content.attachments) {
         attachments.push({
           name: fileName,
@@ -398,7 +408,7 @@ export class RemoteWorkflowRepository implements IWorkflowRepository {
           size: content.attachments.get(fileName)?.length || 0,
           mimeType: this.getMimeType(fileName),
           createdAt: metadata.createdAt,
-          modifiedAt: metadata.modifiedAt
+          modifiedAt: metadata.modifiedAt,
         });
       }
 
@@ -411,16 +421,16 @@ export class RemoteWorkflowRepository implements IWorkflowRepository {
   private getMimeType(fileName: string): string {
     const ext = fileName.split('.').pop()?.toLowerCase();
     const mimeTypes: Record<string, string> = {
-      'py': 'text/x-python',
-      'js': 'application/javascript',
-      'ts': 'application/typescript',
-      'json': 'application/json',
-      'txt': 'text/plain',
-      'md': 'text/markdown',
-      'xxp': 'application/x-xxp',
-      'espace': 'application/x-espace'
+      py: 'text/x-python',
+      js: 'application/javascript',
+      ts: 'application/typescript',
+      json: 'application/json',
+      txt: 'text/plain',
+      md: 'text/markdown',
+      xxp: 'application/x-xxp',
+      espace: 'application/x-espace',
     };
-    
+
     return mimeTypes[ext || ''] || 'application/octet-stream';
   }
 }

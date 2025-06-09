@@ -19,16 +19,19 @@ interface WorkflowManifest {
 export class LocalWorkflowRepository implements IWorkflowRepository {
   constructor(private readonly basePath: string) {}
 
-  async list(workflowPath?: string, options?: WorkflowSearchOptions): Promise<readonly WorkflowMetadata[]> {
+  async list(
+    workflowPath?: string,
+    options?: WorkflowSearchOptions
+  ): Promise<readonly WorkflowMetadata[]> {
     const searchPath = workflowPath ? path.join(this.basePath, workflowPath) : this.basePath;
     const workflows: WorkflowMetadata[] = [];
-    
+
     await this.collectWorkflows(searchPath, workflows);
-    
+
     if (options) {
       return this.filterWorkflows(workflows, options);
     }
-    
+
     return workflows;
   }
 
@@ -48,7 +51,7 @@ export class LocalWorkflowRepository implements IWorkflowRepository {
     return {
       metadata,
       mainFileContent: content.mainFile,
-      attachments
+      attachments,
     };
   }
 
@@ -60,11 +63,11 @@ export class LocalWorkflowRepository implements IWorkflowRepository {
 
     const workflowDir = path.join(this.basePath, metadata.path);
     const mainFilePath = path.join(workflowDir, metadata.mainFile);
-    
+
     try {
       const mainFile = await fs.readFile(mainFilePath, 'utf-8');
       const attachments = new Map<string, Buffer>();
-      
+
       const files = await fs.readdir(workflowDir);
       for (const file of files) {
         if (file !== metadata.mainFile && file !== 'workflow.json') {
@@ -83,10 +86,14 @@ export class LocalWorkflowRepository implements IWorkflowRepository {
     }
   }
 
-  async upload(workflowPath: string, content: WorkflowContent, metadata: Omit<WorkflowMetadata, 'id' | 'createdAt' | 'modifiedAt' | 'hasAttachments'>): Promise<WorkflowMetadata> {
+  async upload(
+    workflowPath: string,
+    content: WorkflowContent,
+    metadata: Omit<WorkflowMetadata, 'id' | 'createdAt' | 'modifiedAt' | 'hasAttachments'>
+  ): Promise<WorkflowMetadata> {
     const id = this.generateId(workflowPath, metadata.name);
     const workflowDir = path.join(this.basePath, workflowPath);
-    
+
     await fs.mkdir(workflowDir, { recursive: true });
 
     const mainFilePath = path.join(workflowDir, metadata.mainFile);
@@ -104,22 +111,26 @@ export class LocalWorkflowRepository implements IWorkflowRepository {
       createdAt: now,
       modifiedAt: now,
       path: workflowPath,
-      hasAttachments: content.attachments.size > 0
+      hasAttachments: content.attachments.size > 0,
     };
 
     await this.saveManifest(workflowDir, fullMetadata);
-    
+
     return fullMetadata;
   }
 
-  async update(id: string, content: WorkflowContent, metadata: Partial<Omit<WorkflowMetadata, 'id' | 'createdAt' | 'modifiedAt' | 'hasAttachments'>>): Promise<WorkflowMetadata> {
+  async update(
+    id: string,
+    content: WorkflowContent,
+    metadata: Partial<Omit<WorkflowMetadata, 'id' | 'createdAt' | 'modifiedAt' | 'hasAttachments'>>
+  ): Promise<WorkflowMetadata> {
     const existingMetadata = await this.findWorkflowById(id);
     if (!existingMetadata) {
       throw new Error(`Workflow with id ${id} not found`);
     }
 
     const workflowDir = path.join(this.basePath, existingMetadata.path);
-    
+
     if (content.mainFile) {
       const mainFilePath = path.join(workflowDir, existingMetadata.mainFile);
       await fs.writeFile(mainFilePath, content.mainFile, 'utf-8');
@@ -141,11 +152,11 @@ export class LocalWorkflowRepository implements IWorkflowRepository {
       ...existingMetadata,
       ...metadata,
       modifiedAt: new Date(),
-      hasAttachments: content.attachments.size > 0
+      hasAttachments: content.attachments.size > 0,
     };
 
     await this.saveManifest(workflowDir, updatedMetadata);
-    
+
     return updatedMetadata;
   }
 
@@ -156,7 +167,7 @@ export class LocalWorkflowRepository implements IWorkflowRepository {
     }
 
     const workflowDir = path.join(this.basePath, metadata.path);
-    
+
     try {
       await fs.rm(workflowDir, { recursive: true, force: true });
       return true;
@@ -183,13 +194,13 @@ export class LocalWorkflowRepository implements IWorkflowRepository {
   private async collectWorkflows(searchPath: string, workflows: WorkflowMetadata[]): Promise<void> {
     try {
       const entries = await fs.readdir(searchPath, { withFileTypes: true });
-      
+
       for (const entry of entries) {
         const fullPath = path.join(searchPath, entry.name);
-        
+
         if (entry.isDirectory()) {
           const manifestPath = path.join(fullPath, 'workflow.json');
-          
+
           try {
             await fs.access(manifestPath);
             const metadata = await this.loadMetadata(fullPath);
@@ -211,14 +222,16 @@ export class LocalWorkflowRepository implements IWorkflowRepository {
       const manifestPath = path.join(workflowDir, 'workflow.json');
       const manifestContent = await fs.readFile(manifestPath, 'utf-8');
       const manifest: WorkflowManifest = JSON.parse(manifestContent);
-      
+
       const stats = await fs.stat(workflowDir);
       const relativePath = path.relative(this.basePath, workflowDir);
       const id = this.generateId(relativePath, manifest.name);
-      
+
       const files = await fs.readdir(workflowDir);
-      const hasAttachments = files.some(file => file !== manifest.mainFile && file !== 'workflow.json');
-      
+      const hasAttachments = files.some(
+        file => file !== manifest.mainFile && file !== 'workflow.json'
+      );
+
       return {
         id,
         name: manifest.name,
@@ -230,7 +243,7 @@ export class LocalWorkflowRepository implements IWorkflowRepository {
         modifiedAt: stats.mtime,
         path: relativePath,
         hasAttachments,
-        mainFile: manifest.mainFile
+        mainFile: manifest.mainFile,
       };
     } catch {
       return null;
@@ -244,9 +257,9 @@ export class LocalWorkflowRepository implements IWorkflowRepository {
       author: metadata.author,
       version: metadata.version,
       tags: [...metadata.tags],
-      mainFile: metadata.mainFile
+      mainFile: metadata.mainFile,
     };
-    
+
     const manifestPath = path.join(workflowDir, 'workflow.json');
     await fs.writeFile(manifestPath, JSON.stringify(manifest, null, 2), 'utf-8');
   }
@@ -259,20 +272,20 @@ export class LocalWorkflowRepository implements IWorkflowRepository {
   private async loadAttachments(workflowPath: string): Promise<readonly WorkflowAttachment[]> {
     const workflowDir = path.join(this.basePath, workflowPath);
     const attachments: WorkflowAttachment[] = [];
-    
+
     try {
       const files = await fs.readdir(workflowDir);
       const manifest = await this.loadMetadata(workflowDir);
-      
+
       if (!manifest) {
         return attachments;
       }
-      
+
       for (const file of files) {
         if (file !== manifest.mainFile && file !== 'workflow.json') {
           const filePath = path.join(workflowDir, file);
           const stats = await fs.stat(filePath);
-          
+
           if (stats.isFile()) {
             attachments.push({
               name: file,
@@ -280,7 +293,7 @@ export class LocalWorkflowRepository implements IWorkflowRepository {
               size: stats.size,
               mimeType: this.getMimeType(file),
               createdAt: stats.birthtime,
-              modifiedAt: stats.mtime
+              modifiedAt: stats.mtime,
             });
           }
         }
@@ -288,60 +301,60 @@ export class LocalWorkflowRepository implements IWorkflowRepository {
     } catch {
       // Directory doesn't exist or can't be read
     }
-    
+
     return attachments;
   }
 
-  private filterWorkflows(workflows: readonly WorkflowMetadata[], options: WorkflowSearchOptions): readonly WorkflowMetadata[] {
+  private filterWorkflows(
+    workflows: readonly WorkflowMetadata[],
+    options: WorkflowSearchOptions
+  ): readonly WorkflowMetadata[] {
     let filtered = [...workflows];
-    
+
     if (options.query) {
       const query = options.query.toLowerCase();
-      filtered = filtered.filter(w => 
-        w.name.toLowerCase().includes(query) || 
-        w.description.toLowerCase().includes(query)
+      filtered = filtered.filter(
+        w => w.name.toLowerCase().includes(query) || w.description.toLowerCase().includes(query)
       );
     }
-    
+
     if (options.author) {
       filtered = filtered.filter(w => w.author === options.author);
     }
-    
+
     if (options.tags && options.tags.length > 0) {
-      filtered = filtered.filter(w => 
-        options.tags!.some(tag => w.tags.includes(tag))
-      );
+      filtered = filtered.filter(w => options.tags!.some(tag => w.tags.includes(tag)));
     }
-    
+
     if (options.path) {
       filtered = filtered.filter(w => w.path.startsWith(options.path!));
     }
-    
+
     if (options.offset) {
       filtered = filtered.slice(options.offset);
     }
-    
+
     if (options.limit) {
       filtered = filtered.slice(0, options.limit);
     }
-    
+
     return filtered;
   }
 
   private async buildTreeNode(dirPath: string, relativePath: string): Promise<WorkflowTreeNode> {
     const name = path.basename(dirPath) || 'Repository';
     const children: WorkflowTreeNode[] = [];
-    
+
     try {
       const entries = await fs.readdir(dirPath, { withFileTypes: true });
-      
+
       for (const entry of entries) {
         const fullPath = path.join(dirPath, entry.name);
         const childRelativePath = path.join(relativePath, entry.name);
-        
+
         if (entry.isDirectory()) {
           const manifestPath = path.join(fullPath, 'workflow.json');
-          
+
           try {
             await fs.access(manifestPath);
             const metadata = await this.loadMetadata(fullPath);
@@ -350,7 +363,7 @@ export class LocalWorkflowRepository implements IWorkflowRepository {
                 name: entry.name,
                 path: childRelativePath,
                 type: 'workflow',
-                metadata
+                metadata,
               });
             }
           } catch {
@@ -364,12 +377,12 @@ export class LocalWorkflowRepository implements IWorkflowRepository {
     } catch {
       // Directory doesn't exist or can't be read
     }
-    
+
     return {
       name,
       path: relativePath,
       type: 'folder',
-      children
+      children,
     };
   }
 
@@ -388,9 +401,9 @@ export class LocalWorkflowRepository implements IWorkflowRepository {
       '.txt': 'text/plain',
       '.md': 'text/markdown',
       '.xxp': 'application/x-xxp',
-      '.espace': 'application/x-espace'
+      '.espace': 'application/x-espace',
     };
-    
+
     return mimeTypes[ext] || 'application/octet-stream';
   }
 }

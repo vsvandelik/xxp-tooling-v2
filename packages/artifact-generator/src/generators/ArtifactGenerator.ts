@@ -65,7 +65,11 @@ export class ArtifactGenerator {
     const filteredExperiment = this.filterExperimentSpaces(experiment, reachableSpaces);
 
     const resolvedParameters = this.parameterResolver.resolve(filteredExperiment, workflows);
-    const resolvedTasks = this.taskResolver.resolve(filteredExperiment, workflows, resolvedParameters);
+    const resolvedTasks = this.taskResolver.resolve(
+      filteredExperiment,
+      workflows,
+      resolvedParameters
+    );
     const resolvedData = this.dataResolver.resolve(filteredExperiment, workflows, resolvedTasks);
 
     this.dataFlowResolver.validate(filteredExperiment, workflows, resolvedTasks);
@@ -113,7 +117,7 @@ export class ArtifactGenerator {
 
       // Validate workflow inheritance early (before task resolution)
       this.validateWorkflowInheritance(workflows, errors, warnings);
-      
+
       // Early exit if there are critical errors that would cause stack overflow
       if (errors.length > 0) {
         return { errors, warnings };
@@ -152,7 +156,7 @@ export class ArtifactGenerator {
 
       // Resolve tasks (needed for further validations)
       const resolvedTasks = this.taskResolver.resolve(experiment, workflows);
-      
+
       // Validate task implementations
       for (const task of resolvedTasks.values()) {
         if (!task.implementation) {
@@ -183,7 +187,7 @@ export class ArtifactGenerator {
       // Check for unused parameters using the same inheritance resolution as parameter resolver
       const usedParams = new Set<string>();
       const definedParams = new Set<string>();
-      
+
       // Use the parameter resolver's inheritance logic to get accurate used parameters
       for (const space of experiment.spaces) {
         const workflow = workflows.find(w => w.name === space.workflowName);
@@ -191,9 +195,9 @@ export class ArtifactGenerator {
           // Resolve the complete inheritance chain
           const workflowMap = new Map<string, WorkflowModel>();
           workflows.forEach(w => workflowMap.set(w.name, w));
-          
+
           const resolvedWorkflow = this.resolveWorkflowInheritance(workflow, workflowMap);
-          
+
           // Collect all parameter names defined by tasks in the resolved workflow
           for (const task of resolvedWorkflow.tasks) {
             for (const param of task.parameters) {
@@ -201,8 +205,8 @@ export class ArtifactGenerator {
             }
           }
         }
-        
-        // Collect all parameters defined in experiment spaces  
+
+        // Collect all parameters defined in experiment spaces
         space.parameters.forEach(param => {
           definedParams.add(param.name);
         });
@@ -226,7 +230,6 @@ export class ArtifactGenerator {
 
       // Validate circular task dependencies
       this.validateCircularTaskDependencies(workflows, errors, warnings);
-
     } catch (error) {
       errors.push(error instanceof Error ? error.message : String(error));
     }
@@ -234,7 +237,10 @@ export class ArtifactGenerator {
     return { errors, warnings };
   }
 
-  private resolveWorkflowInheritance(workflow: WorkflowModel, workflowMap: Map<string, WorkflowModel>): WorkflowModel {
+  private resolveWorkflowInheritance(
+    workflow: WorkflowModel,
+    workflowMap: Map<string, WorkflowModel>
+  ): WorkflowModel {
     if (!workflow.parentWorkflow) {
       return workflow;
     }
@@ -324,27 +330,31 @@ export class ArtifactGenerator {
     }
   }
 
-  private validateControlFlow(experiment: ExperimentModel, errors: string[], warnings: string[]): void {
+  private validateControlFlow(
+    experiment: ExperimentModel,
+    errors: string[],
+    warnings: string[]
+  ): void {
     if (!experiment.controlFlow) {
       return;
     }
 
     const definedSpaces = new Set(experiment.spaces.map(space => space.name));
     const referencedSpaces = new Set<string>();
-    
+
     // Track spaces that can be reached from START
     const reachableSpaces = new Set<string>();
-    
+
     // Process transitions in order to maintain deterministic error reporting
     const transitions = experiment.controlFlow.transitions;
-    
+
     // Check for multiple START transitions (highest priority)
     const startTransitions = transitions.filter(t => t.from === 'START');
     if (startTransitions.length > 1) {
       errors.push('Multiple transitions from START are not allowed');
       return; // Stop validation early for this critical error
     }
-    
+
     // First pass: check for invalid transitions from END and missing spaces
     let hasMissingSpaces = false;
     for (const transition of transitions) {
@@ -352,17 +362,25 @@ export class ArtifactGenerator {
       if (transition.from === 'END') {
         errors.push('Invalid control flow: transition from END is not allowed');
       }
-      
+
       // Check if referenced spaces exist
-      if (transition.from !== 'START' && transition.from !== 'END' && !definedSpaces.has(transition.from)) {
+      if (
+        transition.from !== 'START' &&
+        transition.from !== 'END' &&
+        !definedSpaces.has(transition.from)
+      ) {
         errors.push(`Space '${transition.from}' referenced in control flow but not found`);
         hasMissingSpaces = true;
       }
-      if (transition.to !== 'START' && transition.to !== 'END' && !definedSpaces.has(transition.to)) {
+      if (
+        transition.to !== 'START' &&
+        transition.to !== 'END' &&
+        !definedSpaces.has(transition.to)
+      ) {
         errors.push(`Space '${transition.to}' referenced in control flow but not found`);
         hasMissingSpaces = true;
       }
-      
+
       // Track referenced spaces
       if (transition.from !== 'START' && transition.from !== 'END') {
         referencedSpaces.add(transition.from);
@@ -371,14 +389,18 @@ export class ArtifactGenerator {
         referencedSpaces.add(transition.to);
       }
     }
-    
+
     // Second pass: check for self-loops (after END validation)
     for (const transition of transitions) {
-      if (transition.from === transition.to && transition.from !== 'START' && transition.from !== 'END') {
+      if (
+        transition.from === transition.to &&
+        transition.from !== 'START' &&
+        transition.from !== 'END'
+      ) {
         errors.push(`Self-loop detected in space '${transition.from}'`);
       }
     }
-    
+
     // Build reachability graph
     const transitionMap = new Map<string, string[]>();
     for (const transition of experiment.controlFlow.transitions) {
@@ -387,7 +409,7 @@ export class ArtifactGenerator {
       }
       transitionMap.get(transition.from)!.push(transition.to);
     }
-    
+
     // Check if END is reachable from START (detect infinite loops)
     // Only check for infinite loops if all referenced spaces exist
     if (!hasMissingSpaces) {
@@ -398,20 +420,20 @@ export class ArtifactGenerator {
         return; // Stop validation early for this critical error
       }
     }
-    
+
     // Find all spaces reachable from START
     const queue = ['START'];
     const visitedForReachability = new Set<string>();
-    
+
     while (queue.length > 0) {
       const current = queue.shift()!;
       if (visitedForReachability.has(current)) continue;
       visitedForReachability.add(current);
-      
+
       if (current !== 'START' && current !== 'END') {
         reachableSpaces.add(current);
       }
-      
+
       const nextSpaces = transitionMap.get(current) || [];
       for (const next of nextSpaces) {
         if (!visitedForReachability.has(next)) {
@@ -419,7 +441,7 @@ export class ArtifactGenerator {
         }
       }
     }
-    
+
     // Check for unreachable spaces
     for (const space of experiment.spaces) {
       if (!reachableSpaces.has(space.name)) {
@@ -433,28 +455,36 @@ export class ArtifactGenerator {
   }
 
   // Helper method to check if END is reachable from a given starting point
-  private canReachEnd(current: string, transitionMap: Map<string, string[]>, visited: Set<string>): boolean {
+  private canReachEnd(
+    current: string,
+    transitionMap: Map<string, string[]>,
+    visited: Set<string>
+  ): boolean {
     if (current === 'END') {
       return true;
     }
-    
+
     if (visited.has(current)) {
       return false; // Cycle detected, can't reach END
     }
-    
+
     visited.add(current);
-    
+
     const nextSpaces = transitionMap.get(current) || [];
     for (const next of nextSpaces) {
       if (this.canReachEnd(next, transitionMap, new Set(visited))) {
         return true;
       }
     }
-    
+
     return false;
   }
 
-  private validateWorkflows(workflows: WorkflowModel[], errors: string[], warnings: string[]): void {
+  private validateWorkflows(
+    workflows: WorkflowModel[],
+    errors: string[],
+    warnings: string[]
+  ): void {
     for (const workflow of workflows) {
       // Check for duplicate task definitions
       const taskNames = workflow.tasks.map(task => task.name);
@@ -465,20 +495,28 @@ export class ArtifactGenerator {
     }
   }
 
-  private validateWorkflowsAfterInheritance(experiment: ExperimentModel, workflows: WorkflowModel[], errors: string[], warnings: string[]): void {
+  private validateWorkflowsAfterInheritance(
+    experiment: ExperimentModel,
+    workflows: WorkflowModel[],
+    errors: string[],
+    warnings: string[]
+  ): void {
     // First do basic validations
     this.validateWorkflows(workflows, errors, warnings);
-    
+
     // Check for empty workflows after inheritance resolution
     const workflowMap = this.taskResolver.buildWorkflowMap(workflows);
-    
+
     // Only validate workflows that are actually used in the experiment
     const usedWorkflows = new Set(experiment.spaces.map(space => space.workflowName));
-    
+
     for (const workflowName of usedWorkflows) {
       const workflow = workflowMap.get(workflowName);
       if (workflow) {
-        const resolvedWorkflow = this.taskResolver.resolveWorkflowInheritance(workflow, workflowMap);
+        const resolvedWorkflow = this.taskResolver.resolveWorkflowInheritance(
+          workflow,
+          workflowMap
+        );
         if (resolvedWorkflow.tasks.length === 0) {
           warnings.push(`Workflow '${workflowName}' has no tasks defined`);
         }
@@ -486,9 +524,13 @@ export class ArtifactGenerator {
     }
   }
 
-  private validateStrategies(experiment: ExperimentModel, errors: string[], warnings: string[]): void {
+  private validateStrategies(
+    experiment: ExperimentModel,
+    errors: string[],
+    warnings: string[]
+  ): void {
     const validStrategies = ['gridsearch', 'randomsearch'];
-    
+
     for (const space of experiment.spaces) {
       if (!validStrategies.includes(space.strategy)) {
         errors.push(`Unknown strategy: ${space.strategy}`);
@@ -496,7 +538,11 @@ export class ArtifactGenerator {
     }
   }
 
-  private validateWorkflowInheritance(workflows: WorkflowModel[], errors: string[], warnings: string[]): void {
+  private validateWorkflowInheritance(
+    workflows: WorkflowModel[],
+    errors: string[],
+    warnings: string[]
+  ): void {
     const workflowMap = new Map<string, WorkflowModel>();
     for (const workflow of workflows) {
       workflowMap.set(workflow.name, workflow);
@@ -514,7 +560,11 @@ export class ArtifactGenerator {
     }
   }
 
-  private hasCircularInheritance(workflowName: string, workflowMap: Map<string, WorkflowModel>, visited: Set<string>): boolean {
+  private hasCircularInheritance(
+    workflowName: string,
+    workflowMap: Map<string, WorkflowModel>,
+    visited: Set<string>
+  ): boolean {
     if (visited.has(workflowName)) {
       return true;
     }
@@ -530,23 +580,32 @@ export class ArtifactGenerator {
     return result;
   }
 
-  private validateTaskChains(workflows: WorkflowModel[], errors: string[], warnings: string[]): void {
+  private validateTaskChains(
+    workflows: WorkflowModel[],
+    errors: string[],
+    warnings: string[]
+  ): void {
     const workflowMap = this.taskResolver.buildWorkflowMap(workflows);
-    
+
     for (const workflow of workflows) {
       if (workflow.taskChain) {
         // Resolve inheritance to get all available tasks
-        const resolvedWorkflow = this.taskResolver.resolveWorkflowInheritance(workflow, workflowMap);
+        const resolvedWorkflow = this.taskResolver.resolveWorkflowInheritance(
+          workflow,
+          workflowMap
+        );
         const definedTasks = new Set(resolvedWorkflow.tasks.map(task => task.name));
         const executionOrder = workflow.taskChain.getExecutionOrder();
-        
+
         // Check if all tasks in the chain are defined (considering inheritance)
         for (const taskName of executionOrder) {
           if (!definedTasks.has(taskName)) {
-            errors.push(`Task '${taskName}' referenced in workflow chain but not found in workflow '${workflow.name}'`);
+            errors.push(
+              `Task '${taskName}' referenced in workflow chain but not found in workflow '${workflow.name}'`
+            );
           }
         }
-        
+
         // Check for unused tasks (warning) - only consider tasks actually defined in this workflow
         for (const task of workflow.tasks) {
           if (!executionOrder.includes(task.name)) {
@@ -562,17 +621,21 @@ export class ArtifactGenerator {
     }
   }
 
-  private validateCircularTaskDependencies(workflows: WorkflowModel[], errors: string[], warnings: string[]): void {
+  private validateCircularTaskDependencies(
+    workflows: WorkflowModel[],
+    errors: string[],
+    warnings: string[]
+  ): void {
     for (const workflow of workflows) {
       // Build dependency graph based on input/output data relationships
       const dependencyGraph = new Map<string, string[]>();
       const taskMap = new Map<string, any>();
-      
+
       for (const task of workflow.tasks) {
         taskMap.set(task.name, task);
         dependencyGraph.set(task.name, []);
       }
-      
+
       // Build dependencies: if task A outputs data that task B inputs, then B depends on A
       for (const task of workflow.tasks) {
         for (const output of task.outputs) {
@@ -586,13 +649,13 @@ export class ArtifactGenerator {
           }
         }
       }
-      
+
       // Check for circular dependencies using DFS
       for (const taskName of dependencyGraph.keys()) {
         const visited = new Set<string>();
         const recursionStack = new Set<string>();
         const path: string[] = [];
-        
+
         if (this.hasCircularDependency(taskName, dependencyGraph, visited, recursionStack, path)) {
           // Find the actual cycle in the path
           const cycleStart = path.indexOf(taskName);
@@ -615,22 +678,22 @@ export class ArtifactGenerator {
     if (recursionStack.has(taskName)) {
       return true;
     }
-    
+
     if (visited.has(taskName)) {
       return false;
     }
-    
+
     visited.add(taskName);
     recursionStack.add(taskName);
     path.push(taskName);
-    
+
     const dependencies = dependencyGraph.get(taskName) || [];
     for (const dependency of dependencies) {
       if (this.hasCircularDependency(dependency, dependencyGraph, visited, recursionStack, path)) {
         return true;
       }
     }
-    
+
     recursionStack.delete(taskName);
     path.pop();
     return false;
@@ -643,7 +706,7 @@ export class ArtifactGenerator {
     }
 
     const reachableSpaces = new Set<string>();
-    
+
     // Build transition map
     const transitionMap = new Map<string, string[]>();
     for (const transition of experiment.controlFlow.transitions) {
@@ -652,20 +715,20 @@ export class ArtifactGenerator {
       }
       transitionMap.get(transition.from)!.push(transition.to);
     }
-    
+
     // Find all spaces reachable from START using BFS
     const queue = ['START'];
     const visited = new Set<string>();
-    
+
     while (queue.length > 0) {
       const current = queue.shift()!;
       if (visited.has(current)) continue;
       visited.add(current);
-      
+
       if (current !== 'START' && current !== 'END') {
         reachableSpaces.add(current);
       }
-      
+
       const nextSpaces = transitionMap.get(current) || [];
       for (const next of nextSpaces) {
         if (!visited.has(next)) {
@@ -673,21 +736,28 @@ export class ArtifactGenerator {
         }
       }
     }
-    
+
     return reachableSpaces;
   }
 
-  private filterExperimentSpaces(experiment: ExperimentModel, reachableSpaces: Set<string>): ExperimentModel {
+  private filterExperimentSpaces(
+    experiment: ExperimentModel,
+    reachableSpaces: Set<string>
+  ): ExperimentModel {
     const filteredSpaces = experiment.spaces.filter(space => reachableSpaces.has(space.name));
-    
+
     // Create a new experiment model with filtered spaces
     return {
       ...experiment,
-      spaces: filteredSpaces
+      spaces: filteredSpaces,
     };
   }
 
-  private getUsedTaskIds(experiment: ExperimentModel, workflows: WorkflowModel[], resolvedTasks: Map<string, ResolvedTask>): Set<string> {
+  private getUsedTaskIds(
+    experiment: ExperimentModel,
+    workflows: WorkflowModel[],
+    resolvedTasks: Map<string, ResolvedTask>
+  ): Set<string> {
     const usedTaskIds = new Set<string>();
     const workflowMap = this.taskResolver.buildWorkflowMap(workflows);
 
@@ -699,7 +769,7 @@ export class ArtifactGenerator {
 
       // Get execution order for this space
       let executionOrder: string[] = [];
-      
+
       if (workflow.taskChain) {
         executionOrder = workflow.taskChain.getExecutionOrder();
       } else if (workflow.parentWorkflow) {
@@ -722,15 +792,18 @@ export class ArtifactGenerator {
     return usedTaskIds;
   }
 
-  private filterTasks(resolvedTasks: Map<string, ResolvedTask>, usedTaskIds: Set<string>): Map<string, ResolvedTask> {
+  private filterTasks(
+    resolvedTasks: Map<string, ResolvedTask>,
+    usedTaskIds: Set<string>
+  ): Map<string, ResolvedTask> {
     const filteredTasks = new Map<string, ResolvedTask>();
-    
+
     for (const [taskId, task] of resolvedTasks) {
       if (usedTaskIds.has(taskId)) {
         filteredTasks.set(taskId, task);
       }
     }
-    
+
     return filteredTasks;
   }
 }

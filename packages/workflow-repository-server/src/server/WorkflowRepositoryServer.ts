@@ -1,10 +1,10 @@
 import express from 'express';
 import cors from 'cors';
+import { ApiResponse, LoginRequest, LoginResponse } from '@extremexp/workflow-repository';
 import { WorkflowStorageService } from '../services/WorkflowStorageService.js';
-import { UserService } from './UserService.js';
+import { UserService } from '../services/UserService.js';
 import { AuthenticationMiddleware } from '../middleware/AuthenticationMiddleware.js';
 import { WorkflowController } from '../controlers/WorkflowController.js';
-import { ApiResponse, LoginRequest, LoginResponse } from './ApiTypes.js';
 
 export interface ServerConfig {
   port: number;
@@ -34,8 +34,8 @@ export class WorkflowRepositoryServer {
 
   async start(): Promise<void> {
     await this.storageService.ensureInitialized();
-    
-    return new Promise((resolve) => {
+
+    return new Promise(resolve => {
       this.app.listen(this.config.port, () => {
         console.log(`Workflow Repository Server running on port ${this.config.port}`);
         resolve();
@@ -48,14 +48,16 @@ export class WorkflowRepositoryServer {
   }
 
   private setupMiddleware(): void {
-    this.app.use(cors({
-      origin: this.config.corsOrigin || '*',
-      credentials: true
-    }));
+    this.app.use(
+      cors({
+        origin: this.config.corsOrigin || '*',
+        credentials: true,
+      })
+    );
 
     this.app.use(express.json({ limit: '50mb' }));
     this.app.use(express.urlencoded({ extended: true, limit: '50mb' }));
-    
+
     this.app.use(this.authMiddleware.authenticate);
   }
 
@@ -72,13 +74,13 @@ export class WorkflowRepositoryServer {
         const loginRequest: LoginRequest = req.body;
         const authToken = await this.userService.authenticate({
           username: loginRequest.username,
-          password: loginRequest.password
+          password: loginRequest.password,
         });
 
         if (!authToken) {
           const response: ApiResponse = {
             success: false,
-            error: 'Invalid credentials'
+            error: 'Invalid credentials',
           };
           res.status(401).json(response);
           return;
@@ -89,15 +91,15 @@ export class WorkflowRepositoryServer {
           data: {
             token: authToken.token,
             expiresAt: authToken.expiresAt.toISOString(),
-            user: authToken.user
-          }
+            user: authToken.user,
+          },
         };
 
         res.json(response);
       } catch (error) {
         const response: ApiResponse = {
           success: false,
-          error: error instanceof Error ? error.message : 'Unknown error'
+          error: error instanceof Error ? error.message : 'Unknown error',
         };
         res.status(500).json(response);
       }
@@ -106,7 +108,7 @@ export class WorkflowRepositoryServer {
     this.app.post('/auth/logout', (req, res) => {
       const response: ApiResponse = {
         success: true,
-        message: 'Logged out successfully'
+        message: 'Logged out successfully',
       };
       res.json(response);
     });
@@ -114,33 +116,37 @@ export class WorkflowRepositoryServer {
     this.app.get('/auth/me', this.authMiddleware.requireAuth, (req, res) => {
       const response: ApiResponse = {
         success: true,
-        data: req.user
+        data: req.user,
       };
       res.json(response);
     });
   }
-
   private setupWorkflowRoutes(): void {
     this.app.get('/workflows', this.workflowController.listWorkflows);
-    
+
     this.app.get('/workflows/:id', this.workflowController.getWorkflow);
-    
+
     this.app.get('/workflows/:id/content', this.workflowController.downloadWorkflow);
-    
+
     this.app.get('/workflows/:id/files/*', this.workflowController.downloadWorkflowFile);
-    
-    this.app.post('/workflows', 
+
+    this.app.post(
+      '/workflows',
       this.authMiddleware.requireAuth,
-      ...this.workflowController.uploadWorkflow
+      this.workflowController.uploadWorkflow[0] as express.RequestHandler,
+      this.workflowController.uploadWorkflow[1] as express.RequestHandler
     );
-    
-    this.app.put('/workflows/:id',
+
+    this.app.put(
+      '/workflows/:id',
       this.authMiddleware.requireAuth,
       this.authMiddleware.requireOwnerOrAdmin(this.workflowController.getWorkflowOwner),
-      ...this.workflowController.updateWorkflow
+      this.workflowController.updateWorkflow[0] as express.RequestHandler,
+      this.workflowController.updateWorkflow[1] as express.RequestHandler
     );
-    
-    this.app.delete('/workflows/:id',
+
+    this.app.delete(
+      '/workflows/:id',
       this.authMiddleware.requireAuth,
       this.authMiddleware.requireOwnerOrAdmin(this.workflowController.getWorkflowOwner),
       this.workflowController.deleteWorkflow
@@ -150,11 +156,11 @@ export class WorkflowRepositoryServer {
   private setupDiscoveryRoutes(): void {
     this.app.get('/tree', this.workflowController.getTree);
     this.app.get('/tree/*', this.workflowController.getTree);
-    
+
     this.app.get('/search', this.workflowController.searchWorkflows);
-    
+
     this.app.get('/tags', this.workflowController.getTags);
-    
+
     this.app.get('/authors', this.workflowController.getAuthors);
   }
 
@@ -165,8 +171,8 @@ export class WorkflowRepositoryServer {
         data: {
           status: 'healthy',
           timestamp: new Date().toISOString(),
-          version: '1.0.0'
-        }
+          version: '1.0.0',
+        },
       };
       res.json(response);
     });
@@ -176,19 +182,20 @@ export class WorkflowRepositoryServer {
     this.app.use((req, res) => {
       const response: ApiResponse = {
         success: false,
-        error: 'Endpoint not found'
+        error: 'Endpoint not found',
       };
       res.status(404).json(response);
-    });
+    }); // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    this.app.use(
+      (error: Error, req: express.Request, res: express.Response, next: express.NextFunction) => {
+        console.error('Unhandled error:', error);
 
-    this.app.use((error: Error, req: express.Request, res: express.Response, next: express.NextFunction) => {
-      console.error('Unhandled error:', error);
-      
-      const response: ApiResponse = {
-        success: false,
-        error: 'Internal server error'
-      };
-      res.status(500).json(response);
-    });
+        const response: ApiResponse = {
+          success: false,
+          error: 'Internal server error',
+        };
+        res.status(500).json(response);
+      }
+    );
   }
 }
