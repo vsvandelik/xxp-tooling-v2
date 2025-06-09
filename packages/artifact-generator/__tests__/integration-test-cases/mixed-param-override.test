@@ -1,0 +1,147 @@
+=== mixedParamWorkflow.xxp ===
+workflow MixedParamWorkflow {
+    define task task1;
+    define task task2;
+    
+    START -> task1 -> task2 -> END;
+    
+    configure task task1 {
+        implementation "task1.py";
+        param globalParam = 1;
+        param task1Param = 2;
+    }
+    
+    configure task task2 {
+        implementation "task2.py";
+        param globalParam = 3;
+        param task2Param = 4;
+    }
+}
+
+=== mixed-param-override.espace ===
+experiment MixedParamOverrideTest {
+    space TestSpace of MixedParamWorkflow {
+        strategy gridsearch;
+        param globalParam = enum(100, 200);
+        
+        configure task task1 {
+            param task1Param = enum(300, 400);
+        }
+        
+        configure task task2 {
+            param globalParam = 999;
+            param task2Param = enum(500, 600);
+        }
+    }
+    
+    control {
+        START -> TestSpace -> END;
+    }
+}
+
+
+=== OUTPUT === 
+
+{
+  "experiment": "MixedParamOverrideTest",
+  "version": "1.0",
+  "tasks": [
+    [
+      {
+        "taskId": "MixedParamWorkflow:task1",
+        "workflow": "MixedParamWorkflow",
+        "implementation": "task1.py",
+        "dynamicParameters": [
+          "globalParam"
+        ],
+        "staticParameters": {
+          "task1Param": 2
+        },
+        "inputData": [],
+        "outputData": []
+      },
+      {
+        "taskId": "MixedParamWorkflow:task2",
+        "workflow": "MixedParamWorkflow",
+        "implementation": "task2.py",
+        "dynamicParameters": [],
+        "staticParameters": {
+          "globalParam": 999,
+          "task2Param": 4
+        },
+        "inputData": [],
+        "outputData": []
+      }
+    ]
+  ],
+  "spaces": [
+    {
+      "spaceId": "TestSpace",
+      "tasksOrder": [
+        "MixedParamWorkflow:task1",
+        "MixedParamWorkflow:task2"
+      ],
+      "parameters": [
+        {
+          "globalParam": 100,
+          "task1:task1Param": 300,
+          "task2:globalParam": 999,
+          "task2:task2Param": 500
+        },
+        {
+          "globalParam": 100,
+          "task1:task1Param": 300,
+          "task2:globalParam": 999,
+          "task2:task2Param": 600
+        },
+        {
+          "globalParam": 100,
+          "task1:task1Param": 400,
+          "task2:globalParam": 999,
+          "task2:task2Param": 500
+        },
+        {
+          "globalParam": 100,
+          "task1:task1Param": 400,
+          "task2:globalParam": 999,
+          "task2:task2Param": 600
+        },
+        {
+          "globalParam": 200,
+          "task1:task1Param": 300,
+          "task2:globalParam": 999,
+          "task2:task2Param": 500
+        },
+        {
+          "globalParam": 200,
+          "task1:task1Param": 300,
+          "task2:globalParam": 999,
+          "task2:task2Param": 600
+        },
+        {
+          "globalParam": 200,
+          "task1:task1Param": 400,
+          "task2:globalParam": 999,
+          "task2:task2Param": 500
+        },
+        {
+          "globalParam": 200,
+          "task1:task1Param": 400,
+          "task2:globalParam": 999,
+          "task2:task2Param": 600
+        }
+      ],
+      "inputData": {}
+    }
+  ],
+  "control": {
+    "START": "TestSpace",
+    "transitions": [
+      {
+        "from": "TestSpace",
+        "to": "END"
+      }
+    ]
+  },
+  "inputData": {}
+}
