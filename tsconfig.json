@@ -58,6 +58,9 @@
             "path": "./packages/experiment-runner-server"
         },
         {
+            "path": "./packages/workflow-repository"
+        },
+        {
             "path": "./packages/vs-code-extension"
         }
     ]

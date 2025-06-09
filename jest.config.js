@@ -6,9 +6,10 @@ export default {
     '<rootDir>/packages/artifact-generator', 
     '<rootDir>/packages/experiment-runner',
     '<rootDir>/packages/experiment-runner-server', 
-    '<rootDir>/packages/vs-code-extension'
+    '<rootDir>/packages/vs-code-extension',
+    '<rootDir>/packages/workflow-repository',
   ],
-  
+
   // Global coverage settings
   collectCoverage: false, // Coverage is handled per project
   coverageDirectory: '<rootDir>/coverage',
