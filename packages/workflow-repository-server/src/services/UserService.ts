@@ -10,7 +10,6 @@ import {
 
 interface UserData extends User {
   passwordHash: string;
-  lastLogin?: Date; // Make lastLogin mutable in UserData
 }
 
 export class UserService {
@@ -37,16 +36,11 @@ export class UserService {
       createdAt: new Date(),
       passwordHash,
     };
+
     this.users.set(request.username, user);
 
-    const publicUser: User = {
-      id: user.id,
-      username: user.username,
-      email: user.email,
-      role: user.role,
-      createdAt: user.createdAt,
-      ...(user.lastLogin && { lastLogin: user.lastLogin }),
-    };
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { passwordHash: _createPwd, ...publicUser } = user;
     return publicUser;
   }
 
@@ -60,8 +54,13 @@ export class UserService {
     if (!isValid) {
       return null;
     }
-    user.lastLogin = new Date();
-    this.users.set(user.username, user);
+
+    // Create a new user object with updated lastLogin
+    const updatedUser: UserData = {
+      ...user,
+      lastLogin: new Date(),
+    };
+    this.users.set(user.username, updatedUser);
 
     const token = jwt.sign(
       { userId: user.id, username: user.username, role: user.role },
@@ -72,20 +71,15 @@ export class UserService {
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + 7);
 
-    const publicUser: User = {
-      id: user.id,
-      username: user.username,
-      email: user.email,
-      role: user.role,
-      createdAt: user.createdAt,
-      lastLogin: user.lastLogin,
-    };
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { passwordHash: _pwd, ...publicUser } = updatedUser;
     return {
       token,
       expiresAt,
       user: publicUser,
     };
   }
+
   verifyToken(token: string): User | null {
     try {
       const payload = jwt.verify(token, this.jwtSecret) as {
@@ -99,44 +93,31 @@ export class UserService {
         return null;
       }
 
-      const publicUser: User = {
-        id: user.id,
-        username: user.username,
-        email: user.email,
-        role: user.role,
-        createdAt: user.createdAt,
-        ...(user.lastLogin && { lastLogin: user.lastLogin }),
-      };
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { passwordHash: _verifyPwd, ...publicUser } = user;
       return publicUser;
     } catch {
       return null;
     }
   }
+
   getUser(username: string): User | null {
     const user = this.users.get(username);
     if (!user) {
       return null;
     }
 
-    const publicUser: User = {
-      id: user.id,
-      username: user.username,
-      email: user.email,
-      role: user.role,
-      createdAt: user.createdAt,
-      ...(user.lastLogin && { lastLogin: user.lastLogin }),
-    };
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { passwordHash: _getUserPwd, ...publicUser } = user;
     return publicUser;
   }
+
   listUsers(): User[] {
-    return Array.from(this.users.values()).map(user => ({
-      id: user.id,
-      username: user.username,
-      email: user.email,
-      role: user.role,
-      createdAt: user.createdAt,
-      ...(user.lastLogin && { lastLogin: user.lastLogin }),
-    }));
+    return Array.from(this.users.values()).map(user => {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { passwordHash: _, ...publicUser } = user;
+      return publicUser;
+    });
   }
 
   deleteUser(username: string): boolean {

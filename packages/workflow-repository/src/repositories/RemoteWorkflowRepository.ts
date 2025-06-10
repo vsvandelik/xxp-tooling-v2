@@ -196,16 +196,18 @@ export class RemoteWorkflowRepository implements IWorkflowRepository {
     metadata: Partial<Omit<WorkflowMetadata, 'id' | 'createdAt' | 'modifiedAt' | 'hasAttachments'>>
   ): Promise<WorkflowMetadata> {
     await this.ensureAuthenticated();
+
     const zipBuffer = await this.createWorkflowZip(content, metadata);
     const formData = new FormData();
 
     formData.append('workflow', new Blob([zipBuffer]), 'workflow.zip');
 
+    // Create the update request object properly
     const updateRequest: UpdateWorkflowRequest = {
-      ...(metadata.name && { name: metadata.name }),
-      ...(metadata.description && { description: metadata.description }),
-      ...(metadata.version && { version: metadata.version }),
-      ...(metadata.tags && { tags: [...metadata.tags] }),
+      ...(metadata.name ? { name: metadata.name } : {}),
+      ...(metadata.description ? { description: metadata.description } : {}),
+      ...(metadata.version ? { version: metadata.version } : {}),
+      ...(metadata.tags ? { tags: [...metadata.tags] } : {}),
     };
 
     Object.entries(updateRequest).forEach(([key, value]) => {

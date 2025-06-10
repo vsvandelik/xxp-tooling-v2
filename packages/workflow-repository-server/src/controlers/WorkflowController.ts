@@ -9,10 +9,9 @@ import {
   TreeResponse,
   TagsResponse,
   AuthorsResponse,
-  WorkflowContent,
   WorkflowSearchOptions,
 } from '@extremexp/workflow-repository';
-import { WorkflowStorageService } from '../services/WorkflowStorageService';
+import { WorkflowStorageService } from '../services/WorkflowStorageService.js';
 import { UserService } from '../services/UserService.js';
 
 export class WorkflowController {
@@ -22,18 +21,20 @@ export class WorkflowController {
     private storageService: WorkflowStorageService,
     private userService: UserService
   ) {}
+
   listWorkflows = async (req: Request, res: Response): Promise<void> => {
     try {
       const query: SearchWorkflowRequest = req.query;
       const repository = this.storageService.getRepository();
 
+      // Create search options object, only including defined properties
       const searchOptions: WorkflowSearchOptions = {
-        ...(query.query && { query: query.query }),
-        ...(query.tags && { tags: query.tags }),
-        ...(query.author && { author: query.author }),
-        ...(query.path && { path: query.path }),
-        ...(query.limit && { limit: parseInt(query.limit.toString()) }),
-        ...(query.offset && { offset: parseInt(query.offset.toString()) }),
+        ...(query.query !== undefined && { query: query.query }),
+        ...(query.tags !== undefined && { tags: query.tags }),
+        ...(query.author !== undefined && { author: query.author }),
+        ...(query.path !== undefined && { path: query.path }),
+        ...(query.limit !== undefined && { limit: parseInt(query.limit.toString()) }),
+        ...(query.offset !== undefined && { offset: parseInt(query.offset.toString()) }),
       };
 
       const workflows = await repository.search(searchOptions);
@@ -57,6 +58,7 @@ export class WorkflowController {
       res.status(500).json(response);
     }
   };
+
   getWorkflow = async (req: Request, res: Response): Promise<void> => {
     try {
       const { id } = req.params;
@@ -95,6 +97,7 @@ export class WorkflowController {
       res.status(500).json(response);
     }
   };
+
   downloadWorkflow = async (req: Request, res: Response): Promise<void> => {
     try {
       const { id } = req.params;
@@ -129,6 +132,7 @@ export class WorkflowController {
       res.status(500).json(response);
     }
   };
+
   downloadWorkflowFile = async (req: Request, res: Response): Promise<void> => {
     try {
       const { id, '*': filePath } = req.params;
@@ -273,11 +277,10 @@ export class WorkflowController {
           res.status(400).json(response);
           return;
         }
-
         const updateRequest: UpdateWorkflowRequest = req.body;
         const repository = this.storageService.getRepository();
 
-        let content: WorkflowContent | undefined = undefined;
+        let content: any = undefined;
         if (req.file) {
           const extracted = await this.storageService.extractWorkflowFromZip(req.file.buffer);
           if (!extracted) {
@@ -320,6 +323,7 @@ export class WorkflowController {
       }
     },
   ];
+
   deleteWorkflow = async (req: Request, res: Response): Promise<void> => {
     try {
       const { id } = req.params;
@@ -417,18 +421,20 @@ export class WorkflowController {
       res.status(500).json(response);
     }
   };
+
   searchWorkflows = async (req: Request, res: Response): Promise<void> => {
     try {
       const query: SearchWorkflowRequest = req.query;
       const repository = this.storageService.getRepository();
 
+      // Create search options object, only including defined properties
       const searchOptions: WorkflowSearchOptions = {
-        ...(query.query && { query: query.query }),
-        ...(query.tags && { tags: query.tags }),
-        ...(query.author && { author: query.author }),
-        ...(query.path && { path: query.path }),
-        ...(query.limit && { limit: parseInt(query.limit.toString()) }),
-        ...(query.offset && { offset: parseInt(query.offset.toString()) }),
+        ...(query.query !== undefined && { query: query.query }),
+        ...(query.tags !== undefined && { tags: query.tags }),
+        ...(query.author !== undefined && { author: query.author }),
+        ...(query.path !== undefined && { path: query.path }),
+        ...(query.limit !== undefined && { limit: parseInt(query.limit.toString()) }),
+        ...(query.offset !== undefined && { offset: parseInt(query.offset.toString()) }),
       };
 
       const workflows = await repository.search(searchOptions);
@@ -452,6 +458,7 @@ export class WorkflowController {
       res.status(500).json(response);
     }
   };
+
   getWorkflowOwner = async (req: Request): Promise<string | null> => {
     const { id } = req.params;
     if (!id) {

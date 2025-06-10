@@ -12,11 +12,13 @@ declare global {
 
 export class AuthenticationMiddleware {
   constructor(private userService: UserService) {}
+
   authenticate = (req: Request, res: Response, next: NextFunction): void => {
     const authHeader = req.headers.authorization;
 
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      delete req.user;
+      // Don't assign undefined to optional property
+      delete (req as any).user;
       next();
       return;
     }
@@ -27,7 +29,7 @@ export class AuthenticationMiddleware {
     if (user) {
       req.user = user;
     } else {
-      delete req.user;
+      delete (req as any).user;
     }
     next();
   };
@@ -55,9 +57,10 @@ export class AuthenticationMiddleware {
 
     next();
   };
-  requireOwnerOrAdmin = (getResourceOwner: (req: Request) => Promise<string | null>) => {
-    return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-      const resourceOwner = await getResourceOwner(req);
+
+  requireOwnerOrAdmin = (getResourceOwner: (req: Request) => string | null) => {
+    return (req: Request, res: Response, next: NextFunction): void => {
+      const resourceOwner = getResourceOwner(req);
 
       if (!resourceOwner) {
         res.status(404).json({

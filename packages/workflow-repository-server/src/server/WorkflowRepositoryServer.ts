@@ -1,4 +1,4 @@
-import express from 'express';
+import express, { Request } from 'express';
 import cors from 'cors';
 import { ApiResponse, LoginRequest, LoginResponse } from '@extremexp/workflow-repository';
 import { WorkflowStorageService } from '../services/WorkflowStorageService.js';
@@ -121,6 +121,7 @@ export class WorkflowRepositoryServer {
       res.json(response);
     });
   }
+
   private setupWorkflowRoutes(): void {
     this.app.get('/workflows', this.workflowController.listWorkflows);
 
@@ -140,7 +141,10 @@ export class WorkflowRepositoryServer {
     this.app.put(
       '/workflows/:id',
       this.authMiddleware.requireAuth,
-      this.authMiddleware.requireOwnerOrAdmin(this.workflowController.getWorkflowOwner),
+      this.authMiddleware.requireOwnerOrAdmin((req: Request) => {
+        const { id } = req.params;
+        return id || null;
+      }),
       this.workflowController.updateWorkflow[0] as express.RequestHandler,
       this.workflowController.updateWorkflow[1] as express.RequestHandler
     );
@@ -148,7 +152,10 @@ export class WorkflowRepositoryServer {
     this.app.delete(
       '/workflows/:id',
       this.authMiddleware.requireAuth,
-      this.authMiddleware.requireOwnerOrAdmin(this.workflowController.getWorkflowOwner),
+      this.authMiddleware.requireOwnerOrAdmin((req: Request) => {
+        const { id } = req.params;
+        return id || null;
+      }),
       this.workflowController.deleteWorkflow
     );
   }
@@ -185,8 +192,10 @@ export class WorkflowRepositoryServer {
         error: 'Endpoint not found',
       };
       res.status(404).json(response);
-    }); // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    });
+
     this.app.use(
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       (error: Error, req: express.Request, res: express.Response, next: express.NextFunction) => {
         console.error('Unhandled error:', error);
 

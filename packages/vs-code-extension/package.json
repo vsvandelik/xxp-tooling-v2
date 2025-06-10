@@ -1,8 +1,8 @@
 {
     "name": "extremexp-vs-code-extension",
-    "displayName": "XXP & ESPACE Language Support",
+    "displayName": "ExtremeXP - Workflows & Experiments",
     "version": "1.0.0",
-    "description": "VS Code extension for XXP and ESPACE languages",
+    "description": "VS Code extension for ExtremeXP workflows and experiments with XXP and ESPACE language support",
     "publisher": "extremexp",
     "main": "./dist/extension.js",
     "types": "./dist/extension.d.ts",
@@ -27,6 +27,9 @@
     "keywords": [
         "xxp",
         "espace",
+        "extremexp",
+        "workflows",
+        "experiments",
         "language",
         "syntax highlighting",
         "programming language"
@@ -45,7 +48,8 @@
         "vscode": "^1.85.0"
     },
     "categories": [
-        "Programming Languages"
+        "Programming Languages",
+        "Other"
     ],
     "activationEvents": [],
     "contributes": {
@@ -89,32 +93,186 @@
             {
                 "command": "extremexp.generateArtifact",
                 "title": "Generate Artifact",
-                "category": "ExtremeXP"
+                "category": "ExtremeXP",
+                "icon": "$(package)"
             },
             {
                 "command": "extremexp.runExperiment",
                 "title": "Run Experiment",
-                "category": "ExtremeXP"
+                "category": "ExtremeXP",
+                "icon": "$(play)"
             },
             {
                 "command": "extremexp.showProgress",
                 "title": "Show Progress",
-                "category": "ExtremeXP"
+                "category": "ExtremeXP",
+                "icon": "$(graph)"
             },
             {
                 "command": "extremexp.stopServer",
                 "title": "Stop Server",
-                "category": "ExtremeXP"
+                "category": "ExtremeXP",
+                "icon": "$(stop)"
             },
             {
                 "command": "extremexp.restartServer",
                 "title": "Restart Server",
-                "category": "ExtremeXP"
+                "category": "ExtremeXP",
+                "icon": "$(refresh)"
             },
             {
                 "command": "extremexp.clearToolCache",
                 "title": "Clear Tool Cache",
                 "category": "ExtremeXP"
+            },
+            {
+                "command": "extremexp.workflows.addRepository",
+                "title": "Add Repository",
+                "category": "ExtremeXP Workflows",
+                "icon": "$(plus)"
+            },
+            {
+                "command": "extremexp.workflows.removeRepository",
+                "title": "Remove Repository",
+                "category": "ExtremeXP Workflows",
+                "icon": "$(trash)"
+            },
+            {
+                "command": "extremexp.workflows.setDefaultRepository",
+                "title": "Set Default Repository",
+                "category": "ExtremeXP Workflows",
+                "icon": "$(star)"
+            },
+            {
+                "command": "extremexp.workflows.refreshRepositories",
+                "title": "Refresh Repositories",
+                "category": "ExtremeXP Workflows",
+                "icon": "$(refresh)"
+            },
+            {
+                "command": "extremexp.workflows.openBrowser",
+                "title": "Open Workflow Browser",
+                "category": "ExtremeXP Workflows",
+                "icon": "$(browser)"
+            },
+            {
+                "command": "extremexp.workflows.openWorkflow",
+                "title": "Open Workflow",
+                "category": "ExtremeXP Workflows",
+                "icon": "$(file-code)"
+            },
+            {
+                "command": "extremexp.workflows.downloadWorkflow",
+                "title": "Download Workflow",
+                "category": "ExtremeXP Workflows",
+                "icon": "$(cloud-download)"
+            },
+            {
+                "command": "extremexp.workflows.uploadWorkflow",
+                "title": "Upload Workflow",
+                "category": "ExtremeXP Workflows",
+                "icon": "$(cloud-upload)"
+            },
+            {
+                "command": "extremexp.workflows.deleteWorkflow",
+                "title": "Delete Workflow",
+                "category": "ExtremeXP Workflows",
+                "icon": "$(trash)"
+            },
+            {
+                "command": "extremexp.workflows.searchWorkflows",
+                "title": "Search Workflows",
+                "category": "ExtremeXP Workflows",
+                "icon": "$(search)"
+            },
+            {
+                "command": "extremexp.workflows.uploadCurrentFile",
+                "title": "Upload Current File as Workflow",
+                "category": "ExtremeXP Workflows",
+                "icon": "$(cloud-upload)"
+            },
+            {
+                "command": "extremexp.workflows.tree.refresh",
+                "title": "Refresh",
+                "icon": "$(refresh)"
+            },
+            {
+                "command": "extremexp.workflows.tree.addRepository",
+                "title": "Add Repository",
+                "icon": "$(plus)"
+            }
+        ],
+        "menus": {
+            "commandPalette": [
+                {
+                    "command": "extremexp.workflows.tree.refresh",
+                    "when": "false"
+                },
+                {
+                    "command": "extremexp.workflows.tree.addRepository",
+                    "when": "false"
+                }
+            ],
+            "view/title": [
+                {
+                    "command": "extremexp.workflows.tree.addRepository",
+                    "when": "view == extremexp.workflows.repositories",
+                    "group": "navigation@1"
+                },
+                {
+                    "command": "extremexp.workflows.tree.refresh",
+                    "when": "view == extremexp.workflows.repositories",
+                    "group": "navigation@2"
+                }
+            ],
+            "view/item/context": [
+                {
+                    "command": "extremexp.workflows.openWorkflow",
+                    "when": "view == extremexp.workflows.repositories && viewItem == workflow-item",
+                    "group": "1_workflow@1"
+                },
+                {
+                    "command": "extremexp.workflows.downloadWorkflow",
+                    "when": "view == extremexp.workflows.repositories && viewItem == workflow-item",
+                    "group": "1_workflow@2"
+                },
+                {
+                    "command": "extremexp.workflows.deleteWorkflow",
+                    "when": "view == extremexp.workflows.repositories && viewItem == workflow-item",
+                    "group": "2_danger@1"
+                },
+                {
+                    "command": "extremexp.workflows.removeRepository",
+                    "when": "view == extremexp.workflows.repositories && viewItem =~ /workflow-repository-.*/",
+                    "group": "2_danger@1"
+                },
+                {
+                    "command": "extremexp.workflows.setDefaultRepository",
+                    "when": "view == extremexp.workflows.repositories && viewItem =~ /workflow-repository-.*/",
+                    "group": "1_repository@1"
+                }
+            ],
+            "editor/context": [
+                {
+                    "command": "extremexp.workflows.uploadCurrentFile",
+                    "when": "resourceExtname =~ /\\.(xxp|espace)$/",
+                    "group": "extremexp@1"
+                }
+            ]
+        },
+        "views": {
+            "explorer": [
+                {
+                    "id": "extremexp.workflows.repositories",
+                    "name": "Workflow Repositories",
+                    "when": "extremexp.workflows.enabled"
+                }
+            ]
+        },
+        "viewsWelcome": [
+            {
+                "view": "extremexp.workflows.repositories",
+                "contents": "No workflow repositories configured.\n[Add Repository](command:extremexp.workflows.addRepository)\nTo learn more about workflow repositories, [read our documentation](https://github.com/extremexp/xxp-tooling-v2#workflow-repositories)."
             }
         ],
         "configuration": {
@@ -149,13 +307,56 @@
                     "type": "string",
                     "description": "Default database path for experiments",
                     "default": ""
+                },
+                "extremexp.workflows.repositories": {
+                    "type": "array",
+                    "description": "Configured workflow repositories",
+                    "default": [],
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "name": {
+                                "type": "string",
+                                "description": "Repository name"
+                            },
+                            "type": {
+                                "type": "string",
+                                "enum": ["local", "remote"],
+                                "description": "Repository type"
+                            },
+                            "path": {
+                                "type": "string",
+                                "description": "Repository path (for local repositories)"
+                            },
+                            "url": {
+                                "type": "string",
+                                "description": "Repository URL (for remote repositories)"
+                            },
+                            "authToken": {
+                                "type": "string",
+                                "description": "Authentication token (format: username:password for remote repositories)"
+                            },
+                            "isDefault": {
+                                "type": "boolean",
+                                "description": "Whether this is the default repository",
+                                "default": false
+                            }
+                        },
+                        "required": ["name", "type"]
+                    }
+                },
+                "extremexp.workflows.enabled": {
+                    "type": "boolean",
+                    "description": "Enable workflow repository features",
+                    "default": true
                 }
             }
         }
     },
     "dependencies": {
-        "socket.io-client": "^4.8.1",
-        "@extremexp/experiment-runner-server": "^1.0.0"
+        "@extremexp/workflow-repository": "^1.0.0",
+        "@extremexp/experiment-runner-server": "^1.0.0",
+        "socket.io-client": "^4.8.1"
     },
     "devDependencies": {
         "@types/vscode": "^1.85.0",

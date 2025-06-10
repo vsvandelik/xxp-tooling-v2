@@ -8,7 +8,7 @@ import { RemoteWorkflowRepository } from '../repositories/RemoteWorkflowReposito
 export class WorkflowRepositoryManager {
   private repositories = new Map<string, IWorkflowRepository>();
   private configs = new Map<string, RepositoryConfig>();
-  private defaultRepositoryName: string | undefined = undefined;
+  private defaultRepositoryName?: string;
 
   addRepository(config: RepositoryConfig): void {
     this.configs.set(config.name, config);
@@ -38,12 +38,18 @@ export class WorkflowRepositoryManager {
       this.defaultRepositoryName = config.name;
     }
   }
+
   removeRepository(name: string): boolean {
     this.repositories.delete(name);
     this.configs.delete(name);
 
     if (this.defaultRepositoryName === name) {
-      this.defaultRepositoryName = undefined;
+      const remainingRepos = Array.from(this.repositories.keys());
+      if (remainingRepos.length > 0 && remainingRepos[0]) {
+        this.defaultRepositoryName = remainingRepos[0];
+      } else {
+        delete this.defaultRepositoryName;
+      }
     }
 
     return true;

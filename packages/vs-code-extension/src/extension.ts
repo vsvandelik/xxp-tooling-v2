@@ -7,12 +7,22 @@ import { RunExperimentCommand } from './commands/runExperiment.js';
 import { ToolResolver } from './services/ToolResolver.js';
 import { ToolExecutor } from './services/ToolExecutor.js';
 
+// Workflow repository imports
+import { RepositoryConfigManager } from './repository/RepositoryConfigManager.js';
+import { WorkflowRepositoryProvider } from './repository/WorkflowRepositoryProvider.js';
+import { WorkflowCommands } from './repository/WorkflowCommands.js';
+
 // Global service instances
 let serverManager: ServerManager;
 let experimentService: ExperimentService;
 let progressPanelManager: ProgressPanelManager;
 let toolResolver: ToolResolver;
 let toolExecutor: ToolExecutor;
+
+// Workflow repository instances
+let repositoryConfigManager: RepositoryConfigManager;
+let workflowRepositoryProvider: WorkflowRepositoryProvider;
+let workflowCommands: WorkflowCommands;
 
 /**
  * This method is called when your extension is activated
@@ -21,10 +31,12 @@ export async function activate(context: vscode.ExtensionContext) {
   console.log('ExtremeXP extension is now active!');
 
   await initializeServices(context);
+  await initializeWorkflowRepository(context);
   registerCommands(context);
   setupStatusBar(context);
   setupConfigurationListener(context);
   registerLanguageFeatures(context);
+  setupWorkflowRepositoryView(context);
 }
 
 /**
@@ -45,9 +57,23 @@ async function initializeServices(context: vscode.ExtensionContext): Promise<voi
 }
 
 /**
+ * Initialize workflow repository system
+ */
+async function initializeWorkflowRepository(context: vscode.ExtensionContext): Promise<void> {
+  repositoryConfigManager = new RepositoryConfigManager(context);
+  workflowRepositoryProvider = new WorkflowRepositoryProvider(repositoryConfigManager);
+  workflowCommands = new WorkflowCommands(
+    context,
+    repositoryConfigManager,
+    workflowRepositoryProvider
+  );
+}
+
+/**
  * Register all extension commands
  */
 function registerCommands(context: vscode.ExtensionContext): void {
+  // Existing commands
   const generateArtifactCommand = new GenerateArtifactCommand(toolExecutor);
   const runExperimentCommand = new RunExperimentCommand(experimentService, progressPanelManager);
 
@@ -57,11 +83,36 @@ function registerCommands(context: vscode.ExtensionContext): void {
   registerCommand(context, 'extremexp.stopServer', handleStopServer);
   registerCommand(context, 'extremexp.restartServer', handleRestartServer);
 
-  // Add command to clear tool cache
   registerCommand(context, 'extremexp.clearToolCache', () => {
     toolResolver.clearCache();
     vscode.window.showInformationMessage('Tool cache cleared');
   });
+
+  // Register workflow repository commands
+  workflowCommands.registerCommands();
+}
+
+/**
+ * Setup workflow repository tree view
+ */
+function setupWorkflowRepositoryView(context: vscode.ExtensionContext): void {
+  // Register tree data provider
+  const treeView = vscode.window.createTreeView('extremexp.workflows.repositories', {
+    treeDataProvider: workflowRepositoryProvider,
+    showCollapseAll: true,
+    canSelectMany: false,
+  });
+
+  // Add context menu commands for tree view
+  registerCommand(context, 'extremexp.workflows.tree.refresh', () => {
+    workflowRepositoryProvider.refresh();
+  });
+
+  registerCommand(context, 'extremexp.workflows.tree.addRepository', () => {
+    vscode.commands.executeCommand('extremexp.workflows.addRepository');
+  });
+
+  context.subscriptions.push(treeView);
 }
 
 /**
@@ -208,6 +259,9 @@ export async function deactivate() {
  * Clean up all services
  */
 async function cleanupServices(): Promise<void> {
+  if (repositoryConfigManager) {
+    repositoryConfigManager.dispose();
+  }
   if (progressPanelManager) {
     progressPanelManager.dispose();
   }
