@@ -23,6 +23,7 @@
     "jszip": "^3.10.1"
   },
   "devDependencies": {
+    "@types/node": "^24.0.1",
     "typescript": "^5.8.3"
   }
 }
