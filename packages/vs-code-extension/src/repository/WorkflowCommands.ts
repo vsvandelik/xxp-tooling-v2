@@ -52,7 +52,6 @@ export class WorkflowCommands {
 
     // New commands
     this.registerCommand('extremexp.workflows.uploadAttachment', this.uploadAttachment.bind(this));
-    this.registerCommand('extremexp.workflows.createNewVersion', this.createNewVersion.bind(this));
     this.registerCommand('extremexp.workflows.previewWorkflow', this.previewWorkflow.bind(this));
 
     // Attachment operations
@@ -487,118 +486,6 @@ export class WorkflowCommands {
     }
   }
 
-  async createNewVersion(repositoryNameOrItem?: string | WorkflowTreeItem, workflowId?: string): Promise<void> {
-    try {
-      const { repoName, id } = await this.resolveWorkflowParams(repositoryNameOrItem, workflowId);
-      if (!repoName || !id) return;
-
-      const repositoryManager = this.repositoryProvider.getRepositoryManager();
-      const workflow = await repositoryManager.getWorkflow(id, repoName);
-      if (!workflow) {
-        vscode.window.showErrorMessage('Workflow not found');
-        return;
-      }
-
-      // Parse semantic version and increment
-      const currentVersion = workflow.metadata.version;
-      const versionMatch = currentVersion.match(/^(\d+)\.(\d+)\.(\d+)(.*)$/);
-
-      let newVersion: string;
-      if (versionMatch) {
-        const [, major, minor, patch, suffix] = versionMatch;
-
-        const versionType = await vscode.window.showQuickPick(
-          [
-            {
-              label: 'Patch',
-              description: `${major}.${minor}.${parseInt(patch!) + 1}${suffix}`,
-              value: 'patch',
-            },
-            {
-              label: 'Minor',
-              description: `${major}.${parseInt(minor!) + 1}.0${suffix}`,
-              value: 'minor',
-            },
-            { label: 'Major', description: `${parseInt(major!) + 1}.0.0${suffix}`, value: 'major' },
-          ],
-          {
-            placeHolder: 'Select version increment type',
-          }
-        );
-
-        if (!versionType) return;
-
-        switch (versionType.value) {
-          case 'patch':
-            newVersion = `${major}.${minor}.${parseInt(patch!) + 1}${suffix}`;
-            break;
-          case 'minor':
-            newVersion = `${major}.${parseInt(minor!) + 1}.0${suffix}`;
-            break;
-          case 'major':
-            newVersion = `${parseInt(major!) + 1}.0.0${suffix}`;
-            break;
-          default:
-            newVersion = currentVersion;
-        }
-      } else {
-        // Non-semantic version, just append .1
-        newVersion = `${currentVersion}.1`;
-      }
-
-      const repository = repositoryManager.getRepository(repoName);
-      if (!repository) {
-        vscode.window.showErrorMessage('Repository not found');
-        return;
-      }
-
-      const content = await repository.getContent(id);
-      if (!content) {
-        vscode.window.showErrorMessage('Failed to get workflow content');
-        return;
-      }
-
-      // Prompt for new name
-      const newName = await vscode.window.showInputBox({
-        prompt: 'Enter name for the new version',
-        value: `${workflow.metadata.name} v${newVersion}`,
-        validateInput: value => {
-          if (!value.trim()) {
-            return 'Name is required';
-          }
-          return null;
-        },
-      });
-
-      if (!newName) return;
-
-      // Get target path
-      const targetPath = await this.promptForTargetPath();
-      if (targetPath === undefined) return;
-
-      // Create new workflow with incremented version
-      await repositoryManager.uploadWorkflow(
-        targetPath,
-        content,
-        {
-          ...workflow.metadata,
-          version: newVersion,
-          name: newName.trim(),
-          description: workflow.metadata.description + ` (Version ${newVersion})`,
-        },
-        repoName
-      );
-
-      vscode.window.showInformationMessage(`Created new version: ${newName} (v${newVersion})`);
-
-      this.repositoryProvider.refresh();
-    } catch (error) {
-      vscode.window.showErrorMessage(
-        `Failed to create new version: ${error instanceof Error ? error.message : 'Unknown error'}`
-      );
-    }
-  }
-
   async previewWorkflow(repositoryNameOrItem?: string | WorkflowTreeItem, workflowId?: string): Promise<void> {
     try {
       const { repoName, id } = await this.resolveWorkflowParams(repositoryNameOrItem, workflowId);
@@ -866,7 +753,7 @@ export class WorkflowCommands {
       const selected = await vscode.window.showQuickPick<WorkflowQuickPickItem>(
         workflows.map((workflow: WorkflowMetadata) => ({
           label: workflow.name,
-          description: `by ${workflow.author} • v${workflow.version}`,
+          description: `by ${workflow.author}`,
           detail: workflow.description,
           workflowId: workflow.id,
         })),
@@ -1035,7 +922,7 @@ export class WorkflowCommands {
       const selected = await vscode.window.showQuickPick<WorkflowQuickPickItem>(
         workflows.map((workflow: WorkflowMetadata) => ({
           label: workflow.name,
-          description: `by ${workflow.author} • v${workflow.version}`,
+          description: `by ${workflow.author}`,
           detail: workflow.description,
           workflowId: workflow.id,
         })),
@@ -1153,7 +1040,7 @@ export class WorkflowCommands {
       name: workflow.metadata.name,
       description: workflow.metadata.description,
       author: workflow.metadata.author,
-      version: workflow.metadata.version,
+      
       tags: workflow.metadata.tags,
       mainFile: workflow.metadata.mainFile,
     };
@@ -1410,9 +1297,6 @@ export class WorkflowCommands {
     <div class="metadata">
         <span class="metadata-label">Author:</span>
         <span>${escapeHtml(workflow.metadata.author)}</span>
-        
-        <span class="metadata-label">Version:</span>
-        <span>${escapeHtml(workflow.metadata.version)}</span>
         
         <span class="metadata-label">Main File:</span>
         <span>${escapeHtml(workflow.metadata.mainFile)}</span>

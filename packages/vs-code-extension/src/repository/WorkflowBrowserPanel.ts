@@ -237,7 +237,6 @@ export class WorkflowBrowserPanel {
       name: workflow.metadata.name,
       description: workflow.metadata.description,
       author: workflow.metadata.author,
-      version: workflow.metadata.version,
       tags: workflow.metadata.tags,
       mainFile: workflow.metadata.mainFile,
     };
@@ -961,7 +960,7 @@ export class WorkflowBrowserPanel {
                 workflows.map(workflow => \`
                     <div class="workflow-card">
                         <div class="workflow-title">\${escapeHtml(workflow.name)}</div>
-                        <div class="workflow-meta">👤 \${escapeHtml(workflow.author)} • 📦 v\${escapeHtml(workflow.version)}</div>
+                        <div class="workflow-meta">👤 \${escapeHtml(workflow.author)}</div>
                         <div class="workflow-description">\${escapeHtml(workflow.description)}</div>
                         <div class="workflow-tags">
                             \${workflow.tags.map(tag => \`<span class="tag">\${escapeHtml(tag)}</span>\`).join('')}

@@ -439,7 +439,7 @@ export class WorkflowTreeItem extends vscode.TreeItem {
       case 'workflow': {
         const metadata = this.context?.metadata;
         if (metadata) {
-          return `${metadata.name}\nAuthor: ${metadata.author}\nVersion: ${metadata.version}\nDescription: ${metadata.description}\nTags: ${metadata.tags.join(', ')}`;
+          return `${metadata.name}\nAuthor: ${metadata.author}\nDescription: ${metadata.description}\nTags: ${metadata.tags.join(', ')}`;
         }
         return `Workflow: ${this.label}`;
       }
@@ -472,7 +472,7 @@ export class WorkflowTreeItem extends vscode.TreeItem {
       }
       case 'workflow': {
         const metadata = this.context?.metadata;
-        return metadata ? `v${metadata.version} • ${metadata.author}` : undefined;
+        return metadata ? `${metadata.author}` : undefined;
       }
       case 'attachment': {
         const size = this.context?.attachmentSize;
