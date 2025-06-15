@@ -193,8 +193,15 @@ function setupConfigurationListener(context: vscode.ExtensionContext): void {
   context.subscriptions.push(
     vscode.workspace.onDidChangeConfiguration(async e => {
       if (e.affectsConfiguration('extremexp')) {
-        serverManager.reloadConfiguration();
-        toolResolver.clearCache(); // Clear cache when configuration changes
+        // Only reload server configuration if server-related settings changed
+        if (e.affectsConfiguration('extremexp.server')) {
+          serverManager.reloadConfiguration();
+        }
+        
+        // Clear cache when tool-related configuration changes
+        if (e.affectsConfiguration('extremexp.tools')) {
+          toolResolver.clearCache();
+        }
 
         // Update workflow enabled context if that setting changed
         if (e.affectsConfiguration('extremexp.workflows.enabled')) {
@@ -265,20 +272,39 @@ async function setupWorkflowFeatures(): Promise<void> {
 export async function deactivate() {
   console.log('ExtremeXP extension is being deactivated');
 
-  await cleanupServices();
+  try {
+    await cleanupServices();
+    console.log('ExtremeXP extension cleanup completed');
+  } catch (error) {
+    console.error('Error during extension deactivation:', error);
+    // Don't throw the error to avoid blocking VS Code shutdown
+  }
 }
 
 /**
  * Clean up all services
  */
 async function cleanupServices(): Promise<void> {
+  const cleanupPromises: Promise<void>[] = [];
+
   if (repositoryConfigManager) {
-    repositoryConfigManager.dispose();
+    cleanupPromises.push(Promise.resolve(repositoryConfigManager.dispose()));
   }
   if (progressPanelManager) {
-    progressPanelManager.dispose();
+    cleanupPromises.push(Promise.resolve(progressPanelManager.dispose()));
   }
   if (serverManager) {
-    await serverManager.dispose();
+    cleanupPromises.push(serverManager.dispose());
   }
+
+  // Wait for all cleanup operations to complete, but with a timeout
+  await Promise.race([
+    Promise.all(cleanupPromises),
+    new Promise<void>((resolve) => {
+      setTimeout(() => {
+        console.warn('Cleanup timed out after 10 seconds');
+        resolve();
+      }, 10000);
+    })
+  ]);
 }

@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { spawn, ChildProcess } from 'child_process';
+import { ChildProcess } from 'child_process';
 import * as path from 'path';
 import * as net from 'net';
 import { ToolExecutor } from './ToolExecutor';
@@ -12,6 +12,7 @@ export class ServerManager {
   private port: number = 3000;
   private outputChannel: vscode.OutputChannel;
   private statusChangeHandlers: ((status: ServerStatus) => void)[] = [];
+  private serverPid: number | null = null;
 
   constructor(
     private context: vscode.ExtensionContext,
@@ -131,9 +132,13 @@ export class ServerManager {
         options
       );
 
+      // Store the PID for better process management
+      this.serverPid = this.serverProcess.pid || null;
+
       this.serverProcess.on('close', code => {
         this.outputChannel.appendLine(`Server process exited with code ${code}`);
         this.serverProcess = null;
+        this.serverPid = null;
         this.setStatus('stopped');
       });
 
@@ -158,27 +163,93 @@ export class ServerManager {
     if (this.serverProcess) {
       this.outputChannel.appendLine('Stopping ExtremeXP server...');
 
-      // Send graceful shutdown signal
-      this.serverProcess.kill('SIGINT');
-
-      // Wait for process to exit
-      await new Promise<void>(resolve => {
-        const timeout = setTimeout(() => {
-          // Force kill if not stopped after 5 seconds
-          this.serverProcess?.kill('SIGKILL');
-          resolve();
-        }, 5000);
-
-        this.serverProcess?.on('close', () => {
-          clearTimeout(timeout);
-          resolve();
-        });
-      });
+      try {
+        // Try graceful shutdown first
+        await this.attemptGracefulShutdown();
+      } catch (error) {
+        this.outputChannel.appendLine(`Graceful shutdown failed: ${error}`);
+        // Force kill if graceful shutdown fails
+        await this.forceKillServer();
+      }
 
       this.serverProcess = null;
+      this.serverPid = null;
       this.setStatus('stopped');
       this.outputChannel.appendLine('Server stopped');
     }
+  }
+
+  private async attemptGracefulShutdown(): Promise<void> {
+    if (!this.serverProcess) return;
+
+    return new Promise<void>((resolve, reject) => {
+      const timeout = setTimeout(() => {
+        reject(new Error('Graceful shutdown timed out'));
+      }, 8000); // Increased timeout to 8 seconds
+
+      this.serverProcess!.on('close', () => {
+        clearTimeout(timeout);
+        resolve();
+      });
+
+      // On Windows, try to send a proper shutdown signal
+      if (process.platform === 'win32') {
+        // For Windows, try to terminate the process tree
+        this.terminateProcessTree();
+      } else {
+        // On Unix-like systems, send SIGTERM first, then SIGINT
+        this.serverProcess!.kill('SIGTERM');
+        setTimeout(() => {
+          if (this.serverProcess && !this.serverProcess.killed) {
+            this.serverProcess.kill('SIGINT');
+          }
+        }, 2000);
+      }
+    });
+  }
+
+  private async forceKillServer(): Promise<void> {
+    if (this.serverProcess) {
+      this.outputChannel.appendLine('Force killing server process...');
+      
+      if (process.platform === 'win32' && this.serverPid) {
+        // On Windows, use taskkill to ensure the process tree is terminated
+        try {
+          const { spawn } = await import('child_process');
+          const killProcess = spawn('taskkill', ['/PID', this.serverPid.toString(), '/T', '/F'], {
+            windowsHide: true
+          });
+          
+          await new Promise<void>((resolve) => {
+            killProcess.on('close', () => resolve());
+            setTimeout(resolve, 2000); // Don't wait too long
+          });
+        } catch (error) {
+          this.outputChannel.appendLine(`Failed to force kill with taskkill: ${error}`);
+        }
+      } else {
+        this.serverProcess.kill('SIGKILL');
+      }
+    }
+  }
+
+  private terminateProcessTree(): void {
+    if (!this.serverPid) return;
+
+    // Use taskkill with /T flag to terminate the entire process tree
+    import('child_process').then(({ spawn }) => {
+      const killProcess = spawn('taskkill', ['/PID', this.serverPid!.toString(), '/T'], {
+        windowsHide: true
+      });
+      
+      killProcess.on('error', (error) => {
+        this.outputChannel.appendLine(`Failed to terminate process tree: ${error}`);
+        // Fallback to direct process kill
+        if (this.serverProcess) {
+          this.serverProcess.kill('SIGINT');
+        }
+      });
+    });
   }
 
   async restartServer(): Promise<void> {
@@ -208,25 +279,47 @@ export class ServerManager {
   }
 
   reloadConfiguration(): void {
+    const config = vscode.workspace.getConfiguration('extremexp');
     const oldPort = this.port;
-    this.loadConfiguration();
+    const newPort = config.get<number>('server.port', 3000);
+    
+    this.port = newPort;
 
-    if (oldPort !== this.port && this.status === 'running') {
+    // Only restart server if the port actually changed and server is running
+    if (oldPort !== newPort && this.status === 'running') {
+      this.outputChannel.appendLine(`Port changed from ${oldPort} to ${newPort}`);
       vscode.window
         .showInformationMessage(
-          'Server port changed. Restart the server for changes to take effect.',
-          'Restart Now'
+          `Server port changed from ${oldPort} to ${newPort}. Restart the server for changes to take effect.`,
+          'Restart Now',
+          'Restart Later'
         )
         .then(action => {
           if (action === 'Restart Now') {
-            this.restartServer();
+            this.restartServer().catch(error => {
+              this.outputChannel.appendLine(`Failed to restart server: ${error}`);
+              vscode.window.showErrorMessage(`Failed to restart server: ${error}`);
+            });
           }
         });
+    } else {
+      // Just reload other settings without restarting
+      this.outputChannel.appendLine('Configuration reloaded (no restart required)');
     }
   }
 
   async dispose(): Promise<void> {
-    await this.stopServer();
+    this.outputChannel.appendLine('Disposing ServerManager...');
+    
+    try {
+      await this.stopServer();
+    } catch (error) {
+      this.outputChannel.appendLine(`Error during server disposal: ${error}`);
+    }
+    
+    // Clear all status change handlers
+    this.statusChangeHandlers = [];
+    
     this.outputChannel.dispose();
   }
 
@@ -312,52 +405,100 @@ export class ServerManager {
 
   private async killProcessOnPort(): Promise<void> {
     try {
-      // This is a cross-platform approach
-      const { spawn } = await import('child_process');
+      this.outputChannel.appendLine(`Attempting to kill process on port ${this.port}...`);
 
       if (process.platform === 'win32') {
-        // Windows
-        const netstat = spawn('netstat', ['-ano']);
-        const findstr = spawn('findstr', [`:${this.port}`]);
+        // Windows approach
+        const { spawn } = await import('child_process');
+        
+        // Find processes using the port
+        const netstat = spawn('netstat', ['-ano'], { windowsHide: true });
+        const findstr = spawn('findstr', [`:${this.port}`], { windowsHide: true });
 
-        netstat.stdout.pipe(findstr.stdin);
+        netstat.stdout?.pipe(findstr.stdin);
 
         let output = '';
-        findstr.stdout.on('data', data => {
+        findstr.stdout?.on('data', data => {
           output += data.toString();
         });
 
-        findstr.on('close', () => {
-          const lines = output.split('\n');
-          for (const line of lines) {
-            const parts = line.trim().split(/\s+/);
-            if (parts.length >= 5 && parts[1]?.includes(`:${this.port}`)) {
-              const pid = parts[4];
-              if (pid && pid !== '0') {
-                spawn('taskkill', ['/PID', pid, '/F']);
-                this.outputChannel.appendLine(`Killed process ${pid} using port ${this.port}`);
-                break;
+        await new Promise<void>(resolve => {
+          findstr.on('close', () => {
+            const lines = output.split('\n');
+            let killedAny = false;
+            
+            for (const line of lines) {
+              const parts = line.trim().split(/\s+/);
+              if (parts.length >= 5 && parts[1]?.includes(`:${this.port}`)) {
+                const pid = parts[4];
+                if (pid && pid !== '0' && !isNaN(Number(pid))) {
+                  try {
+                    // Use taskkill with /T to kill the entire process tree
+                    spawn('taskkill', ['/PID', pid, '/T', '/F'], { windowsHide: true });
+                    this.outputChannel.appendLine(`Killed process tree ${pid} using port ${this.port}`);
+                    killedAny = true;
+                  } catch (error) {
+                    this.outputChannel.appendLine(`Failed to kill process ${pid}: ${error}`);
+                  }
+                }
               }
             }
-          }
+            
+            if (!killedAny) {
+              this.outputChannel.appendLine(`No processes found using port ${this.port}`);
+            }
+            
+            resolve();
+          });
+          
+          // Timeout fallback
+          setTimeout(resolve, 5000);
         });
       } else {
         // Unix-like systems
-        spawn('lsof', ['-ti', `tcp:${this.port}`]).stdout.on('data', data => {
-          const pid = data.toString().trim();
-          if (pid) {
-            spawn('kill', ['-9', pid]);
-            this.outputChannel.appendLine(`Killed process ${pid} using port ${this.port}`);
-          }
+        const { spawn } = await import('child_process');
+        const lsof = spawn('lsof', ['-ti', `tcp:${this.port}`]);
+        
+        let output = '';
+        lsof.stdout?.on('data', data => {
+          output += data.toString();
+        });
+        
+        await new Promise<void>(resolve => {
+          lsof.on('close', () => {
+            const pids = output.trim().split('\n').filter(pid => pid && !isNaN(Number(pid)));
+            
+            for (const pid of pids) {
+              try {
+                spawn('kill', ['-9', pid]);
+                this.outputChannel.appendLine(`Killed process ${pid} using port ${this.port}`);
+              } catch (error) {
+                this.outputChannel.appendLine(`Failed to kill process ${pid}: ${error}`);
+              }
+            }
+            
+            resolve();
+          });
+          
+          // Timeout fallback
+          setTimeout(resolve, 5000);
         });
       }
 
-      // Wait a bit and try to start server again
-      setTimeout(() => {
-        this.startServer().catch(console.error);
-      }, 1000);
+      // Wait a bit before trying to start server again
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      // Try to start server again
+      try {
+        await this.startServer();
+      } catch (error) {
+        this.outputChannel.appendLine(`Failed to restart server after killing port process: ${error}`);
+        vscode.window.showErrorMessage(`Failed to restart server: ${error}`);
+      }
     } catch (error) {
-      vscode.window.showErrorMessage(`Failed to kill process on port ${this.port}: ${error}`);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      this.outputChannel.appendLine(`Failed to kill process on port ${this.port}: ${errorMessage}`);
+      vscode.window.showErrorMessage(`Failed to kill process on port ${this.port}: ${errorMessage}`);
     }
   }
 }

@@ -241,9 +241,9 @@ export class WorkflowCommands {
     }
   }
 
-  async openWorkflow(repositoryName?: string, workflowId?: string): Promise<void> {
+  async openWorkflow(repositoryNameOrItem?: string | WorkflowTreeItem, workflowId?: string): Promise<void> {
     try {
-      const { repoName, id } = await this.resolveWorkflowParams(repositoryName, workflowId);
+      const { repoName, id } = await this.resolveWorkflowParams(repositoryNameOrItem, workflowId);
       if (!repoName || !id) {
         return;
       }
@@ -272,9 +272,9 @@ export class WorkflowCommands {
     }
   }
 
-  async downloadWorkflow(repositoryName?: string, workflowId?: string): Promise<void> {
+  async downloadWorkflow(repositoryNameOrItem?: string | WorkflowTreeItem, workflowId?: string): Promise<void> {
     try {
-      const { repoName, id } = await this.resolveWorkflowParams(repositoryName, workflowId);
+      const { repoName, id } = await this.resolveWorkflowParams(repositoryNameOrItem, workflowId);
       if (!repoName || !id) {
         return;
       }
@@ -463,9 +463,9 @@ export class WorkflowCommands {
     }
   }
 
-  async createNewVersion(repositoryName?: string, workflowId?: string): Promise<void> {
+  async createNewVersion(repositoryNameOrItem?: string | WorkflowTreeItem, workflowId?: string): Promise<void> {
     try {
-      const { repoName, id } = await this.resolveWorkflowParams(repositoryName, workflowId);
+      const { repoName, id } = await this.resolveWorkflowParams(repositoryNameOrItem, workflowId);
       if (!repoName || !id) return;
 
       const repositoryManager = this.repositoryProvider.getRepositoryManager();
@@ -575,9 +575,9 @@ export class WorkflowCommands {
     }
   }
 
-  async previewWorkflow(repositoryName?: string, workflowId?: string): Promise<void> {
+  async previewWorkflow(repositoryNameOrItem?: string | WorkflowTreeItem, workflowId?: string): Promise<void> {
     try {
-      const { repoName, id } = await this.resolveWorkflowParams(repositoryName, workflowId);
+      const { repoName, id } = await this.resolveWorkflowParams(repositoryNameOrItem, workflowId);
       if (!repoName || !id) return;
 
       const repositoryManager = this.repositoryProvider.getRepositoryManager();
@@ -774,9 +774,9 @@ export class WorkflowCommands {
     );
   }
 
-  async deleteWorkflow(repositoryName?: string, workflowId?: string): Promise<void> {
+  async deleteWorkflow(repositoryNameOrItem?: string | WorkflowTreeItem, workflowId?: string): Promise<void> {
     try {
-      const { repoName, id } = await this.resolveWorkflowParams(repositoryName, workflowId);
+      const { repoName, id } = await this.resolveWorkflowParams(repositoryNameOrItem, workflowId);
       if (!repoName || !id) {
         return;
       }
@@ -980,11 +980,21 @@ export class WorkflowCommands {
   }
 
   private async resolveWorkflowParams(
-    repositoryName?: string,
+    repositoryNameOrItem?: string | WorkflowTreeItem,
     workflowId?: string
   ): Promise<{ repoName?: string; id?: string }> {
-    let repoName = repositoryName;
-    let id = workflowId;
+    let repoName: string | undefined;
+    let id: string | undefined;
+
+    // Check if the first parameter is a WorkflowTreeItem (from context menu)
+    if (repositoryNameOrItem && typeof repositoryNameOrItem === 'object' && 'context' in repositoryNameOrItem) {
+      const treeItem = repositoryNameOrItem as WorkflowTreeItem;
+      repoName = treeItem.context?.repository;
+      id = treeItem.context?.workflowId;
+    } else {
+      repoName = repositoryNameOrItem as string;
+      id = workflowId;
+    }
 
     if (!repoName) {
       repoName = await this.selectRepository();

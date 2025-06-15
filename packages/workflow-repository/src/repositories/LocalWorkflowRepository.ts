@@ -114,7 +114,7 @@ export class LocalWorkflowRepository implements IWorkflowRepository {
     if (existing) {
       throw new Error(
         `Workflow "${metadata.name}" already exists at path "${workflowPath}". ` +
-          `Use update to modify it or choose a different name.`
+          `Use delete and upload to modify it or choose a different name.`
       );
     }
 
