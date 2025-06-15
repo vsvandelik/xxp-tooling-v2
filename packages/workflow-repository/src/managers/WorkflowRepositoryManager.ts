@@ -4,6 +4,7 @@ import { WorkflowItem, WorkflowContent } from '../models/WorkflowItem.js';
 import { RepositoryConfig, WorkflowSearchOptions } from '../models/RepositoryConfig.js';
 import { LocalWorkflowRepository } from '../repositories/LocalWorkflowRepository.js';
 import { RemoteWorkflowRepository } from '../repositories/RemoteWorkflowRepository.js';
+import { createHash } from 'crypto';
 
 export class WorkflowRepositoryManager {
   private repositories = new Map<string, IWorkflowRepository>();
@@ -92,6 +93,32 @@ export class WorkflowRepositoryManager {
     }
 
     return repository.get(workflowId);
+  }
+
+  /**
+   * Check if a workflow would exist at the given path with the given metadata
+   */
+  async checkWorkflowExists(
+    path: string,
+    metadata: Omit<WorkflowMetadata, 'id' | 'createdAt' | 'modifiedAt' | 'hasAttachments'>,
+    repositoryName?: string
+  ): Promise<boolean> {
+    const repository = this.getRepository(repositoryName);
+    if (!repository) {
+      throw new Error(`Repository ${repositoryName || 'default'} not found`);
+    }
+
+    const workflowId = this.generateWorkflowId(path, metadata.name);
+    return repository.exists(workflowId);
+  }
+
+  /**
+   * Generate the workflow ID that would be created for the given path and name
+   * This uses the same logic as LocalWorkflowRepository.generateId
+   */
+  private generateWorkflowId(workflowPath: string, name: string): string {
+    const input = `${workflowPath}/${name}`;
+    return createHash('sha256').update(input).digest('hex').substring(0, 16);
   }
 
   async uploadWorkflow(

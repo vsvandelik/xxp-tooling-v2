@@ -341,6 +341,26 @@ export class WorkflowCommands {
       return;
     }
 
+    // Check if workflow already exists and prompt for confirmation
+    const workflowExists = await repositoryManager.checkWorkflowExists(
+      targetPath,
+      content.metadata,
+      repositoryName
+    );
+
+    if (workflowExists) {
+      const confirmed = await vscode.window.showWarningMessage(
+        `A workflow named "${content.metadata.name}" already exists at path "${targetPath}". Do you want to override it?`,
+        { modal: true },
+        'Override',
+        'Cancel'
+      );
+
+      if (confirmed !== 'Override') {
+        return;
+      }
+    }
+
     const metadata = await repositoryManager.uploadWorkflow(
       targetPath,
       content.content,
@@ -392,14 +412,37 @@ export class WorkflowCommands {
     };
 
     const repositoryManager = this.repositoryProvider.getRepositoryManager();
+
+    // Check if workflow already exists and prompt for confirmation
+    const workflowMetadata = {
+      ...metadata,
+      mainFile: fileName,
+      path: targetPath,
+    };
+
+    const workflowExists = await repositoryManager.checkWorkflowExists(
+      targetPath,
+      workflowMetadata,
+      repositoryName
+    );
+
+    if (workflowExists) {
+      const confirmed = await vscode.window.showWarningMessage(
+        `A workflow named "${metadata.name}" already exists at path "${targetPath}". Do you want to override it?`,
+        { modal: true },
+        'Override',
+        'Cancel'
+      );
+
+      if (confirmed !== 'Override') {
+        return;
+      }
+    }
+
     const uploadedMetadata = await repositoryManager.uploadWorkflow(
       targetPath,
       content,
-      {
-        ...metadata,
-        mainFile: fileName,
-        path: targetPath,
-      },
+      workflowMetadata,
       repositoryName
     );
 
@@ -540,14 +583,37 @@ export class WorkflowCommands {
       };
 
       const repositoryManager = this.repositoryProvider.getRepositoryManager();
+
+      // Check if workflow already exists and prompt for confirmation
+      const workflowMetadata = {
+        ...metadata,
+        mainFile: fileName,
+        path: targetPath,
+      };
+
+      const workflowExists = await repositoryManager.checkWorkflowExists(
+        targetPath,
+        workflowMetadata,
+        repositoryName
+      );
+
+      if (workflowExists) {
+        const confirmed = await vscode.window.showWarningMessage(
+          `A workflow named "${metadata.name}" already exists at path "${targetPath}". Do you want to override it?`,
+          { modal: true },
+          'Override',
+          'Cancel'
+        );
+
+        if (confirmed !== 'Override') {
+          return;
+        }
+      }
+
       const uploadedMetadata = await repositoryManager.uploadWorkflow(
         targetPath,
         content,
-        {
-          ...metadata,
-          mainFile: fileName,
-          path: targetPath,
-        },
+        workflowMetadata,
         repositoryName
       );
 
