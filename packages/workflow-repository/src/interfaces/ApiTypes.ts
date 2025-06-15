@@ -25,7 +25,6 @@ export interface UploadWorkflowRequest {
   readonly name: string;
   readonly description: string;
   readonly author: string;
-  readonly version: string;
   readonly tags: string[];
   readonly mainFile: string;
 }
@@ -33,7 +32,6 @@ export interface UploadWorkflowRequest {
 export interface UpdateWorkflowRequest {
   readonly name?: string;
   readonly description?: string;
-  readonly version?: string;
   readonly tags?: string[];
 }
 

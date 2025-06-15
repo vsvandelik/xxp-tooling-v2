@@ -3,7 +3,6 @@ export interface WorkflowMetadata {
   readonly name: string;
   readonly description: string;
   readonly author: string;
-  readonly version: string;
   readonly tags: readonly string[];
   readonly createdAt: Date;
   readonly modifiedAt: Date;

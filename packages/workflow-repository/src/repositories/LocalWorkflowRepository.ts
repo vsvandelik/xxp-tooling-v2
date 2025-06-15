@@ -11,7 +11,6 @@ interface WorkflowManifest {
   name: string;
   description: string;
   author: string;
-  version: string;
   tags: string[];
   mainFile: string;
 }
@@ -298,7 +297,6 @@ export class LocalWorkflowRepository implements IWorkflowRepository {
         name: metadata.name || nameWithoutExt,
         description: metadata.description || `Single-file workflow: ${fileName}`,
         author: metadata.author || 'Unknown',
-        version: metadata.version || '1.0.0',
         tags: metadata.tags || [],
         createdAt: stats.birthtime,
         modifiedAt: stats.mtime,
@@ -319,7 +317,6 @@ export class LocalWorkflowRepository implements IWorkflowRepository {
       name: defaultName,
       description: '',
       author: 'Unknown',
-      version: '1.0.0',
       tags: [],
     };
 
@@ -339,9 +336,6 @@ export class LocalWorkflowRepository implements IWorkflowRepository {
             break;
           case 'author':
             metadata.author = value?.trim() || 'Unknown';
-            break;
-          case 'version':
-            metadata.version = value?.trim() || '1.0.0';
             break;
           case 'tags':
             metadata.tags = value?.split(',').map(t => t.trim()) || [];
@@ -373,7 +367,6 @@ export class LocalWorkflowRepository implements IWorkflowRepository {
         name: manifest.name,
         description: manifest.description,
         author: manifest.author,
-        version: manifest.version,
         tags: manifest.tags,
         createdAt: stats.birthtime,
         modifiedAt: stats.mtime,
@@ -391,7 +384,6 @@ export class LocalWorkflowRepository implements IWorkflowRepository {
       name: metadata.name,
       description: metadata.description,
       author: metadata.author,
-      version: metadata.version,
       tags: [...metadata.tags],
       mainFile: metadata.mainFile,
     };
