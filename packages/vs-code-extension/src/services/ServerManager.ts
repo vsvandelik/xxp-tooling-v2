@@ -211,16 +211,16 @@ export class ServerManager {
   private async forceKillServer(): Promise<void> {
     if (this.serverProcess) {
       this.outputChannel.appendLine('Force killing server process...');
-      
+
       if (process.platform === 'win32' && this.serverPid) {
         // On Windows, use taskkill to ensure the process tree is terminated
         try {
           const { spawn } = await import('child_process');
           const killProcess = spawn('taskkill', ['/PID', this.serverPid.toString(), '/T', '/F'], {
-            windowsHide: true
+            windowsHide: true,
           });
-          
-          await new Promise<void>((resolve) => {
+
+          await new Promise<void>(resolve => {
             killProcess.on('close', () => resolve());
             setTimeout(resolve, 2000); // Don't wait too long
           });
@@ -239,10 +239,10 @@ export class ServerManager {
     // Use taskkill with /T flag to terminate the entire process tree
     import('child_process').then(({ spawn }) => {
       const killProcess = spawn('taskkill', ['/PID', this.serverPid!.toString(), '/T'], {
-        windowsHide: true
+        windowsHide: true,
       });
-      
-      killProcess.on('error', (error) => {
+
+      killProcess.on('error', error => {
         this.outputChannel.appendLine(`Failed to terminate process tree: ${error}`);
         // Fallback to direct process kill
         if (this.serverProcess) {
@@ -282,7 +282,7 @@ export class ServerManager {
     const config = vscode.workspace.getConfiguration('extremexp');
     const oldPort = this.port;
     const newPort = config.get<number>('server.port', 3000);
-    
+
     this.port = newPort;
 
     // Only restart server if the port actually changed and server is running
@@ -310,16 +310,16 @@ export class ServerManager {
 
   async dispose(): Promise<void> {
     this.outputChannel.appendLine('Disposing ServerManager...');
-    
+
     try {
       await this.stopServer();
     } catch (error) {
       this.outputChannel.appendLine(`Error during server disposal: ${error}`);
     }
-    
+
     // Clear all status change handlers
     this.statusChangeHandlers = [];
-    
+
     this.outputChannel.dispose();
   }
 
@@ -410,7 +410,7 @@ export class ServerManager {
       if (process.platform === 'win32') {
         // Windows approach
         const { spawn } = await import('child_process');
-        
+
         // Find processes using the port
         const netstat = spawn('netstat', ['-ano'], { windowsHide: true });
         const findstr = spawn('findstr', [`:${this.port}`], { windowsHide: true });
@@ -426,7 +426,7 @@ export class ServerManager {
           findstr.on('close', () => {
             const lines = output.split('\n');
             let killedAny = false;
-            
+
             for (const line of lines) {
               const parts = line.trim().split(/\s+/);
               if (parts.length >= 5 && parts[1]?.includes(`:${this.port}`)) {
@@ -435,7 +435,9 @@ export class ServerManager {
                   try {
                     // Use taskkill with /T to kill the entire process tree
                     spawn('taskkill', ['/PID', pid, '/T', '/F'], { windowsHide: true });
-                    this.outputChannel.appendLine(`Killed process tree ${pid} using port ${this.port}`);
+                    this.outputChannel.appendLine(
+                      `Killed process tree ${pid} using port ${this.port}`
+                    );
                     killedAny = true;
                   } catch (error) {
                     this.outputChannel.appendLine(`Failed to kill process ${pid}: ${error}`);
@@ -443,14 +445,14 @@ export class ServerManager {
                 }
               }
             }
-            
+
             if (!killedAny) {
               this.outputChannel.appendLine(`No processes found using port ${this.port}`);
             }
-            
+
             resolve();
           });
-          
+
           // Timeout fallback
           setTimeout(resolve, 5000);
         });
@@ -458,16 +460,19 @@ export class ServerManager {
         // Unix-like systems
         const { spawn } = await import('child_process');
         const lsof = spawn('lsof', ['-ti', `tcp:${this.port}`]);
-        
+
         let output = '';
         lsof.stdout?.on('data', data => {
           output += data.toString();
         });
-        
+
         await new Promise<void>(resolve => {
           lsof.on('close', () => {
-            const pids = output.trim().split('\n').filter(pid => pid && !isNaN(Number(pid)));
-            
+            const pids = output
+              .trim()
+              .split('\n')
+              .filter(pid => pid && !isNaN(Number(pid)));
+
             for (const pid of pids) {
               try {
                 spawn('kill', ['-9', pid]);
@@ -476,10 +481,10 @@ export class ServerManager {
                 this.outputChannel.appendLine(`Failed to kill process ${pid}: ${error}`);
               }
             }
-            
+
             resolve();
           });
-          
+
           // Timeout fallback
           setTimeout(resolve, 5000);
         });
@@ -487,18 +492,22 @@ export class ServerManager {
 
       // Wait a bit before trying to start server again
       await new Promise(resolve => setTimeout(resolve, 2000));
-      
+
       // Try to start server again
       try {
         await this.startServer();
       } catch (error) {
-        this.outputChannel.appendLine(`Failed to restart server after killing port process: ${error}`);
+        this.outputChannel.appendLine(
+          `Failed to restart server after killing port process: ${error}`
+        );
         vscode.window.showErrorMessage(`Failed to restart server: ${error}`);
       }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
       this.outputChannel.appendLine(`Failed to kill process on port ${this.port}: ${errorMessage}`);
-      vscode.window.showErrorMessage(`Failed to kill process on port ${this.port}: ${errorMessage}`);
+      vscode.window.showErrorMessage(
+        `Failed to kill process on port ${this.port}: ${errorMessage}`
+      );
     }
   }
 }

@@ -55,7 +55,10 @@ export class WorkflowCommands {
     this.registerCommand('extremexp.workflows.previewWorkflow', this.previewWorkflow.bind(this));
 
     // Attachment operations
-    this.registerCommand('extremexp.workflows.downloadAttachment', this.downloadAttachment.bind(this));
+    this.registerCommand(
+      'extremexp.workflows.downloadAttachment',
+      this.downloadAttachment.bind(this)
+    );
     this.registerCommand('extremexp.workflows.openAttachment', this.openAttachment.bind(this));
 
     // Tree view commands
@@ -244,7 +247,10 @@ export class WorkflowCommands {
     }
   }
 
-  async openWorkflow(repositoryNameOrItem?: string | WorkflowTreeItem, workflowId?: string): Promise<void> {
+  async openWorkflow(
+    repositoryNameOrItem?: string | WorkflowTreeItem,
+    workflowId?: string
+  ): Promise<void> {
     try {
       const { repoName, id } = await this.resolveWorkflowParams(repositoryNameOrItem, workflowId);
       if (!repoName || !id) {
@@ -263,10 +269,10 @@ export class WorkflowCommands {
       const workflowFileName = `${workflow.metadata.name}_${id}`;
       const fileExtension = path.extname(workflow.metadata.mainFile) || '.xxp';
       const tempUri = vscode.Uri.parse(`untitled:${workflowFileName}${fileExtension}`);
-      
+
       // Find if document is already open
-      const existingDoc = vscode.workspace.textDocuments.find(doc => 
-        doc.uri.scheme === 'untitled' && doc.uri.path.includes(workflowFileName)
+      const existingDoc = vscode.workspace.textDocuments.find(
+        doc => doc.uri.scheme === 'untitled' && doc.uri.path.includes(workflowFileName)
       );
 
       if (existingDoc) {
@@ -294,7 +300,10 @@ export class WorkflowCommands {
     }
   }
 
-  async downloadWorkflow(repositoryNameOrItem?: string | WorkflowTreeItem, workflowId?: string): Promise<void> {
+  async downloadWorkflow(
+    repositoryNameOrItem?: string | WorkflowTreeItem,
+    workflowId?: string
+  ): Promise<void> {
     try {
       const { repoName, id } = await this.resolveWorkflowParams(repositoryNameOrItem, workflowId);
       if (!repoName || !id) {
@@ -486,7 +495,10 @@ export class WorkflowCommands {
     }
   }
 
-  async previewWorkflow(repositoryNameOrItem?: string | WorkflowTreeItem, workflowId?: string): Promise<void> {
+  async previewWorkflow(
+    repositoryNameOrItem?: string | WorkflowTreeItem,
+    workflowId?: string
+  ): Promise<void> {
     try {
       const { repoName, id } = await this.resolveWorkflowParams(repositoryNameOrItem, workflowId);
       if (!repoName || !id) return;
@@ -685,7 +697,10 @@ export class WorkflowCommands {
     );
   }
 
-  async deleteWorkflow(repositoryNameOrItem?: string | WorkflowTreeItem, workflowId?: string): Promise<void> {
+  async deleteWorkflow(
+    repositoryNameOrItem?: string | WorkflowTreeItem,
+    workflowId?: string
+  ): Promise<void> {
     try {
       const { repoName, id } = await this.resolveWorkflowParams(repositoryNameOrItem, workflowId);
       if (!repoName || !id) {
@@ -898,7 +913,11 @@ export class WorkflowCommands {
     let id: string | undefined;
 
     // Check if the first parameter is a WorkflowTreeItem (from context menu)
-    if (repositoryNameOrItem && typeof repositoryNameOrItem === 'object' && 'context' in repositoryNameOrItem) {
+    if (
+      repositoryNameOrItem &&
+      typeof repositoryNameOrItem === 'object' &&
+      'context' in repositoryNameOrItem
+    ) {
       const treeItem = repositoryNameOrItem as WorkflowTreeItem;
       repoName = treeItem.context?.repository;
       id = treeItem.context?.workflowId;
@@ -1369,7 +1388,12 @@ export class WorkflowCommands {
 
   async downloadAttachment(item: WorkflowTreeItem): Promise<void> {
     try {
-      if (item.type !== 'attachment' || !item.context?.repository || !item.context?.workflowId || !item.context?.attachmentName) {
+      if (
+        item.type !== 'attachment' ||
+        !item.context?.repository ||
+        !item.context?.workflowId ||
+        !item.context?.attachmentName
+      ) {
         vscode.window.showErrorMessage('Invalid attachment selection');
         return;
       }
@@ -1416,7 +1440,12 @@ export class WorkflowCommands {
 
   async openAttachment(item: WorkflowTreeItem): Promise<void> {
     try {
-      if (item.type !== 'attachment' || !item.context?.repository || !item.context?.workflowId || !item.context?.attachmentName) {
+      if (
+        item.type !== 'attachment' ||
+        !item.context?.repository ||
+        !item.context?.workflowId ||
+        !item.context?.attachmentName
+      ) {
         vscode.window.showErrorMessage('Invalid attachment selection');
         return;
       }
@@ -1436,7 +1465,7 @@ export class WorkflowCommands {
 
       const attachmentData = content.attachments.get(item.context.attachmentName)!;
       const attachmentName = item.context.attachmentName;
-      
+
       // Create a temporary file URI for the attachment
       const tempUri = vscode.Uri.parse(`untitled:${attachmentName}`);
       const document = await vscode.workspace.openTextDocument(tempUri);

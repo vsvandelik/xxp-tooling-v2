@@ -197,7 +197,7 @@ function setupConfigurationListener(context: vscode.ExtensionContext): void {
         if (e.affectsConfiguration('extremexp.server')) {
           serverManager.reloadConfiguration();
         }
-        
+
         // Clear cache when tool-related configuration changes
         if (e.affectsConfiguration('extremexp.tools')) {
           toolResolver.clearCache();
@@ -300,11 +300,11 @@ async function cleanupServices(): Promise<void> {
   // Wait for all cleanup operations to complete, but with a timeout
   await Promise.race([
     Promise.all(cleanupPromises),
-    new Promise<void>((resolve) => {
+    new Promise<void>(resolve => {
       setTimeout(() => {
         console.warn('Cleanup timed out after 10 seconds');
         resolve();
       }, 10000);
-    })
+    }),
   ]);
 }

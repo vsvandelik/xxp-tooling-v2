@@ -202,20 +202,21 @@ export class WorkflowRepositoryProvider implements vscode.TreeDataProvider<Workf
       }
 
       // Create tree items for each attachment
-      return workflowItem.attachments.map(attachment => 
-        new WorkflowTreeItem(
-          attachment.name,
-          'attachment',
-          vscode.TreeItemCollapsibleState.None,
-          {
-            repository: repositoryName,
-            workflowId: workflowId,
-            attachmentName: attachment.name,
-            attachmentPath: attachment.path,
-            attachmentSize: attachment.size,
-            attachmentMimeType: attachment.mimeType,
-          }
-        )
+      return workflowItem.attachments.map(
+        attachment =>
+          new WorkflowTreeItem(
+            attachment.name,
+            'attachment',
+            vscode.TreeItemCollapsibleState.None,
+            {
+              repository: repositoryName,
+              workflowId: workflowId,
+              attachmentName: attachment.name,
+              attachmentPath: attachment.path,
+              attachmentSize: attachment.size,
+              attachmentMimeType: attachment.mimeType,
+            }
+          )
       );
     } catch (error) {
       return [
@@ -281,16 +282,11 @@ export class WorkflowRepositoryProvider implements vscode.TreeDataProvider<Workf
         }
 
         // Determine if workflow should be expandable based on hasAttachments
-        const collapsibleState = node.metadata?.hasAttachments 
-          ? vscode.TreeItemCollapsibleState.Collapsed 
+        const collapsibleState = node.metadata?.hasAttachments
+          ? vscode.TreeItemCollapsibleState.Collapsed
           : vscode.TreeItemCollapsibleState.None;
 
-        return new WorkflowTreeItem(
-          node.name,
-          'workflow',
-          collapsibleState,
-          context
-        );
+        return new WorkflowTreeItem(node.name, 'workflow', collapsibleState, context);
       } else {
         return new WorkflowTreeItem(
           node.name,
