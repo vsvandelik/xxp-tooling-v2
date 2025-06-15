@@ -107,7 +107,6 @@ export class WorkflowStorageService {
           name: metadata.metadata.name,
           description: metadata.metadata.description,
           author: metadata.metadata.author,
-          version: metadata.metadata.version,
           tags: metadata.metadata.tags,
           mainFile: metadata.metadata.mainFile,
         },

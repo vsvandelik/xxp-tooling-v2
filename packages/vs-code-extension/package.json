@@ -210,12 +210,6 @@
                 "icon": "$(add)"
             },
             {
-                "command": "extremexp.workflows.createNewVersion",
-                "title": "Create New Version",
-                "category": "ExtremeXP Workflows",
-                "icon": "$(versions)"
-            },
-            {
                 "command": "extremexp.workflows.previewWorkflow",
                 "title": "Preview Workflow",
                 "category": "ExtremeXP Workflows",
@@ -311,10 +305,6 @@
                     "command": "extremexp.workflows.uploadAttachment",
                     "when": "view == extremexp.workflows.repositories && viewItem == workflow-item",
                     "group": "1_workflow@4"
-                },                {
-                    "command": "extremexp.workflows.createNewVersion",
-                    "when": "view == extremexp.workflows.repositories && viewItem == workflow-item",
-                    "group": "1_workflow@5"
                 },
                 {
                     "command": "extremexp.workflows.openAttachment",

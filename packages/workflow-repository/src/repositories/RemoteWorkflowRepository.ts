@@ -162,7 +162,6 @@ export class RemoteWorkflowRepository implements IWorkflowRepository {
       name: metadata.name,
       description: metadata.description,
       author: metadata.author,
-      version: metadata.version,
       tags: [...metadata.tags],
       mainFile: metadata.mainFile,
     };
@@ -206,7 +205,6 @@ export class RemoteWorkflowRepository implements IWorkflowRepository {
     const updateRequest: UpdateWorkflowRequest = {
       ...(metadata.name ? { name: metadata.name } : {}),
       ...(metadata.description ? { description: metadata.description } : {}),
-      ...(metadata.version ? { version: metadata.version } : {}),
       ...(metadata.tags ? { tags: [...metadata.tags] } : {}),
     };
 
@@ -374,7 +372,6 @@ export class RemoteWorkflowRepository implements IWorkflowRepository {
           name: metadata.name,
           description: metadata.description,
           author: metadata.author,
-          version: metadata.version,
           tags: metadata.tags,
           mainFile: metadata.mainFile || 'main.xxp',
         },
