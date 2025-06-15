@@ -1059,7 +1059,7 @@ export class WorkflowCommands {
       name: workflow.metadata.name,
       description: workflow.metadata.description,
       author: workflow.metadata.author,
-      
+
       tags: workflow.metadata.tags,
       mainFile: workflow.metadata.mainFile,
     };
