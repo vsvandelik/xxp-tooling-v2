@@ -36,7 +36,19 @@ async function startServer(): Promise<void> {
     console.log('');
     console.log('Press Ctrl+C to stop the server');
   } catch (error) {
-    console.error('❌ Failed to start server:', error);
+    if (error instanceof Error) {
+      console.error('❌ Failed to start server:', error.message);
+
+      if (error.message.includes('already in use')) {
+        console.log('');
+        console.log('💡 Suggestions:');
+        console.log('  1. Stop any existing server running on this port');
+        console.log('  2. Use a different port: PORT=3002 npm start');
+        console.log("  3. Check what's using the port: netstat -ano | findstr :3001");
+      }
+    } else {
+      console.error('❌ Failed to start server:', error);
+    }
     process.exit(1);
   }
 }

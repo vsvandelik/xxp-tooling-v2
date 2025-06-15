@@ -35,10 +35,22 @@ export class WorkflowRepositoryServer {
   async start(): Promise<void> {
     await this.storageService.ensureInitialized();
 
-    return new Promise(resolve => {
-      this.app.listen(this.config.port, () => {
+    return new Promise((resolve, reject) => {
+      const server = this.app.listen(this.config.port, () => {
         console.log(`Workflow Repository Server running on port ${this.config.port}`);
         resolve();
+      });
+
+      server.on('error', (error: NodeJS.ErrnoException) => {
+        if (error.code === 'EADDRINUSE') {
+          reject(
+            new Error(
+              `Port ${this.config.port} is already in use. Please stop the existing process or use a different port by setting the PORT environment variable.`
+            )
+          );
+        } else {
+          reject(error);
+        }
       });
     });
   }

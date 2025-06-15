@@ -7,7 +7,7 @@ import {
   WorkflowMetadata,
 } from '@extremexp/workflow-repository';
 import { RepositoryConfigManager } from './RepositoryConfigManager.js';
-import { WorkflowRepositoryProvider } from './WorkflowRepositoryProvider.js';
+import { WorkflowRepositoryProvider, WorkflowTreeItem } from './WorkflowRepositoryProvider.js';
 import { WorkflowBrowserPanel } from './WorkflowBrowserPanel.js';
 
 interface WorkflowQuickPickItem extends vscode.QuickPickItem {
@@ -59,6 +59,7 @@ export class WorkflowCommands {
     this.registerCommand('extremexp.workflows.tree.refresh', this.refreshRepositories.bind(this));
     this.registerCommand('extremexp.workflows.tree.addRepository', this.addRepository.bind(this));
     this.registerCommand('extremexp.workflows.tree.search', this.searchInTree.bind(this));
+    this.registerCommand('extremexp.workflows.retryConnection', this.retryConnection.bind(this));
   }
 
   private registerCommand(command: string, callback: (...args: any[]) => any): void {
@@ -72,9 +73,22 @@ export class WorkflowCommands {
         return;
       }
 
-      const errors = await this.configManager.validateRepositoryConfig(config);
+      // Show progress while validating (especially for remote repositories)
+      const errors = await vscode.window.withProgress(
+        {
+          location: vscode.ProgressLocation.Notification,
+          title:
+            config.type === 'remote' ? 'Testing server connection...' : 'Validating repository...',
+          cancellable: false,
+        },
+        async () => {
+          return await this.configManager.validateRepositoryConfig(config);
+        }
+      );
+
       if (errors.length > 0) {
-        vscode.window.showErrorMessage(`Invalid configuration: ${errors.join(', ')}`);
+        const errorMessage = `Invalid configuration:\n${errors.map(e => `• ${e}`).join('\n')}`;
+        vscode.window.showErrorMessage(errorMessage, { modal: true });
         return;
       }
 
@@ -82,7 +96,7 @@ export class WorkflowCommands {
       this.repositoryProvider.refresh();
 
       const action = await vscode.window.showInformationMessage(
-        `Repository "${config.name}" added successfully`,
+        `Repository "${config.name}" added successfully and verified`,
         'Open Browser'
       );
 
@@ -96,9 +110,17 @@ export class WorkflowCommands {
     }
   }
 
-  async removeRepository(repositoryName?: string): Promise<void> {
+  async removeRepository(repositoryNameOrTreeItem?: string | WorkflowTreeItem): Promise<void> {
     try {
-      let nameToRemove = repositoryName;
+      let nameToRemove: string | undefined;
+
+      // Handle the case where this is called from tree view context menu
+      if (repositoryNameOrTreeItem && typeof repositoryNameOrTreeItem === 'object') {
+        // Extract repository name from tree item - for repository items, the label is the repository name
+        nameToRemove = repositoryNameOrTreeItem.label;
+      } else if (typeof repositoryNameOrTreeItem === 'string') {
+        nameToRemove = repositoryNameOrTreeItem;
+      }
 
       if (!nameToRemove) {
         const repositories = this.configManager.getRepositories();
@@ -145,9 +167,17 @@ export class WorkflowCommands {
     }
   }
 
-  async setDefaultRepository(repositoryName?: string): Promise<void> {
+  async setDefaultRepository(repositoryNameOrTreeItem?: string | WorkflowTreeItem): Promise<void> {
     try {
-      let nameToSet = repositoryName;
+      let nameToSet: string | undefined;
+
+      // Handle the case where this is called from tree view context menu
+      if (repositoryNameOrTreeItem && typeof repositoryNameOrTreeItem === 'object') {
+        // Extract repository name from tree item - for repository items, the label is the repository name
+        nameToSet = repositoryNameOrTreeItem.label;
+      } else if (typeof repositoryNameOrTreeItem === 'string') {
+        nameToSet = repositoryNameOrTreeItem;
+      }
 
       if (!nameToSet) {
         const repositories = this.configManager.getRepositories();
@@ -893,6 +923,58 @@ export class WorkflowCommands {
     } catch (error) {
       vscode.window.showErrorMessage(
         `Upload failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
+    }
+  }
+
+  async retryConnection(repositoryName: string): Promise<void> {
+    try {
+      this.repositoryProvider.refresh();
+
+      // Wait a moment for the refresh to complete, then check if the issue is resolved
+      setTimeout(async () => {
+        const repo = this.configManager.getRepository(repositoryName);
+        if (repo?.type === 'remote') {
+          const statusCheckResult = await vscode.window.withProgress(
+            {
+              location: vscode.ProgressLocation.Notification,
+              title: `Testing connection to ${repo.name}...`,
+              cancellable: false,
+            },
+            async () => {
+              try {
+                const errors = await this.configManager.validateRepositoryConfig(repo);
+                return errors;
+              } catch (error) {
+                return [error instanceof Error ? error.message : 'Unknown error'];
+              }
+            }
+          );
+
+          if (statusCheckResult.length === 0) {
+            vscode.window.showInformationMessage(
+              `Connection to ${repositoryName} restored successfully!`
+            );
+          } else {
+            vscode.window
+              .showWarningMessage(
+                `Still unable to connect to ${repositoryName}: ${statusCheckResult[0]}`,
+                'Edit Repository'
+              )
+              .then(action => {
+                if (action === 'Edit Repository') {
+                  vscode.commands.executeCommand(
+                    'extremexp.workflows.editRepository',
+                    repositoryName
+                  );
+                }
+              });
+          }
+        }
+      }, 1000);
+    } catch (error) {
+      vscode.window.showErrorMessage(
+        `Failed to retry connection: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
     }
   }

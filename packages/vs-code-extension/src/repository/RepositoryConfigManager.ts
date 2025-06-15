@@ -306,13 +306,89 @@ export class RepositoryConfigManager {
       } else {
         try {
           new URL(config.url);
-        } catch {
-          errors.push('Invalid repository URL format');
+
+          // Test connectivity to the remote server
+          await this.testRemoteServerConnectivity(config.url, config.authToken);
+        } catch (error) {
+          if (error instanceof TypeError) {
+            errors.push('Invalid repository URL format');
+          } else {
+            errors.push(
+              `Cannot connect to server: ${error instanceof Error ? error.message : 'Unknown error'}`
+            );
+          }
         }
       }
     }
 
     return errors;
+  }
+
+  private async testRemoteServerConnectivity(url: string, authToken?: string): Promise<void> {
+    try {
+      // Test the health endpoint first
+      const healthUrl = `${url.replace(/\/$/, '')}/health`;
+      const healthResponse = await this.makeRequest(healthUrl, authToken);
+
+      if (!healthResponse.ok) {
+        throw new Error(`Server returned ${healthResponse.status}: ${healthResponse.statusText}`);
+      }
+
+      // Test if it's actually a workflow repository server by checking a basic endpoint
+      const workflowsUrl = `${url.replace(/\/$/, '')}/workflows?limit=1`;
+      const workflowsResponse = await this.makeRequest(workflowsUrl, authToken);
+
+      if (!workflowsResponse.ok) {
+        if (workflowsResponse.status === 401) {
+          throw new Error('Authentication required - please check your credentials');
+        } else if (workflowsResponse.status === 404) {
+          throw new Error(
+            'This does not appear to be a workflow repository server (workflows endpoint not found)'
+          );
+        } else {
+          throw new Error(
+            `Server returned ${workflowsResponse.status}: ${workflowsResponse.statusText}`
+          );
+        }
+      }
+    } catch (error) {
+      if (error instanceof TypeError && error.message.includes('fetch')) {
+        throw new Error(
+          `Unable to reach server at ${url}. Please check the URL and your network connection.`
+        );
+      }
+      throw error;
+    }
+  }
+
+  private async makeRequest(url: string, authToken?: string): Promise<Response> {
+    const headers: HeadersInit = {
+      'Content-Type': 'application/json',
+    };
+
+    if (authToken) {
+      headers['Authorization'] = `Bearer ${authToken}`;
+    }
+
+    // Set a reasonable timeout for the connectivity test
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+
+    try {
+      const response = await fetch(url, {
+        method: 'GET',
+        headers,
+        signal: controller.signal,
+      });
+      clearTimeout(timeoutId);
+      return response;
+    } catch (error) {
+      clearTimeout(timeoutId);
+      if (error instanceof Error && error.name === 'AbortError') {
+        throw new Error('Connection timeout - server is not responding');
+      }
+      throw error;
+    }
   }
   private async saveRepositories(repositories: MutableRepositoryConfig[]): Promise<void> {
     const config = vscode.workspace.getConfiguration(RepositoryConfigManager.CONFIG_SECTION);

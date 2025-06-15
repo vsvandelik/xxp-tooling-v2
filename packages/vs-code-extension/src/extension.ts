@@ -32,6 +32,7 @@ export async function activate(context: vscode.ExtensionContext) {
 
   await initializeServices(context);
   await initializeWorkflowRepository(context);
+  await setupWorkflowFeatures();
   registerCommands(context);
   setupStatusBar(context);
   setupConfigurationListener(context);
@@ -190,10 +191,15 @@ function updateStatusBarItem(statusBarItem: vscode.StatusBarItem, status: string
  */
 function setupConfigurationListener(context: vscode.ExtensionContext): void {
   context.subscriptions.push(
-    vscode.workspace.onDidChangeConfiguration(e => {
+    vscode.workspace.onDidChangeConfiguration(async e => {
       if (e.affectsConfiguration('extremexp')) {
         serverManager.reloadConfiguration();
         toolResolver.clearCache(); // Clear cache when configuration changes
+
+        // Update workflow enabled context if that setting changed
+        if (e.affectsConfiguration('extremexp.workflows.enabled')) {
+          await setupWorkflowFeatures();
+        }
       }
     })
   );
@@ -235,6 +241,22 @@ function registerESPACELanguageFeatures(_context: vscode.ExtensionContext): void
   // etc.
 
   console.log('ESPACE language features registered');
+}
+
+/**
+ * Setup workflow repository features and context
+ */
+async function setupWorkflowFeatures(): Promise<void> {
+  // Get the workflow enabled setting
+  const config = vscode.workspace.getConfiguration('extremexp.workflows');
+  const workflowsEnabled = config.get<boolean>('enabled', true);
+
+  // Set the context variable for VS Code's when clauses
+  await vscode.commands.executeCommand(
+    'setContext',
+    'extremexp.workflows.enabled',
+    workflowsEnabled
+  );
 }
 
 /**

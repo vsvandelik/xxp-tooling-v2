@@ -51,7 +51,9 @@
         "Programming Languages",
         "Other"
     ],
-    "activationEvents": [],
+    "activationEvents": [
+        "onStartupFinished"
+    ],
     "contributes": {
         "languages": [
             {

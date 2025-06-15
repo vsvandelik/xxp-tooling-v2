@@ -128,13 +128,16 @@ export class WorkflowRepositoryProvider implements vscode.TreeDataProvider<Workf
 
       return items;
     } catch (error) {
+      const errorMessage = this.getRepositoryErrorMessage(error, repositoryName);
       return [
-        new WorkflowTreeItem(
-          `Error: ${error instanceof Error ? error.message : 'Unknown error'}`,
-          'error',
-          vscode.TreeItemCollapsibleState.None,
-          { repository: repositoryName }
-        ),
+        new WorkflowTreeItem(errorMessage, 'error', vscode.TreeItemCollapsibleState.None, {
+          repository: repositoryName,
+          command: {
+            command: 'extremexp.workflows.retryConnection',
+            title: 'Retry Connection',
+            arguments: [repositoryName],
+          },
+        }),
       ];
     }
   }
@@ -277,6 +280,50 @@ export class WorkflowRepositoryProvider implements vscode.TreeDataProvider<Workf
 
   getRepositoryManager(): WorkflowRepositoryManager {
     return this.repositoryManager;
+  }
+
+  private getRepositoryErrorMessage(error: unknown, repositoryName: string): string {
+    const repositoryConfig = this.configManager.getRepository(repositoryName);
+
+    if (error instanceof Error) {
+      const message = error.message;
+
+      // Network/connection errors
+      if (
+        message.includes('fetch') ||
+        message.includes('ENOTFOUND') ||
+        message.includes('ECONNREFUSED')
+      ) {
+        if (repositoryConfig?.type === 'remote') {
+          return `Cannot connect to ${repositoryConfig.url}. Check if the server is running and accessible.`;
+        }
+        return `Network error: ${message}`;
+      }
+
+      // Authentication errors
+      if (message.includes('401') || message.includes('Unauthorized')) {
+        return `Authentication failed. Please check your credentials.`;
+      }
+
+      // Server errors
+      if (message.includes('500') || message.includes('Internal Server Error')) {
+        return `Server error. The repository server may be experiencing issues.`;
+      }
+
+      // Not found errors
+      if (message.includes('404') || message.includes('Not Found')) {
+        return `Repository not found or server not responding. Please verify the URL.`;
+      }
+
+      // Timeout errors
+      if (message.includes('timeout') || message.includes('ETIMEDOUT')) {
+        return `Connection timeout. The server may be slow or unreachable.`;
+      }
+
+      return `Error loading repository: ${message}`;
+    }
+
+    return `Unknown error loading repository "${repositoryName}"`;
   }
 }
 
