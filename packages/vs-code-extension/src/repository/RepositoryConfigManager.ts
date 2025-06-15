@@ -405,6 +405,16 @@ export class RepositoryConfigManager {
     );
   }
 
+  getDefaultAuthor(): string {
+    const config = vscode.workspace.getConfiguration(RepositoryConfigManager.CONFIG_SECTION);
+    return config.get<string>('defaultAuthor', '');
+  }
+
+  async setDefaultAuthor(author: string): Promise<void> {
+    const config = vscode.workspace.getConfiguration(RepositoryConfigManager.CONFIG_SECTION);
+    await config.update('defaultAuthor', author, vscode.ConfigurationTarget.Global);
+  }
+
   dispose(): void {
     this.configChangeEmitter.dispose();
   }

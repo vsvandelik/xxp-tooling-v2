@@ -484,12 +484,19 @@ export class WorkflowBrowserPanel {
 
     if (description === undefined) return undefined;
 
+    const defaultAuthor = this.configManager.getDefaultAuthor();
     const author = await vscode.window.showInputBox({
       prompt: 'Enter author name',
       placeHolder: 'Your Name',
+      value: defaultAuthor,
     });
 
     if (!author) return undefined;
+
+    // Store as default if no default was set
+    if (!defaultAuthor && author.trim()) {
+      await this.configManager.setDefaultAuthor(author.trim());
+    }
 
     const version = await vscode.window.showInputBox({
       prompt: 'Enter version',

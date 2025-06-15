@@ -401,6 +401,11 @@
                     "type": "boolean",
                     "description": "Enable workflow repository features",
                     "default": true
+                },
+                "extremexp.workflows.defaultAuthor": {
+                    "type": "string",
+                    "description": "Default author name for new workflows",
+                    "default": ""
                 }
             }
         }
