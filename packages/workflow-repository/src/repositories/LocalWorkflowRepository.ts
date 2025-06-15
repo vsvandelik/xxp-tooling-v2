@@ -93,7 +93,7 @@ export class LocalWorkflowRepository implements IWorkflowRepository {
       }
 
       return { mainFile, attachments };
-    } catch (error) {
+    } catch {
       return null;
     }
   }

@@ -116,7 +116,7 @@ export class ArtifactGenerator {
       const { experiment, workflows } = await this.parseFiles(espaceFilePath);
 
       // Validate workflow inheritance early (before task resolution)
-      this.validateWorkflowInheritance(workflows, errors, warnings);
+      this.validateWorkflowInheritance(workflows, errors);
 
       // Early exit if there are critical errors that would cause stack overflow
       if (errors.length > 0) {
@@ -147,7 +147,7 @@ export class ArtifactGenerator {
       this.validateTaskChains(workflows, errors, warnings);
 
       // Validate strategies
-      this.validateStrategies(experiment, errors, warnings);
+      this.validateStrategies(experiment, errors);
 
       // If there are critical errors, don't bother with file-level validations
       if (errors.length > 0) {
@@ -229,7 +229,7 @@ export class ArtifactGenerator {
       this.validateWorkflowsAfterInheritance(experiment, workflows, errors, warnings);
 
       // Validate circular task dependencies
-      this.validateCircularTaskDependencies(workflows, errors, warnings);
+      this.validateCircularTaskDependencies(workflows, errors);
     } catch (error) {
       errors.push(error instanceof Error ? error.message : String(error));
     }
@@ -482,8 +482,7 @@ export class ArtifactGenerator {
 
   private validateWorkflows(
     workflows: WorkflowModel[],
-    errors: string[],
-    warnings: string[]
+    errors: string[]
   ): void {
     for (const workflow of workflows) {
       // Check for duplicate task definitions
@@ -502,7 +501,7 @@ export class ArtifactGenerator {
     warnings: string[]
   ): void {
     // First do basic validations
-    this.validateWorkflows(workflows, errors, warnings);
+    this.validateWorkflows(workflows, errors);
 
     // Check for empty workflows after inheritance resolution
     const workflowMap = this.taskResolver.buildWorkflowMap(workflows);
@@ -526,8 +525,7 @@ export class ArtifactGenerator {
 
   private validateStrategies(
     experiment: ExperimentModel,
-    errors: string[],
-    warnings: string[]
+    errors: string[]
   ): void {
     const validStrategies = ['gridsearch', 'randomsearch'];
 
@@ -540,8 +538,7 @@ export class ArtifactGenerator {
 
   private validateWorkflowInheritance(
     workflows: WorkflowModel[],
-    errors: string[],
-    warnings: string[]
+    errors: string[]
   ): void {
     const workflowMap = new Map<string, WorkflowModel>();
     for (const workflow of workflows) {
@@ -623,8 +620,7 @@ export class ArtifactGenerator {
 
   private validateCircularTaskDependencies(
     workflows: WorkflowModel[],
-    errors: string[],
-    warnings: string[]
+    errors: string[]
   ): void {
     for (const workflow of workflows) {
       // Build dependency graph based on input/output data relationships

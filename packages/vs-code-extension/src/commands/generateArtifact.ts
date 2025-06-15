@@ -124,8 +124,7 @@ export class GenerateArtifactCommand {
   }
 
   private async handleSuccess(
-    result: { artifactPath?: string; validation: ValidationResult },
-    workspaceFolder?: vscode.WorkspaceFolder
+    result: { artifactPath?: string; validation: ValidationResult }
   ): Promise<void> {
     // Show validation results if any
     if (result.validation.warnings.length > 0) {

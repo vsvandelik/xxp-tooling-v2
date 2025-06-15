@@ -207,9 +207,6 @@ export class TaskResolver {
       }
     }
 
-    // Create a set of parameter names that the task actually defines
-    const taskParameterNames = new Set(task.parameters.map(p => p.name));
-
     // Apply all space parameters to the task
     for (const [paramName, paramDef] of spaceParameters) {
       // Only include parameters that are actually used (if filtering is provided)

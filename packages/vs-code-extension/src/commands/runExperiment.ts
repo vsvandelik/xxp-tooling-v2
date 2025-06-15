@@ -288,7 +288,7 @@ export class RunExperimentCommand {
         try {
           const doc = await vscode.workspace.openTextDocument(selected.detail);
           await vscode.window.showTextDocument(doc);
-        } catch (error) {
+        } catch {
           // If can't open as file, show in output channel
           const outputChannel = vscode.window.createOutputChannel('ExtremeXP Output');
           outputChannel.appendLine(`${selected.label}:`);

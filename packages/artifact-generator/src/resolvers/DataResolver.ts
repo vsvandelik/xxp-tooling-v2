@@ -1,4 +1,4 @@
-import { ExperimentModel, SpaceModel, DataDefinition } from '../models/ExperimentModel.js';
+import { ExperimentModel, SpaceModel } from '../models/ExperimentModel.js';
 import { WorkflowModel } from '../models/WorkflowModel.js';
 import { ResolvedTask } from './TaskResolver.js';
 
@@ -23,7 +23,7 @@ export class DataResolver {
     const experimentLevelData = this.resolveExperimentLevelData(experiment, workflowMap);
 
     // Resolve space-level data overrides
-    const spaceLevelData = this.resolveSpaceLevelData(experiment, workflowMap);
+    const spaceLevelData = this.resolveSpaceLevelData(experiment);
 
     // Validate that all required initial inputs have values
     this.validateRequiredInputs(
@@ -127,8 +127,7 @@ export class DataResolver {
   }
 
   private resolveSpaceLevelData(
-    experiment: ExperimentModel,
-    workflowMap: Map<string, WorkflowModel>
+    experiment: ExperimentModel
   ): Map<string, Record<string, string>> {
     const spaceLevelData = new Map<string, Record<string, string>>();
 

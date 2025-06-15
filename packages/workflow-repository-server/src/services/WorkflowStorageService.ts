@@ -126,8 +126,8 @@ export class WorkflowStorageService {
       const zip = await JSZip.default.loadAsync(zipBuffer);
 
       // First, try to find workflow.json
-      let manifestFile = zip.file('workflow.json');
-      let metadata: any;
+      const manifestFile = zip.file('workflow.json');
+      let metadata: unknown;
 
       if (!manifestFile) {
         // No manifest file, check if it's a single workflow file
