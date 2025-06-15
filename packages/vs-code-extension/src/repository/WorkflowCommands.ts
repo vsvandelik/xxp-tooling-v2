@@ -1166,20 +1166,6 @@ export class WorkflowCommands {
       await this.configManager.setDefaultAuthor(author.trim());
     }
 
-    const version = await vscode.window.showInputBox({
-      prompt: 'Enter version',
-      placeHolder: '1.0.0',
-      value: '1.0.0',
-      validateInput: value => {
-        if (!value || !value.trim()) {
-          return 'Version is required';
-        }
-        return null;
-      },
-    });
-
-    if (!version) return undefined;
-
     const tagsInput = await vscode.window.showInputBox({
       prompt: 'Enter tags (comma separated, optional)',
       placeHolder: 'data-processing, machine-learning, etc.',
@@ -1196,7 +1182,6 @@ export class WorkflowCommands {
       name: name.trim(),
       description: description.trim(),
       author: author.trim(),
-      version: version.trim(),
       tags,
     };
   }

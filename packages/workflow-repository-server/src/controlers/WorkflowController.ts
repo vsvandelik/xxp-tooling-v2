@@ -270,7 +270,6 @@ export class WorkflowController {
           const metadata = await repository.update(existingCheck.id!, extracted.content, {
             description: uploadRequest.description,
             author: req.user?.username || uploadRequest.author,
-            version: uploadRequest.version,
             tags: uploadRequest.tags,
           });
 
@@ -290,7 +289,6 @@ export class WorkflowController {
           name: uploadRequest.name,
           description: uploadRequest.description,
           author: req.user?.username || uploadRequest.author,
-          version: uploadRequest.version,
           tags: uploadRequest.tags,
           path: uploadRequest.path,
           mainFile: uploadRequest.mainFile,

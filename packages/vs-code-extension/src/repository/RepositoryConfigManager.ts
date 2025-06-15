@@ -367,7 +367,32 @@ export class RepositoryConfigManager {
     };
 
     if (authToken) {
-      headers['Authorization'] = `Bearer ${authToken}`;
+      // Check if authToken contains username:password (need to authenticate first)
+      if (authToken.includes(':')) {
+        const [username, password] = authToken.split(':', 2);
+        const baseUrl = new URL(url).origin;
+
+        // First authenticate to get a real token
+        const loginResponse = await fetch(`${baseUrl}/auth/login`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ username, password }),
+        });
+
+        if (loginResponse.ok) {
+          const loginResult = await loginResponse.json();
+          if (loginResult.success && loginResult.data?.token) {
+            headers['Authorization'] = `Bearer ${loginResult.data.token}`;
+          }
+        } else {
+          throw new Error('Authentication failed');
+        }
+      } else {
+        // Already a token, use it directly
+        headers['Authorization'] = `Bearer ${authToken}`;
+      }
     }
 
     // Set a reasonable timeout for the connectivity test

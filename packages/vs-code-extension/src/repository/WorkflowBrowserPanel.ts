@@ -352,7 +352,6 @@ export class WorkflowBrowserPanel {
       name: string;
       description: string;
       author: string;
-      version: string;
       tags: string[];
       mainFile: string;
     };
@@ -463,7 +462,6 @@ export class WorkflowBrowserPanel {
         name: string;
         description: string;
         author: string;
-        version: string;
         tags: string[];
       }
     | undefined
@@ -497,14 +495,6 @@ export class WorkflowBrowserPanel {
       await this.configManager.setDefaultAuthor(author.trim());
     }
 
-    const version = await vscode.window.showInputBox({
-      prompt: 'Enter version',
-      placeHolder: '1.0.0',
-      value: '1.0.0',
-    });
-
-    if (!version) return undefined;
-
     const tagsInput = await vscode.window.showInputBox({
       prompt: 'Enter tags (comma separated)',
       placeHolder: 'tag1, tag2, tag3',
@@ -521,7 +511,6 @@ export class WorkflowBrowserPanel {
       name,
       description,
       author,
-      version,
       tags,
     };
   }
