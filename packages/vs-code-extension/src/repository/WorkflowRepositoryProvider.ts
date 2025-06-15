@@ -50,6 +50,10 @@ export class WorkflowRepositoryProvider implements vscode.TreeDataProvider<Workf
       return this.getFolderChildren(element);
     }
 
+    if (element.type === 'workflow') {
+      return this.getWorkflowChildren(element);
+    }
+
     return [];
   }
 
@@ -177,6 +181,54 @@ export class WorkflowRepositoryProvider implements vscode.TreeDataProvider<Workf
     }
   }
 
+  private async getWorkflowChildren(element: WorkflowTreeItem): Promise<WorkflowTreeItem[]> {
+    const repositoryName = element.context?.repository;
+    const workflowId = element.context?.workflowId;
+
+    if (!repositoryName || !workflowId) {
+      return [];
+    }
+
+    try {
+      const repository = this.repositoryManager.getRepository(repositoryName);
+      if (!repository) {
+        return [];
+      }
+
+      // Get the full workflow item to access attachments
+      const workflowItem = await repository.get(workflowId);
+      if (!workflowItem || !workflowItem.attachments.length) {
+        return [];
+      }
+
+      // Create tree items for each attachment
+      return workflowItem.attachments.map(attachment => 
+        new WorkflowTreeItem(
+          attachment.name,
+          'attachment',
+          vscode.TreeItemCollapsibleState.None,
+          {
+            repository: repositoryName,
+            workflowId: workflowId,
+            attachmentName: attachment.name,
+            attachmentPath: attachment.path,
+            attachmentSize: attachment.size,
+            attachmentMimeType: attachment.mimeType,
+          }
+        )
+      );
+    } catch (error) {
+      return [
+        new WorkflowTreeItem(
+          `Error loading attachments: ${error instanceof Error ? error.message : 'Unknown error'}`,
+          'error',
+          vscode.TreeItemCollapsibleState.None,
+          { repository: repositoryName }
+        ),
+      ];
+    }
+  }
+
   private filterItems(items: WorkflowTreeItem[], filter: string): WorkflowTreeItem[] {
     const lowerFilter = filter.toLowerCase();
     const filtered: WorkflowTreeItem[] = [];
@@ -228,10 +280,15 @@ export class WorkflowRepositoryProvider implements vscode.TreeDataProvider<Workf
           context.metadata = node.metadata;
         }
 
+        // Determine if workflow should be expandable based on hasAttachments
+        const collapsibleState = node.metadata?.hasAttachments 
+          ? vscode.TreeItemCollapsibleState.Collapsed 
+          : vscode.TreeItemCollapsibleState.None;
+
         return new WorkflowTreeItem(
           node.name,
           'workflow',
-          vscode.TreeItemCollapsibleState.None,
+          collapsibleState,
           context
         );
       } else {
@@ -335,12 +392,16 @@ interface WorkflowTreeItemContext {
   metadata?: WorkflowMetadata;
   status?: string;
   command?: vscode.Command;
+  attachmentName?: string;
+  attachmentPath?: string;
+  attachmentSize?: number;
+  attachmentMimeType?: string;
 }
 
 export class WorkflowTreeItem extends vscode.TreeItem {
   constructor(
     public override readonly label: string,
-    public readonly type: 'repository' | 'folder' | 'workflow' | 'message' | 'error',
+    public readonly type: 'repository' | 'folder' | 'workflow' | 'attachment' | 'message' | 'error',
     public override readonly collapsibleState: vscode.TreeItemCollapsibleState,
     public readonly context?: WorkflowTreeItemContext
   ) {
@@ -382,6 +443,13 @@ export class WorkflowTreeItem extends vscode.TreeItem {
         }
         return `Workflow: ${this.label}`;
       }
+      case 'attachment': {
+        const size = this.context?.attachmentSize;
+        const mimeType = this.context?.attachmentMimeType;
+        const sizeStr = size ? `\nSize: ${(size / 1024).toFixed(1)} KB` : '';
+        const typeStr = mimeType ? `\nType: ${mimeType}` : '';
+        return `Attachment: ${this.label}${sizeStr}${typeStr}`;
+      }
       case 'folder':
         return `Folder: ${this.label}`;
       default:
@@ -405,6 +473,10 @@ export class WorkflowTreeItem extends vscode.TreeItem {
       case 'workflow': {
         const metadata = this.context?.metadata;
         return metadata ? `v${metadata.version} • ${metadata.author}` : undefined;
+      }
+      case 'attachment': {
+        const size = this.context?.attachmentSize;
+        return size ? `${(size / 1024).toFixed(1)} KB` : undefined;
       }
       default:
         return undefined;
@@ -442,6 +514,8 @@ export class WorkflowTreeItem extends vscode.TreeItem {
         return vscode.ThemeIcon.Folder;
       case 'workflow':
         return new vscode.ThemeIcon('file-code');
+      case 'attachment':
+        return new vscode.ThemeIcon('paperclip');
       case 'error':
         return new vscode.ThemeIcon('error');
       case 'message':
@@ -457,6 +531,14 @@ export class WorkflowTreeItem extends vscode.TreeItem {
         command: 'extremexp.workflows.openWorkflow',
         title: 'Open Workflow',
         arguments: [this.context.repository, this.context.workflowId],
+      };
+    }
+
+    if (this.type === 'attachment') {
+      return {
+        command: 'extremexp.workflows.openAttachment',
+        title: 'Open Attachment',
+        arguments: [this],
       };
     }
 
@@ -477,6 +559,8 @@ export class WorkflowTreeItem extends vscode.TreeItem {
         return 'workflow-folder';
       case 'workflow':
         return 'workflow-item';
+      case 'attachment':
+        return 'workflow-attachment';
       default:
         return this.type;
     }

@@ -226,6 +226,18 @@
                 "title": "Search Workflows",
                 "category": "ExtremeXP Workflows",
                 "icon": "$(search)"
+            },
+            {
+                "command": "extremexp.workflows.downloadAttachment",
+                "title": "Download Attachment",
+                "category": "ExtremeXP Workflows",
+                "icon": "$(cloud-download)"
+            },
+            {
+                "command": "extremexp.workflows.openAttachment",
+                "title": "Open Attachment",
+                "category": "ExtremeXP Workflows",
+                "icon": "$(file)"
             }
         ],
         "menus": {
@@ -236,6 +248,14 @@
                 },
                 {
                     "command": "extremexp.workflows.tree.addRepository",
+                    "when": "false"
+                },
+                {
+                    "command": "extremexp.workflows.downloadAttachment",
+                    "when": "false"
+                },
+                {
+                    "command": "extremexp.workflows.openAttachment",
                     "when": "false"
                 }
             ],
@@ -291,11 +311,20 @@
                     "command": "extremexp.workflows.uploadAttachment",
                     "when": "view == extremexp.workflows.repositories && viewItem == workflow-item",
                     "group": "1_workflow@4"
-                },
-                {
+                },                {
                     "command": "extremexp.workflows.createNewVersion",
                     "when": "view == extremexp.workflows.repositories && viewItem == workflow-item",
                     "group": "1_workflow@5"
+                },
+                {
+                    "command": "extremexp.workflows.openAttachment",
+                    "when": "view == extremexp.workflows.repositories && viewItem == workflow-attachment",
+                    "group": "1_attachment@1"
+                },
+                {
+                    "command": "extremexp.workflows.downloadAttachment",
+                    "when": "view == extremexp.workflows.repositories && viewItem == workflow-attachment",
+                    "group": "1_attachment@2"
                 }
             ],
             "editor/context": [

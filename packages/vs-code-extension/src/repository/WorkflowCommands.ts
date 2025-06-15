@@ -55,6 +55,10 @@ export class WorkflowCommands {
     this.registerCommand('extremexp.workflows.createNewVersion', this.createNewVersion.bind(this));
     this.registerCommand('extremexp.workflows.previewWorkflow', this.previewWorkflow.bind(this));
 
+    // Attachment operations
+    this.registerCommand('extremexp.workflows.downloadAttachment', this.downloadAttachment.bind(this));
+    this.registerCommand('extremexp.workflows.openAttachment', this.openAttachment.bind(this));
+
     // Tree view commands
     this.registerCommand('extremexp.workflows.tree.refresh', this.refreshRepositories.bind(this));
     this.registerCommand('extremexp.workflows.tree.addRepository', this.addRepository.bind(this));
@@ -256,14 +260,33 @@ export class WorkflowCommands {
         return;
       }
 
-      // Create a temporary file with the workflow content
+      // Check if a document with this workflow is already open
+      const workflowFileName = `${workflow.metadata.name}_${id}`;
       const fileExtension = path.extname(workflow.metadata.mainFile) || '.xxp';
-      const tempUri = vscode.Uri.parse(`untitled:${workflow.metadata.name}${fileExtension}`);
+      const tempUri = vscode.Uri.parse(`untitled:${workflowFileName}${fileExtension}`);
+      
+      // Find if document is already open
+      const existingDoc = vscode.workspace.textDocuments.find(doc => 
+        doc.uri.scheme === 'untitled' && doc.uri.path.includes(workflowFileName)
+      );
+
+      if (existingDoc) {
+        // If already open, just show the existing document
+        await vscode.window.showTextDocument(existingDoc);
+        return;
+      }
+
+      // Create a new document with the workflow content
       const document = await vscode.workspace.openTextDocument(tempUri);
       const editor = await vscode.window.showTextDocument(document);
 
+      // Replace all content instead of inserting to avoid duplication
       await editor.edit(editBuilder => {
-        editBuilder.insert(new vscode.Position(0, 0), workflow.mainFileContent);
+        const entireRange = new vscode.Range(
+          new vscode.Position(0, 0),
+          new vscode.Position(document.lineCount, 0)
+        );
+        editBuilder.replace(entireRange, workflow.mainFileContent);
       });
     } catch (error) {
       vscode.window.showErrorMessage(
@@ -292,7 +315,8 @@ export class WorkflowCommands {
         return;
       }
 
-      await this.downloadWorkflowToFolder(workflow, targetFolder, repositoryManager);
+      // Pass repository name separately to download function
+      await this.downloadWorkflowToFolder(workflow, targetFolder, repositoryManager, repoName);
 
       const action = await vscode.window.showInformationMessage(
         `Workflow "${workflow.metadata.name}" downloaded successfully`,
@@ -1099,7 +1123,8 @@ export class WorkflowCommands {
   private async downloadWorkflowToFolder(
     workflow: any,
     targetFolder: vscode.Uri,
-    repositoryManager: WorkflowRepositoryManager
+    repositoryManager: WorkflowRepositoryManager,
+    repositoryName: string
   ): Promise<void> {
     const workflowName = workflow.metadata.name.replace(/[^a-zA-Z0-9-_]/g, '-');
     const workflowDir = vscode.Uri.joinPath(targetFolder, workflowName);
@@ -1110,12 +1135,15 @@ export class WorkflowCommands {
     const mainFileUri = vscode.Uri.joinPath(workflowDir, workflow.metadata.mainFile);
     await vscode.workspace.fs.writeFile(mainFileUri, Buffer.from(workflow.mainFileContent, 'utf8'));
 
-    // Write attachments
-    const content = await repositoryManager.getRepository()?.getContent(workflow.metadata.id);
-    if (content) {
-      for (const [fileName, fileData] of content.attachments) {
-        const attachmentUri = vscode.Uri.joinPath(workflowDir, fileName);
-        await vscode.workspace.fs.writeFile(attachmentUri, fileData);
+    // Write attachments - use the provided repository name
+    const repository = repositoryManager.getRepository(repositoryName);
+    if (repository) {
+      const content = await repository.getContent(workflow.metadata.id);
+      if (content && content.attachments) {
+        for (const [fileName, fileData] of content.attachments) {
+          const attachmentUri = vscode.Uri.joinPath(workflowDir, fileName);
+          await vscode.workspace.fs.writeFile(attachmentUri, fileData);
+        }
       }
     }
 
@@ -1446,5 +1474,108 @@ export class WorkflowCommands {
     const sizes = ['Bytes', 'KB', 'MB', 'GB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  }
+
+  async downloadAttachment(item: WorkflowTreeItem): Promise<void> {
+    try {
+      if (item.type !== 'attachment' || !item.context?.repository || !item.context?.workflowId || !item.context?.attachmentName) {
+        vscode.window.showErrorMessage('Invalid attachment selection');
+        return;
+      }
+
+      const targetFolder = await this.selectTargetFolder();
+      if (!targetFolder) {
+        return;
+      }
+
+      const repositoryManager = this.repositoryProvider.getRepositoryManager();
+      const repository = repositoryManager.getRepository(item.context.repository);
+      if (!repository) {
+        vscode.window.showErrorMessage('Repository not found');
+        return;
+      }
+
+      const content = await repository.getContent(item.context.workflowId);
+      if (!content || !content.attachments.has(item.context.attachmentName)) {
+        vscode.window.showErrorMessage('Attachment not found');
+        return;
+      }
+
+      const attachmentData = content.attachments.get(item.context.attachmentName)!;
+      const attachmentUri = vscode.Uri.joinPath(targetFolder, item.context.attachmentName);
+      await vscode.workspace.fs.writeFile(attachmentUri, attachmentData);
+
+      const action = await vscode.window.showInformationMessage(
+        `Attachment "${item.context.attachmentName}" downloaded successfully`,
+        'Open Folder',
+        'Open File'
+      );
+
+      if (action === 'Open Folder') {
+        vscode.commands.executeCommand('revealFileInOS', targetFolder);
+      } else if (action === 'Open File') {
+        vscode.commands.executeCommand('vscode.open', attachmentUri);
+      }
+    } catch (error) {
+      vscode.window.showErrorMessage(
+        `Failed to download attachment: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
+    }
+  }
+
+  async openAttachment(item: WorkflowTreeItem): Promise<void> {
+    try {
+      if (item.type !== 'attachment' || !item.context?.repository || !item.context?.workflowId || !item.context?.attachmentName) {
+        vscode.window.showErrorMessage('Invalid attachment selection');
+        return;
+      }
+
+      const repositoryManager = this.repositoryProvider.getRepositoryManager();
+      const repository = repositoryManager.getRepository(item.context.repository);
+      if (!repository) {
+        vscode.window.showErrorMessage('Repository not found');
+        return;
+      }
+
+      const content = await repository.getContent(item.context.workflowId);
+      if (!content || !content.attachments.has(item.context.attachmentName)) {
+        vscode.window.showErrorMessage('Attachment not found');
+        return;
+      }
+
+      const attachmentData = content.attachments.get(item.context.attachmentName)!;
+      const attachmentName = item.context.attachmentName;
+      
+      // Create a temporary file URI for the attachment
+      const tempUri = vscode.Uri.parse(`untitled:${attachmentName}`);
+      const document = await vscode.workspace.openTextDocument(tempUri);
+      const editor = await vscode.window.showTextDocument(document);
+
+      // For text files, show the content; for binary files, show info
+      const mimeType = item.context.attachmentMimeType || '';
+      if (mimeType.startsWith('text/') || mimeType.includes('json') || mimeType.includes('xml')) {
+        const textContent = Buffer.from(attachmentData).toString('utf8');
+        await editor.edit(editBuilder => {
+          const entireRange = new vscode.Range(
+            new vscode.Position(0, 0),
+            new vscode.Position(document.lineCount, 0)
+          );
+          editBuilder.replace(entireRange, textContent);
+        });
+      } else {
+        const info = `Binary file: ${attachmentName}\nSize: ${attachmentData.length} bytes\nMIME Type: ${mimeType}\n\n[This is a binary file and cannot be displayed as text]`;
+        await editor.edit(editBuilder => {
+          const entireRange = new vscode.Range(
+            new vscode.Position(0, 0),
+            new vscode.Position(document.lineCount, 0)
+          );
+          editBuilder.replace(entireRange, info);
+        });
+      }
+    } catch (error) {
+      vscode.window.showErrorMessage(
+        `Failed to open attachment: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
+    }
   }
 }
