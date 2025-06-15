@@ -4,6 +4,7 @@ import { WorkflowContent, LocalWorkflowRepository } from '@extremexp/workflow-re
 
 export class WorkflowStorageService {
   private repository: LocalWorkflowRepository;
+  private uploadOverrides = new Map<string, boolean>(); // Track allowed overrides per session
 
   constructor(private basePath: string) {
     this.repository = new LocalWorkflowRepository(basePath);
@@ -42,6 +43,41 @@ export class WorkflowStorageService {
   async getWorkflowOwner(workflowId: string): Promise<string | null> {
     const workflow = await this.repository.get(workflowId);
     return workflow?.metadata.author || null;
+  }
+
+  async checkForExistingWorkflow(
+    workflowPath: string,
+    workflowName: string
+  ): Promise<{ exists: boolean; id?: string }> {
+    const workflows = await this.repository.list(workflowPath);
+    const existing = workflows.find(w => w.name === workflowName);
+
+    if (existing) {
+      return { exists: true, id: existing.id };
+    }
+
+    return { exists: false };
+  }
+
+  async canOverrideWorkflow(workflowId: string, requestId: string): Promise<boolean> {
+    const key = `${workflowId}-${requestId}`;
+    return this.uploadOverrides.get(key) || false;
+  }
+
+  setOverridePermission(workflowId: string, requestId: string, allowed: boolean): void {
+    const key = `${workflowId}-${requestId}`;
+    if (allowed) {
+      this.uploadOverrides.set(key, true);
+      // Clear permission after 5 minutes
+      setTimeout(
+        () => {
+          this.uploadOverrides.delete(key);
+        },
+        5 * 60 * 1000
+      );
+    } else {
+      this.uploadOverrides.delete(key);
+    }
   }
 
   async createWorkflowZip(workflowId: string): Promise<Buffer | null> {
@@ -90,13 +126,54 @@ export class WorkflowStorageService {
       const JSZip = await import('jszip');
       const zip = await JSZip.default.loadAsync(zipBuffer);
 
-      const manifestFile = zip.file('workflow.json');
+      // First, try to find workflow.json
+      let manifestFile = zip.file('workflow.json');
+      let metadata: any;
+
       if (!manifestFile) {
-        return null;
+        // No manifest file, check if it's a single workflow file
+        const files = Object.keys(zip.files).filter(f => !zip.files[f]!.dir);
+        const workflowFiles = files.filter(f => f.endsWith('.xxp') || f.endsWith('.espace'));
+
+        if (workflowFiles.length === 0) {
+          return null; // No workflow files found
+        }
+
+        // Use the first workflow file as main file
+        const mainFile = workflowFiles[0]!;
+        const mainFileContent = await zip.file(mainFile)!.async('string');
+
+        // Create metadata from file
+        metadata = {
+          name: path.basename(mainFile, path.extname(mainFile)),
+          description: 'Imported workflow',
+          author: 'Unknown',
+          version: '1.0.0',
+          tags: [],
+          mainFile: mainFile,
+        };
+
+        // Collect other files as attachments
+        const attachments = new Map<string, Buffer>();
+        for (const fileName of files) {
+          if (fileName !== mainFile) {
+            const content = await zip.file(fileName)!.async('nodebuffer');
+            attachments.set(fileName, content);
+          }
+        }
+
+        return {
+          content: {
+            mainFile: mainFileContent,
+            attachments,
+          },
+          metadata,
+        };
       }
 
+      // Standard workflow with manifest
       const manifestContent = await manifestFile.async('string');
-      const metadata = JSON.parse(manifestContent);
+      metadata = JSON.parse(manifestContent);
 
       const mainFileContent = await zip.file(metadata.mainFile)?.async('string');
       if (!mainFileContent) {

@@ -103,15 +103,6 @@ function setupWorkflowRepositoryView(context: vscode.ExtensionContext): void {
     canSelectMany: false,
   });
 
-  // Add context menu commands for tree view
-  registerCommand(context, 'extremexp.workflows.tree.refresh', () => {
-    workflowRepositoryProvider.refresh();
-  });
-
-  registerCommand(context, 'extremexp.workflows.tree.addRepository', () => {
-    vscode.commands.executeCommand('extremexp.workflows.addRepository');
-  });
-
   context.subscriptions.push(treeView);
 }
 

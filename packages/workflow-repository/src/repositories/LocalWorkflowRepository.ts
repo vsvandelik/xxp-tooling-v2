@@ -26,7 +26,7 @@ export class LocalWorkflowRepository implements IWorkflowRepository {
     const searchPath = workflowPath ? path.join(this.basePath, workflowPath) : this.basePath;
     const workflows: WorkflowMetadata[] = [];
 
-    await this.collectWorkflows(searchPath, workflows);
+    await this.collectWorkflows(searchPath, workflows, workflowPath || '');
 
     if (options) {
       return this.filterWorkflows(workflows, options);
@@ -62,6 +62,19 @@ export class LocalWorkflowRepository implements IWorkflowRepository {
     }
 
     const workflowDir = path.join(this.basePath, metadata.path);
+
+    // Check if it's a single-file workflow
+    if (metadata.path.endsWith('.xxp') || metadata.path.endsWith('.espace')) {
+      const filePath = path.join(this.basePath, metadata.path);
+      try {
+        const mainFile = await fs.readFile(filePath, 'utf-8');
+        return { mainFile, attachments: new Map() };
+      } catch {
+        return null;
+      }
+    }
+
+    // Multi-file workflow
     const mainFilePath = path.join(workflowDir, metadata.mainFile);
 
     try {
@@ -91,8 +104,34 @@ export class LocalWorkflowRepository implements IWorkflowRepository {
     content: WorkflowContent,
     metadata: Omit<WorkflowMetadata, 'id' | 'createdAt' | 'modifiedAt' | 'hasAttachments'>
   ): Promise<WorkflowMetadata> {
-    const id = this.generateId(workflowPath, metadata.name);
-    const workflowDir = path.join(this.basePath, workflowPath);
+    // Generate unique workflow folder name
+    const workflowFolderName = this.sanitizeFileName(metadata.name);
+    const fullWorkflowPath = path.join(workflowPath, workflowFolderName);
+    const id = this.generateId(fullWorkflowPath, metadata.name);
+
+    // Check if workflow already exists
+    const existing = await this.findWorkflowById(id);
+    if (existing) {
+      throw new Error(
+        `Workflow "${metadata.name}" already exists at path "${workflowPath}". ` +
+          `Use update to modify it or choose a different name.`
+      );
+    }
+
+    const workflowDir = path.join(this.basePath, fullWorkflowPath);
+
+    // Check if directory already exists
+    try {
+      await fs.access(workflowDir);
+      throw new Error(
+        `Directory "${workflowFolderName}" already exists at path "${workflowPath}". ` +
+          `Please choose a different workflow name.`
+      );
+    } catch (error: any) {
+      if (error.code !== 'ENOENT') {
+        throw error;
+      }
+    }
 
     await fs.mkdir(workflowDir, { recursive: true });
 
@@ -110,7 +149,7 @@ export class LocalWorkflowRepository implements IWorkflowRepository {
       id,
       createdAt: now,
       modifiedAt: now,
-      path: workflowPath,
+      path: fullWorkflowPath,
       hasAttachments: content.attachments.size > 0,
     };
 
@@ -136,6 +175,7 @@ export class LocalWorkflowRepository implements IWorkflowRepository {
       await fs.writeFile(mainFilePath, content.mainFile, 'utf-8');
     }
 
+    // Remove old attachments
     const files = await fs.readdir(workflowDir);
     for (const file of files) {
       if (file !== existingMetadata.mainFile && file !== 'workflow.json') {
@@ -143,6 +183,7 @@ export class LocalWorkflowRepository implements IWorkflowRepository {
       }
     }
 
+    // Add new attachments
     for (const [fileName, fileContent] of content.attachments) {
       const filePath = path.join(workflowDir, fileName);
       await fs.writeFile(filePath, fileContent);
@@ -191,12 +232,31 @@ export class LocalWorkflowRepository implements IWorkflowRepository {
     return await this.buildTreeNode(searchPath, workflowPath || '');
   }
 
-  private async collectWorkflows(searchPath: string, workflows: WorkflowMetadata[]): Promise<void> {
+  private async collectWorkflows(
+    searchPath: string,
+    workflows: WorkflowMetadata[],
+    relativePath: string
+  ): Promise<void> {
     try {
       const entries = await fs.readdir(searchPath, { withFileTypes: true });
 
+      // First, check for single-file workflows in current directory
+      for (const entry of entries) {
+        if (entry.isFile() && (entry.name.endsWith('.xxp') || entry.name.endsWith('.espace'))) {
+          const metadata = await this.loadSingleFileWorkflow(
+            path.join(searchPath, entry.name),
+            path.join(relativePath, entry.name)
+          );
+          if (metadata) {
+            workflows.push(metadata);
+          }
+        }
+      }
+
+      // Then check subdirectories
       for (const entry of entries) {
         const fullPath = path.join(searchPath, entry.name);
+        const relPath = path.join(relativePath, entry.name);
 
         if (entry.isDirectory()) {
           const manifestPath = path.join(fullPath, 'workflow.json');
@@ -208,13 +268,89 @@ export class LocalWorkflowRepository implements IWorkflowRepository {
               workflows.push(metadata);
             }
           } catch {
-            await this.collectWorkflows(fullPath, workflows);
+            // No workflow.json, check subdirectories
+            await this.collectWorkflows(fullPath, workflows, relPath);
           }
         }
       }
     } catch {
       // Directory doesn't exist or can't be read
     }
+  }
+
+  private async loadSingleFileWorkflow(
+    filePath: string,
+    relativePath: string
+  ): Promise<WorkflowMetadata | null> {
+    try {
+      const stats = await fs.stat(filePath);
+      const fileName = path.basename(filePath);
+      const nameWithoutExt = path.parse(fileName).name;
+
+      // Try to extract metadata from file content
+      const content = await fs.readFile(filePath, 'utf-8');
+      const metadata = this.extractMetadataFromContent(content, nameWithoutExt);
+
+      const id = this.generateId(relativePath, nameWithoutExt);
+
+      return {
+        id,
+        name: metadata.name || nameWithoutExt,
+        description: metadata.description || `Single-file workflow: ${fileName}`,
+        author: metadata.author || 'Unknown',
+        version: metadata.version || '1.0.0',
+        tags: metadata.tags || [],
+        createdAt: stats.birthtime,
+        modifiedAt: stats.mtime,
+        path: relativePath,
+        hasAttachments: false,
+        mainFile: fileName,
+      };
+    } catch {
+      return null;
+    }
+  }
+
+  private extractMetadataFromContent(
+    content: string,
+    defaultName: string
+  ): Partial<WorkflowManifest> {
+    const metadata: Partial<WorkflowManifest> = {
+      name: defaultName,
+      description: '',
+      author: 'Unknown',
+      version: '1.0.0',
+      tags: [],
+    };
+
+    // Try to extract metadata from comments at the beginning of the file
+    const lines = content.split('\n').slice(0, 20); // Check first 20 lines
+
+    for (const line of lines) {
+      const commentMatch = line.match(/^\s*(?:\/\/|#)\s*@(\w+)\s+(.+)$/);
+      if (commentMatch) {
+        const [, key, value] = commentMatch;
+        switch (key?.toLowerCase()) {
+          case 'name':
+            metadata.name = value?.trim() || defaultName;
+            break;
+          case 'description':
+            metadata.description = value?.trim() || '';
+            break;
+          case 'author':
+            metadata.author = value?.trim() || 'Unknown';
+            break;
+          case 'version':
+            metadata.version = value?.trim() || '1.0.0';
+            break;
+          case 'tags':
+            metadata.tags = value?.split(',').map(t => t.trim()) || [];
+            break;
+        }
+      }
+    }
+
+    return metadata;
   }
 
   private async loadMetadata(workflowDir: string): Promise<WorkflowMetadata | null> {
@@ -270,6 +406,11 @@ export class LocalWorkflowRepository implements IWorkflowRepository {
   }
 
   private async loadAttachments(workflowPath: string): Promise<readonly WorkflowAttachment[]> {
+    // Single-file workflows don't have attachments
+    if (workflowPath.endsWith('.xxp') || workflowPath.endsWith('.espace')) {
+      return [];
+    }
+
     const workflowDir = path.join(this.basePath, workflowPath);
     const attachments: WorkflowAttachment[] = [];
 
@@ -314,16 +455,23 @@ export class LocalWorkflowRepository implements IWorkflowRepository {
     if (options.query) {
       const query = options.query.toLowerCase();
       filtered = filtered.filter(
-        w => w.name.toLowerCase().includes(query) || w.description.toLowerCase().includes(query)
+        w =>
+          w.name.toLowerCase().includes(query) ||
+          w.description.toLowerCase().includes(query) ||
+          w.tags.some(tag => tag.toLowerCase().includes(query))
       );
     }
 
     if (options.author) {
-      filtered = filtered.filter(w => w.author === options.author);
+      filtered = filtered.filter(w =>
+        w.author.toLowerCase().includes(options.author!.toLowerCase())
+      );
     }
 
     if (options.tags && options.tags.length > 0) {
-      filtered = filtered.filter(w => options.tags!.some(tag => w.tags.includes(tag)));
+      filtered = filtered.filter(w =>
+        options.tags!.some(tag => w.tags.some(wTag => wTag.toLowerCase() === tag.toLowerCase()))
+      );
     }
 
     if (options.path) {
@@ -342,12 +490,31 @@ export class LocalWorkflowRepository implements IWorkflowRepository {
   }
 
   private async buildTreeNode(dirPath: string, relativePath: string): Promise<WorkflowTreeNode> {
-    const name = path.basename(dirPath) || 'Repository';
+    const name = relativePath === '' ? 'Repository' : path.basename(dirPath);
     const children: WorkflowTreeNode[] = [];
 
     try {
       const entries = await fs.readdir(dirPath, { withFileTypes: true });
 
+      // First, add single-file workflows in the current directory
+      for (const entry of entries) {
+        if (entry.isFile() && (entry.name.endsWith('.xxp') || entry.name.endsWith('.espace'))) {
+          const filePath = path.join(dirPath, entry.name);
+          const relPath = path.join(relativePath, entry.name);
+          const metadata = await this.loadSingleFileWorkflow(filePath, relPath);
+
+          if (metadata) {
+            children.push({
+              name: entry.name,
+              path: relPath,
+              type: 'workflow',
+              metadata,
+            });
+          }
+        }
+      }
+
+      // Then process directories
       for (const entry of entries) {
         const fullPath = path.join(dirPath, entry.name);
         const childRelativePath = path.join(relativePath, entry.name);
@@ -367,6 +534,7 @@ export class LocalWorkflowRepository implements IWorkflowRepository {
               });
             }
           } catch {
+            // No workflow.json, so it's a regular folder
             const childNode = await this.buildTreeNode(fullPath, childRelativePath);
             if (childNode.children && childNode.children.length > 0) {
               children.push(childNode);
@@ -382,13 +550,22 @@ export class LocalWorkflowRepository implements IWorkflowRepository {
       name,
       path: relativePath,
       type: 'folder',
-      children,
+      children: children.length > 0 ? children : [],
     };
   }
 
   private generateId(workflowPath: string, name: string): string {
-    const input = `${workflowPath}/${name}`;
+    const input = `${workflowPath}/${name}`.replace(/\\/g, '/'); // Normalize path separators
     return createHash('sha256').update(input).digest('hex').substring(0, 16);
+  }
+
+  private sanitizeFileName(name: string): string {
+    // Remove or replace characters that are invalid in file names
+    return name
+      .replace(/[<>:"/\\|?*]/g, '-')
+      .replace(/\s+/g, '_')
+      .replace(/\.+$/, '') // Remove trailing dots
+      .substring(0, 255); // Limit length
   }
 
   private getMimeType(fileName: string): string {
@@ -400,6 +577,10 @@ export class LocalWorkflowRepository implements IWorkflowRepository {
       '.json': 'application/json',
       '.txt': 'text/plain',
       '.md': 'text/markdown',
+      '.csv': 'text/csv',
+      '.xml': 'application/xml',
+      '.yaml': 'application/x-yaml',
+      '.yml': 'application/x-yaml',
       '.xxp': 'application/x-xxp',
       '.espace': 'application/x-espace',
     };

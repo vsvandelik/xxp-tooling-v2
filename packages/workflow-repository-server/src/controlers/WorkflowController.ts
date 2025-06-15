@@ -13,6 +13,7 @@ import {
 } from '@extremexp/workflow-repository';
 import { WorkflowStorageService } from '../services/WorkflowStorageService.js';
 import { UserService } from '../services/UserService.js';
+import { v4 as uuidv4 } from 'uuid';
 
 export class WorkflowController {
   private upload = multer({ storage: multer.memoryStorage() });
@@ -236,6 +237,54 @@ export class WorkflowController {
           return;
         }
 
+        // Check for existing workflow
+        const existingCheck = await this.storageService.checkForExistingWorkflow(
+          uploadRequest.path,
+          uploadRequest.name
+        );
+
+        if (existingCheck.exists) {
+          const requestId = (req.headers['x-request-id'] as string) || uuidv4();
+          const canOverride = await this.storageService.canOverrideWorkflow(
+            existingCheck.id!,
+            requestId
+          );
+
+          if (!canOverride) {
+            const response: ApiResponse = {
+              success: false,
+              error:
+                `Workflow "${uploadRequest.name}" already exists at path "${uploadRequest.path}". ` +
+                `Send a confirmation request with X-Request-Id header to override.`,
+              data: {
+                existingWorkflowId: existingCheck.id,
+                requestId: requestId,
+              },
+            };
+            res.status(409).json(response); // 409 Conflict
+            return;
+          }
+
+          // User confirmed override, update instead of create
+          const repository = this.storageService.getRepository();
+          const metadata = await repository.update(existingCheck.id!, extracted.content, {
+            description: uploadRequest.description,
+            author: req.user?.username || uploadRequest.author,
+            version: uploadRequest.version,
+            tags: uploadRequest.tags,
+          });
+
+          const response: ApiResponse = {
+            success: true,
+            data: metadata,
+            message: 'Workflow updated successfully (replaced existing)',
+          };
+
+          res.json(response);
+          return;
+        }
+
+        // New workflow, proceed with upload
         const repository = this.storageService.getRepository();
         const metadata = await repository.upload(uploadRequest.path, extracted.content, {
           name: uploadRequest.name,
@@ -263,6 +312,37 @@ export class WorkflowController {
       }
     },
   ];
+
+  confirmOverride = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { workflowId, requestId } = req.body;
+
+      if (!workflowId || !requestId) {
+        const response: ApiResponse = {
+          success: false,
+          error: 'workflowId and requestId are required',
+        };
+        res.status(400).json(response);
+        return;
+      }
+
+      this.storageService.setOverridePermission(workflowId, requestId, true);
+
+      const response: ApiResponse = {
+        success: true,
+        message:
+          'Override permission granted. You can now upload the workflow with the same X-Request-Id header.',
+      };
+
+      res.json(response);
+    } catch (error) {
+      const response: ApiResponse = {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      };
+      res.status(500).json(response);
+    }
+  };
 
   updateWorkflow = [
     multer({ storage: multer.memoryStorage() }).single('workflow'),
@@ -323,6 +403,137 @@ export class WorkflowController {
       }
     },
   ];
+
+  addAttachment = [
+    multer({ storage: multer.memoryStorage() }).array('attachments', 20),
+    async (req: Request, res: Response): Promise<void> => {
+      try {
+        const { id } = req.params;
+        if (!id) {
+          const response: ApiResponse = {
+            success: false,
+            error: 'Workflow ID is required',
+          };
+          res.status(400).json(response);
+          return;
+        }
+
+        if (!req.files || !Array.isArray(req.files) || req.files.length === 0) {
+          const response: ApiResponse = {
+            success: false,
+            error: 'No files uploaded',
+          };
+          res.status(400).json(response);
+          return;
+        }
+
+        const repository = this.storageService.getRepository();
+        const existingContent = await repository.getContent(id);
+
+        if (!existingContent) {
+          const response: ApiResponse = {
+            success: false,
+            error: 'Workflow not found',
+          };
+          res.status(404).json(response);
+          return;
+        }
+
+        // Add new attachments
+        const newAttachments = new Map(existingContent.attachments);
+        for (const file of req.files) {
+          newAttachments.set(file.originalname, file.buffer);
+        }
+
+        // Update workflow with new attachments
+        const metadata = await repository.update(
+          id,
+          {
+            mainFile: existingContent.mainFile,
+            attachments: newAttachments,
+          },
+          {}
+        );
+
+        const response: ApiResponse = {
+          success: true,
+          data: metadata,
+          message: `Added ${req.files.length} attachment(s) successfully`,
+        };
+
+        res.json(response);
+      } catch (error) {
+        const response: ApiResponse = {
+          success: false,
+          error: error instanceof Error ? error.message : 'Unknown error',
+        };
+        res.status(500).json(response);
+      }
+    },
+  ];
+
+  deleteAttachment = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { id, fileName } = req.params;
+      if (!id || !fileName) {
+        const response: ApiResponse = {
+          success: false,
+          error: 'Workflow ID and file name are required',
+        };
+        res.status(400).json(response);
+        return;
+      }
+
+      const repository = this.storageService.getRepository();
+      const existingContent = await repository.getContent(id);
+
+      if (!existingContent) {
+        const response: ApiResponse = {
+          success: false,
+          error: 'Workflow not found',
+        };
+        res.status(404).json(response);
+        return;
+      }
+
+      // Remove attachment
+      const newAttachments = new Map(existingContent.attachments);
+      if (!newAttachments.has(fileName)) {
+        const response: ApiResponse = {
+          success: false,
+          error: 'Attachment not found',
+        };
+        res.status(404).json(response);
+        return;
+      }
+
+      newAttachments.delete(fileName);
+
+      // Update workflow without the attachment
+      const metadata = await repository.update(
+        id,
+        {
+          mainFile: existingContent.mainFile,
+          attachments: newAttachments,
+        },
+        {}
+      );
+
+      const response: ApiResponse = {
+        success: true,
+        data: metadata,
+        message: 'Attachment deleted successfully',
+      };
+
+      res.json(response);
+    } catch (error) {
+      const response: ApiResponse = {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      };
+      res.status(500).json(response);
+    }
+  };
 
   deleteWorkflow = async (req: Request, res: Response): Promise<void> => {
     try {

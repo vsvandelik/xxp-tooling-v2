@@ -50,9 +50,15 @@ export class WorkflowCommands {
       this.uploadCurrentFile.bind(this)
     );
 
+    // New commands
+    this.registerCommand('extremexp.workflows.uploadAttachment', this.uploadAttachment.bind(this));
+    this.registerCommand('extremexp.workflows.createNewVersion', this.createNewVersion.bind(this));
+    this.registerCommand('extremexp.workflows.previewWorkflow', this.previewWorkflow.bind(this));
+
     // Tree view commands
     this.registerCommand('extremexp.workflows.tree.refresh', this.refreshRepositories.bind(this));
     this.registerCommand('extremexp.workflows.tree.addRepository', this.addRepository.bind(this));
+    this.registerCommand('extremexp.workflows.tree.search', this.searchInTree.bind(this));
   }
 
   private registerCommand(command: string, callback: (...args: any[]) => any): void {
@@ -320,6 +326,274 @@ export class WorkflowCommands {
     }
   }
 
+  async uploadAttachment(repositoryName?: string, workflowId?: string): Promise<void> {
+    try {
+      const { repoName, id } = await this.resolveWorkflowParams(repositoryName, workflowId);
+      if (!repoName || !id) {
+        return;
+      }
+
+      // Select files to attach
+      const fileUris = await vscode.window.showOpenDialog({
+        canSelectFiles: true,
+        canSelectMany: true,
+        openLabel: 'Select Attachments',
+        filters: {
+          'Python Files': ['py'],
+          'JavaScript Files': ['js', 'ts'],
+          'Data Files': ['json', 'csv', 'txt', 'xml', 'yaml', 'yml'],
+          'All Files': ['*'],
+        },
+      });
+
+      if (!fileUris || fileUris.length === 0) {
+        return;
+      }
+
+      // Get existing workflow
+      const repositoryManager = this.repositoryProvider.getRepositoryManager();
+      const workflow = await repositoryManager.getWorkflow(id, repoName);
+
+      if (!workflow) {
+        vscode.window.showErrorMessage('Workflow not found');
+        return;
+      }
+
+      // Get repository
+      const repository = repositoryManager.getRepository(repoName);
+      if (!repository) {
+        vscode.window.showErrorMessage('Repository not found');
+        return;
+      }
+
+      // Get existing content
+      const content = await repository.getContent(id);
+      if (!content) {
+        vscode.window.showErrorMessage('Failed to get workflow content');
+        return;
+      }
+
+      // Create mutable attachments map
+      const newAttachments = new Map<string, Buffer>();
+
+      // Copy existing attachments
+      for (const [name, buffer] of content.attachments) {
+        newAttachments.set(name, buffer);
+      }
+
+      // Add new attachments
+      let overwriteCount = 0;
+      for (const uri of fileUris) {
+        const fileName = path.basename(uri.fsPath);
+
+        // Check if file already exists
+        if (newAttachments.has(fileName)) {
+          const action = await vscode.window.showWarningMessage(
+            `File "${fileName}" already exists. Overwrite?`,
+            'Yes',
+            'Skip',
+            'Cancel All'
+          );
+
+          if (action === 'Cancel All') {
+            return;
+          } else if (action === 'Skip') {
+            continue;
+          }
+          overwriteCount++;
+        }
+
+        const fileData = await vscode.workspace.fs.readFile(uri);
+        newAttachments.set(fileName, Buffer.from(fileData));
+      }
+
+      // Update workflow
+      await repositoryManager.updateWorkflow(
+        id,
+        {
+          mainFile: content.mainFile,
+          attachments: newAttachments,
+        },
+        {},
+        repoName
+      );
+
+      const message =
+        overwriteCount > 0
+          ? `Added ${fileUris.length} attachment(s) to workflow "${workflow.metadata.name}" (${overwriteCount} overwritten)`
+          : `Added ${fileUris.length} attachment(s) to workflow "${workflow.metadata.name}"`;
+
+      vscode.window.showInformationMessage(message);
+
+      this.repositoryProvider.refresh();
+    } catch (error) {
+      vscode.window.showErrorMessage(
+        `Failed to upload attachments: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
+    }
+  }
+
+  async createNewVersion(repositoryName?: string, workflowId?: string): Promise<void> {
+    try {
+      const { repoName, id } = await this.resolveWorkflowParams(repositoryName, workflowId);
+      if (!repoName || !id) return;
+
+      const repositoryManager = this.repositoryProvider.getRepositoryManager();
+      const workflow = await repositoryManager.getWorkflow(id, repoName);
+      if (!workflow) {
+        vscode.window.showErrorMessage('Workflow not found');
+        return;
+      }
+
+      // Parse semantic version and increment
+      const currentVersion = workflow.metadata.version;
+      const versionMatch = currentVersion.match(/^(\d+)\.(\d+)\.(\d+)(.*)$/);
+
+      let newVersion: string;
+      if (versionMatch) {
+        const [, major, minor, patch, suffix] = versionMatch;
+
+        const versionType = await vscode.window.showQuickPick(
+          [
+            {
+              label: 'Patch',
+              description: `${major}.${minor}.${parseInt(patch!) + 1}${suffix}`,
+              value: 'patch',
+            },
+            {
+              label: 'Minor',
+              description: `${major}.${parseInt(minor!) + 1}.0${suffix}`,
+              value: 'minor',
+            },
+            { label: 'Major', description: `${parseInt(major!) + 1}.0.0${suffix}`, value: 'major' },
+          ],
+          {
+            placeHolder: 'Select version increment type',
+          }
+        );
+
+        if (!versionType) return;
+
+        switch (versionType.value) {
+          case 'patch':
+            newVersion = `${major}.${minor}.${parseInt(patch!) + 1}${suffix}`;
+            break;
+          case 'minor':
+            newVersion = `${major}.${parseInt(minor!) + 1}.0${suffix}`;
+            break;
+          case 'major':
+            newVersion = `${parseInt(major!) + 1}.0.0${suffix}`;
+            break;
+          default:
+            newVersion = currentVersion;
+        }
+      } else {
+        // Non-semantic version, just append .1
+        newVersion = `${currentVersion}.1`;
+      }
+
+      const repository = repositoryManager.getRepository(repoName);
+      if (!repository) {
+        vscode.window.showErrorMessage('Repository not found');
+        return;
+      }
+
+      const content = await repository.getContent(id);
+      if (!content) {
+        vscode.window.showErrorMessage('Failed to get workflow content');
+        return;
+      }
+
+      // Prompt for new name
+      const newName = await vscode.window.showInputBox({
+        prompt: 'Enter name for the new version',
+        value: `${workflow.metadata.name} v${newVersion}`,
+        validateInput: value => {
+          if (!value.trim()) {
+            return 'Name is required';
+          }
+          return null;
+        },
+      });
+
+      if (!newName) return;
+
+      // Get target path
+      const targetPath = await this.promptForTargetPath();
+      if (targetPath === undefined) return;
+
+      // Create new workflow with incremented version
+      await repositoryManager.uploadWorkflow(
+        targetPath,
+        content,
+        {
+          ...workflow.metadata,
+          version: newVersion,
+          name: newName.trim(),
+          description: workflow.metadata.description + ` (Version ${newVersion})`,
+        },
+        repoName
+      );
+
+      vscode.window.showInformationMessage(`Created new version: ${newName} (v${newVersion})`);
+
+      this.repositoryProvider.refresh();
+    } catch (error) {
+      vscode.window.showErrorMessage(
+        `Failed to create new version: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
+    }
+  }
+
+  async previewWorkflow(repositoryName?: string, workflowId?: string): Promise<void> {
+    try {
+      const { repoName, id } = await this.resolveWorkflowParams(repositoryName, workflowId);
+      if (!repoName || !id) return;
+
+      const repositoryManager = this.repositoryProvider.getRepositoryManager();
+      const workflow = await repositoryManager.getWorkflow(id, repoName);
+      if (!workflow) {
+        vscode.window.showErrorMessage('Workflow not found');
+        return;
+      }
+
+      // Create preview panel
+      const panel = vscode.window.createWebviewPanel(
+        'workflowPreview',
+        `Preview: ${workflow.metadata.name}`,
+        vscode.ViewColumn.Two,
+        {
+          enableScripts: true,
+        }
+      );
+
+      panel.webview.html = this.getPreviewHtml(workflow);
+    } catch (error) {
+      vscode.window.showErrorMessage(
+        `Failed to preview workflow: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
+    }
+  }
+
+  async searchInTree(): Promise<void> {
+    const searchQuery = await vscode.window.showInputBox({
+      prompt: 'Enter search terms',
+      placeHolder: 'Search workflows by name, description, or tags...',
+    });
+
+    if (searchQuery === undefined) {
+      return;
+    }
+
+    if (searchQuery === '') {
+      this.repositoryProvider.setSearchFilter('');
+      return;
+    }
+
+    this.repositoryProvider.setSearchFilter(searchQuery);
+    vscode.window.showInformationMessage(`Searching for: ${searchQuery}`);
+  }
+
   private async uploadWorkflowFolder(repositoryName: string): Promise<void> {
     const workflowFolder = await this.selectWorkflowFolder();
     if (!workflowFolder) {
@@ -327,13 +601,74 @@ export class WorkflowCommands {
     }
 
     const repositoryManager = this.repositoryProvider.getRepositoryManager();
-    const content = await this.readWorkflowFromFolder(workflowFolder);
+    let content = await this.readWorkflowFromFolder(workflowFolder);
 
     if (!content) {
-      vscode.window.showErrorMessage(
-        'Invalid workflow folder - workflow.json not found or invalid'
+      // No workflow.json found - create it with wizard
+      const createManifest = await vscode.window.showQuickPick(
+        [
+          { label: 'Yes', description: 'Create workflow.json with wizard' },
+          { label: 'No', description: 'Cancel upload' },
+        ],
+        {
+          placeHolder: 'No workflow.json found. Would you like to create one?',
+        }
       );
-      return;
+
+      if (createManifest?.label !== 'Yes') {
+        return;
+      }
+
+      // Find main file
+      const files = await vscode.workspace.fs.readDirectory(workflowFolder);
+      const workflowFiles = files
+        .filter(
+          ([name, type]) =>
+            type === vscode.FileType.File && (name.endsWith('.xxp') || name.endsWith('.espace'))
+        )
+        .map(([name]) => name);
+
+      if (workflowFiles.length === 0) {
+        vscode.window.showErrorMessage('No .xxp or .espace files found in the folder');
+        return;
+      }
+
+      let mainFile: string;
+      if (workflowFiles.length === 1) {
+        mainFile = workflowFiles[0]!;
+        vscode.window.showInformationMessage(`Using ${mainFile} as main workflow file`);
+      } else {
+        const selected = await vscode.window.showQuickPick(workflowFiles, {
+          placeHolder: 'Select the main workflow file',
+        });
+        if (!selected) return;
+        mainFile = selected;
+      }
+
+      // Get metadata
+      const metadata = await this.promptForWorkflowMetadata(mainFile);
+      if (!metadata) return;
+
+      // Create workflow.json
+      const manifest = {
+        ...metadata,
+        mainFile,
+      };
+
+      const manifestUri = vscode.Uri.joinPath(workflowFolder, 'workflow.json');
+      await vscode.workspace.fs.writeFile(
+        manifestUri,
+        Buffer.from(JSON.stringify(manifest, null, 2), 'utf8')
+      );
+
+      vscode.window.showInformationMessage('Created workflow.json');
+
+      // Re-read the folder
+      content = await this.readWorkflowFromFolder(workflowFolder);
+      if (!content) {
+        vscode.window.showErrorMessage('Failed to read workflow after creating manifest');
+        return;
+      }
     }
 
     const targetPath = await this.promptForTargetPath();
@@ -663,7 +998,7 @@ export class WorkflowCommands {
       canSelectFolders: true,
       canSelectMany: false,
       openLabel: 'Select Workflow Folder',
-      title: 'Select Workflow Folder (must contain workflow.json)',
+      title: 'Select Workflow Folder (can contain workflow.json)',
     });
 
     return selectedFolder?.[0];
@@ -831,5 +1166,193 @@ export class WorkflowCommands {
       version: version.trim(),
       tags,
     };
+  }
+
+  private getPreviewHtml(workflow: any): string {
+    const escapeHtml = (text: string) => {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    };
+
+    return `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Workflow Preview</title>
+    <style>
+        body {
+            font-family: var(--vscode-font-family);
+            color: var(--vscode-foreground);
+            background-color: var(--vscode-editor-background);
+            padding: 20px;
+            margin: 0;
+            line-height: 1.6;
+        }
+        
+        .workflow-header {
+            border-bottom: 2px solid var(--vscode-panel-border);
+            padding-bottom: 20px;
+            margin-bottom: 20px;
+        }
+        
+        h1 {
+            margin: 0 0 10px 0;
+            color: var(--vscode-foreground);
+        }
+        
+        .metadata {
+            display: grid;
+            grid-template-columns: auto 1fr;
+            gap: 10px 20px;
+            margin: 20px 0;
+        }
+        
+        .metadata-label {
+            font-weight: bold;
+            color: var(--vscode-descriptionForeground);
+        }
+        
+        .tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 10px;
+        }
+        
+        .tag {
+            background-color: var(--vscode-badge-background);
+            color: var(--vscode-badge-foreground);
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+        }
+        
+        .section {
+            margin: 30px 0;
+        }
+        
+        .section-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: var(--vscode-foreground);
+        }
+        
+        .code-preview {
+            background-color: var(--vscode-textCodeBlock-background);
+            border: 1px solid var(--vscode-panel-border);
+            padding: 15px;
+            border-radius: 4px;
+            overflow-x: auto;
+            font-family: var(--vscode-editor-font-family);
+            font-size: var(--vscode-editor-font-size);
+        }
+        
+        .attachments-list {
+            list-style: none;
+            padding: 0;
+        }
+        
+        .attachment-item {
+            display: flex;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid var(--vscode-panel-border);
+        }
+        
+        .attachment-icon {
+            margin-right: 10px;
+        }
+        
+        .attachment-name {
+            flex: 1;
+        }
+        
+        .attachment-size {
+            color: var(--vscode-descriptionForeground);
+            font-size: 12px;
+        }
+        
+        .no-attachments {
+            color: var(--vscode-descriptionForeground);
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+    <div class="workflow-header">
+        <h1>${escapeHtml(workflow.metadata.name)}</h1>
+        <p>${escapeHtml(workflow.metadata.description)}</p>
+    </div>
+    
+    <div class="metadata">
+        <span class="metadata-label">Author:</span>
+        <span>${escapeHtml(workflow.metadata.author)}</span>
+        
+        <span class="metadata-label">Version:</span>
+        <span>${escapeHtml(workflow.metadata.version)}</span>
+        
+        <span class="metadata-label">Main File:</span>
+        <span>${escapeHtml(workflow.metadata.mainFile)}</span>
+        
+        <span class="metadata-label">Created:</span>
+        <span>${new Date(workflow.metadata.createdAt).toLocaleString()}</span>
+        
+        <span class="metadata-label">Modified:</span>
+        <span>${new Date(workflow.metadata.modifiedAt).toLocaleString()}</span>
+    </div>
+    
+    <div class="section">
+        <div class="section-title">Tags</div>
+        <div class="tags">
+            ${workflow.metadata.tags
+              .map((tag: string) => `<span class="tag">${escapeHtml(tag)}</span>`)
+              .join('')}
+        </div>
+    </div>
+    
+    <div class="section">
+        <div class="section-title">Main File Preview</div>
+        <div class="code-preview">
+            <pre>${escapeHtml(workflow.mainFileContent.substring(0, 1000))}${
+              workflow.mainFileContent.length > 1000 ? '\n\n... (truncated)' : ''
+            }</pre>
+        </div>
+    </div>
+    
+    <div class="section">
+        <div class="section-title">Attachments</div>
+        ${
+          workflow.attachments.length > 0
+            ? `
+            <ul class="attachments-list">
+                ${workflow.attachments
+                  .map(
+                    (attachment: any) => `
+                    <li class="attachment-item">
+                        <span class="attachment-icon">📄</span>
+                        <span class="attachment-name">${escapeHtml(attachment.name)}</span>
+                        <span class="attachment-size">${this.formatFileSize(attachment.size)}</span>
+                    </li>
+                `
+                  )
+                  .join('')}
+            </ul>
+        `
+            : '<p class="no-attachments">No attachments</p>'
+        }
+    </div>
+</body>
+</html>`;
+  }
+
+  private formatFileSize(bytes: number): string {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   }
 }

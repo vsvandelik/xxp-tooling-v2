@@ -200,6 +200,30 @@
                 "command": "extremexp.workflows.tree.addRepository",
                 "title": "Add Repository",
                 "icon": "$(plus)"
+            },
+            {
+                "command": "extremexp.workflows.uploadAttachment",
+                "title": "Upload Attachment",
+                "category": "ExtremeXP Workflows",
+                "icon": "$(add)"
+            },
+            {
+                "command": "extremexp.workflows.createNewVersion",
+                "title": "Create New Version",
+                "category": "ExtremeXP Workflows",
+                "icon": "$(versions)"
+            },
+            {
+                "command": "extremexp.workflows.previewWorkflow",
+                "title": "Preview Workflow",
+                "category": "ExtremeXP Workflows",
+                "icon": "$(eye)"
+            },
+            {
+                "command": "extremexp.workflows.tree.search",
+                "title": "Search Workflows",
+                "category": "ExtremeXP Workflows",
+                "icon": "$(search)"
             }
         ],
         "menus": {
@@ -223,6 +247,11 @@
                     "command": "extremexp.workflows.tree.refresh",
                     "when": "view == extremexp.workflows.repositories",
                     "group": "navigation@2"
+                },
+                {
+                    "command": "extremexp.workflows.tree.search",
+                    "when": "view == extremexp.workflows.repositories",
+                    "group": "navigation@3"
                 }
             ],
             "view/item/context": [
@@ -250,6 +279,21 @@
                     "command": "extremexp.workflows.setDefaultRepository",
                     "when": "view == extremexp.workflows.repositories && viewItem =~ /workflow-repository-.*/",
                     "group": "1_repository@1"
+                },
+                {
+                    "command": "extremexp.workflows.previewWorkflow",
+                    "when": "view == extremexp.workflows.repositories && viewItem == workflow-item",
+                    "group": "1_workflow@3"
+                },
+                {
+                    "command": "extremexp.workflows.uploadAttachment",
+                    "when": "view == extremexp.workflows.repositories && viewItem == workflow-item",
+                    "group": "1_workflow@4"
+                },
+                {
+                    "command": "extremexp.workflows.createNewVersion",
+                    "when": "view == extremexp.workflows.repositories && viewItem == workflow-item",
+                    "group": "1_workflow@5"
                 }
             ],
             "editor/context": [
@@ -321,7 +365,10 @@
                             },
                             "type": {
                                 "type": "string",
-                                "enum": ["local", "remote"],
+                                "enum": [
+                                    "local",
+                                    "remote"
+                                ],
                                 "description": "Repository type"
                             },
                             "path": {
@@ -342,7 +389,10 @@
                                 "default": false
                             }
                         },
-                        "required": ["name", "type"]
+                        "required": [
+                            "name",
+                            "type"
+                        ]
                     }
                 },
                 "extremexp.workflows.enabled": {

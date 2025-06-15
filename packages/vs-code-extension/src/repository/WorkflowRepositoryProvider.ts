@@ -14,6 +14,7 @@ export class WorkflowRepositoryProvider implements vscode.TreeDataProvider<Workf
   readonly onDidChangeTreeData = this._onDidChangeTreeData.event;
 
   private repositoryManager = new WorkflowRepositoryManager();
+  private searchFilter: string = '';
 
   constructor(private configManager: RepositoryConfigManager) {
     this.initializeRepositories();
@@ -25,6 +26,11 @@ export class WorkflowRepositoryProvider implements vscode.TreeDataProvider<Workf
 
   refresh(): void {
     this._onDidChangeTreeData.fire();
+  }
+
+  setSearchFilter(filter: string): void {
+    this.searchFilter = filter;
+    this.refresh();
   }
 
   getTreeItem(element: WorkflowTreeItem): vscode.TreeItem {
@@ -80,6 +86,7 @@ export class WorkflowRepositoryProvider implements vscode.TreeDataProvider<Workf
 
     return items;
   }
+
   private async getRepositoryChildren(element: WorkflowTreeItem): Promise<WorkflowTreeItem[]> {
     const repositoryName = element.context?.repository;
     if (!repositoryName) {
@@ -100,7 +107,26 @@ export class WorkflowRepositoryProvider implements vscode.TreeDataProvider<Workf
       }
 
       const tree = await repository.getTreeStructure();
-      return this.convertTreeNodesToItems(tree.children || [], repositoryName);
+      let items = this.convertTreeNodesToItems(tree.children || [], repositoryName);
+
+      // Apply search filter if set
+      if (this.searchFilter) {
+        items = this.filterItems(items, this.searchFilter);
+      }
+
+      // Add search status if filter is active
+      if (this.searchFilter && items.length === 0) {
+        return [
+          new WorkflowTreeItem(
+            `No workflows match "${this.searchFilter}"`,
+            'message',
+            vscode.TreeItemCollapsibleState.None,
+            { repository: repositoryName }
+          ),
+        ];
+      }
+
+      return items;
     } catch (error) {
       return [
         new WorkflowTreeItem(
@@ -112,6 +138,7 @@ export class WorkflowRepositoryProvider implements vscode.TreeDataProvider<Workf
       ];
     }
   }
+
   private async getFolderChildren(element: WorkflowTreeItem): Promise<WorkflowTreeItem[]> {
     const repositoryName = element.context?.repository;
     const folderPath = element.context?.path;
@@ -127,7 +154,14 @@ export class WorkflowRepositoryProvider implements vscode.TreeDataProvider<Workf
       }
 
       const tree = await repository.getTreeStructure(folderPath);
-      return this.convertTreeNodesToItems(tree.children || [], repositoryName);
+      let items = this.convertTreeNodesToItems(tree.children || [], repositoryName);
+
+      // Apply search filter if set
+      if (this.searchFilter) {
+        items = this.filterItems(items, this.searchFilter);
+      }
+
+      return items;
     } catch (error) {
       return [
         new WorkflowTreeItem(
@@ -139,6 +173,37 @@ export class WorkflowRepositoryProvider implements vscode.TreeDataProvider<Workf
       ];
     }
   }
+
+  private filterItems(items: WorkflowTreeItem[], filter: string): WorkflowTreeItem[] {
+    const lowerFilter = filter.toLowerCase();
+    const filtered: WorkflowTreeItem[] = [];
+
+    for (const item of items) {
+      if (item.type === 'workflow') {
+        // Check workflow metadata
+        const metadata = item.context?.metadata;
+        if (metadata) {
+          const matches =
+            metadata.name.toLowerCase().includes(lowerFilter) ||
+            metadata.description.toLowerCase().includes(lowerFilter) ||
+            metadata.author.toLowerCase().includes(lowerFilter) ||
+            metadata.tags.some(tag => tag.toLowerCase().includes(lowerFilter));
+
+          if (matches) {
+            filtered.push(item);
+          }
+        }
+      } else if (item.type === 'folder') {
+        // For folders, we need to check their children
+        // This is a simplified approach - in a real implementation,
+        // we might want to recursively check all children
+        filtered.push(item);
+      }
+    }
+
+    return filtered;
+  }
+
   private convertTreeNodesToItems(
     nodes: readonly WorkflowTreeNode[],
     repositoryName: string
@@ -249,6 +314,7 @@ export class WorkflowTreeItem extends vscode.TreeItem {
       this.description = description;
     }
   }
+
   private getTooltip(): string {
     switch (this.type) {
       case 'repository': {
@@ -265,7 +331,7 @@ export class WorkflowTreeItem extends vscode.TreeItem {
       case 'workflow': {
         const metadata = this.context?.metadata;
         if (metadata) {
-          return `${metadata.name}\nAuthor: ${metadata.author}\nVersion: ${metadata.version}\nDescription: ${metadata.description}`;
+          return `${metadata.name}\nAuthor: ${metadata.author}\nVersion: ${metadata.version}\nDescription: ${metadata.description}\nTags: ${metadata.tags.join(', ')}`;
         }
         return `Workflow: ${this.label}`;
       }
@@ -275,6 +341,7 @@ export class WorkflowTreeItem extends vscode.TreeItem {
         return this.label;
     }
   }
+
   private getDescription(): string | undefined {
     switch (this.type) {
       case 'repository': {
@@ -296,6 +363,7 @@ export class WorkflowTreeItem extends vscode.TreeItem {
         return undefined;
     }
   }
+
   private getIcon(): vscode.ThemeIcon | undefined {
     switch (this.type) {
       case 'repository': {
@@ -335,6 +403,7 @@ export class WorkflowTreeItem extends vscode.TreeItem {
         return undefined;
     }
   }
+
   private getCommand(): vscode.Command | undefined {
     if (this.type === 'workflow' && this.context?.workflowId) {
       return {
@@ -350,6 +419,7 @@ export class WorkflowTreeItem extends vscode.TreeItem {
 
     return undefined;
   }
+
   private getContextValueString(): string {
     switch (this.type) {
       case 'repository': {

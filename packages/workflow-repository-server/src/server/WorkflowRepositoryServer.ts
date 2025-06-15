@@ -138,6 +138,33 @@ export class WorkflowRepositoryServer {
       this.workflowController.uploadWorkflow[1] as express.RequestHandler
     );
 
+    this.app.post(
+      '/workflows/confirm-override',
+      this.authMiddleware.requireAuth,
+      this.workflowController.confirmOverride
+    );
+
+    this.app.post(
+      '/workflows/:id/attachments',
+      this.authMiddleware.requireAuth,
+      this.authMiddleware.requireOwnerOrAdmin((req: Request) => {
+        const { id } = req.params;
+        return id || null;
+      }),
+      this.workflowController.addAttachment[0] as express.RequestHandler,
+      this.workflowController.addAttachment[1] as express.RequestHandler
+    );
+
+    this.app.delete(
+      '/workflows/:id/attachments/:fileName',
+      this.authMiddleware.requireAuth,
+      this.authMiddleware.requireOwnerOrAdmin((req: Request) => {
+        const { id } = req.params;
+        return id || null;
+      }),
+      this.workflowController.deleteAttachment
+    );
+
     this.app.put(
       '/workflows/:id',
       this.authMiddleware.requireAuth,
