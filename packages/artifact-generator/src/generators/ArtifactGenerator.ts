@@ -1,6 +1,6 @@
 import { ArtifactModel } from '../models/ArtifactModel.js';
 import { ExperimentModel } from '../models/ExperimentModel.js';
-import { WorkflowModel } from '../models/WorkflowModel.js';
+import { WorkflowModel, TaskModel } from '../models/WorkflowModel.js';
 import { DataFlowResolver } from '../parsers/DataFlowResolver.js';
 import { DataResolver } from '../resolvers/DataResolver.js';
 import { ExperimentParser } from '../parsers/ExperimentParser.js';
@@ -25,7 +25,7 @@ export interface ValidationResult {
 }
 
 export interface ArtifactGeneratorOutput {
-  artifact?: any;
+  artifact?: Record<string, unknown>;
   validation: ValidationResult;
 }
 
@@ -625,7 +625,7 @@ export class ArtifactGenerator {
     for (const workflow of workflows) {
       // Build dependency graph based on input/output data relationships
       const dependencyGraph = new Map<string, string[]>();
-      const taskMap = new Map<string, any>();
+      const taskMap = new Map<string, TaskModel>();
 
       for (const task of workflow.tasks) {
         taskMap.set(task.name, task);

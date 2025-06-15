@@ -120,7 +120,7 @@ export class WorkflowStorageService {
 
   async extractWorkflowFromZip(
     zipBuffer: Buffer
-  ): Promise<{ content: WorkflowContent; metadata: any } | null> {
+  ): Promise<{ content: WorkflowContent; metadata: unknown } | null> {
     try {
       const JSZip = await import('jszip');
       const zip = await JSZip.default.loadAsync(zipBuffer);

@@ -10,6 +10,7 @@ import {
   TagsResponse,
   AuthorsResponse,
   WorkflowSearchOptions,
+  WorkflowContent,
 } from '@extremexp/workflow-repository';
 import { WorkflowStorageService } from '../services/WorkflowStorageService.js';
 import { UserService } from '../services/UserService.js';
@@ -360,7 +361,7 @@ export class WorkflowController {
         const updateRequest: UpdateWorkflowRequest = req.body;
         const repository = this.storageService.getRepository();
 
-        let content: any = undefined;
+        let content: WorkflowContent | undefined = undefined;
         if (req.file) {
           const extracted = await this.storageService.extractWorkflowFromZip(req.file.buffer);
           if (!extracted) {

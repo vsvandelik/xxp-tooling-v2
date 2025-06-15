@@ -126,8 +126,8 @@ export class LocalWorkflowRepository implements IWorkflowRepository {
         `Directory "${workflowFolderName}" already exists at path "${workflowPath}". ` +
           `Please choose a different workflow name.`
       );
-    } catch (error: any) {
-      if (error.code !== 'ENOENT') {
+    } catch (error: unknown) {
+      if (error && typeof error === 'object' && 'code' in error && error.code !== 'ENOENT') {
         throw error;
       }
     }

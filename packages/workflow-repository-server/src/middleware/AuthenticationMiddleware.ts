@@ -2,11 +2,9 @@ import { Request, Response, NextFunction } from 'express';
 import { User } from '@extremexp/workflow-repository';
 import { UserService } from '../services/UserService.js';
 
-declare global {
-  namespace Express {
-    interface Request {
-      user?: User;
-    }
+declare module 'express-serve-static-core' {
+  interface Request {
+    user?: User;
   }
 }
 
@@ -18,7 +16,7 @@ export class AuthenticationMiddleware {
 
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
       // Don't assign undefined to optional property
-      delete (req as any).user;
+      delete req.user;
       next();
       return;
     }
@@ -29,7 +27,7 @@ export class AuthenticationMiddleware {
     if (user) {
       req.user = user;
     } else {
-      delete (req as any).user;
+      delete req.user;
     }
     next();
   };

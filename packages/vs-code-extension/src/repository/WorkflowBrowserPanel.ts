@@ -2,6 +2,21 @@ import * as vscode from 'vscode';
 import { WorkflowRepositoryManager, WorkflowSearchOptions } from '@extremexp/workflow-repository';
 import { RepositoryConfigManager } from './RepositoryConfigManager.js';
 
+interface WorkflowWithMetadata {
+  metadata: {
+    name: string;
+    mainFile: string;
+  };
+  content: {
+    mainFile: string;
+    attachments: Map<string, string>;
+  };
+  attachments?: Array<{
+    name: string;
+    size: number;
+  }>;
+}
+
 export class WorkflowBrowserPanel {
   private panel: vscode.WebviewPanel | undefined;
   private disposed = false;
@@ -210,7 +225,7 @@ export class WorkflowBrowserPanel {
     }
   }
 
-  private async downloadWorkflowToFolder(workflow: any, targetFolder: vscode.Uri): Promise<void> {
+  private async downloadWorkflowToFolder(workflow: WorkflowWithMetadata, targetFolder: vscode.Uri): Promise<void> {
     const workflowName = workflow.metadata.name.replace(/[^a-zA-Z0-9-_]/g, '-');
     const workflowDir = vscode.Uri.joinPath(targetFolder, workflowName);
 

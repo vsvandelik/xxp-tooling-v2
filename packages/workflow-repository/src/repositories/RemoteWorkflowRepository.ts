@@ -355,11 +355,12 @@ export class RemoteWorkflowRepository implements IWorkflowRepository {
     }
   }
 
-  private async createWorkflowZip(content: WorkflowContent, metadata: any): Promise<Buffer> {
+  private async createWorkflowZip(content: WorkflowContent, metadata: unknown): Promise<Buffer> {
     const JSZip = await import('jszip');
     const zip = new JSZip.default();
 
-    zip.file(metadata.mainFile || 'main.xxp', content.mainFile);
+    const meta = metadata as Record<string, unknown>;
+    zip.file((meta.mainFile as string) || 'main.xxp', content.mainFile);
 
     for (const [fileName, fileContent] of content.attachments) {
       zip.file(fileName, fileContent);
@@ -369,11 +370,11 @@ export class RemoteWorkflowRepository implements IWorkflowRepository {
       'workflow.json',
       JSON.stringify(
         {
-          name: metadata.name,
-          description: metadata.description,
-          author: metadata.author,
-          tags: metadata.tags,
-          mainFile: metadata.mainFile || 'main.xxp',
+          name: meta.name,
+          description: meta.description,
+          author: meta.author,
+          tags: meta.tags,
+          mainFile: (meta.mainFile as string) || 'main.xxp',
         },
         null,
         2

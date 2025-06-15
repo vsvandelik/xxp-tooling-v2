@@ -14,6 +14,21 @@ interface WorkflowQuickPickItem extends vscode.QuickPickItem {
   workflowId: string;
 }
 
+interface WorkflowWithMetadata {
+  metadata: {
+    name: string;
+    mainFile: string;
+  };
+  content: {
+    mainFile: string;
+    attachments: Map<string, string>;
+  };
+  attachments?: Array<{
+    name: string;
+    size: number;
+  }>;
+}
+
 export class WorkflowCommands {
   private browserPanel: WorkflowBrowserPanel | undefined;
 
@@ -68,7 +83,7 @@ export class WorkflowCommands {
     this.registerCommand('extremexp.workflows.retryConnection', this.retryConnection.bind(this));
   }
 
-  private registerCommand(command: string, callback: (...args: any[]) => any): void {
+  private registerCommand(command: string, callback: (...args: unknown[]) => unknown): void {
     this.context.subscriptions.push(vscode.commands.registerCommand(command, callback));
   }
 
@@ -1027,7 +1042,7 @@ export class WorkflowCommands {
   }
 
   private async downloadWorkflowToFolder(
-    workflow: any,
+    workflow: WorkflowWithMetadata,
     targetFolder: vscode.Uri,
     repositoryManager: WorkflowRepositoryManager,
     repositoryName: string
@@ -1071,7 +1086,7 @@ export class WorkflowCommands {
 
   private async readWorkflowFromFolder(
     workflowFolder: vscode.Uri
-  ): Promise<{ content: WorkflowContent; metadata: any } | null> {
+  ): Promise<{ content: WorkflowContent; metadata: unknown } | null> {
     try {
       const manifestUri = vscode.Uri.joinPath(workflowFolder, 'workflow.json');
       const manifestData = await vscode.workspace.fs.readFile(manifestUri);
@@ -1116,7 +1131,7 @@ export class WorkflowCommands {
     });
   }
 
-  private async promptForWorkflowMetadata(fileName: string): Promise<any | undefined> {
+  private async promptForWorkflowMetadata(fileName: string): Promise<unknown | undefined> {
     const baseName = path.basename(fileName, path.extname(fileName));
 
     const name = await vscode.window.showInputBox({
@@ -1201,7 +1216,7 @@ export class WorkflowCommands {
     };
   }
 
-  private getPreviewHtml(workflow: any): string {
+  private getPreviewHtml(workflow: WorkflowWithMetadata): string {
     const escapeHtml = (text: string) => {
       const div = document.createElement('div');
       div.textContent = text;
@@ -1360,7 +1375,7 @@ export class WorkflowCommands {
             <ul class="attachments-list">
                 ${workflow.attachments
                   .map(
-                    (attachment: any) => `
+                    (attachment: { name: string; size: number }) => `
                     <li class="attachment-item">
                         <span class="attachment-icon">📄</span>
                         <span class="attachment-name">${escapeHtml(attachment.name)}</span>

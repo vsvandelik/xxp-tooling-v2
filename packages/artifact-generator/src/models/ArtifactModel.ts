@@ -10,7 +10,7 @@ export class ArtifactModel {
     public inputData: Record<string, string> = {}
   ) {}
 
-  toJSON(): any {
+  toJSON(): Record<string, unknown> {
     return {
       experiment: this.experiment,
       version: this.version,
@@ -33,7 +33,7 @@ export class TaskDefinition {
     public outputData: string[]
   ) {}
 
-  toJSON(): any {
+  toJSON(): Record<string, unknown> {
     return {
       taskId: this.taskId,
       workflow: this.workflow,
@@ -54,7 +54,7 @@ export class SpaceDefinition {
     public inputData: Record<string, string> = {}
   ) {}
 
-  toJSON(): any {
+  toJSON(): Record<string, unknown> {
     return {
       spaceId: this.spaceId,
       tasksOrder: [...this.tasksOrder],
@@ -70,7 +70,7 @@ export class ControlDefinition {
     public transitions: TransitionDefinition[]
   ) {}
 
-  toJSON(): any {
+  toJSON(): Record<string, unknown> {
     return {
       START: this.START,
       transitions: this.transitions.map(transition => transition.toJSON()),
@@ -85,7 +85,7 @@ export class TransitionDefinition {
     public condition?: string
   ) {}
 
-  toJSON(): any {
+  toJSON(): Record<string, unknown> {
     return {
       from: this.from,
       to: this.to,
