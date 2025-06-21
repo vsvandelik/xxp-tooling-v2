@@ -20,7 +20,7 @@ import {
   CodeAction,
   DiagnosticSeverity,
   Diagnostic,
-} from 'vscode-languageserver/node';
+} from 'vscode-languageserver/node.js';
 
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import { DocumentManager } from './documents/DocumentManager.js';

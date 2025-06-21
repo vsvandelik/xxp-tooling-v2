@@ -1,5 +1,5 @@
 // packages/language-server/src/features/DiagnosticProvider.ts
-import { Connection, Diagnostic, DiagnosticSeverity, Range } from 'vscode-languageserver/node';
+import { Connection, Diagnostic, DiagnosticSeverity, Range } from 'vscode-languageserver/node.js';
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import { DocumentManager } from '../documents/DocumentManager.js';
 import { XXPValidator } from '../validation/XXPValidator.js';

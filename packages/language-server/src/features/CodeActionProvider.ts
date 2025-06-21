@@ -7,7 +7,7 @@ import {
   TextEdit,
   WorkspaceEdit,
   Diagnostic,
-} from 'vscode-languageserver/node';
+} from 'vscode-languageserver/node.js';
 import { DocumentManager } from '../documents/DocumentManager.js';
 
 export class CodeActionProvider {

@@ -1,4 +1,4 @@
-import { Range } from 'vscode-languageserver/node';
+import { Range } from 'vscode-languageserver/node.js';
 import { Symbol } from '../analysis/SymbolTable.js';
 
 export interface DocumentAnalysis {

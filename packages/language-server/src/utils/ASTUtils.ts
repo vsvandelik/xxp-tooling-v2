@@ -1,5 +1,5 @@
 import { ParseTree, ParserRuleContext, TerminalNode } from 'antlr4ng';
-import { Range } from 'vscode-languageserver/node';
+import { Range } from 'vscode-languageserver/node.js';
 
 export class ASTUtils {
   static getAncestors(node: ParseTree): ParseTree[] {

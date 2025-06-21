@@ -2,7 +2,7 @@
 import { DocumentManager } from '../documents/DocumentManager.js';
 import { ValidationResult } from '../types/ValidationTypes.js';
 import { ParsedDocument } from '../types/ParsedDocument.js';
-import { Range } from 'vscode-languageserver/node';
+import { Range } from 'vscode-languageserver/node.js';
 
 export class CommonValidator {
   constructor(private documentManager: DocumentManager) {}

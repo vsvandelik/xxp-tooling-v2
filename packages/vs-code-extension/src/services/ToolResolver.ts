@@ -85,6 +85,19 @@ export class ToolResolver {
         path.join(extensionPath, 'node_modules/@extremexp/experiment-runner-server/dist/server.js'),
         path.join(workspacePath, 'node_modules/@extremexp/experiment-runner-server/dist/server.js'),
       ],
+      'language-server': [
+        // Bundled with extension (production)
+        path.join(extensionPath, 'bundled-tools/language-server/server.js'),
+
+        // Development paths (monorepo)
+        path.join(workspacePath, 'packages/language-server/dist/server.js'),
+        path.join(extensionPath, '../language-server/dist/server.js'),
+        path.join(extensionPath, '../../packages/language-server/dist/server.js'),
+
+        // Node modules
+        path.join(extensionPath, 'node_modules/@extremexp/language-server/dist/server.js'),
+        path.join(workspacePath, 'node_modules/@extremexp/language-server/dist/server.js'),
+      ],
     };
 
     return toolMappings[toolName] || [];

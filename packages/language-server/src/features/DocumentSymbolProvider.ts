@@ -1,4 +1,4 @@
-import { DocumentSymbolParams, DocumentSymbol } from 'vscode-languageserver/node';
+import { DocumentSymbolParams, DocumentSymbol } from 'vscode-languageserver/node.js';
 import { DocumentManager } from '../documents/DocumentManager.js';
 
 export class DocumentSymbolProvider {

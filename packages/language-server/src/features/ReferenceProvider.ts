@@ -1,5 +1,5 @@
 // packages/language-server/src/features/ReferenceProvider.ts
-import { ReferenceParams, Location } from 'vscode-languageserver/node';
+import { ReferenceParams, Location } from 'vscode-languageserver/node.js';
 import { DocumentManager } from '../documents/DocumentManager.js';
 import { ASTUtils } from '../utils/ASTUtils.js';
 

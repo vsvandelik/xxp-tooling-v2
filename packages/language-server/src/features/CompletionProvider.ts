@@ -5,7 +5,7 @@ import {
   TextDocumentPositionParams,
   InsertTextFormat,
   CompletionItemTag,
-} from 'vscode-languageserver/node';
+} from 'vscode-languageserver/node.js';
 import { DocumentManager } from '../documents/DocumentManager.js';
 import { CompletionEngine } from '../completion/CompletionEngine.js';
 import { XXPCompletions } from '../completion/XXPCompletions.js';

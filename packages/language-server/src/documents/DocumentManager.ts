@@ -8,7 +8,7 @@ import { WorkspaceManager } from '../workspace/WorkspaceManager.js';
 import { SymbolTable } from '../analysis/SymbolTable.js';
 import { ParsedDocument } from '../types/ParsedDocument.js';
 import { ErrorListener } from '../utils/ErrorListener.js';
-import { Diagnostic } from 'vscode-languageserver/node';
+import { Diagnostic } from 'vscode-languageserver/node.js';
 
 export class DocumentManager {
   private documents: Map<string, ParsedDocument> = new Map();

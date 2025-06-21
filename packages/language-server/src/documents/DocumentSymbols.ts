@@ -1,5 +1,5 @@
 import { ParseTree, ParserRuleContext } from 'antlr4ng';
-import { DocumentSymbol, SymbolKind, Range } from 'vscode-languageserver/node';
+import { DocumentSymbol, SymbolKind, Range } from 'vscode-languageserver/node.js';
 import { XXPVisitor, ESPACEVisitor } from '@extremexp/core';
 import { ASTUtils } from '../utils/ASTUtils.js';
 

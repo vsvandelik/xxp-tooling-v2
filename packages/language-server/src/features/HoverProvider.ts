@@ -1,4 +1,4 @@
-import { TextDocumentPositionParams, Hover, MarkupKind } from 'vscode-languageserver/node';
+import { TextDocumentPositionParams, Hover, MarkupKind } from 'vscode-languageserver/node.js';
 import { DocumentManager } from '../documents/DocumentManager.js';
 import { ASTUtils } from '../utils/ASTUtils.js';
 

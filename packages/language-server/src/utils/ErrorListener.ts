@@ -5,7 +5,7 @@ import {
   Recognizer,
   Token,
 } from 'antlr4ng';
-import { Diagnostic, DiagnosticSeverity } from 'vscode-languageserver/node';
+import { Diagnostic, DiagnosticSeverity } from 'vscode-languageserver/node.js';
 
 export class ErrorListener implements ANTLRErrorListener {
   constructor(private diagnostics: Diagnostic[]) {}

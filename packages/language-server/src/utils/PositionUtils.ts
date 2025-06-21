@@ -1,4 +1,4 @@
-import { Position, Range } from 'vscode-languageserver/node';
+import { Position, Range } from 'vscode-languageserver/node.js';
 
 export class PositionUtils {
   static isPositionInRange(position: Position, range: Range): boolean {

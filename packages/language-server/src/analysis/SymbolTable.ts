@@ -1,5 +1,5 @@
 // packages/language-server/src/analysis/SymbolTable.ts
-import { Range } from 'vscode-languageserver/node';
+import { Range } from 'vscode-languageserver/node.js';
 import { WorkspaceManager } from '../workspace/WorkspaceManager.js';
 
 export interface Symbol {

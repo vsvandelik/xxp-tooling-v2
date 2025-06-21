@@ -7,20 +7,22 @@ import {
   ServerOptions,
   TransportKind,
 } from 'vscode-languageclient/node';
+import { ToolResolver } from '../services/ToolResolver';
 
 export class LanguageClientManager {
   private client: LanguageClient | undefined;
   private context: vscode.ExtensionContext;
+  private toolResolver: ToolResolver;
 
   constructor(context: vscode.ExtensionContext) {
     this.context = context;
+    this.toolResolver = new ToolResolver(context);
   }
 
   async start(): Promise<void> {
-    // Path to the language server
-    const serverModule = this.context.asAbsolutePath(
-      path.join('node_modules', '@extremexp', 'language-server', 'dist', 'server.js')
-    );
+    // Use ToolResolver to find the language server
+    const languageServerTool = await this.toolResolver.resolveTool('language-server');
+    const serverModule = languageServerTool.path;
 
     // If the extension is launched in debug mode, the debug server options are used
     // Otherwise the run options are used

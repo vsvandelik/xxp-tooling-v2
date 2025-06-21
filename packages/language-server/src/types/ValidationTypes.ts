@@ -1,4 +1,4 @@
-import { Range, DiagnosticRelatedInformation } from 'vscode-languageserver/node';
+import { Range, DiagnosticRelatedInformation } from 'vscode-languageserver/node.js';
 
 export interface ValidationResult {
   severity: 'error' | 'warning' | 'info' | 'hint';

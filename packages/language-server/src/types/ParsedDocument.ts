@@ -1,6 +1,6 @@
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import { ParseTree, CommonTokenStream } from 'antlr4ng';
-import { DocumentSymbol, Diagnostic } from 'vscode-languageserver/node';
+import { DocumentSymbol, Diagnostic } from 'vscode-languageserver/node.js';
 import { DocumentAnalysis } from './AnalysisTypes.js';
 
 export interface ParsedDocument {

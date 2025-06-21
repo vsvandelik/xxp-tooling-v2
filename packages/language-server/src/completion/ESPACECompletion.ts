@@ -1,5 +1,5 @@
 // packages/language-server/src/completion/ESPACECompletions.ts
-import { CompletionItem, CompletionItemKind, InsertTextFormat } from 'vscode-languageserver/node';
+import { CompletionItem, CompletionItemKind, InsertTextFormat } from 'vscode-languageserver/node.js';
 import { DocumentManager } from '../documents/DocumentManager.js';
 import { CompletionContext } from './CompletionContext.js';
 

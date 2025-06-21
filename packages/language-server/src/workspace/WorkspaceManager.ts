@@ -1,5 +1,5 @@
 // packages/language-server/src/workspace/WorkspaceManager.ts
-import { WorkspaceFolder, DidChangeWorkspaceFoldersParams } from 'vscode-languageserver/node';
+import { WorkspaceFolder, DidChangeWorkspaceFoldersParams } from 'vscode-languageserver/node.js';
 import * as path from 'path';
 import * as fs from 'fs/promises';
 
