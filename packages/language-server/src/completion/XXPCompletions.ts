@@ -1,5 +1,9 @@
 // packages/language-server/src/completion/XXPCompletions.ts
-import { CompletionItem, CompletionItemKind, InsertTextFormat } from 'vscode-languageserver/node.js';
+import {
+  CompletionItem,
+  CompletionItemKind,
+  InsertTextFormat,
+} from 'vscode-languageserver/node.js';
 import { DocumentManager } from '../documents/DocumentManager.js';
 import { CompletionContext } from './CompletionContext.js';
 

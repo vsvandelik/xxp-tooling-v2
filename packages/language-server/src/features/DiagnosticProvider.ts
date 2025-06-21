@@ -14,6 +14,8 @@ export class DiagnosticProvider {
   private espaceValidator: ESPACEValidator;
   private commonValidator: CommonValidator;
   private hasDiagnosticRelatedInformation: boolean;
+  private pendingValidations = new Map<string, TextDocument>();
+  private validationTimeout: NodeJS.Timeout | null = null;
 
   constructor(
     connection: Connection,
@@ -30,6 +32,31 @@ export class DiagnosticProvider {
   }
 
   async validateDocument(textDocument: TextDocument): Promise<void> {
+    // Add to pending validations
+    this.pendingValidations.set(textDocument.uri, textDocument);
+
+    // Clear existing timeout
+    if (this.validationTimeout) {
+      clearTimeout(this.validationTimeout);
+    }
+
+    // Set a new timeout to batch validations
+    this.validationTimeout = setTimeout(() => {
+      this.performPendingValidations();
+    }, 100);
+  }
+
+  private async performPendingValidations(): Promise<void> {
+    const documentsToValidate = Array.from(this.pendingValidations.values());
+    this.pendingValidations.clear();
+
+    // Validate all pending documents
+    for (const document of documentsToValidate) {
+      await this.doValidateDocument(document);
+    }
+  }
+
+  private async doValidateDocument(textDocument: TextDocument): Promise<void> {
     const parsedDoc = this.documentManager.getDocument(textDocument.uri);
     if (!parsedDoc) return;
 

@@ -57,6 +57,10 @@ export class LanguageClientManager {
       initializationOptions: {
         configuration: vscode.workspace.getConfiguration('extremexp'),
       },
+      // Configure output channel for server logs
+      outputChannelName: 'ExtremeXP Language Server',
+      // Enable tracing for debugging
+      traceOutputChannel: vscode.window.createOutputChannel('ExtremeXP Language Server Trace'),
     };
 
     // Create the language client and start the client
@@ -74,6 +78,10 @@ export class LanguageClientManager {
     await this.client.start();
 
     console.log('ExtremeXP Language Server started');
+
+    // Add logging for successful connection
+    this.client.outputChannel.appendLine('ExtremeXP Language Server client connection established');
+    this.client.outputChannel.show();
   }
 
   async stop(): Promise<void> {

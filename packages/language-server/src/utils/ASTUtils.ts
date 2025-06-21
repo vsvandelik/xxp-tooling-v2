@@ -169,14 +169,29 @@ export class ASTUtils {
       const stop = node.stop;
 
       if (start && stop) {
+        // Calculate the actual end position including the stop token's text
+        let endLine = stop.line - 1;
+        let endChar = stop.column;
+
+        // If we have the text, add its length
+        if (stop.text) {
+          endChar += stop.text.length;
+        } else {
+          // If no text, try to get it from the stop index
+          const stopIndex = stop.stop;
+          if (stopIndex >= 0) {
+            endChar = stop.column + (stopIndex - stop.start + 1);
+          }
+        }
+
         return {
           start: {
             line: start.line - 1,
             character: start.column,
           },
           end: {
-            line: stop.line - 1,
-            character: stop.column + (stop.text?.length || 0),
+            line: endLine,
+            character: endChar,
           },
         };
       }
@@ -187,6 +202,7 @@ export class ASTUtils {
       end: { line: 0, character: 0 },
     };
   }
+
   private static isInContext(node: ParseTree, contextName: string): boolean {
     let current: ParseTree | undefined = node.parent || undefined;
 

@@ -48,9 +48,8 @@ export class XXPAnalyzer extends XXPVisitor<any> {
 
     if (ctx.workflowHeader().workflowNameRead()) {
       parentWorkflow = ctx.workflowHeader().workflowNameRead().IDENTIFIER().getText();
-      parentWorkflowRange = ASTUtils.getNodeRange(
-        ctx.workflowHeader().workflowNameRead().IDENTIFIER()
-      );
+      // Get the full range of the parent workflow reference
+      parentWorkflowRange = ASTUtils.getNodeRange(ctx.workflowHeader().workflowNameRead());
       // Add parent workflow to imports
       if (parentWorkflow) {
         this.imports.push(parentWorkflow);

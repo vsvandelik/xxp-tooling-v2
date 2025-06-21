@@ -1,6 +1,7 @@
 // packages/language-server/src/analysis/SymbolTable.ts
 import { Range } from 'vscode-languageserver/node.js';
 import { WorkspaceManager } from '../workspace/WorkspaceManager.js';
+import { Reference } from '../types/AnalysisTypes.js';
 
 export interface Symbol {
   name: string;
@@ -89,6 +90,9 @@ export class SymbolTable {
   // Document URI -> dependent documents
   private dependencies = new Map<string, Set<string>>();
 
+  // Document URI -> references (NEW)
+  private documentReferences = new Map<string, Reference[]>();
+
   constructor(private workspaceManager: WorkspaceManager) {
     this.initializeSymbolTypes();
   }
@@ -109,12 +113,20 @@ export class SymbolTable {
     }
   }
 
-  updateDocument(uri: string, symbols: Symbol[], imports: string[]): void {
+  updateDocument(
+    uri: string,
+    symbols: Symbol[],
+    imports: string[],
+    references: Reference[] = []
+  ): void {
     // Clear old symbols for this document
     this.removeDocument(uri);
 
     // Store new symbols
     this.documentSymbols.set(uri, symbols);
+
+    // Store references
+    this.documentReferences.set(uri, references);
 
     // Update global symbol index
     for (const symbol of symbols) {
@@ -159,6 +171,7 @@ export class SymbolTable {
     }
 
     this.documentSymbols.delete(uri);
+    this.documentReferences.delete(uri);
     this.imports.delete(uri);
 
     // Remove from dependencies
@@ -189,15 +202,24 @@ export class SymbolTable {
     const references: Location[] = [];
 
     // Search all documents for references
-    for (const [uri, symbols] of this.documentSymbols) {
-      for (const symbol of symbols) {
-        if (symbol.name === name && symbol.type === type) {
+    for (const [uri, refs] of this.documentReferences) {
+      for (const ref of refs) {
+        if (ref.name === name && ref.type === type) {
           references.push({
-            uri: symbol.uri,
-            range: symbol.range,
+            uri: uri,
+            range: ref.range,
           });
         }
       }
+    }
+
+    // Also include the definition locations
+    const definitions = this.globalSymbols.get(type)?.get(name) || [];
+    for (const def of definitions) {
+      references.push({
+        uri: def.uri,
+        range: def.range,
+      });
     }
 
     return references;

@@ -97,7 +97,12 @@ export class DocumentManager {
         this.documents.set(uri, parsedDocument);
 
         // Update symbol table
-        this.symbolTable.updateDocument(uri, analysis.symbols, analysis.imports);
+        this.symbolTable.updateDocument(
+          uri,
+          analysis.symbols,
+          analysis.imports,
+          analysis.references
+        );
 
         // Trigger re-analysis of dependent documents
         this.reanalyzeDependents(uri);

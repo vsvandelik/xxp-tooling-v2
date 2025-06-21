@@ -205,22 +205,20 @@ export class ESPACEValidator {
         }
       }
 
+      // Also check parameters used in task configurations
+      for (const taskConfig of space.taskConfigurations) {
+        for (const param of taskConfig.parameters) {
+          usedParams.add(param.name);
+        }
+      }
+
       // Collect parameters defined in the space
       for (const param of space.parameters) {
         definedParams.set(param.name, param);
       }
 
-      // Check for parameters defined but not used
-      for (const [paramName, param] of definedParams) {
-        if (!usedParams.has(paramName)) {
-          results.push({
-            severity: 'warning',
-            range: param.range,
-            message: `Parameter '${paramName}' is defined but never used`,
-            code: 'espace-unused-parameter',
-          });
-        }
-      }
+      // Don't warn about unused parameters since they might be used
+      // in the actual task implementation scripts
 
       // Check for required parameters not provided
       for (const paramName of usedParams) {
@@ -231,12 +229,19 @@ export class ESPACEValidator {
           );
 
           if (!taskConfig) {
-            results.push({
-              severity: 'error',
-              range: space.nameRange,
-              message: `Required parameter '${paramName}' not provided in space '${space.name}'`,
-              code: 'espace-missing-parameter',
-            });
+            // Only warn if the parameter is actually required by a task
+            const isRequired = workflowInfo.tasks.some(t =>
+              t.parameters.some(p => p.name === paramName && p.required && !p.hasDefault)
+            );
+
+            if (isRequired) {
+              results.push({
+                severity: 'error',
+                range: space.nameRange,
+                message: `Required parameter '${paramName}' not provided in space '${space.name}'`,
+                code: 'espace-missing-parameter',
+              });
+            }
           }
         }
       }

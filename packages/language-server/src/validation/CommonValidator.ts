@@ -93,7 +93,6 @@ export class CommonValidator {
 
   private checkUnusedDefinitions(document: ParsedDocument): ValidationResult[] {
     const results: ValidationResult[] = [];
-    const symbolTable = this.documentManager.getSymbolTable();
 
     for (const symbol of document.analysis?.symbols || []) {
       // Skip checking for main constructs (workflows, experiments)
@@ -101,10 +100,35 @@ export class CommonValidator {
         continue;
       }
 
-      const references = symbolTable.getReferences(symbol.name, symbol.type);
+      // Check if the symbol is referenced anywhere in the same document
+      const isUsedInSameDocument = document.analysis?.references.some(
+        ref => ref.name === symbol.name && ref.type === symbol.type
+      );
 
-      // If the only reference is the definition itself, it's unused
-      if (references.length <= 1) {
+      if (isUsedInSameDocument) {
+        continue; // It's used in the same document
+      }
+
+      // For symbols that can be referenced from other files, check globally
+      if (symbol.type === 'data') {
+        const symbolTable = this.documentManager.getSymbolTable();
+        const references = symbolTable.getReferences(symbol.name, symbol.type);
+
+        // If there are references beyond the definition, it's used
+        if (references.length > 1) {
+          continue;
+        }
+      }
+
+      // Special handling for certain symbol types
+      if (symbol.type === 'space' || symbol.type === 'task') {
+        // These are often referenced in control flows or task chains
+        // which might be tracked differently
+        continue; // Skip the unused check for now
+      }
+
+      // Only warn about unused parameters and local data
+      if (symbol.type === 'parameter' || symbol.type === 'data') {
         results.push({
           severity: 'warning',
           range: symbol.range,

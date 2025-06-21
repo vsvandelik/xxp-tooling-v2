@@ -70,9 +70,8 @@ export class ESPACEAnalyzer extends ESPACEVisitor<any> {
     const nameRange = ASTUtils.getNodeRange(ctx.spaceHeader().IDENTIFIER());
 
     const workflowName = ctx.spaceHeader().workflowNameRead().IDENTIFIER().getText();
-    const workflowNameRange = ASTUtils.getNodeRange(
-      ctx.spaceHeader().workflowNameRead().IDENTIFIER()
-    );
+    // Get the full range of the workflow reference including "of WorkflowName"
+    const workflowNameRange = ASTUtils.getNodeRange(ctx.spaceHeader().workflowNameRead());
 
     // Add workflow import
     this.imports.push(workflowName);
@@ -238,8 +237,10 @@ export class ESPACEAnalyzer extends ESPACEVisitor<any> {
     const spaceNames = ctx.spaceNameRead();
 
     for (let i = 0; i < spaceNames.length - 1; i++) {
-      const from = spaceNames[i].IDENTIFIER().getText();
-      const to = spaceNames[i + 1].IDENTIFIER().getText();
+      const fromNode = spaceNames[i];
+      const toNode = spaceNames[i + 1];
+      const from = fromNode.IDENTIFIER().getText();
+      const to = toNode.IDENTIFIER().getText();
 
       transitions.push({
         from,
@@ -253,7 +254,7 @@ export class ESPACEAnalyzer extends ESPACEVisitor<any> {
           name: from,
           type: 'space',
           scope: this.experiment?.name || 'global',
-          range: ASTUtils.getNodeRange(spaceNames[i].IDENTIFIER()),
+          range: ASTUtils.getNodeRange(fromNode),
           isDefinition: false,
         });
       }
@@ -263,7 +264,7 @@ export class ESPACEAnalyzer extends ESPACEVisitor<any> {
           name: to,
           type: 'space',
           scope: this.experiment?.name || 'global',
-          range: ASTUtils.getNodeRange(spaceNames[i + 1].IDENTIFIER()),
+          range: ASTUtils.getNodeRange(toNode),
           isDefinition: false,
         });
       }
