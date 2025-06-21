@@ -148,7 +148,7 @@ export class LocalWorkflowRepository implements IWorkflowRepository {
       id,
       createdAt: now,
       modifiedAt: now,
-      path: fullWorkflowPath,
+      path: this.normalizePath(fullWorkflowPath),
       hasAttachments: content.attachments.size > 0,
     };
 
@@ -300,7 +300,7 @@ export class LocalWorkflowRepository implements IWorkflowRepository {
         tags: metadata.tags || [],
         createdAt: stats.birthtime,
         modifiedAt: stats.mtime,
-        path: relativePath,
+        path: this.normalizePath(relativePath),
         hasAttachments: false,
         mainFile: fileName,
       };
@@ -370,7 +370,7 @@ export class LocalWorkflowRepository implements IWorkflowRepository {
         tags: manifest.tags,
         createdAt: stats.birthtime,
         modifiedAt: stats.mtime,
-        path: relativePath,
+        path: this.normalizePath(relativePath),
         hasAttachments,
         mainFile: manifest.mainFile,
       };
@@ -422,7 +422,7 @@ export class LocalWorkflowRepository implements IWorkflowRepository {
           if (stats.isFile()) {
             attachments.push({
               name: file,
-              path: path.join(workflowPath, file),
+              path: this.normalizePath(path.join(workflowPath, file)),
               size: stats.size,
               mimeType: this.getMimeType(file),
               createdAt: stats.birthtime,
@@ -498,7 +498,7 @@ export class LocalWorkflowRepository implements IWorkflowRepository {
           if (metadata) {
             children.push({
               name: entry.name,
-              path: relPath,
+              path: this.normalizePath(relPath),
               type: 'workflow',
               metadata,
             });
@@ -520,7 +520,7 @@ export class LocalWorkflowRepository implements IWorkflowRepository {
             if (metadata) {
               children.push({
                 name: entry.name,
-                path: childRelativePath,
+                path: this.normalizePath(childRelativePath),
                 type: 'workflow',
                 metadata,
               });
@@ -540,7 +540,7 @@ export class LocalWorkflowRepository implements IWorkflowRepository {
 
     return {
       name,
-      path: relativePath,
+      path: this.normalizePath(relativePath),
       type: 'folder',
       children: children.length > 0 ? children : [],
     };
@@ -549,6 +549,11 @@ export class LocalWorkflowRepository implements IWorkflowRepository {
   private generateId(workflowPath: string, name: string): string {
     const input = `${workflowPath}/${name}`.replace(/\\/g, '/'); // Normalize path separators
     return createHash('sha256').update(input).digest('hex').substring(0, 16);
+  }
+
+  private normalizePath(pathStr: string): string {
+    // Normalize path separators to forward slashes for consistent API behavior
+    return pathStr.replace(/\\/g, '/');
   }
 
   private sanitizeFileName(name: string): string {
