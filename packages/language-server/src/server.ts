@@ -61,9 +61,7 @@ connection.onInitialize((params: InitializeParams): InitializeResult => {
   const capabilities = params.capabilities;
 
   // Check client capabilities
-  hasConfigurationCapability = !!(
-    capabilities.workspace && !!capabilities.workspace.configuration
-  );
+  hasConfigurationCapability = !!(capabilities.workspace && !!capabilities.workspace.configuration);
   hasWorkspaceFolderCapability = !!(
     capabilities.workspace && !!capabilities.workspace.workspaceFolders
   );
@@ -119,77 +117,61 @@ connection.onInitialize((params: InitializeParams): InitializeResult => {
 });
 
 connection.onInitialized(() => {
-  if (hasConfigurationCapability) {
-    // Register for configuration changes
-    connection.client.register('workspace/didChangeConfiguration', {
-      section: 'extremexp',
-    });
-  }
   if (hasWorkspaceFolderCapability) {
-    connection.workspace.onDidChangeWorkspaceFolders((event) => {
-      workspaceManager.updateWorkspaceFolders(event);
+    connection.workspace.onDidChangeWorkspaceFolders(event => {
+      workspaceManager.updateWorkspaceFolders({ event });
     });
   }
 });
 
 // Document change handlers
-documents.onDidOpen((event) => {
+documents.onDidOpen(event => {
   documentManager.openDocument(event.document);
   diagnosticProvider.validateDocument(event.document);
 });
 
-documents.onDidChangeContent((event) => {
+documents.onDidChangeContent(event => {
   documentManager.updateDocument(event.document);
   diagnosticProvider.validateDocument(event.document);
 });
 
-documents.onDidClose((event) => {
+documents.onDidClose(event => {
   documentManager.closeDocument(event.document.uri);
   connection.sendDiagnostics({ uri: event.document.uri, diagnostics: [] });
 });
 
 // Feature handlers
-connection.onCompletion(
-  async (params: TextDocumentPositionParams): Promise<CompletionItem[]> => {
-    return completionProvider.provideCompletions(params);
-  }
-);
+connection.onCompletion(async (params: TextDocumentPositionParams): Promise<CompletionItem[]> => {
+  return completionProvider.provideCompletions(params);
+});
 
-connection.onCompletionResolve(
-  async (item: CompletionItem): Promise<CompletionItem> => {
-    return completionProvider.resolveCompletion(item);
-  }
-);
+connection.onCompletionResolve(async (item: CompletionItem): Promise<CompletionItem> => {
+  return completionProvider.resolveCompletion(item);
+});
 
-connection.onDefinition(
-  async (params: TextDocumentPositionParams): Promise<Definition | null> => {
-    return definitionProvider.provideDefinition(params);
-  }
-);
+connection.onDefinition(async (params: TextDocumentPositionParams): Promise<Definition | null> => {
+  return definitionProvider.provideDefinition(params);
+});
 
-connection.onReferences(
-  async (params: ReferenceParams): Promise<Location[] | null> => {
-    return referenceProvider.provideReferences(params);
-  }
-);
+connection.onReferences(async (params: ReferenceParams): Promise<Location[] | null> => {
+  return referenceProvider.provideReferences(params);
+});
 
-connection.onRenameRequest(
-  async (params: RenameParams): Promise<WorkspaceEdit | null> => {
-    return renameProvider.provideRename(params);
-  }
-);
+connection.onRenameRequest(async (params: RenameParams): Promise<WorkspaceEdit | null> => {
+  return renameProvider.provideRename(params);
+});
 
 connection.onPrepareRename(
-  async (params: TextDocumentPositionParams): Promise<{ range: any; placeholder: string } | null> => {
+  async (
+    params: TextDocumentPositionParams
+  ): Promise<{ range: any; placeholder: string } | null> => {
     return renameProvider.prepareRename(params);
   }
 );
 
-connection.onHover(
-  async (params: TextDocumentPositionParams): Promise<Hover | null> => {
-    return hoverProvider.provideHover(params);
-  }
-);
+connection.onHover(async (params: TextDocumentPositionParams): Promise<Hover | null> => {
+  return hoverProvider.provideHover(params);
+});
 
 connection.onDocumentSymbol(
   async (params: DocumentSymbolParams): Promise<DocumentSymbol[] | null> => {
@@ -197,20 +179,18 @@ connection.onDocumentSymbol(
   }
 );
 
-connection.onCodeAction(
-  async (params: CodeActionParams): Promise<CodeAction[] | null> => {
-    return codeActionProvider.provideCodeActions(params);
-  }
-);
+connection.onCodeAction(async (params: CodeActionParams): Promise<CodeAction[] | null> => {
+  return codeActionProvider.provideCodeActions(params);
+});
 
-connection.onDidChangeConfiguration((change) => {
+connection.onDidChangeConfiguration(change => {
   if (hasConfigurationCapability) {
     // Reset all cached document settings
     documentManager.updateConfiguration(change.settings.extremexp || {});
   }
 
   // Revalidate all open text documents
-  documents.all().forEach((document) => {
+  documents.all().forEach(document => {
     diagnosticProvider.validateDocument(document);
   });
 });

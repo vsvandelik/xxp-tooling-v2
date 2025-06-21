@@ -1,8 +1,4 @@
-import {
-  TextDocumentPositionParams,
-  Hover,
-  MarkupKind,
-} from 'vscode-languageserver/node';
+import { TextDocumentPositionParams, Hover, MarkupKind } from 'vscode-languageserver/node';
 import { DocumentManager } from '../documents/DocumentManager.js';
 import { ASTUtils } from '../utils/ASTUtils.js';
 
@@ -25,7 +21,7 @@ export class HoverProvider {
     // Get symbol or reference information
     const symbolInfo = ASTUtils.getSymbolInfo(node, document.languageId);
     const referenceInfo = ASTUtils.getReferenceInfo(node, document.languageId);
-    
+
     const info = symbolInfo || referenceInfo;
     if (!info) return null;
 
@@ -48,25 +44,25 @@ export class HoverProvider {
     switch (info.type) {
       case 'workflow':
         return this.generateWorkflowHover(info.name);
-        
+
       case 'experiment':
         return this.generateExperimentHover(info.name);
-        
+
       case 'task':
         return this.generateTaskHover(info.name, info.workflow);
-        
+
       case 'parameter':
         return this.generateParameterHover(info.name, info.task, info.workflow);
-        
+
       case 'data':
         return this.generateDataHover(info.name, info.scope);
-        
+
       case 'space':
         return this.generateSpaceHover(info.name, info.experiment);
-        
+
       case 'strategy':
         return this.generateStrategyHover(info.name);
-        
+
       default:
         return null;
     }
@@ -75,20 +71,23 @@ export class HoverProvider {
   private generateWorkflowHover(name: string): string {
     const symbolTable = this.documentManager.getSymbolTable();
     const workflow = symbolTable.getWorkflowInfo(name);
-    
+
     if (!workflow) {
       return `**Workflow:** ${name}\n\n*Not found*`;
     }
 
     let content = `**Workflow:** ${name}\n\n`;
-    
+
     if (workflow.parentWorkflow) {
       content += `**Inherits from:** ${workflow.parentWorkflow}\n\n`;
     }
 
     if (workflow.tasks.length > 0) {
       content += `**Tasks:** ${workflow.tasks.length}\n`;
-      const taskList = workflow.tasks.slice(0, 5).map(t => `- ${t.name}`).join('\n');
+      const taskList = workflow.tasks
+        .slice(0, 5)
+        .map(t => `- ${t.name}`)
+        .join('\n');
       content += taskList;
       if (workflow.tasks.length > 5) {
         content += `\n- ... and ${workflow.tasks.length - 5} more`;
@@ -98,7 +97,10 @@ export class HoverProvider {
 
     if (workflow.data.length > 0) {
       content += `**Data:** ${workflow.data.length}\n`;
-      const dataList = workflow.data.slice(0, 5).map(d => `- ${d.name}`).join('\n');
+      const dataList = workflow.data
+        .slice(0, 5)
+        .map(d => `- ${d.name}`)
+        .join('\n');
       content += dataList;
       if (workflow.data.length > 5) {
         content += `\n- ... and ${workflow.data.length - 5} more`;
@@ -110,14 +112,14 @@ export class HoverProvider {
 
   private generateExperimentHover(name: string): string {
     const symbolTable = this.documentManager.getSymbolTable();
-    const experiment = symbolTable.experiments.get(name);
-    
+    const experiment = symbolTable.getExperiment(name);
+
     if (!experiment) {
       return `**Experiment:** ${name}\n\n*Not found*`;
     }
 
     let content = `**Experiment:** ${name}\n\n`;
-    
+
     if (experiment.spaces && experiment.spaces.length > 0) {
       content += `**Spaces:** ${experiment.spaces.length}\n`;
       for (const space of experiment.spaces.slice(0, 5)) {
@@ -138,7 +140,7 @@ export class HoverProvider {
 
     const symbolTable = this.documentManager.getSymbolTable();
     const task = symbolTable.getTaskInfo(workflowName, name);
-    
+
     if (!task) {
       return `**Task:** ${name}\n\n*Not found in workflow ${workflowName}*`;
     }
@@ -182,19 +184,19 @@ export class HoverProvider {
     if (taskName && workflowName) {
       const symbolTable = this.documentManager.getSymbolTable();
       const param = symbolTable.getParameterInfo(taskName, name);
-      
+
       if (param) {
         content += `**Task:** ${taskName}\n`;
         content += `**Workflow:** ${workflowName}\n\n`;
-        
+
         if (param.type) {
           content += `**Type:** ${param.type}\n`;
         }
-        
+
         if (param.hasDefault) {
           content += `**Default value:** ${param.defaultValue}\n`;
         }
-        
+
         if (param.required) {
           content += `**Required:** Yes\n`;
         }
@@ -207,9 +209,9 @@ export class HoverProvider {
   private generateDataHover(name: string, scope: string): string {
     const symbolTable = this.documentManager.getSymbolTable();
     const dataSymbol = symbolTable.resolveSymbol(name, scope, 'data');
-    
+
     let content = `**Data:** ${name}\n`;
-    
+
     if (dataSymbol && dataSymbol.data) {
       const data = dataSymbol.data;
       if (data.value) {
@@ -231,20 +233,20 @@ export class HoverProvider {
 
   private generateSpaceHover(name: string, experimentName?: string): string {
     let content = `**Space:** ${name}\n`;
-    
+
     if (experimentName) {
       content += `**Experiment:** ${experimentName}\n\n`;
-      
+
       const symbolTable = this.documentManager.getSymbolTable();
-      const experiment = symbolTable.experiments.get(experimentName);
-      
+      const experiment = symbolTable.getExperiment(experimentName);
+
       if (experiment) {
         const space = experiment.spaces?.find((s: any) => s.name === name);
-        
+
         if (space) {
           content += `**Workflow:** ${space.workflowName}\n`;
           content += `**Strategy:** ${space.strategy}\n\n`;
-          
+
           if (space.parameters && space.parameters.length > 0) {
             content += `**Parameters:** ${space.parameters.length}\n`;
             for (const param of space.parameters.slice(0, 3)) {
@@ -276,7 +278,7 @@ param learning_rate = enum(0.01, 0.1, 1.0);
 param batch_size = enum(16, 32, 64);
 // Results in 3 × 3 = 9 combinations
 \`\`\``,
-      
+
       randomsearch: `**Random Search Strategy**
 
 Randomly samples parameter combinations from the search space.

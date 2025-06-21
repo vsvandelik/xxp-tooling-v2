@@ -1,9 +1,5 @@
 // packages/language-server/src/completion/XXPCompletions.ts
-import {
-  CompletionItem,
-  CompletionItemKind,
-  InsertTextFormat,
-} from 'vscode-languageserver/node';
+import { CompletionItem, CompletionItemKind, InsertTextFormat } from 'vscode-languageserver/node';
 import { DocumentManager } from '../documents/DocumentManager.js';
 import { CompletionContext } from './CompletionContext.js';
 
@@ -83,7 +79,8 @@ export class XXPCompletions {
       {
         label: 'configure task',
         kind: CompletionItemKind.Snippet,
-        insertText: 'configure task ${1:taskName} {\n\t${2:implementation "${3:script.py}";}\n\t$0\n}',
+        insertText:
+          'configure task ${1:taskName} {\n\t${2:implementation "${3:script.py}";}\n\t$0\n}',
         insertTextFormat: InsertTextFormat.Snippet,
         documentation: 'Configure a task',
         sortText: '1_configure_task',
@@ -291,7 +288,7 @@ export class XXPCompletions {
   private getAvailableDataForTask(workflow: string, taskName: string): any[] {
     const symbolTable = this.documentManager.getSymbolTable();
     const workflowInfo = symbolTable.getWorkflowInfo(workflow);
-    
+
     if (!workflowInfo || !workflowInfo.taskChain) return [];
 
     const availableData: any[] = [];

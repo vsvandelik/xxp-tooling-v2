@@ -32,8 +32,12 @@ export class CommonValidator {
     const symbolTable = this.documentManager.getSymbolTable();
 
     for (const reference of document.analysis?.references || []) {
-      const symbol = symbolTable.resolveSymbol(reference.name, reference.scope, reference.type);
-      
+      const symbol = symbolTable.resolveSymbol(
+        reference.name,
+        reference.scope,
+        reference.type as any
+      );
+
       if (!symbol) {
         results.push({
           severity: 'error',
@@ -57,7 +61,7 @@ export class CommonValidator {
 
     for (const symbol of document.analysis?.symbols || []) {
       const key = `${symbol.scope}:${symbol.name}:${symbol.type}`;
-      
+
       if (seenSymbols.has(key)) {
         const existing = seenSymbols.get(key);
         results.push({
@@ -65,13 +69,15 @@ export class CommonValidator {
           range: symbol.range,
           message: `Duplicate definition of ${this.getSymbolTypeName(symbol.type)} '${symbol.name}'`,
           code: 'duplicate-definition',
-          relatedInformation: [{
-            location: {
-              uri: document.uri,
-              range: existing.range,
+          relatedInformation: [
+            {
+              location: {
+                uri: document.uri,
+                range: existing.range,
+              },
+              message: 'First definition is here',
             },
-            message: 'First definition is here',
-          }],
+          ],
           data: {
             name: symbol.name,
             type: symbol.type,
@@ -96,7 +102,7 @@ export class CommonValidator {
       }
 
       const references = symbolTable.getReferences(symbol.name, symbol.type);
-      
+
       // If the only reference is the definition itself, it's unused
       if (references.length <= 1) {
         results.push({
@@ -129,7 +135,7 @@ export class CommonValidator {
           isValid = /^[A-Z][a-zA-Z0-9]*$/.test(symbol.name);
           expectedPattern = 'PascalCase (e.g., MyWorkflow)';
           break;
-        
+
         case 'task':
         case 'space':
         case 'parameter':

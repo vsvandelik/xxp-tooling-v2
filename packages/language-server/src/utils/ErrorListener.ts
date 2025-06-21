@@ -1,9 +1,9 @@
-import { 
-  ANTLRErrorListener, 
-  ATNSimulator, 
-  RecognitionException, 
-  Recognizer, 
-  Token 
+import {
+  ANTLRErrorListener,
+  ATNSimulator,
+  RecognitionException,
+  Recognizer,
+  Token,
 } from 'antlr4ng';
 import { Diagnostic, DiagnosticSeverity } from 'vscode-languageserver/node';
 
@@ -21,13 +21,13 @@ export class ErrorListener implements ANTLRErrorListener {
     const diagnostic: Diagnostic = {
       severity: DiagnosticSeverity.Error,
       range: {
-        start: { 
+        start: {
           line: line - 1, // Convert to 0-based
-          character: charPositionInLine 
+          character: charPositionInLine,
         },
-        end: { 
-          line: line - 1, 
-          character: charPositionInLine + (offendingSymbol?.text?.length || 1)
+        end: {
+          line: line - 1,
+          character: charPositionInLine + (offendingSymbol?.text?.length || 1),
         },
       },
       message: msg,

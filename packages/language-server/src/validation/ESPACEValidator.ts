@@ -33,11 +33,7 @@ export class ESPACEValidator {
     const symbolTable = this.documentManager.getSymbolTable();
 
     for (const space of experiment.spaces) {
-      const workflowSymbol = symbolTable.resolveSymbol(
-        space.workflowName,
-        'global',
-        'workflow'
-      );
+      const workflowSymbol = symbolTable.resolveSymbol(space.workflowName, 'global', 'workflow');
 
       if (!workflowSymbol) {
         results.push({
@@ -76,10 +72,8 @@ export class ESPACEValidator {
     const reachableSpaces = new Set<string>();
 
     // Check for multiple START transitions
-    const startTransitions = experiment.controlFlow.transitions.filter(
-      t => t.from === 'START'
-    );
-    
+    const startTransitions = experiment.controlFlow.transitions.filter(t => t.from === 'START');
+
     if (startTransitions.length > 1) {
       results.push({
         severity: 'error',
@@ -102,9 +96,11 @@ export class ESPACEValidator {
       }
 
       // Check for self-loops
-      if (transition.from === transition.to && 
-          transition.from !== 'START' && 
-          transition.from !== 'END') {
+      if (
+        transition.from === transition.to &&
+        transition.from !== 'START' &&
+        transition.from !== 'END'
+      ) {
         results.push({
           severity: 'error',
           range: transition.range,
@@ -117,7 +113,7 @@ export class ESPACEValidator {
       for (const spaceName of [transition.from, transition.to]) {
         if (spaceName !== 'START' && spaceName !== 'END') {
           referencedSpaces.add(spaceName);
-          
+
           if (!definedSpaces.has(spaceName)) {
             results.push({
               severity: 'error',
@@ -132,18 +128,10 @@ export class ESPACEValidator {
 
     // Check reachability
     if (startTransitions.length === 1) {
-      this.findReachableSpaces(
-        'START',
-        experiment.controlFlow.transitions,
-        reachableSpaces
-      );
+      this.findReachableSpaces('START', experiment.controlFlow.transitions, reachableSpaces);
 
       // Check if END is reachable
-      const canReachEnd = this.canReachEnd(
-        'START',
-        experiment.controlFlow.transitions,
-        new Set()
-      );
+      const canReachEnd = this.canReachEnd('START', experiment.controlFlow.transitions, new Set());
 
       if (!canReachEnd) {
         results.push({
@@ -241,7 +229,7 @@ export class ESPACEValidator {
           const taskConfig = space.taskConfigurations.find(tc =>
             tc.parameters.some(p => p.name === paramName)
           );
-          
+
           if (!taskConfig) {
             results.push({
               severity: 'error',
@@ -314,7 +302,7 @@ export class ESPACEValidator {
       // Validate task configurations
       for (const taskConfig of space.taskConfigurations) {
         const task = workflowInfo.tasks.find(t => t.name === taskConfig.taskName);
-        
+
         if (!task) {
           results.push({
             severity: 'error',
@@ -329,11 +317,7 @@ export class ESPACEValidator {
     return results;
   }
 
-  private findReachableSpaces(
-    current: string,
-    transitions: any[],
-    reachable: Set<string>
-  ): void {
+  private findReachableSpaces(current: string, transitions: any[], reachable: Set<string>): void {
     if (current !== 'START' && current !== 'END') {
       reachable.add(current);
     }
@@ -346,11 +330,7 @@ export class ESPACEValidator {
     }
   }
 
-  private canReachEnd(
-    current: string,
-    transitions: any[],
-    visited: Set<string>
-  ): boolean {
+  private canReachEnd(current: string, transitions: any[], visited: Set<string>): boolean {
     if (current === 'END') return true;
     if (visited.has(current)) return false;
 

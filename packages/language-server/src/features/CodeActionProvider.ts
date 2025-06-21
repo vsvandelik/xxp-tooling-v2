@@ -41,39 +41,37 @@ export class CodeActionProvider {
     // Handle different diagnostic codes
     switch (diagnostic.code) {
       case 'undefined-reference':
-        actions.push(...this.getUndefinedReferenceFixe
-
-(diagnostic, uri));
+        actions.push(...this.getUndefinedReferenceFixes(diagnostic, uri));
         break;
-        
+
       case 'duplicate-definition':
         actions.push(...this.getDuplicateDefinitionFixes(diagnostic, uri));
         break;
-        
+
       case 'unused-definition':
         actions.push(...this.getUnusedDefinitionFixes(diagnostic, uri));
         break;
-        
+
       case 'naming-convention':
         actions.push(...this.getNamingConventionFixes(diagnostic, uri));
         break;
-        
+
       case 'xxp-abstract-task':
         actions.push(...this.getAbstractTaskFixes(diagnostic, uri));
         break;
-        
+
       case 'xxp-missing-task-chain':
         actions.push(...this.getMissingTaskChainFixes(diagnostic, uri));
         break;
-        
+
       case 'espace-workflow-not-found':
         actions.push(...this.getWorkflowNotFoundFixes(diagnostic, uri));
         break;
-        
+
       case 'espace-missing-parameter':
         actions.push(...this.getMissingParameterFixes(diagnostic, uri));
         break;
-        
+
       case 'espace-missing-control-flow':
         actions.push(...this.getMissingControlFlowFixes(diagnostic, uri));
         break;
@@ -85,7 +83,7 @@ export class CodeActionProvider {
   private getUndefinedReferenceFixes(diagnostic: Diagnostic, uri: string): CodeAction[] {
     const actions: CodeAction[] = [];
     const data = diagnostic.data;
-    
+
     if (!data) return actions;
 
     switch (data.type) {
@@ -102,7 +100,7 @@ export class CodeActionProvider {
           },
         });
         break;
-        
+
       case 'task':
         // Offer to define the missing task
         actions.push({
@@ -112,7 +110,7 @@ export class CodeActionProvider {
           edit: this.createAddTaskEdit(uri, data.name, diagnostic.range),
         });
         break;
-        
+
       case 'parameter':
         // Offer to add the missing parameter
         actions.push({
@@ -142,10 +140,12 @@ export class CodeActionProvider {
       command: {
         title: 'Rename',
         command: 'editor.action.rename',
-        arguments: [{
-          line: diagnostic.range.start.line,
-          character: diagnostic.range.start.character,
-        }],
+        arguments: [
+          {
+            line: diagnostic.range.start.line,
+            character: diagnostic.range.start.character,
+          },
+        ],
       },
     });
 
@@ -156,10 +156,12 @@ export class CodeActionProvider {
       diagnostics: [diagnostic],
       edit: {
         changes: {
-          [uri]: [{
-            range: diagnostic.range,
-            newText: '',
-          }],
+          [uri]: [
+            {
+              range: diagnostic.range,
+              newText: '',
+            },
+          ],
         },
       },
     });
@@ -188,12 +190,12 @@ export class CodeActionProvider {
   private getNamingConventionFixes(diagnostic: Diagnostic, uri: string): CodeAction[] {
     const actions: CodeAction[] = [];
     const data = diagnostic.data;
-    
+
     if (!data) return actions;
 
     // Generate properly formatted name
     const properName = this.formatName(data.name, data.expectedPattern);
-    
+
     if (properName !== data.name) {
       actions.push({
         title: `Rename to '${properName}'`,
@@ -201,10 +203,12 @@ export class CodeActionProvider {
         diagnostics: [diagnostic],
         edit: {
           changes: {
-            [uri]: [{
-              range: diagnostic.range,
-              newText: properName,
-            }],
+            [uri]: [
+              {
+                range: diagnostic.range,
+                newText: properName,
+              },
+            ],
           },
         },
       });
@@ -216,7 +220,7 @@ export class CodeActionProvider {
   private getAbstractTaskFixes(diagnostic: Diagnostic, uri: string): CodeAction[] {
     const actions: CodeAction[] = [];
     const document = this.documentManager.getDocument(uri);
-    
+
     if (!document) return actions;
 
     // Offer to add implementation
@@ -247,7 +251,7 @@ export class CodeActionProvider {
   private getWorkflowNotFoundFixes(diagnostic: Diagnostic, uri: string): CodeAction[] {
     const actions: CodeAction[] = [];
     const data = diagnostic.data;
-    
+
     if (!data) return actions;
 
     // Offer to create the workflow
@@ -268,7 +272,7 @@ export class CodeActionProvider {
   private getMissingParameterFixes(diagnostic: Diagnostic, uri: string): CodeAction[] {
     const actions: CodeAction[] = [];
     const data = diagnostic.data;
-    
+
     if (!data) return actions;
 
     // Offer to add the parameter to the space
@@ -299,7 +303,7 @@ export class CodeActionProvider {
   private getRefactoringActions(params: CodeActionParams): CodeAction[] {
     const actions: CodeAction[] = [];
     const document = this.documentManager.getDocument(params.textDocument.uri);
-    
+
     if (!document) return actions;
 
     // Extract task refactoring
@@ -336,10 +340,12 @@ export class CodeActionProvider {
     // In reality, you'd need to find the appropriate location in the workflow
     const edit: WorkspaceEdit = {
       changes: {
-        [uri]: [{
-          range: { start: range.end, end: range.end },
-          newText: `\n    define task ${taskName};`,
-        }],
+        [uri]: [
+          {
+            range: { start: range.end, end: range.end },
+            newText: `\n    define task ${taskName};`,
+          },
+        ],
       },
     };
     return edit;
@@ -349,10 +355,12 @@ export class CodeActionProvider {
     // Find the task configuration block and add implementation
     const edit: WorkspaceEdit = {
       changes: {
-        [uri]: [{
-          range: { start: diagnostic.range.end, end: diagnostic.range.end },
-          newText: '\n        implementation "task.py";',
-        }],
+        [uri]: [
+          {
+            range: { start: diagnostic.range.end, end: diagnostic.range.end },
+            newText: '\n        implementation "task.py";',
+          },
+        ],
       },
     };
     return edit;
@@ -370,33 +378,38 @@ export class CodeActionProvider {
       taskNames.push(...document.analysis.workflow.tasks.map(t => t.name));
     }
 
-    const chainText = taskNames.length > 0
-      ? `\n    START -> ${taskNames.join(' -> ')} -> END;`
-      : '\n    START -> END;';
+    const chainText =
+      taskNames.length > 0
+        ? `\n    START -> ${taskNames.join(' -> ')} -> END;`
+        : '\n    START -> END;';
 
     const edit: WorkspaceEdit = {
       changes: {
-        [uri]: [{
-          range: { start: diagnostic.range.end, end: diagnostic.range.end },
-          newText: chainText,
-        }],
+        [uri]: [
+          {
+            range: { start: diagnostic.range.end, end: diagnostic.range.end },
+            newText: chainText,
+          },
+        ],
       },
     };
     return edit;
   }
 
   private createAddParameterToSpaceEdit(
-    uri: string, 
-    paramName: string, 
+    uri: string,
+    paramName: string,
     diagnostic: Diagnostic
   ): WorkspaceEdit {
     // Add parameter definition to the space
     const edit: WorkspaceEdit = {
       changes: {
-        [uri]: [{
-          range: { start: diagnostic.range.end, end: diagnostic.range.end },
-          newText: `\n    param ${paramName} = 0; // TODO: Set appropriate value`,
-        }],
+        [uri]: [
+          {
+            range: { start: diagnostic.range.end, end: diagnostic.range.end },
+            newText: `\n    param ${paramName} = 0; // TODO: Set appropriate value`,
+          },
+        ],
       },
     };
     return edit;
@@ -414,16 +427,19 @@ export class CodeActionProvider {
       spaceNames.push(...document.analysis.experiment.spaces.map(s => s.name));
     }
 
-    const controlText = spaceNames.length > 0
-      ? `\n\n    control {\n        START -> ${spaceNames.join(' -> ')} -> END;\n    }`
-      : '\n\n    control {\n        START -> END;\n    }';
+    const controlText =
+      spaceNames.length > 0
+        ? `\n\n    control {\n        START -> ${spaceNames.join(' -> ')} -> END;\n    }`
+        : '\n\n    control {\n        START -> END;\n    }';
 
     const edit: WorkspaceEdit = {
       changes: {
-        [uri]: [{
-          range: { start: diagnostic.range.end, end: diagnostic.range.end },
-          newText: controlText,
-        }],
+        [uri]: [
+          {
+            range: { start: diagnostic.range.end, end: diagnostic.range.end },
+            newText: controlText,
+          },
+        ],
       },
     };
     return edit;
@@ -433,10 +449,10 @@ export class CodeActionProvider {
     switch (pattern) {
       case 'PascalCase (e.g., MyWorkflow)':
         return name.charAt(0).toUpperCase() + name.slice(1);
-        
+
       case 'camelCase (e.g., myTask)':
         return name.charAt(0).toLowerCase() + name.slice(1);
-        
+
       default:
         return name;
     }

@@ -48,13 +48,11 @@ export class DefinitionProvider {
         range: symbol.selectionRange || symbol.range,
       };
     } else {
-      // Different file - return as LocationLink for better navigation
+      // Different file - return as Location instead of LocationLink for now
       return {
-        targetUri: symbol.uri,
-        targetRange: symbol.range,
-        targetSelectionRange: symbol.selectionRange || symbol.range,
-        originSelectionRange: referenceInfo.range,
-      } as LocationLink;
+        uri: symbol.uri,
+        range: symbol.selectionRange || symbol.range,
+      };
     }
   }
 
@@ -80,11 +78,11 @@ export class DefinitionProvider {
       case 'workflow':
         // For workflow references in ESPACE files, go to the workflow definition
         return this.provideWorkflowDefinition(referenceInfo.name);
-        
+
       case 'task':
         // For task references, go to the task definition
         return this.provideTaskDefinition(referenceInfo.name, referenceInfo.workflow);
-        
+
       case 'parameter':
         // For parameter references, go to where it's first defined
         return this.provideParameterDefinition(
@@ -92,11 +90,11 @@ export class DefinitionProvider {
           referenceInfo.task,
           referenceInfo.workflow
         );
-        
+
       case 'data':
         // For data references, go to the data definition
         return this.provideDataDefinition(referenceInfo.name, referenceInfo.scope);
-        
+
       default:
         return null;
     }
@@ -105,7 +103,7 @@ export class DefinitionProvider {
   private async provideWorkflowDefinition(workflowName: string): Promise<Definition | null> {
     const symbolTable = this.documentManager.getSymbolTable();
     const symbol = symbolTable.resolveSymbol(workflowName, 'global', 'workflow');
-    
+
     if (!symbol) return null;
 
     return {
@@ -122,7 +120,7 @@ export class DefinitionProvider {
 
     const symbolTable = this.documentManager.getSymbolTable();
     const workflowInfo = symbolTable.getWorkflowInfo(workflowName);
-    
+
     if (!workflowInfo) return null;
 
     // Find the task in the workflow or its parents
@@ -144,7 +142,7 @@ export class DefinitionProvider {
 
     const symbolTable = this.documentManager.getSymbolTable();
     const taskInfo = symbolTable.getTaskInfo(workflowName, taskName);
-    
+
     if (!taskInfo) return null;
 
     const param = taskInfo.parameters.find(p => p.name === paramName);
@@ -156,15 +154,12 @@ export class DefinitionProvider {
     };
   }
 
-  private async provideDataDefinition(
-    dataName: string,
-    scope: string
-  ): Promise<Definition | null> {
+  private async provideDataDefinition(dataName: string, scope: string): Promise<Definition | null> {
     const symbolTable = this.documentManager.getSymbolTable();
-    
+
     // Try to find data definition in the appropriate scope
     const symbol = symbolTable.resolveSymbol(dataName, scope, 'data');
-    
+
     if (!symbol) {
       // Try global scope as fallback
       const globalSymbol = symbolTable.resolveSymbol(dataName, 'global', 'data');

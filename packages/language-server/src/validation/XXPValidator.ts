@@ -27,24 +27,19 @@ export class XXPValidator {
   private validateWorkflowInheritance(document: ParsedDocument): ValidationResult[] {
     const results: ValidationResult[] = [];
     const workflow = document.analysis?.workflow;
-    
+
     if (!workflow || !workflow.parentWorkflow) {
       return results;
     }
 
     const symbolTable = this.documentManager.getSymbolTable();
-    
-    // Check if parent workflow exists
-    const parentSymbol = symbolTable.resolveSymbol(
-      workflow.parentWorkflow,
-      'global',
-      'workflow'
-    );
 
+    // Check if parent workflow exists
+    const parentSymbol = symbolTable.resolveSymbol(workflow.parentWorkflow, 'global', 'workflow');
     if (!parentSymbol) {
       results.push({
         severity: 'error',
-        range: workflow.parentWorkflowRange,
+        range: workflow.parentWorkflowRange || workflow.nameRange,
         message: `Parent workflow '${workflow.parentWorkflow}' not found`,
         code: 'xxp-parent-workflow-not-found',
       });
@@ -95,14 +90,13 @@ export class XXPValidator {
 
     // Validate task chain references
     const definedTasks = new Set(workflow.tasks.map(t => t.name));
-    const executionOrder = workflow.taskChain.elements
-      .filter(e => e !== 'START' && e !== 'END');
+    const executionOrder = workflow.taskChain.elements.filter(e => e !== 'START' && e !== 'END');
 
     for (const taskRef of workflow.taskChain.elements) {
       if (taskRef !== 'START' && taskRef !== 'END' && !definedTasks.has(taskRef)) {
         results.push({
           severity: 'error',
-          range: workflow.taskChain.elementRanges[taskRef],
+          range: workflow.taskChain.elementRanges[taskRef] || workflow.nameRange,
           message: `Task '${taskRef}' referenced in workflow chain but not found in workflow '${workflow.name}'`,
           code: 'xxp-undefined-task-in-chain',
         });
@@ -165,12 +159,12 @@ export class XXPValidator {
           document.uri,
           task.implementation
         );
-        
+
         // This would need to be async in real implementation
         if (!this.fileExists(implementationPath)) {
           results.push({
             severity: 'warning',
-            range: task.implementationRange,
+            range: task.implementationRange || task.nameRange,
             message: `Implementation file '${task.implementation}' for task '${task.name}' not found`,
             code: 'xxp-implementation-not-found',
           });
@@ -196,8 +190,7 @@ export class XXPValidator {
     }
 
     // Process tasks in execution order
-    const executionOrder = workflow.taskChain.elements
-      .filter(e => e !== 'START' && e !== 'END');
+    const executionOrder = workflow.taskChain.elements.filter(e => e !== 'START' && e !== 'END');
 
     for (const taskName of executionOrder) {
       const task = workflow.tasks.find(t => t.name === taskName);
@@ -233,7 +226,7 @@ export class XXPValidator {
 
     for (const task of workflow.tasks) {
       const requiredParams = task.parameters.filter(p => p.required);
-      
+
       for (const param of requiredParams) {
         // This check would be more complex in real implementation
         // checking against space configurations
@@ -262,7 +255,7 @@ export class XXPValidator {
 
     for (const task of workflow.tasks) {
       dependencyGraph.set(task.name, []);
-      
+
       // Find tasks that produce data this task needs
       for (const input of task.inputs) {
         for (const otherTask of workflow.tasks) {
@@ -277,7 +270,7 @@ export class XXPValidator {
     for (const [taskName] of dependencyGraph) {
       const visited = new Set<string>();
       const recursionStack = new Set<string>();
-      
+
       if (this.hasCircularDependency(taskName, dependencyGraph, visited, recursionStack)) {
         results.push({
           severity: 'error',

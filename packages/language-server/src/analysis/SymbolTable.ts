@@ -15,7 +15,7 @@ export interface Symbol {
   data?: any;
 }
 
-export type SymbolType = 
+export type SymbolType =
   | 'workflow'
   | 'experiment'
   | 'space'
@@ -24,9 +24,7 @@ export type SymbolType =
   | 'data'
   | 'strategy';
 
-export type SymbolKind =
-  | 'definition'
-  | 'reference';
+export type SymbolKind = 'definition' | 'reference';
 
 export interface WorkflowInfo {
   name: string;
@@ -75,19 +73,19 @@ export interface Location {
 export class SymbolTable {
   // Document URI -> Symbols
   private documentSymbols = new Map<string, Symbol[]>();
-  
+
   // Symbol type -> name -> Symbol[]
   private globalSymbols = new Map<SymbolType, Map<string, Symbol[]>>();
-  
+
   // Workflow name -> WorkflowInfo
   private workflows = new Map<string, WorkflowInfo>();
-  
+
   // Experiment name -> ExperimentInfo
   private experiments = new Map<string, any>();
-  
+
   // Document URI -> imported symbols
   private imports = new Map<string, string[]>();
-  
+
   // Document URI -> dependent documents
   private dependencies = new Map<string, Set<string>>();
 
@@ -97,9 +95,15 @@ export class SymbolTable {
 
   private initializeSymbolTypes(): void {
     const types: SymbolType[] = [
-      'workflow', 'experiment', 'space', 'task', 'parameter', 'data', 'strategy'
+      'workflow',
+      'experiment',
+      'space',
+      'task',
+      'parameter',
+      'data',
+      'strategy',
     ];
-    
+
     for (const type of types) {
       this.globalSymbols.set(type, new Map());
     }
@@ -156,7 +160,7 @@ export class SymbolTable {
 
     this.documentSymbols.delete(uri);
     this.imports.delete(uri);
-    
+
     // Remove from dependencies
     for (const [, deps] of this.dependencies) {
       deps.delete(uri);
@@ -225,6 +229,10 @@ export class SymbolTable {
     return workflow ? workflow.data : [];
   }
 
+  getExperiment(name: string): any {
+    return this.experiments.get(name);
+  }
+
   getTaskInfo(workflowName: string, taskName: string): TaskInfo | null {
     const workflow = this.workflows.get(workflowName);
     if (!workflow) return null;
@@ -255,7 +263,7 @@ export class SymbolTable {
 
   getDependents(uri: string): string[] {
     const dependents: string[] = [];
-    
+
     for (const [dependentUri, deps] of this.dependencies) {
       if (deps.has(uri)) {
         dependents.push(dependentUri);
@@ -272,7 +280,7 @@ export class SymbolTable {
           this.workflows.set(symbol.name, symbol.data as WorkflowInfo);
         }
         break;
-        
+
       case 'experiment':
         if (symbol.data) {
           this.experiments.set(symbol.name, symbol.data);
@@ -302,7 +310,7 @@ export class SymbolTable {
   debug(): void {
     console.log('=== Symbol Table Debug ===');
     console.log('Documents:', this.documentSymbols.size);
-    
+
     for (const [type, typeMap] of this.globalSymbols) {
       console.log(`\n${type} symbols:`);
       for (const [name, symbols] of typeMap) {

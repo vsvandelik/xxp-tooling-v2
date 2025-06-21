@@ -79,9 +79,9 @@ async function initializeWorkflowRepository(context: vscode.ExtensionContext): P
  */
 async function initializeLanguageServer(context: vscode.ExtensionContext): Promise<void> {
   console.log('Initializing ExtremeXP Language Server...');
-  
+
   languageClientManager = new LanguageClientManager(context);
-  
+
   try {
     await languageClientManager.start();
     console.log('Language Server started successfully');

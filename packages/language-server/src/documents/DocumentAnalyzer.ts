@@ -17,11 +17,7 @@ export class DocumentAnalyzer {
     this.espaceAnalyzer = new ESPACEAnalyzer();
   }
 
-  analyze(
-    parseTree: ParseTree,
-    uri: string,
-    languageId: string
-  ): DocumentAnalysis {
+  analyze(parseTree: ParseTree, uri: string, languageId: string): DocumentAnalysis {
     if (languageId === 'xxp') {
       return this.xxpAnalyzer.analyze(parseTree, uri);
     } else if (languageId === 'espace') {

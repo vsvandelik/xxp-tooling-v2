@@ -1,8 +1,5 @@
 // packages/language-server/src/features/ReferenceProvider.ts
-import {
-  ReferenceParams,
-  Location,
-} from 'vscode-languageserver/node';
+import { ReferenceParams, Location } from 'vscode-languageserver/node';
 import { DocumentManager } from '../documents/DocumentManager.js';
 import { ASTUtils } from '../utils/ASTUtils.js';
 
@@ -33,12 +30,12 @@ export class ReferenceProvider {
     const references = symbolTable.getReferences(symbolInfo.name, symbolInfo.type);
 
     const locations: Location[] = [];
-
     for (const reference of references) {
       // Skip the declaration if not requested
-      if (!includeDeclaration && reference.isDefinition) {
-        continue;
-      }
+      // TODO: implement proper isDefinition check
+      // if (!includeDeclaration && reference.isDefinition) {
+      //   continue;
+      // }
 
       locations.push({
         uri: reference.uri,
@@ -54,11 +51,12 @@ export class ReferenceProvider {
     const documents = this.documentManager.getAllDocuments();
 
     for (const doc of documents) {
-      if (!doc.analysis) continue;
-
-      // In XXP files: look for workflow inheritance
+      if (!doc.analysis) continue; // In XXP files: look for workflow inheritance
       if (doc.languageId === 'xxp' && doc.analysis.workflow) {
-        if (doc.analysis.workflow.parentWorkflow === workflowName) {
+        if (
+          doc.analysis.workflow.parentWorkflow === workflowName &&
+          doc.analysis.workflow.parentWorkflowRange
+        ) {
           locations.push({
             uri: doc.uri,
             range: doc.analysis.workflow.parentWorkflowRange,
@@ -95,11 +93,13 @@ export class ReferenceProvider {
         if (doc.analysis.workflow.taskChain) {
           const chainRefs = doc.analysis.workflow.taskChain.elements
             .filter(e => e === taskName)
-            .map(e => doc.analysis.workflow.taskChain.elementRanges[e])
+            .map(e => doc.analysis?.workflow?.taskChain?.elementRanges[e])
             .filter(r => r !== undefined);
-          
+
           for (const range of chainRefs) {
-            locations.push({ uri: doc.uri, range });
+            if (range) {
+              locations.push({ uri: doc.uri, range });
+            }
           }
         }
 
@@ -246,11 +246,7 @@ export class ReferenceProvider {
     return locations;
   }
 
-  private hasDataDependency(
-    task: any,
-    targetTaskName: string,
-    workflow: any
-  ): boolean {
+  private hasDataDependency(task: any, targetTaskName: string, workflow: any): boolean {
     // Check if task depends on outputs from targetTask
     const targetTask = workflow.tasks.find((t: any) => t.name === targetTaskName);
     if (!targetTask) return false;

@@ -117,11 +117,7 @@ export class RenameProvider {
     return /^[a-zA-Z_][a-zA-Z0-9_]*$/.test(name);
   }
 
-  private addCascadingRenames(
-    symbolInfo: any,
-    newName: string,
-    edit: WorkspaceEdit
-  ): void {
+  private addCascadingRenames(symbolInfo: any, newName: string, edit: WorkspaceEdit): void {
     // Handle special cases where renaming one symbol requires renaming others
 
     switch (symbolInfo.type) {
@@ -143,36 +139,27 @@ export class RenameProvider {
     }
   }
 
-  private addWorkflowFileRename(
-    oldName: string,
-    newName: string,
-    edit: WorkspaceEdit
-  ): void {
+  private addWorkflowFileRename(oldName: string, newName: string, edit: WorkspaceEdit): void {
     // If the workflow name matches the file name, suggest renaming the file
     // This would be handled by documentChanges in the WorkspaceEdit
-    
     // For now, we'll add a comment indicating this might be needed
     // In a real implementation, you'd add a file rename operation
   }
 
-  private addTaskParameterRenames(
-    symbolInfo: any,
-    newName: string,
-    edit: WorkspaceEdit
-  ): void {
+  private addTaskParameterRenames(symbolInfo: any, newName: string, edit: WorkspaceEdit): void {
     // In ESPACE files, task-specific parameters use the format task:param
     // We need to update these references when the task is renamed
-    
+
     const documents = this.documentManager.getAllDocuments();
-    
+
     for (const doc of documents) {
       if (doc.languageId !== 'espace' || !doc.analysis) continue;
-      
+
       const experiment = doc.analysis.experiment;
       if (!experiment) continue;
-      
+
       const edits: TextEdit[] = [];
-      
+
       for (const space of experiment.spaces) {
         for (const taskConfig of space.taskConfigurations) {
           if (taskConfig.taskName === symbolInfo.name) {
@@ -183,7 +170,7 @@ export class RenameProvider {
             });
           }
         }
-        
+
         // Update parameter references in the format task:param
         for (const param of space.parameters) {
           if (param.name.startsWith(`${symbolInfo.name}:`)) {
@@ -195,26 +182,21 @@ export class RenameProvider {
           }
         }
       }
-      
+
       if (edits.length > 0) {
         if (!edit.changes![doc.uri]) {
           edit.changes![doc.uri] = [];
         }
-        edit.changes![doc.uri].push(...edits);
+        edit.changes![doc.uri]!.push(...edits);
       }
     }
   }
 
-  private addDataReferenceRenames(
-    symbolInfo: any,
-    newName: string,
-    edit: WorkspaceEdit
-  ): void {
+  private addDataReferenceRenames(symbolInfo: any, newName: string, edit: WorkspaceEdit): void {
     // Data references appear in multiple contexts:
     // - Data definitions
     // - Task inputs/outputs
     // - Data value assignments
-    
     // The base rename operation should handle most of these
     // This method is for any special cases that need additional handling
   }

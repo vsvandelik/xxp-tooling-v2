@@ -9,7 +9,7 @@ import {
 import { DocumentManager } from '../documents/DocumentManager.js';
 import { CompletionEngine } from '../completion/CompletionEngine.js';
 import { XXPCompletions } from '../completion/XXPCompletions.js';
-import { ESPACECompletions } from '../completion/ESPACECompletions.js';
+import { ESPACECompletions } from '../completion/ESPACECompletion.js';
 
 export class CompletionProvider {
   private completionEngine: CompletionEngine;
@@ -212,18 +212,13 @@ export class CompletionProvider {
     return items;
   }
 
-  private filterAndSortCompletions(
-    items: CompletionItem[],
-    context: any
-  ): CompletionItem[] {
+  private filterAndSortCompletions(items: CompletionItem[], context: any): CompletionItem[] {
     // Filter based on context
     let filtered = items;
 
     if (context.filter) {
       const filterLower = context.filter.toLowerCase();
-      filtered = items.filter(item =>
-        item.label.toLowerCase().includes(filterLower)
-      );
+      filtered = items.filter(item => item.label.toLowerCase().includes(filterLower));
     }
 
     // Remove duplicates
@@ -272,11 +267,11 @@ export class CompletionProvider {
   private getWorkflowDocumentation(name: string): string {
     const symbolTable = this.documentManager.getSymbolTable();
     const workflow = symbolTable.getWorkflowInfo(name);
-    
+
     if (!workflow) return '';
 
     let doc = `# Workflow: ${name}\n\n`;
-    
+
     if (workflow.parentWorkflow) {
       doc += `**Inherits from:** ${workflow.parentWorkflow}\n\n`;
     }
@@ -298,7 +293,7 @@ export class CompletionProvider {
   private getTaskDocumentation(name: string, workflow: string): string {
     const symbolTable = this.documentManager.getSymbolTable();
     const task = symbolTable.getTaskInfo(workflow, name);
-    
+
     if (!task) return '';
 
     let doc = `# Task: ${name}\n\n`;
@@ -336,7 +331,7 @@ export class CompletionProvider {
   private getParameterDocumentation(name: string, task: string): string {
     const symbolTable = this.documentManager.getSymbolTable();
     const param = symbolTable.getParameterInfo(task, name);
-    
+
     if (!param) return '';
 
     let doc = `# Parameter: ${name}\n\n`;

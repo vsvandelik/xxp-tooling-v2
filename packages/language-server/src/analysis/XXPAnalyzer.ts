@@ -1,10 +1,10 @@
 import { ParseTree } from 'antlr4ng';
 import { XXPVisitor } from '@extremexp/core';
-import { 
-  DocumentAnalysis, 
-  WorkflowAnalysis, 
+import {
+  DocumentAnalysis,
+  WorkflowAnalysis,
   TaskAnalysis,
-  Reference 
+  Reference,
 } from '../types/AnalysisTypes.js';
 import { Symbol } from './SymbolTable.js';
 import { ASTUtils } from '../utils/ASTUtils.js';
@@ -21,45 +21,49 @@ export class XXPAnalyzer extends XXPVisitor<any> {
     this.symbols = [];
     this.references = [];
     this.imports = [];
-    this.workflow = undefined;
-
-    // Visit the parse tree
+    this.workflow = undefined; // Visit the parse tree
     this.visit(parseTree);
 
-    return {
+    const result: DocumentAnalysis = {
       uri,
       languageId: 'xxp',
       symbols: this.symbols,
       references: this.references,
       imports: this.imports,
-      workflow: this.workflow,
     };
+
+    if (this.workflow) {
+      result.workflow = this.workflow;
+    }
+
+    return result;
   }
 
-  visitWorkflowDeclaration(ctx: any): any {
+  override visitWorkflowDeclaration = (ctx: any): any => {
     const name = ctx.workflowHeader().IDENTIFIER().getText();
     const nameRange = ASTUtils.getNodeRange(ctx.workflowHeader().IDENTIFIER());
-    
+
     let parentWorkflow: string | undefined;
     let parentWorkflowRange: any | undefined;
-    
+
     if (ctx.workflowHeader().workflowNameRead()) {
       parentWorkflow = ctx.workflowHeader().workflowNameRead().IDENTIFIER().getText();
       parentWorkflowRange = ASTUtils.getNodeRange(
         ctx.workflowHeader().workflowNameRead().IDENTIFIER()
       );
-      
       // Add parent workflow to imports
-      this.imports.push(parentWorkflow);
-      
-      // Add reference to parent workflow
-      this.references.push({
-        name: parentWorkflow,
-        type: 'workflow',
-        scope: 'global',
-        range: parentWorkflowRange,
-        isDefinition: false,
-      });
+      if (parentWorkflow) {
+        this.imports.push(parentWorkflow);
+
+        // Add reference to parent workflow
+        this.references.push({
+          name: parentWorkflow,
+          type: 'workflow',
+          scope: 'global',
+          range: parentWorkflowRange,
+          isDefinition: false,
+        });
+      }
     }
 
     // Create workflow symbol
@@ -73,14 +77,12 @@ export class XXPAnalyzer extends XXPVisitor<any> {
       scope: 'global',
     };
 
-    this.symbols.push(workflowSymbol);
-
-    // Create workflow analysis
+    this.symbols.push(workflowSymbol); // Create workflow analysis
     this.workflow = {
       name,
       nameRange,
-      parentWorkflow,
-      parentWorkflowRange,
+      parentWorkflow: parentWorkflow || undefined,
+      parentWorkflowRange: parentWorkflowRange || undefined,
       tasks: [],
       data: [],
     };
@@ -109,9 +111,9 @@ export class XXPAnalyzer extends XXPVisitor<any> {
     };
 
     return null;
-  }
+  };
 
-  visitTaskDefinition(ctx: any): any {
+  handleTaskDefinition(ctx: any): any {
     const name = ctx.IDENTIFIER().getText();
     const nameRange = ASTUtils.getNodeRange(ctx.IDENTIFIER());
 
@@ -143,9 +145,9 @@ export class XXPAnalyzer extends XXPVisitor<any> {
     return null;
   }
 
-  visitTaskConfiguration(ctx: any): any {
+  handleTaskConfiguration(ctx: any): any {
     const taskName = ctx.taskConfigurationHeader().taskNameRead().IDENTIFIER().getText();
-    
+
     // Find the task in workflow
     const task = this.workflow?.tasks.find(t => t.name === taskName);
     if (!task) return null;
@@ -159,14 +161,14 @@ export class XXPAnalyzer extends XXPVisitor<any> {
       } else if (content.paramAssignment()) {
         const paramName = content.paramAssignment().IDENTIFIER().getText();
         const paramRange = ASTUtils.getNodeRange(content.paramAssignment());
-        
+
         task.parameters.push({
           name: paramName,
           range: paramRange,
           required: !content.paramAssignment().expression(),
           hasDefault: !!content.paramAssignment().expression(),
         });
-        
+
         // Create parameter symbol
         this.symbols.push({
           name: paramName,
@@ -181,10 +183,10 @@ export class XXPAnalyzer extends XXPVisitor<any> {
         for (const dataName of dataNames) {
           const name = dataName.IDENTIFIER().getText();
           task.inputs.push(name);
-          
+
           if (!task.inputRanges) task.inputRanges = {};
           task.inputRanges[name] = ASTUtils.getNodeRange(dataName.IDENTIFIER());
-          
+
           // Add data reference
           this.references.push({
             name,
@@ -199,10 +201,10 @@ export class XXPAnalyzer extends XXPVisitor<any> {
         for (const dataName of dataNames) {
           const name = dataName.IDENTIFIER().getText();
           task.outputs.push(name);
-          
+
           if (!task.outputRanges) task.outputRanges = {};
           task.outputRanges[name] = ASTUtils.getNodeRange(dataName.IDENTIFIER());
-          
+
           // Create data symbol for output
           this.symbols.push({
             name,
@@ -219,7 +221,7 @@ export class XXPAnalyzer extends XXPVisitor<any> {
     return null;
   }
 
-  visitTaskChain(ctx: any): any {
+  handleTaskChain(ctx: any): any {
     if (!this.workflow) return null;
 
     const elements: string[] = [];
@@ -227,14 +229,14 @@ export class XXPAnalyzer extends XXPVisitor<any> {
 
     for (const element of ctx.chainElement()) {
       let name: string;
-      
+
       if (element.START()) {
         name = 'START';
       } else if (element.END()) {
         name = 'END';
       } else if (element.taskNameRead()) {
         name = element.taskNameRead().IDENTIFIER().getText();
-        
+
         // Add task reference
         this.references.push({
           name,
@@ -246,7 +248,7 @@ export class XXPAnalyzer extends XXPVisitor<any> {
       } else {
         continue;
       }
-      
+
       elements.push(name);
       elementRanges[name] = ASTUtils.getNodeRange(element);
     }
@@ -260,13 +262,13 @@ export class XXPAnalyzer extends XXPVisitor<any> {
     return null;
   }
 
-  visitDataDefinition(ctx: any): any {
+  handleDataDefinition(ctx: any): any {
     const name = ctx.IDENTIFIER().getText();
     const nameRange = ASTUtils.getNodeRange(ctx.IDENTIFIER());
-    
+
     let value: string | undefined;
     let valueRange: any | undefined;
-    
+
     if (ctx.STRING()) {
       value = ctx.STRING().getText().slice(1, -1);
       valueRange = ASTUtils.getNodeRange(ctx.STRING());

@@ -1,12 +1,7 @@
 // packages/language-server/src/documents/DocumentManager.ts
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import { CharStream, CommonTokenStream, ParseTree } from 'antlr4ng';
-import { 
-  XXPLexer, 
-  XXPParser, 
-  ESPACELexer, 
-  ESPACEParser 
-} from '@extremexp/core';
+import { XXPLexer, XXPParser, ESPACELexer, ESPACEParser } from '@extremexp/core';
 import { DocumentSymbols } from './DocumentSymbols.js';
 import { DocumentAnalyzer } from './DocumentAnalyzer.js';
 import { WorkspaceManager } from '../workspace/WorkspaceManager.js';
@@ -135,7 +130,10 @@ export class DocumentManager {
     }
   }
 
-  private parseXXP(text: string, errorListener: ErrorListener): { tree: ParseTree; tokens: CommonTokenStream } {
+  private parseXXP(
+    text: string,
+    errorListener: ErrorListener
+  ): { tree: ParseTree; tokens: CommonTokenStream } {
     const inputStream = CharStream.fromString(text);
     const lexer = new XXPLexer(inputStream);
     lexer.removeErrorListeners();
@@ -150,7 +148,10 @@ export class DocumentManager {
     return { tree, tokens: tokenStream };
   }
 
-  private parseESPACE(text: string, errorListener: ErrorListener): { tree: ParseTree; tokens: CommonTokenStream } {
+  private parseESPACE(
+    text: string,
+    errorListener: ErrorListener
+  ): { tree: ParseTree; tokens: CommonTokenStream } {
     const inputStream = CharStream.fromString(text);
     const lexer = new ESPACELexer(inputStream);
     lexer.removeErrorListeners();
@@ -182,7 +183,8 @@ export class DocumentManager {
 
     const tokens = doc.tokens.getTokens();
     for (const token of tokens) {
-      if (token.line === line + 1) { // ANTLR lines are 1-based
+      if (token.line === line + 1) {
+        // ANTLR lines are 1-based
         const start = token.column;
         const end = start + (token.text?.length || 0);
         if (character >= start && character <= end) {
@@ -206,7 +208,10 @@ export class DocumentManager {
 
 // Helper class to find nodes at specific positions
 class PositionVisitor {
-  constructor(private line: number, private character: number) {}
+  constructor(
+    private line: number,
+    private character: number
+  ) {}
 
   findNode(tree: ParseTree): ParseTree | null {
     // TODO: Implementation would traverse the tree and find the most specific node

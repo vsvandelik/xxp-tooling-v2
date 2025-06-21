@@ -109,15 +109,11 @@ export class LanguageClientManager {
         async (uri: string, param: string, location: vscode.Range) => {
           const document = await vscode.workspace.openTextDocument(vscode.Uri.parse(uri));
           const edit = new vscode.WorkspaceEdit();
-          
+
           // Find appropriate location to add parameter
           const insertPosition = this.findParameterInsertPosition(document, location);
           if (insertPosition) {
-            edit.insert(
-              document.uri,
-              insertPosition,
-              `    param ${param};\n`
-            );
+            edit.insert(document.uri, insertPosition, `    param ${param};\n`);
             await vscode.workspace.applyEdit(edit);
           }
         }
@@ -146,7 +142,7 @@ export class LanguageClientManager {
             return;
           }
 
-          const workspaceRoot = workspaceFolders[0].uri.fsPath;
+          const workspaceRoot = workspaceFolders[0]!.uri.fsPath;
           const fileName = `${workflowName.charAt(0).toLowerCase() + workflowName.slice(1)}.xxp`;
           const filePath = path.join(workspaceRoot, fileName);
 
@@ -171,9 +167,7 @@ export class LanguageClientManager {
     this.client.onNotification('extremexp/validationStatus', (params: any) => {
       // Update status bar or show notifications based on validation status
       if (params.hasErrors) {
-        vscode.window.showErrorMessage(
-          `Validation errors found in ${params.uri}`
-        );
+        vscode.window.showErrorMessage(`Validation errors found in ${params.uri}`);
       }
     });
 
@@ -184,7 +178,7 @@ export class LanguageClientManager {
           location: vscode.ProgressLocation.Window,
           title: params.title,
         },
-        async (progress) => {
+        async progress => {
           progress.report({ increment: params.percentage });
         }
       );
@@ -198,9 +192,9 @@ export class LanguageClientManager {
     // Simple implementation - find the space body and insert at the beginning
     const text = document.getText();
     const lines = text.split('\n');
-    
     for (let i = location.start.line; i < lines.length; i++) {
-      if (lines[i].includes('{')) {
+      const line = lines[i];
+      if (line && line.includes('{')) {
         return new vscode.Position(i + 1, 0);
       }
     }
@@ -214,11 +208,9 @@ export function activateLanguageServer(context: vscode.ExtensionContext): void {
   const languageClientManager = new LanguageClientManager(context);
 
   // Start the language server
-  languageClientManager.start().catch((error) => {
+  languageClientManager.start().catch(error => {
     console.error('Failed to start language server:', error);
-    vscode.window.showErrorMessage(
-      'Failed to start ExtremeXP Language Server: ' + error.message
-    );
+    vscode.window.showErrorMessage('Failed to start ExtremeXP Language Server: ' + error.message);
   });
 
   // Register commands to control the language server

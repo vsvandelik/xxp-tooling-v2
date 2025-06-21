@@ -21,14 +21,14 @@ class XXPSymbolExtractor extends XXPVisitor<DocumentSymbol[]> {
     return this.visit(parseTree) || [];
   }
 
-  visitWorkflowDeclaration(ctx: any): DocumentSymbol[] {
+  handleWorkflowDeclaration(ctx: any): DocumentSymbol[] {
     const name = ctx.workflowHeader().IDENTIFIER().getText();
     const range = ASTUtils.getNodeRange(ctx);
     const selectionRange = ASTUtils.getNodeRange(ctx.workflowHeader().IDENTIFIER());
 
     const workflowSymbol: DocumentSymbol = {
       name,
-      detail: ctx.workflowHeader().workflowNameRead() 
+      detail: ctx.workflowHeader().workflowNameRead()
         ? `extends ${ctx.workflowHeader().workflowNameRead().IDENTIFIER().getText()}`
         : undefined,
       kind: SymbolKind.Class,
@@ -167,7 +167,7 @@ class ESPACESymbolExtractor extends ESPACEVisitor<DocumentSymbol[]> {
     return this.visit(parseTree) || [];
   }
 
-  visitExperimentDeclaration(ctx: any): DocumentSymbol[] {
+  handleExperimentDeclaration(ctx: any): DocumentSymbol[] {
     const name = ctx.experimentHeader().IDENTIFIER().getText();
     const range = ASTUtils.getNodeRange(ctx);
     const selectionRange = ASTUtils.getNodeRange(ctx.experimentHeader().IDENTIFIER());
@@ -262,12 +262,14 @@ class ESPACESymbolExtractor extends ESPACEVisitor<DocumentSymbol[]> {
     // Add transitions as children
     const body = ctx.controlBody();
     let transitionIndex = 0;
-    
+
     for (const content of body.controlContent()) {
       if (content.simpleTransition()) {
-        const spaceNames = content.simpleTransition().spaceNameRead()
+        const spaceNames = content
+          .simpleTransition()
+          .spaceNameRead()
           .map((s: any) => s.IDENTIFIER().getText());
-        
+
         controlSymbol.children!.push({
           name: `Transition ${++transitionIndex}`,
           detail: spaceNames.join(' → '),
@@ -280,7 +282,7 @@ class ESPACESymbolExtractor extends ESPACEVisitor<DocumentSymbol[]> {
         const header = content.conditionalTransition().conditionalTransitionHeader();
         const from = header.spaceNameRead()[0].IDENTIFIER().getText();
         const to = header.spaceNameRead()[1].IDENTIFIER().getText();
-        
+
         controlSymbol.children!.push({
           name: `Conditional ${++transitionIndex}`,
           detail: `${from} → ${to}`,

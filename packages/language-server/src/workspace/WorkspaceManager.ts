@@ -1,8 +1,5 @@
 // packages/language-server/src/workspace/WorkspaceManager.ts
-import {
-  WorkspaceFolder,
-  DidChangeWorkspaceFoldersParams,
-} from 'vscode-languageserver/node';
+import { WorkspaceFolder, DidChangeWorkspaceFoldersParams } from 'vscode-languageserver/node';
 import * as path from 'path';
 import * as fs from 'fs/promises';
 
@@ -14,7 +11,7 @@ export class WorkspaceManager {
     for (const folder of folders) {
       this.workspaceFolders.set(folder.uri, folder);
     }
-    
+
     // Start indexing workspace files
     this.indexWorkspaceFiles();
   }
@@ -36,7 +33,7 @@ export class WorkspaceManager {
   async findFiles(pattern: string): Promise<string[]> {
     const results: string[] = [];
     const extension = path.extname(pattern);
-    
+
     if (extension) {
       const files = this.fileIndex.get(extension) || new Set();
       for (const file of files) {
@@ -67,7 +64,7 @@ export class WorkspaceManager {
     if (this.workspaceFolders.size === 0) {
       return null;
     }
-    
+
     // Return the first workspace folder
     const firstFolder = this.workspaceFolders.values().next().value;
     return firstFolder ? this.resolveUri(firstFolder.uri) : null;
@@ -81,9 +78,9 @@ export class WorkspaceManager {
 
   private async indexWorkspaceFolder(folder: WorkspaceFolder): Promise<void> {
     const folderPath = this.resolveUri(folder.uri);
-    
+
     try {
-      await this.walkDirectory(folderPath, async (filePath) => {
+      await this.walkDirectory(folderPath, async filePath => {
         const ext = path.extname(filePath);
         if (ext === '.xxp' || ext === '.espace') {
           if (!this.fileIndex.has(ext)) {
@@ -98,15 +95,15 @@ export class WorkspaceManager {
   }
 
   private async walkDirectory(
-    dir: string, 
+    dir: string,
     callback: (filePath: string) => Promise<void>
   ): Promise<void> {
     try {
       const entries = await fs.readdir(dir, { withFileTypes: true });
-      
+
       for (const entry of entries) {
         const fullPath = path.join(dir, entry.name);
-        
+
         if (entry.isDirectory()) {
           // Skip node_modules and hidden directories
           if (entry.name !== 'node_modules' && !entry.name.startsWith('.')) {
@@ -124,13 +121,10 @@ export class WorkspaceManager {
   private matchesPattern(filePath: string, pattern: string): boolean {
     // Simple pattern matching (could be enhanced with glob support)
     if (pattern.includes('*')) {
-      const regex = pattern
-        .replace(/\./g, '\\.')
-        .replace(/\*/g, '.*')
-        .replace(/\?/g, '.');
+      const regex = pattern.replace(/\./g, '\\.').replace(/\*/g, '.*').replace(/\?/g, '.');
       return new RegExp(regex).test(filePath);
     }
-    
+
     return filePath.includes(pattern);
   }
 
@@ -158,13 +152,13 @@ export class WorkspaceManager {
   async createFile(uri: string, content: string): Promise<void> {
     const filePath = this.resolveUri(uri);
     const dir = path.dirname(filePath);
-    
+
     // Ensure directory exists
     await fs.mkdir(dir, { recursive: true });
-    
+
     // Write file
     await fs.writeFile(filePath, content, 'utf8');
-    
+
     // Update index
     const ext = path.extname(filePath);
     if (ext === '.xxp' || ext === '.espace') {
@@ -183,14 +177,14 @@ export class WorkspaceManager {
   // Check if a URI is within the workspace
   isInWorkspace(uri: string): boolean {
     const filePath = this.resolveUri(uri);
-    
+
     for (const folder of this.workspaceFolders.values()) {
       const folderPath = this.resolveUri(folder.uri);
       if (filePath.startsWith(folderPath)) {
         return true;
       }
     }
-    
+
     return false;
   }
 }

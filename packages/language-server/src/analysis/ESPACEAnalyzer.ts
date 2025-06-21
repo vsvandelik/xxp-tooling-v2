@@ -1,6 +1,6 @@
 import { ParseTree } from 'antlr4ng';
 import { ESPACEVisitor } from '@extremexp/core';
-import { DocumentAnalysis, ExperimentAnalysis } from '../types/AnalysisTypes.js';
+import { DocumentAnalysis, ExperimentAnalysis, Reference } from '../types/AnalysisTypes.js';
 import { Symbol } from './SymbolTable.js';
 import { ASTUtils } from '../utils/ASTUtils.js';
 
@@ -31,7 +31,7 @@ export class ESPACEAnalyzer extends ESPACEVisitor<any> {
     };
   }
 
-  visitExperimentDeclaration(ctx: any): any {
+  override visitExperimentDeclaration = (ctx: any): any => {
     const name = ctx.experimentHeader().IDENTIFIER().getText();
     const nameRange = ASTUtils.getNodeRange(ctx.experimentHeader().IDENTIFIER());
 
@@ -63,12 +63,12 @@ export class ESPACEAnalyzer extends ESPACEVisitor<any> {
     experimentSymbol.data = this.experiment;
 
     return null;
-  }
+  };
 
-  visitSpaceDeclaration(ctx: any): any {
+  override visitSpaceDeclaration = (ctx: any): any => {
     const name = ctx.spaceHeader().IDENTIFIER().getText();
     const nameRange = ASTUtils.getNodeRange(ctx.spaceHeader().IDENTIFIER());
-    
+
     const workflowName = ctx.spaceHeader().workflowNameRead().IDENTIFIER().getText();
     const workflowNameRange = ASTUtils.getNodeRange(
       ctx.spaceHeader().workflowNameRead().IDENTIFIER()
@@ -118,7 +118,7 @@ export class ESPACEAnalyzer extends ESPACEVisitor<any> {
           content.strategyStatement().IDENTIFIER()
         );
       } else if (content.paramDefinition()) {
-        this.visitParamDefinition(content.paramDefinition(), spaceAnalysis);
+        this.handleParamDefinition(content.paramDefinition(), spaceAnalysis);
       } else if (content.taskConfiguration()) {
         this.visitSpaceTaskConfiguration(content.taskConfiguration(), spaceAnalysis);
       }
@@ -129,15 +129,15 @@ export class ESPACEAnalyzer extends ESPACEVisitor<any> {
     }
 
     return null;
-  }
+  };
 
-  private visitParamDefinition(ctx: any, spaceAnalysis: any): void {
+  private handleParamDefinition(ctx: any, spaceAnalysis: any): void {
     const name = ctx.IDENTIFIER().getText();
     const nameRange = ASTUtils.getNodeRange(ctx.IDENTIFIER());
-    
+
     let type: string = 'value';
-    let values: any[] = [];
-    
+    const values: any[] = [];
+
     const paramValue = ctx.paramValue();
     if (paramValue.enumFunction()) {
       type = 'enum';
@@ -198,7 +198,7 @@ export class ESPACEAnalyzer extends ESPACEVisitor<any> {
       if (content.paramAssignment()) {
         const paramName = content.paramAssignment().IDENTIFIER().getText();
         const paramRange = ASTUtils.getNodeRange(content.paramAssignment().IDENTIFIER());
-        
+
         taskConfig.parameters.push({
           name: paramName,
           nameRange: paramRange,
@@ -212,7 +212,7 @@ export class ESPACEAnalyzer extends ESPACEVisitor<any> {
     spaceAnalysis.taskConfigurations.push(taskConfig);
   }
 
-  visitControlBlock(ctx: any): any {
+  override visitControlBlock = (ctx: any): any => {
     if (!this.experiment) return null;
 
     const transitions: any[] = [];
@@ -232,15 +232,15 @@ export class ESPACEAnalyzer extends ESPACEVisitor<any> {
     };
 
     return null;
-  }
+  };
 
   private processSimpleTransition(ctx: any, transitions: any[]): void {
     const spaceNames = ctx.spaceNameRead();
-    
+
     for (let i = 0; i < spaceNames.length - 1; i++) {
       const from = spaceNames[i].IDENTIFIER().getText();
       const to = spaceNames[i + 1].IDENTIFIER().getText();
-      
+
       transitions.push({
         from,
         to,
@@ -257,7 +257,7 @@ export class ESPACEAnalyzer extends ESPACEVisitor<any> {
           isDefinition: false,
         });
       }
-      
+
       if (to !== 'START' && to !== 'END') {
         this.references.push({
           name: to,
@@ -274,11 +274,11 @@ export class ESPACEAnalyzer extends ESPACEVisitor<any> {
     const header = ctx.conditionalTransitionHeader();
     const from = header.spaceNameRead()[0].IDENTIFIER().getText();
     const to = header.spaceNameRead()[1].IDENTIFIER().getText();
-    
+
     const body = ctx.conditionalTransitionBody();
     for (const condition of body.condition()) {
       const conditionText = condition.STRING().getText().slice(1, -1);
-      
+
       transitions.push({
         from,
         to,
@@ -297,7 +297,7 @@ export class ESPACEAnalyzer extends ESPACEVisitor<any> {
         isDefinition: false,
       });
     }
-    
+
     if (to !== 'START' && to !== 'END') {
       this.references.push({
         name: to,

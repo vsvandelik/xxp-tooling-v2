@@ -1,9 +1,5 @@
 // packages/language-server/src/completion/ESPACECompletions.ts
-import {
-  CompletionItem,
-  CompletionItemKind,
-  InsertTextFormat,
-} from 'vscode-languageserver/node';
+import { CompletionItem, CompletionItemKind, InsertTextFormat } from 'vscode-languageserver/node';
 import { DocumentManager } from '../documents/DocumentManager.js';
 import { CompletionContext } from './CompletionContext.js';
 
@@ -61,7 +57,8 @@ export class ESPACECompletions {
       {
         label: 'space',
         kind: CompletionItemKind.Snippet,
-        insertText: 'space ${1:SpaceName} of ${2:WorkflowName} {\n\tstrategy ${3:gridsearch};\n\t$0\n}',
+        insertText:
+          'space ${1:SpaceName} of ${2:WorkflowName} {\n\tstrategy ${3:gridsearch};\n\t$0\n}',
         insertTextFormat: InsertTextFormat.Snippet,
         documentation: 'Define a parameter space',
         sortText: '0_space',

@@ -1,10 +1,5 @@
 // packages/language-server/src/features/DiagnosticProvider.ts
-import {
-  Connection,
-  Diagnostic,
-  DiagnosticSeverity,
-  Range,
-} from 'vscode-languageserver/node';
+import { Connection, Diagnostic, DiagnosticSeverity, Range } from 'vscode-languageserver/node';
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import { DocumentManager } from '../documents/DocumentManager.js';
 import { XXPValidator } from '../validation/XXPValidator.js';
@@ -28,7 +23,7 @@ export class DiagnosticProvider {
     this.connection = connection;
     this.documentManager = documentManager;
     this.hasDiagnosticRelatedInformation = hasDiagnosticRelatedInformation;
-    
+
     this.xxpValidator = new XXPValidator(documentManager);
     this.espaceValidator = new ESPACEValidator(documentManager);
     this.commonValidator = new CommonValidator(documentManager);
@@ -46,7 +41,7 @@ export class DiagnosticProvider {
     // Only run semantic validation if parsing succeeded
     if (parsedDoc.parseTree && parsedDoc.analysis) {
       const validationResults = await this.runValidations(parsedDoc);
-      
+
       // Convert validation results to diagnostics
       for (const result of validationResults) {
         diagnostics.push(this.createDiagnostic(result));
@@ -64,13 +59,13 @@ export class DiagnosticProvider {
     const results: ValidationResult[] = [];
 
     // Run common validations
-    results.push(...await this.commonValidator.validate(parsedDoc));
+    results.push(...(await this.commonValidator.validate(parsedDoc)));
 
     // Run language-specific validations
     if (parsedDoc.languageId === 'xxp') {
-      results.push(...await this.xxpValidator.validate(parsedDoc));
+      results.push(...(await this.xxpValidator.validate(parsedDoc)));
     } else if (parsedDoc.languageId === 'espace') {
-      results.push(...await this.espaceValidator.validate(parsedDoc));
+      results.push(...(await this.espaceValidator.validate(parsedDoc)));
     }
 
     return results;

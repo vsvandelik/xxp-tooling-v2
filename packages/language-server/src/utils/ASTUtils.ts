@@ -5,12 +5,12 @@ export class ASTUtils {
   static getAncestors(node: ParseTree): ParseTree[] {
     const ancestors: ParseTree[] = [];
     let current = node.parent;
-    
+
     while (current) {
       ancestors.push(current);
       current = current.parent;
     }
-    
+
     return ancestors;
   }
 
@@ -29,12 +29,12 @@ export class ASTUtils {
     if (node instanceof TerminalNode) {
       const text = node.getText();
       const parent = node.parent;
-      
+
       if (!parent) return null;
-      
+
       // Determine reference type based on context
       const ruleName = this.getRuleName(parent);
-      
+
       // XXP-specific references
       if (languageId === 'xxp') {
         if (this.isInContext(node, 'workflowNameRead')) {
@@ -63,7 +63,7 @@ export class ASTUtils {
           };
         }
       }
-      
+
       // ESPACE-specific references
       if (languageId === 'espace') {
         if (this.isInContext(node, 'workflowNameRead')) {
@@ -93,7 +93,7 @@ export class ASTUtils {
         }
       }
     }
-    
+
     return null;
   }
 
@@ -102,9 +102,9 @@ export class ASTUtils {
     if (node instanceof TerminalNode) {
       const text = node.getText();
       const parent = node.parent;
-      
+
       if (!parent) return null;
-      
+
       // Determine symbol type based on context
       if (languageId === 'xxp') {
         if (this.isInContext(node, 'workflowHeader')) {
@@ -124,7 +124,7 @@ export class ASTUtils {
           };
         }
       }
-      
+
       if (languageId === 'espace') {
         if (this.isInContext(node, 'experimentHeader')) {
           return {
@@ -144,7 +144,7 @@ export class ASTUtils {
         }
       }
     }
-    
+
     return null;
   }
 
@@ -162,12 +162,12 @@ export class ASTUtils {
         },
       };
     }
-    
+
     // For parser rule contexts, calculate range from children
     if (node instanceof ParserRuleContext) {
       const start = node.start;
       const stop = node.stop;
-      
+
       if (start && stop) {
         return {
           start: {
@@ -181,40 +181,39 @@ export class ASTUtils {
         };
       }
     }
-    
+
     return {
       start: { line: 0, character: 0 },
       end: { line: 0, character: 0 },
     };
   }
-
   private static isInContext(node: ParseTree, contextName: string): boolean {
-    let current: ParseTree | undefined = node.parent;
-    
+    let current: ParseTree | undefined = node.parent || undefined;
+
     while (current) {
       const ruleName = this.getRuleName(current);
       if (ruleName === contextName) {
         return true;
       }
-      current = current.parent;
+      current = current.parent || undefined;
     }
-    
+
     return false;
   }
 
   private static getCurrentWorkflow(node: ParseTree): string {
     // Walk up the tree to find the workflow name
     let current: ParseTree | undefined = node;
-    
+
     while (current) {
       if (this.getRuleName(current) === 'workflowDeclaration') {
         // Extract workflow name from the declaration
         // This is simplified - actual implementation would parse the tree properly
         return 'currentWorkflow';
       }
-      current = current.parent;
+      current = current.parent || undefined;
     }
-    
+
     return 'global';
   }
 
