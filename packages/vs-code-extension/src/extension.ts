@@ -7,6 +7,9 @@ import { RunExperimentCommand } from './commands/runExperiment.js';
 import { ToolResolver } from './services/ToolResolver.js';
 import { ToolExecutor } from './services/ToolExecutor.js';
 
+// Language Client imports
+import { LanguageClientManager } from './languageClient/LanguageClientManager.js';
+
 // Workflow repository imports
 import { RepositoryConfigManager } from './repository/RepositoryConfigManager.js';
 import { WorkflowRepositoryProvider } from './repository/WorkflowRepositoryProvider.js';
@@ -18,6 +21,7 @@ let experimentService: ExperimentService;
 let progressPanelManager: ProgressPanelManager;
 let toolResolver: ToolResolver;
 let toolExecutor: ToolExecutor;
+let languageClientManager: LanguageClientManager;
 
 // Workflow repository instances
 let repositoryConfigManager: RepositoryConfigManager;
@@ -32,11 +36,11 @@ export async function activate(context: vscode.ExtensionContext) {
 
   await initializeServices(context);
   await initializeWorkflowRepository(context);
+  await initializeLanguageServer(context);
   await setupWorkflowFeatures();
   registerCommands(context);
   setupStatusBar(context);
   setupConfigurationListener(context);
-  registerLanguageFeatures(context);
   setupWorkflowRepositoryView(context);
 }
 
@@ -71,6 +75,25 @@ async function initializeWorkflowRepository(context: vscode.ExtensionContext): P
 }
 
 /**
+ * Initialize Language Server
+ */
+async function initializeLanguageServer(context: vscode.ExtensionContext): Promise<void> {
+  console.log('Initializing ExtremeXP Language Server...');
+  
+  languageClientManager = new LanguageClientManager(context);
+  
+  try {
+    await languageClientManager.start();
+    console.log('Language Server started successfully');
+  } catch (error) {
+    console.error('Failed to start Language Server:', error);
+    vscode.window.showErrorMessage(
+      'Failed to start ExtremeXP Language Server. Some features may not work correctly.'
+    );
+  }
+}
+
+/**
  * Register all extension commands
  */
 function registerCommands(context: vscode.ExtensionContext): void {
@@ -87,6 +110,12 @@ function registerCommands(context: vscode.ExtensionContext): void {
   registerCommand(context, 'extremexp.clearToolCache', () => {
     toolResolver.clearCache();
     vscode.window.showInformationMessage('Tool cache cleared');
+  });
+
+  // Language Server commands
+  registerCommand(context, 'extremexp.restartLanguageServer', async () => {
+    await languageClientManager.restart();
+    vscode.window.showInformationMessage('ExtremeXP Language Server restarted');
   });
 
   // Register workflow repository commands
@@ -207,47 +236,14 @@ function setupConfigurationListener(context: vscode.ExtensionContext): void {
         if (e.affectsConfiguration('extremexp.workflows.enabled')) {
           await setupWorkflowFeatures();
         }
+
+        // Restart language server if language-related settings changed
+        if (e.affectsConfiguration('extremexp.language')) {
+          await languageClientManager.restart();
+        }
       }
     })
   );
-}
-
-/**
- * Register language features for XXP and ESPACE languages
- */
-function registerLanguageFeatures(context: vscode.ExtensionContext): void {
-  registerXXPLanguageFeatures(context);
-  registerESPACELanguageFeatures(context);
-}
-
-/**
- * Register language features for XXP language
- */
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-function registerXXPLanguageFeatures(_context: vscode.ExtensionContext): void {
-  // You can add language features here such as:
-  // - Code completion providers
-  // - Hover providers
-  // - Definition providers
-  // - Symbol providers
-  // etc.
-
-  console.log('XXP language features registered');
-}
-
-/**
- * Register language features for ESPACE language
- */
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-function registerESPACELanguageFeatures(_context: vscode.ExtensionContext): void {
-  // You can add language features here such as:
-  // - Code completion providers
-  // - Hover providers
-  // - Definition providers
-  // - Symbol providers
-  // etc.
-
-  console.log('ESPACE language features registered');
 }
 
 /**
@@ -287,6 +283,9 @@ export async function deactivate() {
 async function cleanupServices(): Promise<void> {
   const cleanupPromises: Promise<void>[] = [];
 
+  if (languageClientManager) {
+    cleanupPromises.push(languageClientManager.stop());
+  }
   if (repositoryConfigManager) {
     cleanupPromises.push(Promise.resolve(repositoryConfigManager.dispose()));
   }

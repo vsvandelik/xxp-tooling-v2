@@ -32,7 +32,9 @@
         "experiments",
         "language",
         "syntax highlighting",
-        "programming language"
+        "programming language",
+        "lsp",
+        "language-server"
     ],
     "author": "ExtremEXP Team",
     "license": "MIT",
@@ -119,6 +121,12 @@
             {
                 "command": "extremexp.restartServer",
                 "title": "Restart Server",
+                "category": "ExtremeXP",
+                "icon": "$(refresh)"
+            },
+            {
+                "command": "extremexp.restartLanguageServer",
+                "title": "Restart Language Server",
                 "category": "ExtremeXP",
                 "icon": "$(refresh)"
             },
@@ -425,6 +433,26 @@
                     "type": "string",
                     "description": "Default author name for new workflows",
                     "default": ""
+                },
+                "extremexp.language.validation.strictMode": {
+                    "type": "boolean",
+                    "description": "Enable strict validation mode",
+                    "default": false
+                },
+                "extremexp.language.completion.snippets": {
+                    "type": "boolean",
+                    "description": "Enable code snippets in completions",
+                    "default": true
+                },
+                "extremexp.language.completion.autoImport": {
+                    "type": "boolean",
+                    "description": "Automatically import workflows when completing references",
+                    "default": true
+                },
+                "extremexp.language.diagnostics.delay": {
+                    "type": "number",
+                    "description": "Delay in milliseconds before running diagnostics",
+                    "default": 500
                 }
             }
         }
@@ -432,7 +460,9 @@
     "dependencies": {
         "@extremexp/workflow-repository": "^1.0.0",
         "@extremexp/experiment-runner-server": "^1.0.0",
-        "socket.io-client": "^4.8.1"
+        "@extremexp/language-server": "^1.0.0",
+        "socket.io-client": "^4.8.1",
+        "vscode-languageclient": "^9.0.1"
     },
     "devDependencies": {
         "@types/vscode": "^1.85.0",
