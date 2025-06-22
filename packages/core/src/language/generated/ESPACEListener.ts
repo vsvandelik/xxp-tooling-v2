@@ -30,6 +30,7 @@ import { ConditionalTransitionContext } from "./ESPACEParser.js";
 import { ConditionalTransitionHeaderContext } from "./ESPACEParser.js";
 import { ConditionalTransitionBodyContext } from "./ESPACEParser.js";
 import { ConditionContext } from "./ESPACEParser.js";
+import { ControlChainElementContext } from "./ESPACEParser.js";
 import { DataDefinitionContext } from "./ESPACEParser.js";
 import { WorkflowNameReadContext } from "./ESPACEParser.js";
 import { TaskNameReadContext } from "./ESPACEParser.js";
@@ -312,6 +313,16 @@ export class ESPACEListener implements ParseTreeListener {
      * @param ctx the parse tree
      */
     exitCondition?: (ctx: ConditionContext) => void;
+    /**
+     * Enter a parse tree produced by `ESPACEParser.controlChainElement`.
+     * @param ctx the parse tree
+     */
+    enterControlChainElement?: (ctx: ControlChainElementContext) => void;
+    /**
+     * Exit a parse tree produced by `ESPACEParser.controlChainElement`.
+     * @param ctx the parse tree
+     */
+    exitControlChainElement?: (ctx: ControlChainElementContext) => void;
     /**
      * Enter a parse tree produced by `ESPACEParser.dataDefinition`.
      * @param ctx the parse tree

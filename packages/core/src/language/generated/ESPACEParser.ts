@@ -34,12 +34,14 @@ export class ESPACEParser extends antlr.Parser {
     public static readonly CONDITION = 20;
     public static readonly DEFINE = 21;
     public static readonly DATA = 22;
-    public static readonly BOOLEAN = 23;
-    public static readonly IDENTIFIER = 24;
-    public static readonly STRING = 25;
-    public static readonly NUMBER = 26;
-    public static readonly WS = 27;
-    public static readonly COMMENT = 28;
+    public static readonly START = 23;
+    public static readonly END = 24;
+    public static readonly BOOLEAN = 25;
+    public static readonly IDENTIFIER = 26;
+    public static readonly STRING = 27;
+    public static readonly NUMBER = 28;
+    public static readonly WS = 29;
+    public static readonly COMMENT = 30;
     public static readonly RULE_program = 0;
     public static readonly RULE_experimentDeclaration = 1;
     public static readonly RULE_experimentHeader = 2;
@@ -67,25 +69,26 @@ export class ESPACEParser extends antlr.Parser {
     public static readonly RULE_conditionalTransitionHeader = 24;
     public static readonly RULE_conditionalTransitionBody = 25;
     public static readonly RULE_condition = 26;
-    public static readonly RULE_dataDefinition = 27;
-    public static readonly RULE_workflowNameRead = 28;
-    public static readonly RULE_taskNameRead = 29;
-    public static readonly RULE_spaceNameRead = 30;
-    public static readonly RULE_expression = 31;
+    public static readonly RULE_controlChainElement = 27;
+    public static readonly RULE_dataDefinition = 28;
+    public static readonly RULE_workflowNameRead = 29;
+    public static readonly RULE_taskNameRead = 30;
+    public static readonly RULE_spaceNameRead = 31;
+    public static readonly RULE_expression = 32;
 
     public static readonly literalNames = [
         null, "';'", "'->'", "'-?>'", "'{'", "'}'", "'('", "')'", "'='", 
         "','", "'experiment'", "'space'", "'of'", "'strategy'", "'param'", 
         "'enum'", "'range'", "'configure'", "'task'", "'control'", "'condition'", 
-        "'define'", "'data'"
+        "'define'", "'data'", "'start'", "'end'"
     ];
 
     public static readonly symbolicNames = [
         null, "SEMICOLON", "ARROW", "CONDITION_ARROW", "LBRACE", "RBRACE", 
         "LPAREN", "RPAREN", "EQUALS", "COMMA", "EXPERIMENT", "SPACE", "OF", 
         "STRATEGY", "PARAM", "ENUM", "RANGE", "CONFIGURE", "TASK", "CONTROL", 
-        "CONDITION", "DEFINE", "DATA", "BOOLEAN", "IDENTIFIER", "STRING", 
-        "NUMBER", "WS", "COMMENT"
+        "CONDITION", "DEFINE", "DATA", "START", "END", "BOOLEAN", "IDENTIFIER", 
+        "STRING", "NUMBER", "WS", "COMMENT"
     ];
     public static readonly ruleNames = [
         "program", "experimentDeclaration", "experimentHeader", "experimentBody", 
@@ -95,8 +98,8 @@ export class ESPACEParser extends antlr.Parser {
         "taskConfigurationBody", "configurationContent", "paramAssignment", 
         "controlBlock", "controlBody", "controlContent", "simpleTransition", 
         "conditionalTransition", "conditionalTransitionHeader", "conditionalTransitionBody", 
-        "condition", "dataDefinition", "workflowNameRead", "taskNameRead", 
-        "spaceNameRead", "expression",
+        "condition", "controlChainElement", "dataDefinition", "workflowNameRead", 
+        "taskNameRead", "spaceNameRead", "expression",
     ];
 
     public get grammarFileName(): string { return "ESPACE.g4"; }
@@ -119,7 +122,7 @@ export class ESPACEParser extends antlr.Parser {
         try {
             this.enterOuterAlt(localContext, 1);
             {
-            this.state = 64;
+            this.state = 66;
             this.experimentDeclaration();
             }
         }
@@ -142,9 +145,9 @@ export class ESPACEParser extends antlr.Parser {
         try {
             this.enterOuterAlt(localContext, 1);
             {
-            this.state = 66;
+            this.state = 68;
             this.experimentHeader();
-            this.state = 67;
+            this.state = 69;
             this.experimentBody();
             }
         }
@@ -167,9 +170,9 @@ export class ESPACEParser extends antlr.Parser {
         try {
             this.enterOuterAlt(localContext, 1);
             {
-            this.state = 69;
+            this.state = 71;
             this.match(ESPACEParser.EXPERIMENT);
-            this.state = 70;
+            this.state = 72;
             this.match(ESPACEParser.IDENTIFIER);
             }
         }
@@ -193,23 +196,23 @@ export class ESPACEParser extends antlr.Parser {
         try {
             this.enterOuterAlt(localContext, 1);
             {
-            this.state = 72;
+            this.state = 74;
             this.match(ESPACEParser.LBRACE);
-            this.state = 76;
+            this.state = 78;
             this.errorHandler.sync(this);
             _la = this.tokenStream.LA(1);
             while ((((_la) & ~0x1F) === 0 && ((1 << _la) & 2623488) !== 0)) {
                 {
                 {
-                this.state = 73;
+                this.state = 75;
                 this.experimentContent();
                 }
                 }
-                this.state = 78;
+                this.state = 80;
                 this.errorHandler.sync(this);
                 _la = this.tokenStream.LA(1);
             }
-            this.state = 79;
+            this.state = 81;
             this.match(ESPACEParser.RBRACE);
             }
         }
@@ -230,27 +233,27 @@ export class ESPACEParser extends antlr.Parser {
         let localContext = new ExperimentContentContext(this.context, this.state);
         this.enterRule(localContext, 8, ESPACEParser.RULE_experimentContent);
         try {
-            this.state = 84;
+            this.state = 86;
             this.errorHandler.sync(this);
             switch (this.tokenStream.LA(1)) {
             case ESPACEParser.SPACE:
                 this.enterOuterAlt(localContext, 1);
                 {
-                this.state = 81;
+                this.state = 83;
                 this.spaceDeclaration();
                 }
                 break;
             case ESPACEParser.CONTROL:
                 this.enterOuterAlt(localContext, 2);
                 {
-                this.state = 82;
+                this.state = 84;
                 this.controlBlock();
                 }
                 break;
             case ESPACEParser.DEFINE:
                 this.enterOuterAlt(localContext, 3);
                 {
-                this.state = 83;
+                this.state = 85;
                 this.dataDefinition();
                 }
                 break;
@@ -277,9 +280,9 @@ export class ESPACEParser extends antlr.Parser {
         try {
             this.enterOuterAlt(localContext, 1);
             {
-            this.state = 86;
+            this.state = 88;
             this.spaceHeader();
-            this.state = 87;
+            this.state = 89;
             this.spaceBody();
             }
         }
@@ -302,13 +305,13 @@ export class ESPACEParser extends antlr.Parser {
         try {
             this.enterOuterAlt(localContext, 1);
             {
-            this.state = 89;
-            this.match(ESPACEParser.SPACE);
-            this.state = 90;
-            this.match(ESPACEParser.IDENTIFIER);
             this.state = 91;
-            this.match(ESPACEParser.OF);
+            this.match(ESPACEParser.SPACE);
             this.state = 92;
+            this.match(ESPACEParser.IDENTIFIER);
+            this.state = 93;
+            this.match(ESPACEParser.OF);
+            this.state = 94;
             this.workflowNameRead();
             }
         }
@@ -332,23 +335,23 @@ export class ESPACEParser extends antlr.Parser {
         try {
             this.enterOuterAlt(localContext, 1);
             {
-            this.state = 94;
+            this.state = 96;
             this.match(ESPACEParser.LBRACE);
-            this.state = 98;
+            this.state = 100;
             this.errorHandler.sync(this);
             _la = this.tokenStream.LA(1);
             while ((((_la) & ~0x1F) === 0 && ((1 << _la) & 2252800) !== 0)) {
                 {
                 {
-                this.state = 95;
+                this.state = 97;
                 this.spaceContent();
                 }
                 }
-                this.state = 100;
+                this.state = 102;
                 this.errorHandler.sync(this);
                 _la = this.tokenStream.LA(1);
             }
-            this.state = 101;
+            this.state = 103;
             this.match(ESPACEParser.RBRACE);
             }
         }
@@ -369,34 +372,34 @@ export class ESPACEParser extends antlr.Parser {
         let localContext = new SpaceContentContext(this.context, this.state);
         this.enterRule(localContext, 16, ESPACEParser.RULE_spaceContent);
         try {
-            this.state = 107;
+            this.state = 109;
             this.errorHandler.sync(this);
             switch (this.tokenStream.LA(1)) {
             case ESPACEParser.STRATEGY:
                 this.enterOuterAlt(localContext, 1);
                 {
-                this.state = 103;
+                this.state = 105;
                 this.strategyStatement();
                 }
                 break;
             case ESPACEParser.PARAM:
                 this.enterOuterAlt(localContext, 2);
                 {
-                this.state = 104;
+                this.state = 106;
                 this.paramDefinition();
                 }
                 break;
             case ESPACEParser.CONFIGURE:
                 this.enterOuterAlt(localContext, 3);
                 {
-                this.state = 105;
+                this.state = 107;
                 this.taskConfiguration();
                 }
                 break;
             case ESPACEParser.DEFINE:
                 this.enterOuterAlt(localContext, 4);
                 {
-                this.state = 106;
+                this.state = 108;
                 this.dataDefinition();
                 }
                 break;
@@ -423,11 +426,11 @@ export class ESPACEParser extends antlr.Parser {
         try {
             this.enterOuterAlt(localContext, 1);
             {
-            this.state = 109;
-            this.match(ESPACEParser.STRATEGY);
-            this.state = 110;
-            this.match(ESPACEParser.IDENTIFIER);
             this.state = 111;
+            this.match(ESPACEParser.STRATEGY);
+            this.state = 112;
+            this.match(ESPACEParser.IDENTIFIER);
+            this.state = 113;
             this.match(ESPACEParser.SEMICOLON);
             }
         }
@@ -450,15 +453,15 @@ export class ESPACEParser extends antlr.Parser {
         try {
             this.enterOuterAlt(localContext, 1);
             {
-            this.state = 113;
-            this.match(ESPACEParser.PARAM);
-            this.state = 114;
-            this.match(ESPACEParser.IDENTIFIER);
             this.state = 115;
-            this.match(ESPACEParser.EQUALS);
+            this.match(ESPACEParser.PARAM);
             this.state = 116;
-            this.paramValue();
+            this.match(ESPACEParser.IDENTIFIER);
             this.state = 117;
+            this.match(ESPACEParser.EQUALS);
+            this.state = 118;
+            this.paramValue();
+            this.state = 119;
             this.match(ESPACEParser.SEMICOLON);
             }
         }
@@ -479,20 +482,20 @@ export class ESPACEParser extends antlr.Parser {
         let localContext = new ParamValueContext(this.context, this.state);
         this.enterRule(localContext, 22, ESPACEParser.RULE_paramValue);
         try {
-            this.state = 122;
+            this.state = 124;
             this.errorHandler.sync(this);
             switch (this.tokenStream.LA(1)) {
             case ESPACEParser.ENUM:
                 this.enterOuterAlt(localContext, 1);
                 {
-                this.state = 119;
+                this.state = 121;
                 this.enumFunction();
                 }
                 break;
             case ESPACEParser.RANGE:
                 this.enterOuterAlt(localContext, 2);
                 {
-                this.state = 120;
+                this.state = 122;
                 this.rangeFunction();
                 }
                 break;
@@ -501,7 +504,7 @@ export class ESPACEParser extends antlr.Parser {
             case ESPACEParser.NUMBER:
                 this.enterOuterAlt(localContext, 3);
                 {
-                this.state = 121;
+                this.state = 123;
                 this.expression();
                 }
                 break;
@@ -529,29 +532,29 @@ export class ESPACEParser extends antlr.Parser {
         try {
             this.enterOuterAlt(localContext, 1);
             {
-            this.state = 124;
-            this.match(ESPACEParser.ENUM);
-            this.state = 125;
-            this.match(ESPACEParser.LPAREN);
             this.state = 126;
+            this.match(ESPACEParser.ENUM);
+            this.state = 127;
+            this.match(ESPACEParser.LPAREN);
+            this.state = 128;
             this.expression();
-            this.state = 131;
+            this.state = 133;
             this.errorHandler.sync(this);
             _la = this.tokenStream.LA(1);
             while (_la === 9) {
                 {
                 {
-                this.state = 127;
+                this.state = 129;
                 this.match(ESPACEParser.COMMA);
-                this.state = 128;
+                this.state = 130;
                 this.expression();
                 }
                 }
-                this.state = 133;
+                this.state = 135;
                 this.errorHandler.sync(this);
                 _la = this.tokenStream.LA(1);
             }
-            this.state = 134;
+            this.state = 136;
             this.match(ESPACEParser.RPAREN);
             }
         }
@@ -574,14 +577,10 @@ export class ESPACEParser extends antlr.Parser {
         try {
             this.enterOuterAlt(localContext, 1);
             {
-            this.state = 136;
-            this.match(ESPACEParser.RANGE);
-            this.state = 137;
-            this.match(ESPACEParser.LPAREN);
             this.state = 138;
-            this.match(ESPACEParser.NUMBER);
+            this.match(ESPACEParser.RANGE);
             this.state = 139;
-            this.match(ESPACEParser.COMMA);
+            this.match(ESPACEParser.LPAREN);
             this.state = 140;
             this.match(ESPACEParser.NUMBER);
             this.state = 141;
@@ -589,6 +588,10 @@ export class ESPACEParser extends antlr.Parser {
             this.state = 142;
             this.match(ESPACEParser.NUMBER);
             this.state = 143;
+            this.match(ESPACEParser.COMMA);
+            this.state = 144;
+            this.match(ESPACEParser.NUMBER);
+            this.state = 145;
             this.match(ESPACEParser.RPAREN);
             }
         }
@@ -611,9 +614,9 @@ export class ESPACEParser extends antlr.Parser {
         try {
             this.enterOuterAlt(localContext, 1);
             {
-            this.state = 145;
+            this.state = 147;
             this.taskConfigurationHeader();
-            this.state = 146;
+            this.state = 148;
             this.taskConfigurationBody();
             }
         }
@@ -636,11 +639,11 @@ export class ESPACEParser extends antlr.Parser {
         try {
             this.enterOuterAlt(localContext, 1);
             {
-            this.state = 148;
-            this.match(ESPACEParser.CONFIGURE);
-            this.state = 149;
-            this.match(ESPACEParser.TASK);
             this.state = 150;
+            this.match(ESPACEParser.CONFIGURE);
+            this.state = 151;
+            this.match(ESPACEParser.TASK);
+            this.state = 152;
             this.taskNameRead();
             }
         }
@@ -664,23 +667,23 @@ export class ESPACEParser extends antlr.Parser {
         try {
             this.enterOuterAlt(localContext, 1);
             {
-            this.state = 152;
+            this.state = 154;
             this.match(ESPACEParser.LBRACE);
-            this.state = 156;
+            this.state = 158;
             this.errorHandler.sync(this);
             _la = this.tokenStream.LA(1);
             while (_la === 14) {
                 {
                 {
-                this.state = 153;
+                this.state = 155;
                 this.configurationContent();
                 }
                 }
-                this.state = 158;
+                this.state = 160;
                 this.errorHandler.sync(this);
                 _la = this.tokenStream.LA(1);
             }
-            this.state = 159;
+            this.state = 161;
             this.match(ESPACEParser.RBRACE);
             }
         }
@@ -703,7 +706,7 @@ export class ESPACEParser extends antlr.Parser {
         try {
             this.enterOuterAlt(localContext, 1);
             {
-            this.state = 161;
+            this.state = 163;
             this.paramAssignment();
             }
         }
@@ -726,15 +729,15 @@ export class ESPACEParser extends antlr.Parser {
         try {
             this.enterOuterAlt(localContext, 1);
             {
-            this.state = 163;
-            this.match(ESPACEParser.PARAM);
-            this.state = 164;
-            this.match(ESPACEParser.IDENTIFIER);
             this.state = 165;
-            this.match(ESPACEParser.EQUALS);
+            this.match(ESPACEParser.PARAM);
             this.state = 166;
-            this.paramValue();
+            this.match(ESPACEParser.IDENTIFIER);
             this.state = 167;
+            this.match(ESPACEParser.EQUALS);
+            this.state = 168;
+            this.paramValue();
+            this.state = 169;
             this.match(ESPACEParser.SEMICOLON);
             }
         }
@@ -757,9 +760,9 @@ export class ESPACEParser extends antlr.Parser {
         try {
             this.enterOuterAlt(localContext, 1);
             {
-            this.state = 169;
+            this.state = 171;
             this.match(ESPACEParser.CONTROL);
-            this.state = 170;
+            this.state = 172;
             this.controlBody();
             }
         }
@@ -783,23 +786,23 @@ export class ESPACEParser extends antlr.Parser {
         try {
             this.enterOuterAlt(localContext, 1);
             {
-            this.state = 172;
+            this.state = 174;
             this.match(ESPACEParser.LBRACE);
-            this.state = 176;
+            this.state = 178;
             this.errorHandler.sync(this);
             _la = this.tokenStream.LA(1);
-            while (_la === 24) {
+            while ((((_la) & ~0x1F) === 0 && ((1 << _la) & 92274688) !== 0)) {
                 {
                 {
-                this.state = 173;
+                this.state = 175;
                 this.controlContent();
                 }
                 }
-                this.state = 178;
+                this.state = 180;
                 this.errorHandler.sync(this);
                 _la = this.tokenStream.LA(1);
             }
-            this.state = 179;
+            this.state = 181;
             this.match(ESPACEParser.RBRACE);
             }
         }
@@ -820,20 +823,20 @@ export class ESPACEParser extends antlr.Parser {
         let localContext = new ControlContentContext(this.context, this.state);
         this.enterRule(localContext, 42, ESPACEParser.RULE_controlContent);
         try {
-            this.state = 183;
+            this.state = 185;
             this.errorHandler.sync(this);
             switch (this.interpreter.adaptivePredict(this.tokenStream, 8, this.context) ) {
             case 1:
                 this.enterOuterAlt(localContext, 1);
                 {
-                this.state = 181;
+                this.state = 183;
                 this.simpleTransition();
                 }
                 break;
             case 2:
                 this.enterOuterAlt(localContext, 2);
                 {
-                this.state = 182;
+                this.state = 184;
                 this.conditionalTransition();
                 }
                 break;
@@ -859,25 +862,25 @@ export class ESPACEParser extends antlr.Parser {
         try {
             this.enterOuterAlt(localContext, 1);
             {
-            this.state = 185;
-            this.spaceNameRead();
-            this.state = 188;
+            this.state = 187;
+            this.controlChainElement();
+            this.state = 190;
             this.errorHandler.sync(this);
             _la = this.tokenStream.LA(1);
             do {
                 {
                 {
-                this.state = 186;
+                this.state = 188;
                 this.match(ESPACEParser.ARROW);
-                this.state = 187;
-                this.spaceNameRead();
+                this.state = 189;
+                this.controlChainElement();
                 }
                 }
-                this.state = 190;
+                this.state = 192;
                 this.errorHandler.sync(this);
                 _la = this.tokenStream.LA(1);
             } while (_la === 2);
-            this.state = 192;
+            this.state = 194;
             this.match(ESPACEParser.SEMICOLON);
             }
         }
@@ -900,9 +903,9 @@ export class ESPACEParser extends antlr.Parser {
         try {
             this.enterOuterAlt(localContext, 1);
             {
-            this.state = 194;
+            this.state = 196;
             this.conditionalTransitionHeader();
-            this.state = 195;
+            this.state = 197;
             this.conditionalTransitionBody();
             }
         }
@@ -925,12 +928,12 @@ export class ESPACEParser extends antlr.Parser {
         try {
             this.enterOuterAlt(localContext, 1);
             {
-            this.state = 197;
-            this.spaceNameRead();
-            this.state = 198;
-            this.match(ESPACEParser.CONDITION_ARROW);
             this.state = 199;
-            this.spaceNameRead();
+            this.controlChainElement();
+            this.state = 200;
+            this.match(ESPACEParser.CONDITION_ARROW);
+            this.state = 201;
+            this.controlChainElement();
             }
         }
         catch (re) {
@@ -953,23 +956,23 @@ export class ESPACEParser extends antlr.Parser {
         try {
             this.enterOuterAlt(localContext, 1);
             {
-            this.state = 201;
+            this.state = 203;
             this.match(ESPACEParser.LBRACE);
-            this.state = 205;
+            this.state = 207;
             this.errorHandler.sync(this);
             _la = this.tokenStream.LA(1);
             while (_la === 20) {
                 {
                 {
-                this.state = 202;
+                this.state = 204;
                 this.condition();
                 }
                 }
-                this.state = 207;
+                this.state = 209;
                 this.errorHandler.sync(this);
                 _la = this.tokenStream.LA(1);
             }
-            this.state = 208;
+            this.state = 210;
             this.match(ESPACEParser.RBRACE);
             }
         }
@@ -992,12 +995,57 @@ export class ESPACEParser extends antlr.Parser {
         try {
             this.enterOuterAlt(localContext, 1);
             {
-            this.state = 210;
-            this.match(ESPACEParser.CONDITION);
-            this.state = 211;
-            this.match(ESPACEParser.STRING);
             this.state = 212;
+            this.match(ESPACEParser.CONDITION);
+            this.state = 213;
+            this.match(ESPACEParser.STRING);
+            this.state = 214;
             this.match(ESPACEParser.SEMICOLON);
+            }
+        }
+        catch (re) {
+            if (re instanceof antlr.RecognitionException) {
+                this.errorHandler.reportError(this, re);
+                this.errorHandler.recover(this, re);
+            } else {
+                throw re;
+            }
+        }
+        finally {
+            this.exitRule();
+        }
+        return localContext;
+    }
+    public controlChainElement(): ControlChainElementContext {
+        let localContext = new ControlChainElementContext(this.context, this.state);
+        this.enterRule(localContext, 54, ESPACEParser.RULE_controlChainElement);
+        try {
+            this.state = 219;
+            this.errorHandler.sync(this);
+            switch (this.tokenStream.LA(1)) {
+            case ESPACEParser.START:
+                this.enterOuterAlt(localContext, 1);
+                {
+                this.state = 216;
+                this.match(ESPACEParser.START);
+                }
+                break;
+            case ESPACEParser.END:
+                this.enterOuterAlt(localContext, 2);
+                {
+                this.state = 217;
+                this.match(ESPACEParser.END);
+                }
+                break;
+            case ESPACEParser.IDENTIFIER:
+                this.enterOuterAlt(localContext, 3);
+                {
+                this.state = 218;
+                this.spaceNameRead();
+                }
+                break;
+            default:
+                throw new antlr.NoViableAltException(this);
             }
         }
         catch (re) {
@@ -1015,21 +1063,21 @@ export class ESPACEParser extends antlr.Parser {
     }
     public dataDefinition(): DataDefinitionContext {
         let localContext = new DataDefinitionContext(this.context, this.state);
-        this.enterRule(localContext, 54, ESPACEParser.RULE_dataDefinition);
+        this.enterRule(localContext, 56, ESPACEParser.RULE_dataDefinition);
         try {
             this.enterOuterAlt(localContext, 1);
             {
-            this.state = 214;
+            this.state = 221;
             this.match(ESPACEParser.DEFINE);
-            this.state = 215;
+            this.state = 222;
             this.match(ESPACEParser.DATA);
-            this.state = 216;
+            this.state = 223;
             this.match(ESPACEParser.IDENTIFIER);
-            this.state = 217;
+            this.state = 224;
             this.match(ESPACEParser.EQUALS);
-            this.state = 218;
+            this.state = 225;
             this.match(ESPACEParser.STRING);
-            this.state = 219;
+            this.state = 226;
             this.match(ESPACEParser.SEMICOLON);
             }
         }
@@ -1048,11 +1096,11 @@ export class ESPACEParser extends antlr.Parser {
     }
     public workflowNameRead(): WorkflowNameReadContext {
         let localContext = new WorkflowNameReadContext(this.context, this.state);
-        this.enterRule(localContext, 56, ESPACEParser.RULE_workflowNameRead);
+        this.enterRule(localContext, 58, ESPACEParser.RULE_workflowNameRead);
         try {
             this.enterOuterAlt(localContext, 1);
             {
-            this.state = 221;
+            this.state = 228;
             this.match(ESPACEParser.IDENTIFIER);
             }
         }
@@ -1071,11 +1119,11 @@ export class ESPACEParser extends antlr.Parser {
     }
     public taskNameRead(): TaskNameReadContext {
         let localContext = new TaskNameReadContext(this.context, this.state);
-        this.enterRule(localContext, 58, ESPACEParser.RULE_taskNameRead);
+        this.enterRule(localContext, 60, ESPACEParser.RULE_taskNameRead);
         try {
             this.enterOuterAlt(localContext, 1);
             {
-            this.state = 223;
+            this.state = 230;
             this.match(ESPACEParser.IDENTIFIER);
             }
         }
@@ -1094,11 +1142,11 @@ export class ESPACEParser extends antlr.Parser {
     }
     public spaceNameRead(): SpaceNameReadContext {
         let localContext = new SpaceNameReadContext(this.context, this.state);
-        this.enterRule(localContext, 60, ESPACEParser.RULE_spaceNameRead);
+        this.enterRule(localContext, 62, ESPACEParser.RULE_spaceNameRead);
         try {
             this.enterOuterAlt(localContext, 1);
             {
-            this.state = 225;
+            this.state = 232;
             this.match(ESPACEParser.IDENTIFIER);
             }
         }
@@ -1117,14 +1165,14 @@ export class ESPACEParser extends antlr.Parser {
     }
     public expression(): ExpressionContext {
         let localContext = new ExpressionContext(this.context, this.state);
-        this.enterRule(localContext, 62, ESPACEParser.RULE_expression);
+        this.enterRule(localContext, 64, ESPACEParser.RULE_expression);
         let _la: number;
         try {
             this.enterOuterAlt(localContext, 1);
             {
-            this.state = 227;
+            this.state = 234;
             _la = this.tokenStream.LA(1);
-            if(!((((_la) & ~0x1F) === 0 && ((1 << _la) & 109051904) !== 0))) {
+            if(!((((_la) & ~0x1F) === 0 && ((1 << _la) & 436207616) !== 0))) {
             this.errorHandler.recoverInline(this);
             }
             else {
@@ -1148,78 +1196,82 @@ export class ESPACEParser extends antlr.Parser {
     }
 
     public static readonly _serializedATN: number[] = [
-        4,1,28,230,2,0,7,0,2,1,7,1,2,2,7,2,2,3,7,3,2,4,7,4,2,5,7,5,2,6,7,
+        4,1,30,237,2,0,7,0,2,1,7,1,2,2,7,2,2,3,7,3,2,4,7,4,2,5,7,5,2,6,7,
         6,2,7,7,7,2,8,7,8,2,9,7,9,2,10,7,10,2,11,7,11,2,12,7,12,2,13,7,13,
         2,14,7,14,2,15,7,15,2,16,7,16,2,17,7,17,2,18,7,18,2,19,7,19,2,20,
         7,20,2,21,7,21,2,22,7,22,2,23,7,23,2,24,7,24,2,25,7,25,2,26,7,26,
-        2,27,7,27,2,28,7,28,2,29,7,29,2,30,7,30,2,31,7,31,1,0,1,0,1,1,1,
-        1,1,1,1,2,1,2,1,2,1,3,1,3,5,3,75,8,3,10,3,12,3,78,9,3,1,3,1,3,1,
-        4,1,4,1,4,3,4,85,8,4,1,5,1,5,1,5,1,6,1,6,1,6,1,6,1,6,1,7,1,7,5,7,
-        97,8,7,10,7,12,7,100,9,7,1,7,1,7,1,8,1,8,1,8,1,8,3,8,108,8,8,1,9,
-        1,9,1,9,1,9,1,10,1,10,1,10,1,10,1,10,1,10,1,11,1,11,1,11,3,11,123,
-        8,11,1,12,1,12,1,12,1,12,1,12,5,12,130,8,12,10,12,12,12,133,9,12,
-        1,12,1,12,1,13,1,13,1,13,1,13,1,13,1,13,1,13,1,13,1,13,1,14,1,14,
-        1,14,1,15,1,15,1,15,1,15,1,16,1,16,5,16,155,8,16,10,16,12,16,158,
-        9,16,1,16,1,16,1,17,1,17,1,18,1,18,1,18,1,18,1,18,1,18,1,19,1,19,
-        1,19,1,20,1,20,5,20,175,8,20,10,20,12,20,178,9,20,1,20,1,20,1,21,
-        1,21,3,21,184,8,21,1,22,1,22,1,22,4,22,189,8,22,11,22,12,22,190,
-        1,22,1,22,1,23,1,23,1,23,1,24,1,24,1,24,1,24,1,25,1,25,5,25,204,
-        8,25,10,25,12,25,207,9,25,1,25,1,25,1,26,1,26,1,26,1,26,1,27,1,27,
-        1,27,1,27,1,27,1,27,1,27,1,28,1,28,1,29,1,29,1,30,1,30,1,31,1,31,
-        1,31,0,0,32,0,2,4,6,8,10,12,14,16,18,20,22,24,26,28,30,32,34,36,
-        38,40,42,44,46,48,50,52,54,56,58,60,62,0,1,2,0,23,23,25,26,212,0,
-        64,1,0,0,0,2,66,1,0,0,0,4,69,1,0,0,0,6,72,1,0,0,0,8,84,1,0,0,0,10,
-        86,1,0,0,0,12,89,1,0,0,0,14,94,1,0,0,0,16,107,1,0,0,0,18,109,1,0,
-        0,0,20,113,1,0,0,0,22,122,1,0,0,0,24,124,1,0,0,0,26,136,1,0,0,0,
-        28,145,1,0,0,0,30,148,1,0,0,0,32,152,1,0,0,0,34,161,1,0,0,0,36,163,
-        1,0,0,0,38,169,1,0,0,0,40,172,1,0,0,0,42,183,1,0,0,0,44,185,1,0,
-        0,0,46,194,1,0,0,0,48,197,1,0,0,0,50,201,1,0,0,0,52,210,1,0,0,0,
-        54,214,1,0,0,0,56,221,1,0,0,0,58,223,1,0,0,0,60,225,1,0,0,0,62,227,
-        1,0,0,0,64,65,3,2,1,0,65,1,1,0,0,0,66,67,3,4,2,0,67,68,3,6,3,0,68,
-        3,1,0,0,0,69,70,5,10,0,0,70,71,5,24,0,0,71,5,1,0,0,0,72,76,5,4,0,
-        0,73,75,3,8,4,0,74,73,1,0,0,0,75,78,1,0,0,0,76,74,1,0,0,0,76,77,
-        1,0,0,0,77,79,1,0,0,0,78,76,1,0,0,0,79,80,5,5,0,0,80,7,1,0,0,0,81,
-        85,3,10,5,0,82,85,3,38,19,0,83,85,3,54,27,0,84,81,1,0,0,0,84,82,
-        1,0,0,0,84,83,1,0,0,0,85,9,1,0,0,0,86,87,3,12,6,0,87,88,3,14,7,0,
-        88,11,1,0,0,0,89,90,5,11,0,0,90,91,5,24,0,0,91,92,5,12,0,0,92,93,
-        3,56,28,0,93,13,1,0,0,0,94,98,5,4,0,0,95,97,3,16,8,0,96,95,1,0,0,
-        0,97,100,1,0,0,0,98,96,1,0,0,0,98,99,1,0,0,0,99,101,1,0,0,0,100,
-        98,1,0,0,0,101,102,5,5,0,0,102,15,1,0,0,0,103,108,3,18,9,0,104,108,
-        3,20,10,0,105,108,3,28,14,0,106,108,3,54,27,0,107,103,1,0,0,0,107,
-        104,1,0,0,0,107,105,1,0,0,0,107,106,1,0,0,0,108,17,1,0,0,0,109,110,
-        5,13,0,0,110,111,5,24,0,0,111,112,5,1,0,0,112,19,1,0,0,0,113,114,
-        5,14,0,0,114,115,5,24,0,0,115,116,5,8,0,0,116,117,3,22,11,0,117,
-        118,5,1,0,0,118,21,1,0,0,0,119,123,3,24,12,0,120,123,3,26,13,0,121,
-        123,3,62,31,0,122,119,1,0,0,0,122,120,1,0,0,0,122,121,1,0,0,0,123,
-        23,1,0,0,0,124,125,5,15,0,0,125,126,5,6,0,0,126,131,3,62,31,0,127,
-        128,5,9,0,0,128,130,3,62,31,0,129,127,1,0,0,0,130,133,1,0,0,0,131,
-        129,1,0,0,0,131,132,1,0,0,0,132,134,1,0,0,0,133,131,1,0,0,0,134,
-        135,5,7,0,0,135,25,1,0,0,0,136,137,5,16,0,0,137,138,5,6,0,0,138,
-        139,5,26,0,0,139,140,5,9,0,0,140,141,5,26,0,0,141,142,5,9,0,0,142,
-        143,5,26,0,0,143,144,5,7,0,0,144,27,1,0,0,0,145,146,3,30,15,0,146,
-        147,3,32,16,0,147,29,1,0,0,0,148,149,5,17,0,0,149,150,5,18,0,0,150,
-        151,3,58,29,0,151,31,1,0,0,0,152,156,5,4,0,0,153,155,3,34,17,0,154,
-        153,1,0,0,0,155,158,1,0,0,0,156,154,1,0,0,0,156,157,1,0,0,0,157,
-        159,1,0,0,0,158,156,1,0,0,0,159,160,5,5,0,0,160,33,1,0,0,0,161,162,
-        3,36,18,0,162,35,1,0,0,0,163,164,5,14,0,0,164,165,5,24,0,0,165,166,
-        5,8,0,0,166,167,3,22,11,0,167,168,5,1,0,0,168,37,1,0,0,0,169,170,
-        5,19,0,0,170,171,3,40,20,0,171,39,1,0,0,0,172,176,5,4,0,0,173,175,
-        3,42,21,0,174,173,1,0,0,0,175,178,1,0,0,0,176,174,1,0,0,0,176,177,
-        1,0,0,0,177,179,1,0,0,0,178,176,1,0,0,0,179,180,5,5,0,0,180,41,1,
-        0,0,0,181,184,3,44,22,0,182,184,3,46,23,0,183,181,1,0,0,0,183,182,
-        1,0,0,0,184,43,1,0,0,0,185,188,3,60,30,0,186,187,5,2,0,0,187,189,
-        3,60,30,0,188,186,1,0,0,0,189,190,1,0,0,0,190,188,1,0,0,0,190,191,
-        1,0,0,0,191,192,1,0,0,0,192,193,5,1,0,0,193,45,1,0,0,0,194,195,3,
-        48,24,0,195,196,3,50,25,0,196,47,1,0,0,0,197,198,3,60,30,0,198,199,
-        5,3,0,0,199,200,3,60,30,0,200,49,1,0,0,0,201,205,5,4,0,0,202,204,
-        3,52,26,0,203,202,1,0,0,0,204,207,1,0,0,0,205,203,1,0,0,0,205,206,
-        1,0,0,0,206,208,1,0,0,0,207,205,1,0,0,0,208,209,5,5,0,0,209,51,1,
-        0,0,0,210,211,5,20,0,0,211,212,5,25,0,0,212,213,5,1,0,0,213,53,1,
-        0,0,0,214,215,5,21,0,0,215,216,5,22,0,0,216,217,5,24,0,0,217,218,
-        5,8,0,0,218,219,5,25,0,0,219,220,5,1,0,0,220,55,1,0,0,0,221,222,
-        5,24,0,0,222,57,1,0,0,0,223,224,5,24,0,0,224,59,1,0,0,0,225,226,
-        5,24,0,0,226,61,1,0,0,0,227,228,7,0,0,0,228,63,1,0,0,0,11,76,84,
-        98,107,122,131,156,176,183,190,205
+        2,27,7,27,2,28,7,28,2,29,7,29,2,30,7,30,2,31,7,31,2,32,7,32,1,0,
+        1,0,1,1,1,1,1,1,1,2,1,2,1,2,1,3,1,3,5,3,77,8,3,10,3,12,3,80,9,3,
+        1,3,1,3,1,4,1,4,1,4,3,4,87,8,4,1,5,1,5,1,5,1,6,1,6,1,6,1,6,1,6,1,
+        7,1,7,5,7,99,8,7,10,7,12,7,102,9,7,1,7,1,7,1,8,1,8,1,8,1,8,3,8,110,
+        8,8,1,9,1,9,1,9,1,9,1,10,1,10,1,10,1,10,1,10,1,10,1,11,1,11,1,11,
+        3,11,125,8,11,1,12,1,12,1,12,1,12,1,12,5,12,132,8,12,10,12,12,12,
+        135,9,12,1,12,1,12,1,13,1,13,1,13,1,13,1,13,1,13,1,13,1,13,1,13,
+        1,14,1,14,1,14,1,15,1,15,1,15,1,15,1,16,1,16,5,16,157,8,16,10,16,
+        12,16,160,9,16,1,16,1,16,1,17,1,17,1,18,1,18,1,18,1,18,1,18,1,18,
+        1,19,1,19,1,19,1,20,1,20,5,20,177,8,20,10,20,12,20,180,9,20,1,20,
+        1,20,1,21,1,21,3,21,186,8,21,1,22,1,22,1,22,4,22,191,8,22,11,22,
+        12,22,192,1,22,1,22,1,23,1,23,1,23,1,24,1,24,1,24,1,24,1,25,1,25,
+        5,25,206,8,25,10,25,12,25,209,9,25,1,25,1,25,1,26,1,26,1,26,1,26,
+        1,27,1,27,1,27,3,27,220,8,27,1,28,1,28,1,28,1,28,1,28,1,28,1,28,
+        1,29,1,29,1,30,1,30,1,31,1,31,1,32,1,32,1,32,0,0,33,0,2,4,6,8,10,
+        12,14,16,18,20,22,24,26,28,30,32,34,36,38,40,42,44,46,48,50,52,54,
+        56,58,60,62,64,0,1,2,0,25,25,27,28,220,0,66,1,0,0,0,2,68,1,0,0,0,
+        4,71,1,0,0,0,6,74,1,0,0,0,8,86,1,0,0,0,10,88,1,0,0,0,12,91,1,0,0,
+        0,14,96,1,0,0,0,16,109,1,0,0,0,18,111,1,0,0,0,20,115,1,0,0,0,22,
+        124,1,0,0,0,24,126,1,0,0,0,26,138,1,0,0,0,28,147,1,0,0,0,30,150,
+        1,0,0,0,32,154,1,0,0,0,34,163,1,0,0,0,36,165,1,0,0,0,38,171,1,0,
+        0,0,40,174,1,0,0,0,42,185,1,0,0,0,44,187,1,0,0,0,46,196,1,0,0,0,
+        48,199,1,0,0,0,50,203,1,0,0,0,52,212,1,0,0,0,54,219,1,0,0,0,56,221,
+        1,0,0,0,58,228,1,0,0,0,60,230,1,0,0,0,62,232,1,0,0,0,64,234,1,0,
+        0,0,66,67,3,2,1,0,67,1,1,0,0,0,68,69,3,4,2,0,69,70,3,6,3,0,70,3,
+        1,0,0,0,71,72,5,10,0,0,72,73,5,26,0,0,73,5,1,0,0,0,74,78,5,4,0,0,
+        75,77,3,8,4,0,76,75,1,0,0,0,77,80,1,0,0,0,78,76,1,0,0,0,78,79,1,
+        0,0,0,79,81,1,0,0,0,80,78,1,0,0,0,81,82,5,5,0,0,82,7,1,0,0,0,83,
+        87,3,10,5,0,84,87,3,38,19,0,85,87,3,56,28,0,86,83,1,0,0,0,86,84,
+        1,0,0,0,86,85,1,0,0,0,87,9,1,0,0,0,88,89,3,12,6,0,89,90,3,14,7,0,
+        90,11,1,0,0,0,91,92,5,11,0,0,92,93,5,26,0,0,93,94,5,12,0,0,94,95,
+        3,58,29,0,95,13,1,0,0,0,96,100,5,4,0,0,97,99,3,16,8,0,98,97,1,0,
+        0,0,99,102,1,0,0,0,100,98,1,0,0,0,100,101,1,0,0,0,101,103,1,0,0,
+        0,102,100,1,0,0,0,103,104,5,5,0,0,104,15,1,0,0,0,105,110,3,18,9,
+        0,106,110,3,20,10,0,107,110,3,28,14,0,108,110,3,56,28,0,109,105,
+        1,0,0,0,109,106,1,0,0,0,109,107,1,0,0,0,109,108,1,0,0,0,110,17,1,
+        0,0,0,111,112,5,13,0,0,112,113,5,26,0,0,113,114,5,1,0,0,114,19,1,
+        0,0,0,115,116,5,14,0,0,116,117,5,26,0,0,117,118,5,8,0,0,118,119,
+        3,22,11,0,119,120,5,1,0,0,120,21,1,0,0,0,121,125,3,24,12,0,122,125,
+        3,26,13,0,123,125,3,64,32,0,124,121,1,0,0,0,124,122,1,0,0,0,124,
+        123,1,0,0,0,125,23,1,0,0,0,126,127,5,15,0,0,127,128,5,6,0,0,128,
+        133,3,64,32,0,129,130,5,9,0,0,130,132,3,64,32,0,131,129,1,0,0,0,
+        132,135,1,0,0,0,133,131,1,0,0,0,133,134,1,0,0,0,134,136,1,0,0,0,
+        135,133,1,0,0,0,136,137,5,7,0,0,137,25,1,0,0,0,138,139,5,16,0,0,
+        139,140,5,6,0,0,140,141,5,28,0,0,141,142,5,9,0,0,142,143,5,28,0,
+        0,143,144,5,9,0,0,144,145,5,28,0,0,145,146,5,7,0,0,146,27,1,0,0,
+        0,147,148,3,30,15,0,148,149,3,32,16,0,149,29,1,0,0,0,150,151,5,17,
+        0,0,151,152,5,18,0,0,152,153,3,60,30,0,153,31,1,0,0,0,154,158,5,
+        4,0,0,155,157,3,34,17,0,156,155,1,0,0,0,157,160,1,0,0,0,158,156,
+        1,0,0,0,158,159,1,0,0,0,159,161,1,0,0,0,160,158,1,0,0,0,161,162,
+        5,5,0,0,162,33,1,0,0,0,163,164,3,36,18,0,164,35,1,0,0,0,165,166,
+        5,14,0,0,166,167,5,26,0,0,167,168,5,8,0,0,168,169,3,22,11,0,169,
+        170,5,1,0,0,170,37,1,0,0,0,171,172,5,19,0,0,172,173,3,40,20,0,173,
+        39,1,0,0,0,174,178,5,4,0,0,175,177,3,42,21,0,176,175,1,0,0,0,177,
+        180,1,0,0,0,178,176,1,0,0,0,178,179,1,0,0,0,179,181,1,0,0,0,180,
+        178,1,0,0,0,181,182,5,5,0,0,182,41,1,0,0,0,183,186,3,44,22,0,184,
+        186,3,46,23,0,185,183,1,0,0,0,185,184,1,0,0,0,186,43,1,0,0,0,187,
+        190,3,54,27,0,188,189,5,2,0,0,189,191,3,54,27,0,190,188,1,0,0,0,
+        191,192,1,0,0,0,192,190,1,0,0,0,192,193,1,0,0,0,193,194,1,0,0,0,
+        194,195,5,1,0,0,195,45,1,0,0,0,196,197,3,48,24,0,197,198,3,50,25,
+        0,198,47,1,0,0,0,199,200,3,54,27,0,200,201,5,3,0,0,201,202,3,54,
+        27,0,202,49,1,0,0,0,203,207,5,4,0,0,204,206,3,52,26,0,205,204,1,
+        0,0,0,206,209,1,0,0,0,207,205,1,0,0,0,207,208,1,0,0,0,208,210,1,
+        0,0,0,209,207,1,0,0,0,210,211,5,5,0,0,211,51,1,0,0,0,212,213,5,20,
+        0,0,213,214,5,27,0,0,214,215,5,1,0,0,215,53,1,0,0,0,216,220,5,23,
+        0,0,217,220,5,24,0,0,218,220,3,62,31,0,219,216,1,0,0,0,219,217,1,
+        0,0,0,219,218,1,0,0,0,220,55,1,0,0,0,221,222,5,21,0,0,222,223,5,
+        22,0,0,223,224,5,26,0,0,224,225,5,8,0,0,225,226,5,27,0,0,226,227,
+        5,1,0,0,227,57,1,0,0,0,228,229,5,26,0,0,229,59,1,0,0,0,230,231,5,
+        26,0,0,231,61,1,0,0,0,232,233,5,26,0,0,233,63,1,0,0,0,234,235,7,
+        0,0,0,235,65,1,0,0,0,12,78,86,100,109,124,133,158,178,185,192,207,
+        219
     ];
 
     private static __ATN: antlr.ATN;
@@ -2085,14 +2137,14 @@ export class SimpleTransitionContext extends antlr.ParserRuleContext {
     public constructor(parent: antlr.ParserRuleContext | null, invokingState: number) {
         super(parent, invokingState);
     }
-    public spaceNameRead(): SpaceNameReadContext[];
-    public spaceNameRead(i: number): SpaceNameReadContext | null;
-    public spaceNameRead(i?: number): SpaceNameReadContext[] | SpaceNameReadContext | null {
+    public controlChainElement(): ControlChainElementContext[];
+    public controlChainElement(i: number): ControlChainElementContext | null;
+    public controlChainElement(i?: number): ControlChainElementContext[] | ControlChainElementContext | null {
         if (i === undefined) {
-            return this.getRuleContexts(SpaceNameReadContext);
+            return this.getRuleContexts(ControlChainElementContext);
         }
 
-        return this.getRuleContext(i, SpaceNameReadContext);
+        return this.getRuleContext(i, ControlChainElementContext);
     }
     public SEMICOLON(): antlr.TerminalNode {
         return this.getToken(ESPACEParser.SEMICOLON, 0)!;
@@ -2166,14 +2218,14 @@ export class ConditionalTransitionHeaderContext extends antlr.ParserRuleContext 
     public constructor(parent: antlr.ParserRuleContext | null, invokingState: number) {
         super(parent, invokingState);
     }
-    public spaceNameRead(): SpaceNameReadContext[];
-    public spaceNameRead(i: number): SpaceNameReadContext | null;
-    public spaceNameRead(i?: number): SpaceNameReadContext[] | SpaceNameReadContext | null {
+    public controlChainElement(): ControlChainElementContext[];
+    public controlChainElement(i: number): ControlChainElementContext | null;
+    public controlChainElement(i?: number): ControlChainElementContext[] | ControlChainElementContext | null {
         if (i === undefined) {
-            return this.getRuleContexts(SpaceNameReadContext);
+            return this.getRuleContexts(ControlChainElementContext);
         }
 
-        return this.getRuleContext(i, SpaceNameReadContext);
+        return this.getRuleContext(i, ControlChainElementContext);
     }
     public CONDITION_ARROW(): antlr.TerminalNode {
         return this.getToken(ESPACEParser.CONDITION_ARROW, 0)!;
@@ -2272,6 +2324,42 @@ export class ConditionContext extends antlr.ParserRuleContext {
     public override accept<Result>(visitor: ESPACEVisitor<Result>): Result | null {
         if (visitor.visitCondition) {
             return visitor.visitCondition(this);
+        } else {
+            return visitor.visitChildren(this);
+        }
+    }
+}
+
+
+export class ControlChainElementContext extends antlr.ParserRuleContext {
+    public constructor(parent: antlr.ParserRuleContext | null, invokingState: number) {
+        super(parent, invokingState);
+    }
+    public START(): antlr.TerminalNode | null {
+        return this.getToken(ESPACEParser.START, 0);
+    }
+    public END(): antlr.TerminalNode | null {
+        return this.getToken(ESPACEParser.END, 0);
+    }
+    public spaceNameRead(): SpaceNameReadContext | null {
+        return this.getRuleContext(0, SpaceNameReadContext);
+    }
+    public override get ruleIndex(): number {
+        return ESPACEParser.RULE_controlChainElement;
+    }
+    public override enterRule(listener: ESPACEListener): void {
+        if(listener.enterControlChainElement) {
+             listener.enterControlChainElement(this);
+        }
+    }
+    public override exitRule(listener: ESPACEListener): void {
+        if(listener.exitControlChainElement) {
+             listener.exitControlChainElement(this);
+        }
+    }
+    public override accept<Result>(visitor: ESPACEVisitor<Result>): Result | null {
+        if (visitor.visitControlChainElement) {
+            return visitor.visitControlChainElement(this);
         } else {
             return visitor.visitChildren(this);
         }

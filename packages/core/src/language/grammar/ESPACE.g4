@@ -46,11 +46,12 @@ controlContent:
     simpleTransition
     | conditionalTransition;
 
-simpleTransition: spaceNameRead (ARROW spaceNameRead)+ SEMICOLON;
+simpleTransition: controlChainElement (ARROW controlChainElement)+ SEMICOLON;
 conditionalTransition: conditionalTransitionHeader conditionalTransitionBody;
-conditionalTransitionHeader: spaceNameRead CONDITION_ARROW spaceNameRead;
+conditionalTransitionHeader: controlChainElement CONDITION_ARROW controlChainElement;
 conditionalTransitionBody: LBRACE condition* RBRACE;
 condition: CONDITION STRING SEMICOLON;
+controlChainElement: START | END | spaceNameRead;
 
 // Data definition - Available at both experiment and space levels
 dataDefinition: DEFINE DATA IDENTIFIER EQUALS STRING SEMICOLON;
@@ -88,6 +89,8 @@ CONTROL: 'control';
 CONDITION: 'condition';
 DEFINE: 'define';
 DATA: 'data';
+START: 'start';
+END: 'end';
 
 // Fragments
 fragment LETTER: [a-zA-Z_];

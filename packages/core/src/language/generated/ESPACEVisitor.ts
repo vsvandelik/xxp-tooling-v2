@@ -30,6 +30,7 @@ import { ConditionalTransitionContext } from "./ESPACEParser.js";
 import { ConditionalTransitionHeaderContext } from "./ESPACEParser.js";
 import { ConditionalTransitionBodyContext } from "./ESPACEParser.js";
 import { ConditionContext } from "./ESPACEParser.js";
+import { ControlChainElementContext } from "./ESPACEParser.js";
 import { DataDefinitionContext } from "./ESPACEParser.js";
 import { WorkflowNameReadContext } from "./ESPACEParser.js";
 import { TaskNameReadContext } from "./ESPACEParser.js";
@@ -207,6 +208,12 @@ export class ESPACEVisitor<Result> extends AbstractParseTreeVisitor<Result> {
      * @return the visitor result
      */
     visitCondition?: (ctx: ConditionContext) => Result;
+    /**
+     * Visit a parse tree produced by `ESPACEParser.controlChainElement`.
+     * @param ctx the parse tree
+     * @return the visitor result
+     */
+    visitControlChainElement?: (ctx: ControlChainElementContext) => Result;
     /**
      * Visit a parse tree produced by `ESPACEParser.dataDefinition`.
      * @param ctx the parse tree
