@@ -1,10 +1,11 @@
 import { Provider } from './Provider.js';
 import { Logger } from '../utils/Logger.js';
 import { RenameParams, WorkspaceEdit, TextEdit } from 'vscode-languageserver';
-import { RangeUtils } from '../utils/RangeUtils.js';
+import { NavigationFeatures } from '../core/features/NavigationFeatures.js';
 
 export class RenameProvider extends Provider {
   private logger = Logger.getInstance();
+  private navigationFeatures = new NavigationFeatures();
 
   public addHandlers(): void {
     this.connection?.onRenameRequest(params => this.onRenameRequest(params));
@@ -24,39 +25,18 @@ export class RenameProvider extends Provider {
       return null;
     }
 
-    const symbol = await this.findSymbolAtPosition(document, tokenPosition.text);
-    if (!symbol || !symbol.context) return null;
+    const references = await this.navigationFeatures.findReferences(document, tokenPosition, true);
+    if (references.length === 0) return null;
 
     const changes: { [uri: string]: TextEdit[] } = {};
 
-    // Add declaration location
-    const declarationRange = RangeUtils.getRangeFromParseTree(symbol.context);
-    if (declarationRange) {
-      const uri = symbol.document.uri;
+    for (const reference of references) {
+      const uri = reference.uri;
       if (!changes[uri]) changes[uri] = [];
-      changes[uri].push(TextEdit.replace(declarationRange, params.newName));
-    }
-
-    // Add all reference locations
-    if (symbol.references) {
-      for (const reference of symbol.references) {
-        const range = RangeUtils.getRangeFromParseTree(reference.node);
-        if (!range) continue;
-
-        const uri = reference.document.uri;
-        if (!changes[uri]) changes[uri] = [];
-        changes[uri].push(TextEdit.replace(range, params.newName));
-      }
+      changes[uri].push(TextEdit.replace(reference.range, params.newName));
     }
 
     return { changes };
-  }
-
-  private async findSymbolAtPosition(document: any, text: string): Promise<any> {
-    if (!document.symbolTable) return undefined;
-
-    const allSymbols = await document.symbolTable.getAllNestedSymbols();
-    return allSymbols.find((symbol: any) => symbol.name === text);
   }
 
   private isValidIdentifier(name: string): boolean {
