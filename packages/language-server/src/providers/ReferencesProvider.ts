@@ -1,27 +1,89 @@
-import { Provider } from './Provider.js';
-import { Logger } from '../utils/Logger.js';
-import { ReferenceParams, Location } from 'vscode-languageserver';
-import { NavigationFeatures } from '../core/features/NavigationFeatures.js';
+import { Provider } from './Provider';
+import { Logger } from '../utils/Logger';
+import { ReferenceParams, Location, Range, DefinitionParams } from 'vscode-languageserver';
+import { TerminalSymbolWithReferences } from '../core/models/symbols/TerminalSymbolWithReferences';
+import { RangeUtils } from '../utils/RangeUtils';
+import { WorkflowSymbol } from '../core/models/symbols/WorkflowSymbol';
+import { TerminalSymbolReference } from '../core/models/TerminalSymbolReference';
+import { WorkflowNameReadContext } from '@extremexp/core/src/language/generated/XXPParser';
 
 export class ReferencesProvider extends Provider {
-  private logger = Logger.getInstance();
-  private navigationFeatures = new NavigationFeatures();
+	private logger = Logger.getLogger();
 
-  public addHandlers(): void {
-    this.connection?.onReferences(params => this.onReferences(params));
-  }
+	addHandlers(): void {
+		this.connection!.onReferences(referenceParams => this.onReferences(referenceParams));
+		this.connection!.onDefinition(tokenPosition => this.onDefinition(tokenPosition));
+	}
 
-  private async onReferences(params: ReferenceParams): Promise<Location[] | null> {
-    this.logger.info(`Received references request for document: ${params.textDocument.uri}`);
+	private async onReferences(params: ReferenceParams): Promise<Location[] | null> {
+		this.logger.info(`Received references request for document: ${params.textDocument.uri}`);
 
-    const result = this.getDocumentAndPosition(params.textDocument, params.position);
-    if (!result) return null;
-    const [document, tokenPosition] = result;
+		const result = super.getDocumentAndPosition(params.textDocument, params.position);
+		if (!result) return Promise.resolve(null);
+		const [document, tokenPosition] = result;
 
-    return this.navigationFeatures.findReferences(
-      document, 
-      tokenPosition, 
-      params.context.includeDeclaration
-    );
-  }
+		let symbol: TerminalSymbolWithReferences | WorkflowSymbol;
+
+		if (tokenPosition.parseTree instanceof WorkflowNameReadContext) {
+			const folderSymbolTable = document.workflowSymbolTable?.parent;
+			const workflowSymbol = await folderSymbolTable?.resolve(tokenPosition.text, true);
+			if (!(workflowSymbol instanceof WorkflowSymbol)) return null;
+			symbol = workflowSymbol;
+		} else {
+			const terminalSymbol = await document.workflowSymbolTable?.resolve(tokenPosition.text, true);
+			if (!(terminalSymbol instanceof TerminalSymbolWithReferences)) return null;
+			symbol = terminalSymbol;
+		}
+
+		const locations = this.getLocationsFromReferences(symbol.references);
+
+		if (params.context.includeDeclaration && symbol.context) {
+			const definitionLocation = this.getLocationFromDeclaration(symbol);
+			if (definitionLocation) locations.push(definitionLocation);
+		}
+
+		return locations;
+	}
+
+	public async onDefinition(params: DefinitionParams): Promise<Location | null | undefined> {
+		this.logger.info(`Received definition request for document: ${params.textDocument.uri}`);
+
+		const result = super.getDocumentAndPosition(params.textDocument, params.position);
+		if (!result) return Promise.resolve(null);
+		const [document, tokenPosition] = result;
+
+		let defitionSymbol: TerminalSymbolWithReferences | WorkflowSymbol;
+
+		if (tokenPosition.parseTree instanceof WorkflowNameReadContext) {
+			const folderSymbolTable = document.workflowSymbolTable?.parent;
+			const workflowSymbol = await folderSymbolTable?.resolve(tokenPosition.text, true);
+			if (!(workflowSymbol instanceof WorkflowSymbol)) return null;
+			defitionSymbol = workflowSymbol;
+		} else {
+			const terminalSymbol = await document.workflowSymbolTable?.resolve(tokenPosition.text, true);
+			if (!(terminalSymbol instanceof TerminalSymbolWithReferences)) return null;
+			defitionSymbol = terminalSymbol;
+		}
+
+		if (!defitionSymbol.context) return null;
+		return this.getLocationFromDeclaration(defitionSymbol);
+	}
+
+	private getLocationsFromReferences(references: TerminalSymbolReference[]): Location[] {
+		return references.map(ref => ({
+			uri: ref.document.uri,
+			range: Range.create(ref.node.symbol.line - 1, ref.node.symbol.column, ref.node.symbol.line - 1, ref.node.symbol.column + ref.node.getText().length),
+		}));
+	}
+
+	private getLocationFromDeclaration(symbol: TerminalSymbolWithReferences | WorkflowSymbol): Location | undefined {
+		const parseTree = symbol instanceof TerminalSymbolWithReferences ? symbol.context : symbol.context?.getChild(0);
+		const definitionRange = RangeUtils.getRangeFromParseTree(parseTree!);
+		if (!definitionRange) return undefined;
+
+		return {
+			uri: symbol.document.uri,
+			range: definitionRange,
+		};
+	}
 }

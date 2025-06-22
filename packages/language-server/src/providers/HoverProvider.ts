@@ -1,168 +1,81 @@
-import { Provider } from './Provider.js';
-import { Logger } from '../utils/Logger.js';
+import { Provider } from './Provider';
+import { Logger } from '../utils/Logger';
 import { Hover, HoverParams, MarkupContent } from 'vscode-languageserver';
-import { DataSymbol } from '../core/symbols/DataSymbol.js';
-import { TaskSymbol } from '../core/symbols/TaskSymbol.js';
-import { WorkflowSymbol } from '../core/symbols/WorkflowSymbol.js';
-import { SpaceSymbol } from '../core/symbols/SpaceSymbol.js';
-import { ExperimentSymbol } from '../core/symbols/ExperimentSymbol.js';
-import { Document as LSDocument } from '../core/documents/Document.js';
-import { BaseSymbol } from 'antlr4-c3';
+import { DataSymbol } from '../core/models/symbols/DataSymbol';
+import { TaskSymbol } from '../core/models/symbols/TaskSymbol';
+import { WorkflowSymbol } from '../core/models/symbols/WorkflowSymbol';
 
 export class HoverProvider extends Provider {
-  private logger = Logger.getInstance();
+	private logger = Logger.getLogger();
 
-  public addHandlers(): void {
-    this.connection?.onHover((params: HoverParams) => this.onHover(params));
-  }
+	addHandlers(): void {
+		this.connection?.onHover((params) => this.onHover(params));
+	}
 
-  private async onHover(params: HoverParams): Promise<Hover | undefined> {
-    this.logger.info(`Received hover request for document: ${params.textDocument.uri}`);
+	private async onHover(params: HoverParams): Promise<Hover | undefined> {
+		this.logger.info(`Recieved hover request for document: ${params.textDocument.uri}`);
 
-    const result = this.getDocumentAndPosition(params.textDocument, params.position);
-    if (!result) return undefined;
-    const [document, tokenPosition] = result;
+		const result = super.getDocumentAndPosition(params.textDocument, params.position);
+		if (!result) return;
+		const [document, tokenPosition] = result;
 
-    if (!document.symbolTable) return undefined;
+		if (document.symbolTable === undefined) return;
 
-    const symbol = await this.findSymbolAtPosition(document, tokenPosition.text);
-    if (!symbol) {
-      this.logger.debug(`No hover information available for symbol: ${tokenPosition.text}`);
-      return undefined;
-    }
+		const symbol = await document.workflowSymbolTable?.resolve(tokenPosition.text, true);
+		if (symbol instanceof TaskSymbol) {
+			return { contents: this.getTaskHoverInformation(symbol) };
+		}
 
-    return { contents: this.getHoverContent(symbol) };
-  }
+		if (symbol instanceof DataSymbol) {
+			return { contents: this.getDataHoverInformation(symbol) };
+		}
 
-  private async findSymbolAtPosition(
-    document: LSDocument,
-    text: string
-  ): Promise<BaseSymbol | undefined> {
-    if (!document.symbolTable) return undefined;
+		this.logger.debug(`No hover information available for symbol: ${tokenPosition.text}`);
+		return { contents: [] };
+	}
 
-    // Search in different symbol types
-    const allSymbols = await document.symbolTable.getAllNestedSymbols();
-    return allSymbols.find((symbol: BaseSymbol) => symbol.name === text);
-  }
+	private getTaskHoverInformation(task: TaskSymbol): MarkupContent {
+		let content = `### Task: ${task.name}\n\n`;
 
-  private getHoverContent(symbol: BaseSymbol): MarkupContent {
-    if (symbol instanceof TaskSymbol) {
-      return this.getTaskHoverInformation(symbol);
-    } else if (symbol instanceof DataSymbol) {
-      return this.getDataHoverInformation(symbol);
-    } else if (symbol instanceof WorkflowSymbol) {
-      return this.getWorkflowHoverInformation(symbol);
-    } else if (symbol instanceof SpaceSymbol) {
-      return this.getSpaceHoverInformation(symbol);
-    } else if (symbol instanceof ExperimentSymbol) {
-      return this.getExperimentHoverInformation(symbol);
-    }
+		// Add parameters if available
+		if (task.params.length > 0) {
+			content += `**Parameters:**\n\n`;
+			content += task.params.map(param => `- \`${param}\``).join('\n') + '\n\n';
+		}
 
-    return {
-      kind: 'markdown',
-      value: `**${symbol.constructor.name}**: ${symbol.name}`,
-    };
-  }
+		// Add implementation details
+		if (task.implementation) {
+			if (typeof task.implementation === 'string') {
+				content += `**Implementation:**\n\n`;
+				content += `\`${task.implementation}\`\n\n`;
+			} else if (task.implementation instanceof WorkflowSymbol) {
+				content += `**Implementation:**\n\n`;
+				content += `Reference to \`${task.implementation.name}\`\n\n`;
+			}
+		} else {
+			content += `**Implementation:**\n\nNone\n\n`;
+		}
 
-  private getTaskHoverInformation(task: TaskSymbol): MarkupContent {
-    let content = `### Task: ${task.name}\n\n`;
+		return {
+			kind: 'markdown',
+			value: content.trim(),
+		};
+	}
 
-    if (task.implementation) {
-      content += `**Implementation:** \`${task.implementation}\`\n\n`;
-    }
+	private getDataHoverInformation(data: DataSymbol): MarkupContent {
+		let content = `### Data: ${data.name}\n\n`;
 
-    if (task.params.length > 0) {
-      content += `**Parameters:**\n${task.params.map(param => `- \`${param}\``).join('\n')}\n\n`;
-    }
+		// Add schema file path if available
+		if (data.schemaFilePath) {
+			content += `**Schema File Path:**\n\n`;
+			content += `\`${data.schemaFilePath}\`\n\n`;
+		} else {
+			content += `**Schema File Path:**\n\nNone\n\n`;
+		}
 
-    if (task.inputs.length > 0) {
-      content += `**Inputs:**\n${task.inputs.map(input => `- \`${input}\``).join('\n')}\n\n`;
-    }
-
-    if (task.outputs.length > 0) {
-      content += `**Outputs:**\n${task.outputs.map(output => `- \`${output}\``).join('\n')}\n\n`;
-    }
-
-    content += `**References:** ${task.references.length}`;
-
-    return {
-      kind: 'markdown',
-      value: content.trim(),
-    };
-  }
-
-  private getDataHoverInformation(data: DataSymbol): MarkupContent {
-    let content = `### Data: ${data.name}\n\n`;
-
-    if (data.value) {
-      content += `**Value:** \`${data.value}\`\n\n`;
-    }
-
-    content += `**References:** ${data.references.length}`;
-
-    return {
-      kind: 'markdown',
-      value: content.trim(),
-    };
-  }
-
-  private getWorkflowHoverInformation(workflow: WorkflowSymbol): MarkupContent {
-    let content = `### Workflow: ${workflow.name}\n\n`;
-
-    if (workflow.parentWorkflow) {
-      content += `**Inherits from:** \`${workflow.parentWorkflow.name}\`\n\n`;
-    }
-
-    const tasks = workflow.getNestedSymbolsOfTypeSync(TaskSymbol);
-    const data = workflow.getNestedSymbolsOfTypeSync(DataSymbol);
-
-    content += `**Tasks:** ${tasks.length}\n`;
-    content += `**Data:** ${data.length}\n`;
-    content += `**References:** ${workflow.references.length}`;
-
-    return {
-      kind: 'markdown',
-      value: content.trim(),
-    };
-  }
-
-  private getSpaceHoverInformation(space: SpaceSymbol): MarkupContent {
-    let content = `### Space: ${space.name}\n\n`;
-    content += `**Workflow:** \`${space.workflowName}\`\n\n`;
-
-    if (space.strategy) {
-      content += `**Strategy:** \`${space.strategy}\`\n\n`;
-    }
-
-    if (space.params.size > 0) {
-      content += `**Parameters:** ${space.params.size}\n`;
-      for (const [key, value] of space.params.entries()) {
-        content += `- \`${key}\`: ${JSON.stringify(value)}\n`;
-      }
-      content += '\n';
-    }
-
-    content += `**References:** ${space.references.length}`;
-
-    return {
-      kind: 'markdown',
-      value: content.trim(),
-    };
-  }
-
-  private getExperimentHoverInformation(experiment: ExperimentSymbol): MarkupContent {
-    let content = `### Experiment: ${experiment.name}\n\n`;
-
-    const spaces = experiment.getNestedSymbolsOfTypeSync(SpaceSymbol);
-    const data = experiment.getNestedSymbolsOfTypeSync(DataSymbol);
-
-    content += `**Spaces:** ${spaces.length}\n`;
-    content += `**Data:** ${data.length}\n`;
-    content += `**References:** ${experiment.references.length}`;
-
-    return {
-      kind: 'markdown',
-      value: content.trim(),
-    };
-  }
+		return {
+			kind: 'markdown',
+			value: content.trim(),
+		};
+	}
 }

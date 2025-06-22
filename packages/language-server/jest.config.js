@@ -17,35 +17,44 @@ export default {
     '<rootDir>/src/**/*.(test|spec).(js|ts)'
   ],
   
-  // Module file extensions
-  moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json'],
+  // Ignore patterns
+  testPathIgnorePatterns: [
+    '<rootDir>/node_modules/',
+    '<rootDir>/dist/'
+  ],
+  
+  // Module name mapping for internal imports
+  moduleNameMapper: {
+    '^@extremexp/core$': '<rootDir>/../core/src/index.ts',
+    '^@extremexp/core/(.*)$': '<rootDir>/../core/src/$1',
+    '^@extremexp/language-server$': '<rootDir>/src/index.ts',
+    '^@extremexp/language-server/(.*)$': '<rootDir>/src/$1',
+    '^(\\.{1,2}/.*)\\.js$': '$1' // Map .js extensions to .ts for imports
+  },
   
   // Transform configuration
+  extensionsToTreatAsEsm: ['.ts'],
   transform: {
-    '^.+\\.(ts|tsx)$': ['ts-jest', {
+    '^.+\\.ts$': ['ts-jest', {
       useESM: true,
       tsconfig: {
-        module: 'ESNext'
+        module: 'ESNext',
+        moduleResolution: 'node'
       }
     }]
   },
   
-  // Module name mapping
-  moduleNameMapping: {
-    '^(\\.{1,2}/.*)\\.js$': '$1'
-  },
+  // Module file extensions
+  moduleFileExtensions: ['ts', 'js', 'json'],
   
   // Coverage settings
+  collectCoverage: false,
   collectCoverageFrom: [
-    'src/**/*.{ts,tsx}',
+    'src/**/*.ts',
     '!src/**/*.d.ts',
-    '!src/**/__tests__/**',
-    '!src/**/types/**'
+    '!src/**/*.test.ts',
+    '!src/**/*.spec.ts'
   ],
-  
-  // Setup files
-  setupFilesAfterEnv: [],
-  
-  // Test timeout
-  testTimeout: 30000
+  coverageDirectory: '<rootDir>/coverage',
+  coverageReporters: ['text', 'lcov', 'html']
 };

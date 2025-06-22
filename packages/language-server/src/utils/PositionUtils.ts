@@ -1,99 +1,73 @@
 import { ParseTree, TokenStream, ParserRuleContext, TerminalNode, Token } from 'antlr4ng';
+import { TokenPosition } from '../core/models/TokenPosition';
+import { CaretPosition } from '../core/models/CaretPosition';
 import { Position } from 'vscode-languageserver-textdocument';
-import { CaretPosition, TokenPosition } from '../core/types/Position.js';
 
-export class PositionUtils {
-  public static getCurrentPosition(
-    parseTree: ParseTree,
-    tokens: TokenStream,
-    position: Position
-  ): TokenPosition | undefined {
-    const caretPosition: CaretPosition = {
-      line: position.line + 1,
-      column: position.character,
-    };
-    return this.getCurrentPositionFromCaretPosition(parseTree, tokens, caretPosition);
-  }
+export abstract class PositionUtils {
 
-  public static getCurrentPositionFromCaretPosition(
-    parseTree: ParseTree,
-    tokens: TokenStream,
-    caretPosition: CaretPosition
-  ): TokenPosition | undefined {
-    const { index, token } = this.getNearestTokenIndex(tokens, caretPosition);
-    const terminalNodeOrParentRule = this.findTerminalNodeOrParentRule(
-      parseTree as ParserRuleContext,
-      index
-    );
+	public static getCurrentPosition(parseTree: ParseTree, tokens: TokenStream, position: Position): TokenPosition | undefined {
+		const caretPosition: CaretPosition = { line: position.line + 1, column: position.character };
+		return this.getCurrentPositionFromCaretPosition(parseTree, tokens, caretPosition);
+	}
 
-    let terminalNode: TerminalNode | undefined;
-    let parserRule: ParserRuleContext;
 
-    if (terminalNodeOrParentRule instanceof TerminalNode) {
-      terminalNode = terminalNodeOrParentRule;
-      parserRule = terminalNode.parent as ParserRuleContext;
-    } else {
-      parserRule = terminalNodeOrParentRule as ParserRuleContext;
-    }
+	public static getCurrentPositionFromCaretPosition(parseTree: ParseTree, tokens: TokenStream, caretPosition: CaretPosition): TokenPosition | undefined {
+		const { index, token } = this.getNearestTokenIndex(tokens, caretPosition);
+		const terminalNodeOrParentRule = this.findTerminalNodeOrParentRule(parseTree as ParserRuleContext, index);
 
-    if (token && parserRule) {
-      const text = token.text || '';
-      return {
-        index,
-        parseTree: parserRule,
-        text: text.trim(),
-        terminalNode,
-      };
-    }
+		let terminalNode: TerminalNode | undefined = undefined
+		let parserRule: ParserRuleContext;
 
-    return undefined;
-  }
+		if (terminalNodeOrParentRule instanceof TerminalNode) {
+			terminalNode = terminalNodeOrParentRule;
+			parserRule = terminalNode.parent as ParserRuleContext;
+		} else {
+			parserRule = terminalNodeOrParentRule as ParserRuleContext;
+		}
 
-  private static getNearestTokenIndex(
-    tokens: TokenStream,
-    caretPosition: CaretPosition
-  ): { index: number; token: Token } {
-    let index = 0;
-    let token: Token = tokens.get(index);
+		if (token && parserRule) {
+			const text = token.text || "";
+			return {
+				index,
+				parseTree: parserRule,
+				text: text.trim(),
+				terminalNode: terminalNode
+			}
+		}
 
-    for (index = 0; ; ++index) {
-      token = tokens.get(index);
-      if (
-        token.type === Token.EOF ||
-        token.line > caretPosition.line ||
-        index === tokens.size - 1
-      ) {
-        break;
-      }
-      if (token.line < caretPosition.line) {
-        continue;
-      }
-      const length = token.text ? token.text.length : 0;
-      if (token.column + length >= caretPosition.column) {
-        break;
-      }
-    }
+		return undefined;
+	}
 
-    return { index, token };
-  }
+	private static getNearestTokenIndex(tokens: TokenStream, caretPosition: CaretPosition): { index: number, token: Token } {
+		let index: number = 0;
+		let token: Token = tokens.get(index);
 
-  private static findTerminalNodeOrParentRule(
-    parseTree: ParserRuleContext,
-    tokenIndex: number
-  ): TerminalNode | ParserRuleContext {
-    for (const child of parseTree.children) {
-      if (child instanceof TerminalNode && child.symbol.tokenIndex === tokenIndex) {
-        return child;
-      } else if (
-        child instanceof ParserRuleContext &&
-        child.start &&
-        child.stop &&
-        child.start.tokenIndex <= tokenIndex &&
-        child.stop.tokenIndex >= tokenIndex
-      ) {
-        return this.findTerminalNodeOrParentRule(child, tokenIndex);
-      }
-    }
-    return parseTree;
-  }
+		for (index = 0; ; ++index) {
+			token = tokens.get(index);
+			if (token.type === Token.EOF || token.line > caretPosition.line || index === tokens.size - 1) {
+				break;
+			}
+			if (token.line < caretPosition.line) {
+				continue;
+			}
+			const length = token.text ? token.text.length : 0;
+			if ((token.column + length) >= caretPosition.column) {
+				break;
+			}
+		}
+
+		return { index, token };
+	}
+
+	private static findTerminalNodeOrParentRule(parseTree: ParserRuleContext, tokenIndex: number): TerminalNode | ParserRuleContext {
+		for (const child of parseTree.children) {
+			if (child instanceof TerminalNode && child.symbol.tokenIndex === tokenIndex) {
+				return child; // Found terminal node
+			} else if (child instanceof ParserRuleContext && child.start && child.stop && child.start.tokenIndex <= tokenIndex && child.stop.tokenIndex >= tokenIndex) {
+				return this.findTerminalNodeOrParentRule(child, tokenIndex);
+			}
+		}
+
+		return parseTree; // Found parent rule
+	}
 }

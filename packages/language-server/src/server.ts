@@ -1,69 +1,73 @@
 import {
-  createConnection,
-  TextDocuments,
-  ProposedFeatures,
-  InitializeParams,
-  TextDocumentSyncKind,
-  InitializeResult,
-  Connection,
-  ServerCapabilities,
-  CodeActionKind,
+	createConnection,
+	TextDocuments,
+	ProposedFeatures,
+	InitializeParams,
+	TextDocumentSyncKind,
+	InitializeResult,
+	Connection,
+	ServerCapabilities,
 } from 'vscode-languageserver/node.js';
 import { TextDocument } from 'vscode-languageserver-textdocument';
-import { DocumentManager } from './core/managers/DocumentManager.js';
-import { ProvidersManager } from './core/managers/ProvidersManager.js';
-import { Logger } from './utils/Logger.js';
 
+import { Logger } from './utils/Logger';
+import { DocumentManager } from './core/managers/DocumentsManager';
+import { ProvidersManager } from './core/managers/ProvidersManager';
+
+// Create a connection for the server
 const connection: Connection = createConnection(ProposedFeatures.all);
-const logger = Logger.initialize(connection);
+const logger = Logger.setupLogger(connection);
+
+// Create a document manager with all open documents
 const documents: TextDocuments<TextDocument> = new TextDocuments(TextDocument);
+
+// Create our core services
 const documentManager = new DocumentManager();
+
+// Create a providers manager
 const providersManager = new ProvidersManager(connection, documentManager);
 
 connection.onInitialize((params: InitializeParams): InitializeResult => {
-  logger.info('Initializing DSL Language Server');
+	logger.info('Initializing XXP Language Server');
 
-  const capabilities: ServerCapabilities = {
-    textDocumentSync: TextDocumentSyncKind.Incremental,
-    completionProvider: {
-      resolveProvider: true,
-      triggerCharacters: ['.', ':', ' ', '"'],
-    },
-    hoverProvider: true,
-    definitionProvider: true,
-    referencesProvider: true,
-    renameProvider: { prepareProvider: false },
-    documentSymbolProvider: true,
-    codeActionProvider: {
-      codeActionKinds: [
-        CodeActionKind.QuickFix,
-        CodeActionKind.Refactor,
-        CodeActionKind.RefactorExtract,
-        CodeActionKind.RefactorInline,
-      ],
-    },
-    diagnosticProvider: {
-      interFileDependencies: true,
-      workspaceDiagnostics: false,
-    },
-  };
+	// Declare server capabilities
+	const capabilities: ServerCapabilities = {
+		textDocumentSync: TextDocumentSyncKind.Incremental,
+		completionProvider: {
+			resolveProvider: true
+		},
+		hoverProvider: true,
+		definitionProvider: true,
+		referencesProvider: true,
+		renameProvider: {
+			prepareProvider: false,
+		},
+		diagnosticProvider: {
+			interFileDependencies: true,
+			workspaceDiagnostics: false
+		},
+	};
 
-  return { capabilities };
+	return {
+		capabilities,
+	};
 });
 
 connection.onInitialized(() => {
-  logger.info('DSL Language Server initialized');
-  providersManager.registerProviders();
+	logger.info('XXP Language Server initialized');
 });
 
-// Handle shutdown request
-connection.onShutdown(() => {
-  logger.info('DSL Language Server shutting down');
-});
-
+// Register handlers for document lifecycle events
 documents.onDidOpen(e => documentManager.onDocumentOpened(e.document));
 documents.onDidClose(e => documentManager.onDocumentClosed(e.document));
 documents.onDidChangeContent(e => documentManager.onDocumentChanged(e.document));
+documents.onDidSave(e => documentManager.onDocumentSaved(e.document));
 
+// Make the text document manager listen on the connection
 documents.listen(connection);
+
+// Listen on the connection
 connection.listen();
+
+// Register providers
+providersManager.registerProviders();
