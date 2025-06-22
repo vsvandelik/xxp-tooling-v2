@@ -23,6 +23,7 @@ export {
   ParamAssignmentContext,
   DataNameReadContext,
   TaskNameReadContext,
+  FileNameStringContext,
 } from './language/generated/XXPParser.js';
 
 // Export utility functions

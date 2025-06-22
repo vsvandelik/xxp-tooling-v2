@@ -27,7 +27,7 @@ export default {
   moduleNameMapper: {
     '^@extremexp/core$': '<rootDir>/../core/src/index.ts',
     '^@extremexp/core/(.*)$': '<rootDir>/../core/src/$1',
-    '^@extremexp/language-server$': '<rootDir>/src/index.ts',
+    '^@extremexp/language-server$': '<rootDir>/src/server.ts',
     '^@extremexp/language-server/(.*)$': '<rootDir>/src/$1',
     '^(\\.{1,2}/.*)\\.js$': '$1' // Map .js extensions to .ts for imports
   },

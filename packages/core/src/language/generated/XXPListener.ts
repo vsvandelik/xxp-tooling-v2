@@ -24,6 +24,7 @@ import { DataNameListContext } from "./XXPParser.js";
 import { WorkflowNameReadContext } from "./XXPParser.js";
 import { DataNameReadContext } from "./XXPParser.js";
 import { TaskNameReadContext } from "./XXPParser.js";
+import { FileNameStringContext } from "./XXPParser.js";
 import { ExpressionContext } from "./XXPParser.js";
 
 
@@ -242,6 +243,16 @@ export class XXPListener implements ParseTreeListener {
      * @param ctx the parse tree
      */
     exitTaskNameRead?: (ctx: TaskNameReadContext) => void;
+    /**
+     * Enter a parse tree produced by `XXPParser.fileNameString`.
+     * @param ctx the parse tree
+     */
+    enterFileNameString?: (ctx: FileNameStringContext) => void;
+    /**
+     * Exit a parse tree produced by `XXPParser.fileNameString`.
+     * @param ctx the parse tree
+     */
+    exitFileNameString?: (ctx: FileNameStringContext) => void;
     /**
      * Enter a parse tree produced by `XXPParser.expression`.
      * @param ctx the parse tree

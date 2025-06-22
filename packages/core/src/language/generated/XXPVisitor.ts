@@ -24,6 +24,7 @@ import { DataNameListContext } from "./XXPParser.js";
 import { WorkflowNameReadContext } from "./XXPParser.js";
 import { DataNameReadContext } from "./XXPParser.js";
 import { TaskNameReadContext } from "./XXPParser.js";
+import { FileNameStringContext } from "./XXPParser.js";
 import { ExpressionContext } from "./XXPParser.js";
 
 
@@ -161,6 +162,12 @@ export class XXPVisitor<Result> extends AbstractParseTreeVisitor<Result> {
      * @return the visitor result
      */
     visitTaskNameRead?: (ctx: TaskNameReadContext) => Result;
+    /**
+     * Visit a parse tree produced by `XXPParser.fileNameString`.
+     * @param ctx the parse tree
+     * @return the visitor result
+     */
+    visitFileNameString?: (ctx: FileNameStringContext) => Result;
     /**
      * Visit a parse tree produced by `XXPParser.expression`.
      * @param ctx the parse tree

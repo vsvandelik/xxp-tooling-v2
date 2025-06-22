@@ -9,21 +9,22 @@ import { TaskVisitor } from '../visitors/TaskVisitor.js';
 import { ScopedSymbol } from 'antlr4-c3';
 import { FileVisitor } from '../visitors/FileVisitor.js';
 import { Document } from '../../../core/documents/Document.js';
-import { XXPVisitor } from '@extremexp/core';
-import {
-  DataDefinitionContext,
-  TaskConfigurationContext,
-  ParamAssignmentContext,
-  WorkflowNameReadContext,
-  TaskNameReadContext,
-} from '@extremexp/core/src/language/generated/ESPACEParser';
+import { FileNameStringContext, ParamAssignmentContext, XXPVisitor } from '@extremexp/core';
 import {
   WorkflowHeaderContext,
   WorkflowBodyContext,
+  DataDefinitionContext,
   TaskDefinitionContext,
+  TaskConfigurationContext,
   ImplementationContext,
   DataNameReadContext,
 } from '@extremexp/core';
+import {
+  InputStatementContext,
+  OutputStatementContext,
+  TaskNameReadContext,
+  WorkflowNameReadContext,
+} from '@extremexp/core/src/language/generated/XXPParser.js';
 
 export class XxpSymbolTableBuilder
   extends AbstractParseTreeVisitor<DocumentSymbolTable>
@@ -36,7 +37,6 @@ export class XxpSymbolTableBuilder
   private readonly dataVisitor: DataVisitor;
   private readonly taskVisitor: TaskVisitor;
   private readonly variableReadVisitor: VariableReadVisitor;
-  //private readonly dataChainVisitor: DataChainVisitor;
   private readonly fileVisitor: FileVisitor;
 
   constructor(
@@ -50,25 +50,51 @@ export class XxpSymbolTableBuilder
     this.dataVisitor = new DataVisitor(this);
     this.taskVisitor = new TaskVisitor(this);
     this.variableReadVisitor = new VariableReadVisitor(this);
-    //this.dataChainVisitor = new DataChainVisitor(this);
     this.fileVisitor = new FileVisitor(this);
   }
 
   public override defaultResult(): DocumentSymbolTable {
     return this.symbolTable;
   }
-  /*
-	visitWorkflowHeader(ctx: WorkflowHeaderContext): DocumentSymbolTable { return this.workflowVisitor.visitHeader(ctx); }
-	visitWorkflowBody(ctx: WorkflowBodyContext): DocumentSymbolTable { return this.workflowVisitor.visitBody(ctx); }
-	visitDataDefinition(ctx: DataDefinitionContext): DocumentSymbolTable { return this.dataVisitor.visitDefinition(ctx); }
-	visitSchemaDefinition(ctx: SchemaDefinitionContext): DocumentSymbolTable { return this.dataVisitor.visitSchema(ctx); }
-	visitTaskDefinition(ctx: TaskDefinitionContext): DocumentSymbolTable { return this.taskVisitor.visitDefinition(ctx); }
-	visitTaskConfiguration(ctx: TaskConfigurationContext): DocumentSymbolTable { return this.taskVisitor.visitConfiguration(ctx); }
-	visitParamAssignment(ctx: ParamAssignmentContext): DocumentSymbolTable { return this.taskVisitor.visitParam(ctx); }
-	visitImplementation(ctx: ImplementationContext): DocumentSymbolTable { return this.taskVisitor.visitImplementation(ctx); }
-	visitWorkflowNameRead(ctx: WorkflowNameReadContext): DocumentSymbolTable { return this.variableReadVisitor.visitWorkflow(ctx); }
-	visitDataNameRead(ctx: DataNameReadContext): DocumentSymbolTable { return this.variableReadVisitor.visitData(ctx); }
-	visitTaskNameRead(ctx: TaskNameReadContext): DocumentSymbolTable { return this.variableReadVisitor.visitTask(ctx); }
-	visitDataChain(ctx: DataChainContext): DocumentSymbolTable { return this.dataChainVisitor.visitChain(ctx); }
-	visitFileNameString(ctx: FileNameStringContext): DocumentSymbolTable { return this.fileVisitor.visitFileName(ctx); }*/
+
+  visitWorkflowHeader(ctx: WorkflowHeaderContext): DocumentSymbolTable {
+    return this.workflowVisitor.visitHeader(ctx);
+  }
+  visitWorkflowBody(ctx: WorkflowBodyContext): DocumentSymbolTable {
+    return this.workflowVisitor.visitBody(ctx);
+  }
+  visitDataDefinition(ctx: DataDefinitionContext): DocumentSymbolTable {
+    return this.dataVisitor.visitDefinition(ctx);
+  }
+  visitTaskDefinition(ctx: TaskDefinitionContext): DocumentSymbolTable {
+    return this.taskVisitor.visitDefinition(ctx);
+  }
+  visitTaskConfiguration(ctx: TaskConfigurationContext): DocumentSymbolTable {
+    return this.taskVisitor.visitConfiguration(ctx);
+  }
+  visitImplementation(ctx: ImplementationContext): DocumentSymbolTable {
+    return this.taskVisitor.visitImplementation(ctx);
+  }
+  visitParamAssignment(ctx: ParamAssignmentContext): DocumentSymbolTable {
+    return this.taskVisitor.visitParam(ctx);
+  }
+  visitInputStatement(ctx: InputStatementContext): DocumentSymbolTable {
+    return this.taskVisitor.visitInput(ctx);
+  }
+  visitOutputStatement(ctx: OutputStatementContext): DocumentSymbolTable {
+    return this.taskVisitor.visitOutput(ctx);
+  }
+
+  visitWorkflowNameRead(ctx: WorkflowNameReadContext): DocumentSymbolTable {
+    return this.variableReadVisitor.visitWorkflow(ctx);
+  }
+  visitDataNameRead(ctx: DataNameReadContext): DocumentSymbolTable {
+    return this.variableReadVisitor.visitData(ctx);
+  }
+  visitTaskNameRead(ctx: TaskNameReadContext): DocumentSymbolTable {
+    return this.variableReadVisitor.visitTask(ctx);
+  }
+  visitFileNameString(ctx: FileNameStringContext): DocumentSymbolTable {
+    return this.fileVisitor.visitFileName(ctx);
+  }
 }

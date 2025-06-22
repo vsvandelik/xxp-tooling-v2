@@ -33,7 +33,7 @@ configurationContent:
     | inputStatement
     | outputStatement;
 
-implementation: IMPLEMENTATION STRING SEMICOLON;
+implementation: IMPLEMENTATION fileNameString SEMICOLON;
 paramAssignment: PARAM IDENTIFIER (EQUALS expression)? SEMICOLON;
 inputStatement: INPUT dataNameList SEMICOLON;
 outputStatement: OUTPUT dataNameList SEMICOLON;
@@ -44,6 +44,9 @@ dataNameList: dataNameRead (COMMA dataNameRead)*;
 workflowNameRead: IDENTIFIER;
 dataNameRead: IDENTIFIER;
 taskNameRead: IDENTIFIER;
+
+// files
+fileNameString: STRING;
 
 // Expressions
 expression: NUMBER | STRING | BOOLEAN;

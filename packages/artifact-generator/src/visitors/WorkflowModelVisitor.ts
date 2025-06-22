@@ -115,7 +115,7 @@ export class WorkflowModelVisitor extends XXPVisitor<any> {
 
     for (const content of body.configurationContent()) {
       if (content.implementation()) {
-        implementation = content.implementation()!.STRING().getText().slice(1, -1); // Remove quotes
+        implementation = content.implementation()!.fileNameString().getText().slice(1, -1); // Remove quotes
       } else if (content.paramAssignment()) {
         const paramAssignment = content.paramAssignment()!;
         const paramName = paramAssignment.IDENTIFIER().getText();

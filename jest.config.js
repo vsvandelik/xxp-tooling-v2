@@ -2,12 +2,14 @@
 export default {
   // Root configuration that discovers all package configurations
   projects: [
-    '<rootDir>/packages/core',
     '<rootDir>/packages/artifact-generator', 
+    '<rootDir>/packages/core',
     '<rootDir>/packages/experiment-runner',
     '<rootDir>/packages/experiment-runner-server', 
+    '<rootDir>/packages/language-server',
     '<rootDir>/packages/vs-code-extension',
     '<rootDir>/packages/workflow-repository',
+    '<rootDir>/packages/workflow-repository-server',
   ],
 
   // Global coverage settings

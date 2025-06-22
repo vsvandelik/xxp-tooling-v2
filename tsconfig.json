@@ -46,10 +46,10 @@
     ],
     "references": [
         {
-            "path": "./packages/core"
+            "path": "./packages/artifact-generator"
         },
         {
-            "path": "./packages/artifact-generator"
+            "path": "./packages/core"
         },
         {
             "path": "./packages/experiment-runner"
@@ -58,13 +58,16 @@
             "path": "./packages/experiment-runner-server"
         },
         {
+            "path": "./packages/language-server"
+        },
+        {
+            "path": "./packages/vs-code-extension"
+        },
+        {
             "path": "./packages/workflow-repository"
         },
         {
             "path": "./packages/workflow-repository-server"
-        },
-        {
-            "path": "./packages/vs-code-extension"
         }
     ]
 }
