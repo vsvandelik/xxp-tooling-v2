@@ -1,7 +1,7 @@
 import { TaskConfigurationScopeSymbol } from '../../../core/models/symbols/TaskConfigurationScopeSymbol.js';
 import { TaskSymbol } from '../../../core/models/symbols/TaskSymbol.js';
 import { DocumentSymbolTable } from '../DocumentSymbolTable.js';
-import { addSymbolOfTypeWithContext, visitScopeSymbol } from '../helpers/SymbolHelpers.js';
+import { addSymbolOfTypeWithInheritanceCheck, visitScopeSymbol } from '../helpers/SymbolHelpers.js';
 import { XxpSymbolTableBuilder } from '../builders/XxpSymbolTableBuilder.js';
 import {
   ImplementationContext,
@@ -27,11 +27,12 @@ export class TaskVisitor {
     const taskName = identifier.getText();
     if (!taskName) return this.builder.defaultResult();
 
-    const taskSymbol = addSymbolOfTypeWithContext(
+    const taskSymbol = addSymbolOfTypeWithInheritanceCheck(
       this.builder,
       TaskSymbol,
       taskName,
       ctx,
+      'task',
       this.builder.currentScope,
       this.builder.document
     );
@@ -60,7 +61,7 @@ export class TaskVisitor {
       TaskConfigurationScopeSymbol,
       ctx.taskConfigurationBody(),
       taskSymbol
-    );
+    ) as DocumentSymbolTable;
   }
 
   public visitImplementation(ctx: ImplementationContext): DocumentSymbolTable {

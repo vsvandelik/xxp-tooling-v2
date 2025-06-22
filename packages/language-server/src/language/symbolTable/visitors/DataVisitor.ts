@@ -1,6 +1,6 @@
 import { DataSymbol } from '../../../core/models/symbols/DataSymbol.js';
 import { DocumentSymbolTable } from '../DocumentSymbolTable.js';
-import { addSymbolOfTypeWithContext } from '../helpers/SymbolHelpers.js';
+import { addSymbolOfTypeWithInheritanceCheck } from '../helpers/SymbolHelpers.js';
 import { XxpSymbolTableBuilder } from '../builders/XxpSymbolTableBuilder.js';
 import { DataDefinitionContext } from '@extremexp/core';
 
@@ -16,16 +16,15 @@ export class DataVisitor {
     const dataName = identifier.getText();
     if (!dataName) return this.builder.defaultResult();
 
-    addSymbolOfTypeWithContext(
+    addSymbolOfTypeWithInheritanceCheck(
       this.builder,
       DataSymbol,
       dataName,
       ctx,
+      'data',
       this.builder.currentScope,
       this.builder.document
     );
-
-    /* TODO: Handle define data which are overriding existing data -> error */
 
     return this.builder.visitChildren(ctx) as DocumentSymbolTable;
   }

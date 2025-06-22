@@ -1,0 +1,26 @@
+=== parentWorkflow.xxp ===
+workflow ParentWorkflow {
+    define data existingData;
+    define task existingTask;
+    define data anotherData;
+    
+    existingTask -> END;
+}
+
+=== childWorkflow.xxp ===
+workflow ChildWorkflow from ParentWorkflow {
+    define data newData;          // Should be fine - new data  
+    define data existingData;     // Should cause error - overriding parent data (line 2)
+    define task newTask;          // Should be fine - new task
+    define task existingTask;     // Should cause error - overriding parent task (line 4)
+    define data anotherData;      // Should cause error - overriding parent data (line 5)
+    
+    newTask -> END;
+}
+
+=== ERRORS ===
+- Cannot override data 'existingData' from parent workflow at childWorkflow.xxp:2:4
+- Cannot override task 'existingTask' from parent workflow at childWorkflow.xxp:4:4
+- Cannot override data 'anotherData' from parent workflow at childWorkflow.xxp:5:4
+
+=== WARNINGS ===
