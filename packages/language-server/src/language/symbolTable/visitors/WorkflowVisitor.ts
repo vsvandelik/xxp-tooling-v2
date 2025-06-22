@@ -1,4 +1,3 @@
-import { TaskSymbol } from '../../../core/models/symbols/TaskSymbol.js';
 import { WorkflowSymbol } from '../../../core/models/symbols/WorkflowSymbol.js';
 import { FileUtils } from '../../../utils/FileUtils.js';
 import { DocumentSymbolTable } from '../DocumentSymbolTable.js';
@@ -51,9 +50,6 @@ export class WorkflowVisitor {
   }
 
   public visitBody(ctx: WorkflowBodyContext): DocumentSymbolTable {
-    if (!this.hasParentWorkflowSymbol()) {
-      this.addWorkflowGlobalSymbols(ctx);
-    }
     return this.builder.visitChildren(ctx) as DocumentSymbolTable;
 
     /* TODO: check if the task chains exists */
@@ -122,17 +118,5 @@ export class WorkflowVisitor {
         `Workflow name '${workflowName}' does not match file name '${actualFileName}'. Expected '${expectedFileName}'.`
       );
     }
-  }
-
-  private hasParentWorkflowSymbol(): boolean {
-    return (
-      this.builder.currentScope instanceof WorkflowSymbol &&
-      !!this.builder.currentScope.parentWorkflowSymbol
-    );
-  }
-
-  private addWorkflowGlobalSymbols(ctx: WorkflowBodyContext): void {
-    addSymbolOfTypeWithContext(this.builder, TaskSymbol, 'START', ctx, this.builder.currentScope);
-    addSymbolOfTypeWithContext(this.builder, TaskSymbol, 'END', ctx, this.builder.currentScope);
   }
 }

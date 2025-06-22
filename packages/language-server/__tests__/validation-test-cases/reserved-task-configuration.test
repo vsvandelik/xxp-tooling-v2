@@ -1,0 +1,23 @@
+=== testWorkflow.xxp ===
+workflow TestWorkflow {
+    define data testData;
+    define task myTask;
+    
+    START -> myTask -> END;
+    
+    configure task myTask {
+        param taskParam = "value";
+    }
+    
+    configure task START {
+    }
+    
+    configure task END {
+    }
+}
+
+=== ERRORS ===
+- mismatched input 'END' expecting IDENTIFIER at testWorkflow.xxp:13:19
+- mismatched input 'START' expecting IDENTIFIER at testWorkflow.xxp:10:19
+
+=== WARNINGS ===

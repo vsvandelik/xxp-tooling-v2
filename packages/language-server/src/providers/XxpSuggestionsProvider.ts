@@ -116,8 +116,6 @@ export class XxpSuggestionsProvider extends Provider {
         symbolTable,
         CompletionItemKind.Variable
       );
-
-      /* TODO: don't allow configuring START and END tasks */
     }
 
     return proposedSymbols;
@@ -183,7 +181,13 @@ export class XxpSuggestionsProvider extends Provider {
         });
       } else if (k !== XXPParser.IDENTIFIER) {
         const symbolicName = vocabulary.getSymbolicName(k);
-        if (symbolicName) {
+        if (symbolicName === "START" || symbolicName === "END") {
+          proposedSymbols.push({
+            label: symbolicName,
+            kind: CompletionItemKind.Keyword,
+          });
+        }
+        else if (symbolicName) {
           proposedSymbols.push({
             label: symbolicName.toLowerCase(),
             kind: CompletionItemKind.Keyword,

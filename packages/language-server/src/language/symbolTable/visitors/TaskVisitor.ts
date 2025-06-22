@@ -2,7 +2,9 @@ import { TaskConfigurationScopeSymbol } from '../../../core/models/symbols/TaskC
 import { TaskSymbol } from '../../../core/models/symbols/TaskSymbol.js';
 import { DocumentSymbolTable } from '../DocumentSymbolTable.js';
 import { addSymbolOfTypeWithInheritanceCheck, visitScopeSymbol } from '../helpers/SymbolHelpers.js';
+import { addDiagnostic } from '../helpers/Diagnostics.js';
 import { XxpSymbolTableBuilder } from '../builders/XxpSymbolTableBuilder.js';
+import { DiagnosticSeverity } from 'vscode-languageserver';
 import {
   ImplementationContext,
   ParamAssignmentContext,
@@ -47,14 +49,24 @@ export class TaskVisitor {
       return this.builder.visitChildren(ctx) as DocumentSymbolTable;
     }
 
-    const taskSymbol = this.getTaskSymbolByName(nameContext.getText());
+    const taskName = nameContext.getText();
+    const taskSymbol = this.getTaskSymbolByName(taskName);
     if (!taskSymbol) {
       return this.builder.visitChildren(ctx) as DocumentSymbolTable;
     }
 
     this.builder.visitChildren(ctx.taskConfigurationHeader()!);
 
-    /* TODO: don't allow configuring START and END tasks */
+    // Don't allow configuring START and END tasks
+    if (taskName === 'START' || taskName === 'END') {
+      addDiagnostic(
+        this.builder,
+        nameContext,
+        `Cannot configure reserved task '${taskName}'. START and END tasks are predefined and cannot be configured.`,
+        DiagnosticSeverity.Error
+      );
+      return this.builder.visitChildren(ctx) as DocumentSymbolTable;
+    }
 
     return visitScopeSymbol(
       this.builder,
