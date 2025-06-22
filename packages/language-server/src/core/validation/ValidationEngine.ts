@@ -13,6 +13,11 @@ export class ValidationEngine {
   public validateDocument(document: Document): void {
     if (!document.symbolTable) return;
 
+    // Ensure diagnostics array exists
+    if (!document.diagnostics) {
+      document.diagnostics = [];
+    }
+
     this.logger.info(`Running validation for document: ${document.uri}`);
 
     if (document.uri.endsWith('.xxp')) {
@@ -253,6 +258,11 @@ export class ValidationEngine {
 
   private addValidationError(symbol: any, message: string, severity: DiagnosticSeverity): void {
     if (!symbol.context || !symbol.document) return;
+
+    // Ensure diagnostics array exists
+    if (!symbol.document.diagnostics) {
+      symbol.document.diagnostics = [];
+    }
 
     symbol.document.diagnostics.push({
       severity,

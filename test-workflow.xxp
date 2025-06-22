@@ -1,0 +1,11 @@
+workflow TestWorkflow {
+    define data inputData;
+    define data outputData;
+
+    define task processing;
+
+    configure task processing {
+        input inputData;
+        output outputData;
+    }
+}

@@ -35,6 +35,7 @@ export class XxpSymbolTableBuilder
 {
   private readonly logger = Logger.getInstance();
   private currentScope: ScopedSymbol;
+  private currentConfiguredTask?: TaskSymbol;
 
   constructor(
     private documentManager: DocumentManager,
@@ -58,6 +59,8 @@ export class XxpSymbolTableBuilder
     if (ctx.workflowBody()) {
       this.visitWorkflowBody(ctx.workflowBody());
     }
+    // Reset scope back to folder level after workflow
+    this.currentScope = this.folderSymbolTable;
     return this.defaultResult();
   }
 
@@ -72,22 +75,21 @@ export class XxpSymbolTableBuilder
     this.validateWorkflowNameMatchesFileName(identifier, workflowName);
 
     const existingWorkflow = this.getExistingWorkflowSymbol(workflowName);
-    let workflowSymbol: WorkflowSymbol;
 
+    // If there's an existing workflow from the same document, remove it completely
     if (existingWorkflow && existingWorkflow.document.uri === this.document.uri) {
-      existingWorkflow.clear();
-      workflowSymbol = existingWorkflow;
-    } else {
-      const newWorkflowSymbol = this.addSymbol(
-        WorkflowSymbol,
-        workflowName,
-        ctx,
-        workflowName,
-        this.document
-      );
-      if (!newWorkflowSymbol) return this.defaultResult();
-      workflowSymbol = newWorkflowSymbol;
+      this.folderSymbolTable.removeSymbol(existingWorkflow);
     }
+
+    // Always create a new workflow symbol
+    const workflowSymbol = this.addSymbol(
+      WorkflowSymbol,
+      workflowName,
+      ctx,
+      workflowName,
+      this.document
+    );
+    if (!workflowSymbol) return this.defaultResult();
 
     // Handle parent workflow if specified
     const workflowNameRead = ctx.workflowNameRead();
@@ -183,16 +185,16 @@ export class XxpSymbolTableBuilder
     }
 
     // Store current task for parameter and implementation processing
-    const previousScope = this.currentScope;
-    this.currentScope = taskSymbol as unknown as ScopedSymbol;
+    // but DON'T change the currentScope - it should remain as the workflow
+    this.currentConfiguredTask = taskSymbol;
     const result = this.visitChildren(ctx);
-    this.currentScope = previousScope;
+    this.currentConfiguredTask = undefined;
 
     return result as DocumentSymbolTable;
   }
 
   visitImplementation(ctx: ImplementationContext): DocumentSymbolTable {
-    if (!(this.currentScope instanceof TaskSymbol)) {
+    if (!this.currentConfiguredTask) {
       this.addDiagnostic(
         ctx,
         'Implementation can only be defined within task configuration',
@@ -204,7 +206,7 @@ export class XxpSymbolTableBuilder
     const stringNode = ctx.STRING();
     if (stringNode) {
       const implementation = this.cleanString(stringNode.getText());
-      (this.currentScope as unknown as TaskSymbol).implementation = implementation;
+      this.currentConfiguredTask.implementation = implementation;
       this.validateFilePath(stringNode, implementation);
     }
 
@@ -212,7 +214,7 @@ export class XxpSymbolTableBuilder
   }
 
   visitParamAssignment(ctx: ParamAssignmentContext): DocumentSymbolTable {
-    if (!(this.currentScope instanceof TaskSymbol)) {
+    if (!this.currentConfiguredTask) {
       this.addDiagnostic(
         ctx,
         'Parameters can only be defined within task configuration',
@@ -220,20 +222,18 @@ export class XxpSymbolTableBuilder
       );
       return this.visitChildren(ctx) as DocumentSymbolTable;
     }
+
     const identifier = ctx.IDENTIFIER();
     if (identifier) {
       const paramName = identifier.getText();
-      const taskSymbol = this.currentScope as unknown as TaskSymbol;
-      if (taskSymbol.params) {
-        taskSymbol.params.push(paramName);
-      }
+      this.currentConfiguredTask.params.push(paramName);
     }
 
     return this.visitChildren(ctx) as DocumentSymbolTable;
   }
 
   visitInputStatement(ctx: InputStatementContext): DocumentSymbolTable {
-    if (!(this.currentScope instanceof TaskSymbol)) {
+    if (!this.currentConfiguredTask) {
       this.addDiagnostic(
         ctx,
         'Input statement can only be defined within task configuration',
@@ -241,13 +241,11 @@ export class XxpSymbolTableBuilder
       );
       return this.visitChildren(ctx) as DocumentSymbolTable;
     }
+
     const dataNames = ctx.dataNameList().dataNameRead();
     for (const dataNameCtx of dataNames) {
       const dataName = dataNameCtx.getText();
-      const taskSymbol = this.currentScope as unknown as TaskSymbol;
-      if (taskSymbol.inputs) {
-        taskSymbol.inputs.push(dataName);
-      }
+      this.currentConfiguredTask.inputs.push(dataName);
       this.validateDataReference(dataNameCtx, dataName);
     }
 
@@ -255,7 +253,7 @@ export class XxpSymbolTableBuilder
   }
 
   visitOutputStatement(ctx: OutputStatementContext): DocumentSymbolTable {
-    if (!(this.currentScope instanceof TaskSymbol)) {
+    if (!this.currentConfiguredTask) {
       this.addDiagnostic(
         ctx,
         'Output statement can only be defined within task configuration',
@@ -263,13 +261,12 @@ export class XxpSymbolTableBuilder
       );
       return this.visitChildren(ctx) as DocumentSymbolTable;
     }
+
     const dataNames = ctx.dataNameList().dataNameRead();
     for (const dataNameCtx of dataNames) {
       const dataName = dataNameCtx.getText();
-      const taskSymbol = this.currentScope as unknown as TaskSymbol;
-      if (taskSymbol.outputs) {
-        taskSymbol.outputs.push(dataName);
-      }
+      this.currentConfiguredTask.outputs.push(dataName);
+      // Note: we don't validate output data references as they're being defined here
     }
 
     return this.visitChildren(ctx) as DocumentSymbolTable;
@@ -480,13 +477,28 @@ export class XxpSymbolTableBuilder
     return this.findSymbolOfType(DataSymbol, dataName);
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private findSymbolOfType<T>(type: new (...args: any[]) => T, name: string): T | undefined {
-    if (this.currentScope instanceof WorkflowSymbol) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const symbols = this.currentScope.getNestedSymbolsOfTypeSync(type as any);
-      return symbols.find(s => s.name === name) as T | undefined;
+    // Search in the current workflow scope
+    let searchScope = this.currentScope;
+
+    // If we're in a nested scope, go up to the workflow level
+    while (
+      searchScope &&
+      !(searchScope instanceof WorkflowSymbol) &&
+      searchScope !== this.folderSymbolTable
+    ) {
+      searchScope = (searchScope.parent as ScopedSymbol) || this.folderSymbolTable;
     }
+
+    if (searchScope instanceof WorkflowSymbol) {
+      const symbols = searchScope.getNestedSymbolsOfTypeSync(type as any);
+      return symbols.find(s => s.name === name) as T | undefined;
+    } else if (searchScope === this.folderSymbolTable) {
+      // Search in folder symbol table
+      const allSymbols = this.folderSymbolTable.getAllNestedSymbolsSync();
+      return allSymbols.find(s => s instanceof type && s.name === name) as T | undefined;
+    }
+
     return undefined;
   }
 
@@ -519,11 +531,9 @@ export class XxpSymbolTableBuilder
   }
 
   private addSymbol<T extends BaseSymbol>(
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     type: new (...args: any[]) => T,
     name: string,
     ctx: ParserRuleContext,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     ...args: any[]
   ): T | undefined {
     try {

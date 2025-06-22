@@ -27,6 +27,34 @@ export class DocumentSymbolTable extends SymbolTable {
     return symbols.map(s => s.name);
   }
 
+  /**
+   * Synchronous version of getAllNestedSymbols for use in symbol builders
+   */
+  public override getAllNestedSymbolsSync(): BaseSymbol[] {
+    const symbols: BaseSymbol[] = [];
+    this.collectNestedSymbolsSync(this, symbols);
+    return symbols;
+  }
+
+  /**
+   * Synchronous version of getNestedSymbolsOfType
+   */
+  public override getNestedSymbolsOfTypeSync<T extends BaseSymbol>(
+    type: new (...args: any[]) => T
+  ): T[] {
+    const allSymbols = this.getAllNestedSymbolsSync();
+    return allSymbols.filter(s => s instanceof type) as T[];
+  }
+
+  private collectNestedSymbolsSync(scope: ScopedSymbol, symbols: BaseSymbol[]): void {
+    for (const child of scope.children) {
+      symbols.push(child);
+      if (child instanceof ScopedSymbol) {
+        this.collectNestedSymbolsSync(child, symbols);
+      }
+    }
+  }
+
   private static symbolWithContextRecursive(
     root: ScopedSymbol,
     context: ParseTree

@@ -52,6 +52,7 @@ export class EspaceSymbolTableBuilder
   private currentSpace?: SpaceSymbol;
   private controlFlowTransitions: ControlFlowTransition[] = [];
   private definedSpaces = new Set<string>();
+  private currentConfiguredTask?: string;
 
   constructor(
     private documentManager: DocumentManager,
@@ -319,7 +320,12 @@ export class EspaceSymbolTableBuilder
     const taskName = taskNameCtx.getText();
     this.validateTaskInWorkflow(taskNameCtx, taskName);
 
-    return this.visitChildren(ctx) as DocumentSymbolTable;
+    // Store current task name for param assignment processing
+    this.currentConfiguredTask = taskName;
+    const result = this.visitChildren(ctx);
+    this.currentConfiguredTask = undefined;
+
+    return result as DocumentSymbolTable;
   }
 
   visitParamAssignment(ctx: ParamAssignmentContext): DocumentSymbolTable {
@@ -332,7 +338,17 @@ export class EspaceSymbolTableBuilder
     const paramName = identifier.getText();
     const paramValue = this.extractParamValue(ctx.paramValue());
 
-    if (this.currentSpace) {
+    // Store param in space since tasks are not directly accessible in ESPACE
+    if (this.currentSpace && this.currentConfiguredTask) {
+      // Store task-specific params in a structured way
+      const taskParams =
+        (this.currentSpace.params.get(`_task_${this.currentConfiguredTask}`) as Record<
+          string,
+          any
+        >) || {};
+      taskParams[paramName] = paramValue;
+      this.currentSpace.params.set(`_task_${this.currentConfiguredTask}`, taskParams);
+    } else if (this.currentSpace) {
       this.currentSpace.params.set(paramName, paramValue);
     }
 
