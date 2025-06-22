@@ -1,9 +1,13 @@
-import { DataNameReadContext, TaskConfigurationBodyContext, TaskNameReadContext, WorkflowNameReadContext } from "@extremexp/core/src/language/generated/XXPParser";
-
+import {
+  DataNameReadContext,
+  TaskConfigurationBodyContext,
+  TaskNameReadContext,
+  WorkflowNameReadContext,
+} from '@extremexp/core';
 
 export enum ChainPartType {
-	Data,
-	Task
+  Data,
+  Task,
 }
 
 export type ReadNameContext = DataNameReadContext | TaskNameReadContext | WorkflowNameReadContext;

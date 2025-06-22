@@ -1,18 +1,18 @@
 import {
-	createConnection,
-	TextDocuments,
-	ProposedFeatures,
-	InitializeParams,
-	TextDocumentSyncKind,
-	InitializeResult,
-	Connection,
-	ServerCapabilities,
+  createConnection,
+  TextDocuments,
+  ProposedFeatures,
+  InitializeParams,
+  TextDocumentSyncKind,
+  InitializeResult,
+  Connection,
+  ServerCapabilities,
 } from 'vscode-languageserver/node.js';
 import { TextDocument } from 'vscode-languageserver-textdocument';
 
-import { Logger } from './utils/Logger';
-import { DocumentManager } from './core/managers/DocumentsManager';
-import { ProvidersManager } from './core/managers/ProvidersManager';
+import { Logger } from './utils/Logger.js';
+import { DocumentManager } from './core/managers/DocumentsManager.js';
+import { ProvidersManager } from './core/managers/ProvidersManager.js';
 
 // Create a connection for the server
 const connection: Connection = createConnection(ProposedFeatures.all);
@@ -28,33 +28,33 @@ const documentManager = new DocumentManager();
 const providersManager = new ProvidersManager(connection, documentManager);
 
 connection.onInitialize((params: InitializeParams): InitializeResult => {
-	logger.info('Initializing XXP Language Server');
+  logger.info('Initializing XXP Language Server');
 
-	// Declare server capabilities
-	const capabilities: ServerCapabilities = {
-		textDocumentSync: TextDocumentSyncKind.Incremental,
-		completionProvider: {
-			resolveProvider: true
-		},
-		hoverProvider: true,
-		definitionProvider: true,
-		referencesProvider: true,
-		renameProvider: {
-			prepareProvider: false,
-		},
-		diagnosticProvider: {
-			interFileDependencies: true,
-			workspaceDiagnostics: false
-		},
-	};
+  // Declare server capabilities
+  const capabilities: ServerCapabilities = {
+    textDocumentSync: TextDocumentSyncKind.Incremental,
+    completionProvider: {
+      resolveProvider: true,
+    },
+    hoverProvider: true,
+    definitionProvider: true,
+    referencesProvider: true,
+    renameProvider: {
+      prepareProvider: false,
+    },
+    diagnosticProvider: {
+      interFileDependencies: true,
+      workspaceDiagnostics: false,
+    },
+  };
 
-	return {
-		capabilities,
-	};
+  return {
+    capabilities,
+  };
 });
 
 connection.onInitialized(() => {
-	logger.info('XXP Language Server initialized');
+  logger.info('XXP Language Server initialized');
 });
 
 // Register handlers for document lifecycle events

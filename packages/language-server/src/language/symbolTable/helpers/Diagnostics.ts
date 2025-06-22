@@ -1,53 +1,53 @@
 import { ParserRuleContext, TerminalNode } from 'antlr4ng';
 import { DiagnosticSeverity } from 'vscode-languageserver';
-import { Logger } from '../../../utils/Logger';
-import { XxpSymbolTableBuilder } from '../builders/XxpSymbolTableBuilder';
+import { Logger } from '../../../utils/Logger.js';
+import { XxpSymbolTableBuilder } from '../builders/XxpSymbolTableBuilder.js';
 
 const logger = Logger.getLogger();
 
 export function addDiagnostic(
-	builder: XxpSymbolTableBuilder,
-	ctx: ParserRuleContext,
-	message: string,
-	severity: DiagnosticSeverity = DiagnosticSeverity.Error
+  builder: XxpSymbolTableBuilder,
+  ctx: ParserRuleContext,
+  message: string,
+  severity: DiagnosticSeverity = DiagnosticSeverity.Error
 ): void {
-	if (!ctx.start || !ctx.stop) return;
+  if (!ctx.start || !ctx.stop) return;
 
-	logger.debug(`Diagnostic: ${message}`);
-	builder.document.diagnostics?.push({
-		severity,
-		range: {
-			start: { line: ctx.start.line - 1, character: ctx.start.column },
-			end: { line: ctx.stop.line - 1, character: ctx.stop.column + ctx.getText().length }
-		},
-		message
-	});
+  logger.debug(`Diagnostic: ${message}`);
+  builder.document.diagnostics?.push({
+    severity,
+    range: {
+      start: { line: ctx.start.line - 1, character: ctx.start.column },
+      end: { line: ctx.stop.line - 1, character: ctx.stop.column + ctx.getText().length },
+    },
+    message,
+  });
 }
 
 export function addDiagnosticForTerminalNode(
-	builder: XxpSymbolTableBuilder,
-	node: TerminalNode,
-	message: string,
-	severity: DiagnosticSeverity = DiagnosticSeverity.Error
+  builder: XxpSymbolTableBuilder,
+  node: TerminalNode,
+  message: string,
+  severity: DiagnosticSeverity = DiagnosticSeverity.Error
 ): void {
-	if (!node.symbol.start || !node.symbol.stop) return;
+  if (!node.symbol.start || !node.symbol.stop) return;
 
-	logger.debug(`Diagnostic: ${message}`);
-	builder.document.diagnostics?.push({
-		severity,
-		range: {
-			start: { line: node.symbol.line - 1, character: node.symbol.column },
-			end: { line: node.symbol.line - 1, character: node.symbol.column + node.getText().length }
-		},
-		message
-	});
+  logger.debug(`Diagnostic: ${message}`);
+  builder.document.diagnostics?.push({
+    severity,
+    range: {
+      start: { line: node.symbol.line - 1, character: node.symbol.column },
+      end: { line: node.symbol.line - 1, character: node.symbol.column + node.getText().length },
+    },
+    message,
+  });
 }
 
 export function addDiagnosticAndContinue(
-	builder: XxpSymbolTableBuilder,
-	ctx: ParserRuleContext,
-	message: string
+  builder: XxpSymbolTableBuilder,
+  ctx: ParserRuleContext,
+  message: string
 ) {
-	addDiagnostic(builder, ctx, message);
-	return builder.visitChildren(ctx) as any;
+  addDiagnostic(builder, ctx, message);
+  return builder.visitChildren(ctx) as any;
 }

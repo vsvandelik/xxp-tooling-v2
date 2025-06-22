@@ -10,30 +10,30 @@ import { XxpSuggestionsProvider } from '../../providers/XxpSuggestionsProvider.j
 import { XxpSpaceSuggestionsProvider } from '../../providers/EspaceSuggestionsProvider.js';
 
 export class ProvidersManager {
-	private readonly logger = Logger.getLogger();
-	private readonly providers: Provider[] = [
-		new DiagnosticsProvider(),
-		new HoverProvider(),
-		new ReferencesProvider(),
-		new RenamerProvider(),
-		new XxpSuggestionsProvider(),
-		new XxpSpaceSuggestionsProvider(),
-	];
+  private readonly logger = Logger.getLogger();
+  private readonly providers: Provider[] = [
+    new DiagnosticsProvider(),
+    new HoverProvider(),
+    new ReferencesProvider(),
+    new RenamerProvider(),
+    new XxpSuggestionsProvider(),
+    new XxpSpaceSuggestionsProvider(),
+  ];
 
-	constructor(
-		private readonly connection: Connection,
-		private readonly documentsManager: DocumentManager
-	) { }
+  constructor(
+    private readonly connection: Connection,
+    private readonly documentsManager: DocumentManager
+  ) {}
 
-	public registerProviders(): void {
-		for (const provider of this.providers) {
-			this.registerProvider(provider);
-		}
-	}
+  public registerProviders(): void {
+    for (const provider of this.providers) {
+      this.registerProvider(provider);
+    }
+  }
 
-	private registerProvider(provider: Provider): void {
-		provider.initialize(this.connection, this.documentsManager);
-		provider.addHandlers();
-		this.logger.info(`Registered provider: ${provider.constructor.name}`);
-	}
+  private registerProvider(provider: Provider): void {
+    provider.initialize(this.connection, this.documentsManager);
+    provider.addHandlers();
+    this.logger.info(`Registered provider: ${provider.constructor.name}`);
+  }
 }

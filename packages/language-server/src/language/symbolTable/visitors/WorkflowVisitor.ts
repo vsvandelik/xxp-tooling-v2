@@ -7,7 +7,7 @@ import { addSymbolOfTypeWithContext } from '../helpers/SymbolHelpers';
 import { XxpSymbolTableBuilder } from '../builders/XxpSymbolTableBuilder';
 import { Document } from '../../../core/documents/Document';
 import { TerminalNode } from 'antlr4ng';
-import { WorkflowHeaderContext, WorkflowBodyContext, WorkflowNameReadContext } from '@extremexp/core/src/language/generated/XXPParser';
+import { WorkflowHeaderContext, WorkflowBodyContext, WorkflowNameReadContext } from '@extremexp/core';
 
 export class WorkflowVisitor {
 	constructor(private readonly builder: XxpSymbolTableBuilder) { }
@@ -113,8 +113,8 @@ export class WorkflowVisitor {
 	}
 }*/
 
-import { XxpSymbolTableBuilder } from "../builders/XxpSymbolTableBuilder";
+import { XxpSymbolTableBuilder } from '../builders/XxpSymbolTableBuilder.js';
 
 export class WorkflowVisitor {
-	constructor(private readonly builder: XxpSymbolTableBuilder) {}
+  constructor(private readonly builder: XxpSymbolTableBuilder) {}
 }

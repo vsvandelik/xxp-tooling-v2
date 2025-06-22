@@ -1,3 +1,3 @@
-import { ScopeSymbolWithSymbolReference } from './ScopeSymbolWithSymbolReference';
+import { ScopeSymbolWithSymbolReference } from './ScopeSymbolWithSymbolReference.js';
 
-export class DataDeclarationScopeSymbol extends ScopeSymbolWithSymbolReference { }
+export class DataDeclarationScopeSymbol extends ScopeSymbolWithSymbolReference {}

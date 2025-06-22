@@ -1,3 +1,3 @@
 import { Document } from './Document.js';
 
-export class EspaceDocument extends Document { }
+export class EspaceDocument extends Document {}

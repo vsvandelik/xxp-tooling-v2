@@ -7,7 +7,7 @@ import { DocumentSymbolTable } from '../DocumentSymbolTable';
 import { addDiagnostic } from '../helpers/Diagnostics';
 import { addSymbolOfTypeWithContext, visitScopeSymbol } from '../helpers/SymbolHelpers';
 import { XxpSymbolTableBuilder } from '../builders/XxpSymbolTableBuilder';
-import { DataDefinitionContext } from '@extremexp/core/src/language/generated/XXPParser';
+import { DataDefinitionContext } from '@extremexp/core';
 
 export class DataVisitor {
 	constructor(private readonly builder: XxpSymbolTableBuilder) { }
@@ -76,8 +76,8 @@ export class DataVisitor {
 
 }*/
 
-import { XxpSymbolTableBuilder } from "../builders/XxpSymbolTableBuilder";
+import { XxpSymbolTableBuilder } from '../builders/XxpSymbolTableBuilder.js';
 
 export class DataVisitor {
-	constructor(private readonly builder: XxpSymbolTableBuilder) {}
+  constructor(private readonly builder: XxpSymbolTableBuilder) {}
 }

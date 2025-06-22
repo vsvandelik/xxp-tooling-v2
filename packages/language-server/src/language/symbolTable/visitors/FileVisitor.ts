@@ -24,8 +24,8 @@ export class FileVisitor {
 	}
 }*/
 
-import { XxpSymbolTableBuilder } from "../builders/XxpSymbolTableBuilder";
+import { XxpSymbolTableBuilder } from '../builders/XxpSymbolTableBuilder.js';
 
 export class FileVisitor {
-	constructor(private readonly builder: XxpSymbolTableBuilder) {}
+  constructor(private readonly builder: XxpSymbolTableBuilder) {}
 }

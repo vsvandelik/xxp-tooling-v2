@@ -3,7 +3,7 @@ import { TaskSymbol } from '../../../core/models/symbols/TaskSymbol';
 import { DocumentSymbolTable } from '../DocumentSymbolTable';
 import { addSymbolOfTypeWithContext, visitScopeSymbol } from '../helpers/SymbolHelpers';
 import { XxpSymbolTableBuilder } from '../builders/XxpSymbolTableBuilder';
-import { ImplementationContext, ParamAssignmentContext, TaskConfigurationContext, TaskDefinitionContext } from '@extremexp/core/src/language/generated/XXPParser';
+import { ImplementationContext, ParamAssignmentContext, TaskConfigurationContext, TaskDefinitionContext } from '@extremexp/core';
 
 export class TaskVisitor {
 	constructor(private readonly builder: XxpSymbolTableBuilder) { }
@@ -98,8 +98,8 @@ export class TaskVisitor {
 
 }*/
 
-import { XxpSymbolTableBuilder } from "../builders/XxpSymbolTableBuilder";
+import { XxpSymbolTableBuilder } from '../builders/XxpSymbolTableBuilder.js';
 
 export class TaskVisitor {
-	constructor(private readonly builder: XxpSymbolTableBuilder) {}
+  constructor(private readonly builder: XxpSymbolTableBuilder) {}
 }

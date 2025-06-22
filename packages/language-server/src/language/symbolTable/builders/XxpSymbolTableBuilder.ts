@@ -1,48 +1,63 @@
 import { AbstractParseTreeVisitor } from 'antlr4ng';
-import { DocumentManager } from '../../../core/managers/DocumentsManager';
-import { Logger } from '../../../utils/Logger';
-import { DocumentSymbolTable } from '../DocumentSymbolTable';
-import { WorkflowVisitor } from '../visitors/WorkflowVisitor';
-import { DataVisitor } from '../visitors/DataVisitor';
-import { VariableReadVisitor } from '../visitors/VariableReadVisitor';
-import { TaskVisitor } from '../visitors/TaskVisitor';
+import { DocumentManager } from '../../../core/managers/DocumentsManager.js';
+import { Logger } from '../../../utils/Logger.js';
+import { DocumentSymbolTable } from '../DocumentSymbolTable.js';
+import { WorkflowVisitor } from '../visitors/WorkflowVisitor.js';
+import { DataVisitor } from '../visitors/DataVisitor.js';
+import { VariableReadVisitor } from '../visitors/VariableReadVisitor.js';
+import { TaskVisitor } from '../visitors/TaskVisitor.js';
 import { ScopedSymbol } from 'antlr4-c3';
-import { FileVisitor } from '../visitors/FileVisitor';
-import { Document } from '../../../core/documents/Document';
+import { FileVisitor } from '../visitors/FileVisitor.js';
+import { Document } from '../../../core/documents/Document.js';
 import { XXPVisitor } from '@extremexp/core';
-import { DataDefinitionContext, TaskConfigurationContext, ParamAssignmentContext, WorkflowNameReadContext, TaskNameReadContext } from '@extremexp/core/src/language/generated/ESPACEParser';
-import { WorkflowHeaderContext, WorkflowBodyContext, TaskDefinitionContext, ImplementationContext, DataNameReadContext } from '@extremexp/core/src/language/generated/XXPParser';
+import {
+  DataDefinitionContext,
+  TaskConfigurationContext,
+  ParamAssignmentContext,
+  WorkflowNameReadContext,
+  TaskNameReadContext,
+} from '@extremexp/core/src/language/generated/ESPACEParser';
+import {
+  WorkflowHeaderContext,
+  WorkflowBodyContext,
+  TaskDefinitionContext,
+  ImplementationContext,
+  DataNameReadContext,
+} from '@extremexp/core';
 
-export class XxpSymbolTableBuilder extends AbstractParseTreeVisitor<DocumentSymbolTable> implements XXPVisitor<DocumentSymbolTable> {
-	public readonly logger = Logger.getLogger();
-	public currentScope: ScopedSymbol;
+export class XxpSymbolTableBuilder
+  extends AbstractParseTreeVisitor<DocumentSymbolTable>
+  implements XXPVisitor<DocumentSymbolTable>
+{
+  public readonly logger = Logger.getLogger();
+  public currentScope: ScopedSymbol;
 
-	private readonly workflowVisitor: WorkflowVisitor;
-	private readonly dataVisitor: DataVisitor;
-	private readonly taskVisitor: TaskVisitor;
-	private readonly variableReadVisitor: VariableReadVisitor;
-	//private readonly dataChainVisitor: DataChainVisitor;
-	private readonly fileVisitor: FileVisitor;
+  private readonly workflowVisitor: WorkflowVisitor;
+  private readonly dataVisitor: DataVisitor;
+  private readonly taskVisitor: TaskVisitor;
+  private readonly variableReadVisitor: VariableReadVisitor;
+  //private readonly dataChainVisitor: DataChainVisitor;
+  private readonly fileVisitor: FileVisitor;
 
-	constructor(
-		public readonly documentsManager: DocumentManager,
-		public readonly document: Document,
-		public readonly symbolTable: DocumentSymbolTable,
-	) {
-		super();
-		this.currentScope = this.symbolTable;
-		this.workflowVisitor = new WorkflowVisitor(this);
-		this.dataVisitor = new DataVisitor(this);
-		this.taskVisitor = new TaskVisitor(this);
-		this.variableReadVisitor = new VariableReadVisitor(this);
-		//this.dataChainVisitor = new DataChainVisitor(this);
-		this.fileVisitor = new FileVisitor(this);
-	}
+  constructor(
+    public readonly documentsManager: DocumentManager,
+    public readonly document: Document,
+    public readonly symbolTable: DocumentSymbolTable
+  ) {
+    super();
+    this.currentScope = this.symbolTable;
+    this.workflowVisitor = new WorkflowVisitor(this);
+    this.dataVisitor = new DataVisitor(this);
+    this.taskVisitor = new TaskVisitor(this);
+    this.variableReadVisitor = new VariableReadVisitor(this);
+    //this.dataChainVisitor = new DataChainVisitor(this);
+    this.fileVisitor = new FileVisitor(this);
+  }
 
-	public override defaultResult(): DocumentSymbolTable {
-		return this.symbolTable;
-	}
-/*
+  public override defaultResult(): DocumentSymbolTable {
+    return this.symbolTable;
+  }
+  /*
 	visitWorkflowHeader(ctx: WorkflowHeaderContext): DocumentSymbolTable { return this.workflowVisitor.visitHeader(ctx); }
 	visitWorkflowBody(ctx: WorkflowBodyContext): DocumentSymbolTable { return this.workflowVisitor.visitBody(ctx); }
 	visitDataDefinition(ctx: DataDefinitionContext): DocumentSymbolTable { return this.dataVisitor.visitDefinition(ctx); }

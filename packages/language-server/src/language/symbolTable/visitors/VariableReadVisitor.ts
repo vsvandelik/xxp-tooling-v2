@@ -63,8 +63,8 @@ export class VariableReadVisitor {
 	}
 }*/
 
-import { XxpSymbolTableBuilder } from "../builders/XxpSymbolTableBuilder";
+import { XxpSymbolTableBuilder } from '../builders/XxpSymbolTableBuilder.js';
 
 export class VariableReadVisitor {
-	constructor(private readonly builder: XxpSymbolTableBuilder) {}
+  constructor(private readonly builder: XxpSymbolTableBuilder) {}
 }
