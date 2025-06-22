@@ -6,10 +6,13 @@ import { XxpSymbolTableBuilder } from '../builders/XxpSymbolTableBuilder.js';
 import { ScopeSymbolWithSymbolReference } from '../../../core/models/symbols/ScopeSymbolWithSymbolReference.js';
 import { ScopedParserRuleContext } from '../types.js';
 import { WorkflowSymbol } from '../../../core/models/symbols/WorkflowSymbol.js';
+import { EspaceSymbolTableBuilder } from '../builders/EspaceSymbolTableBuilder.js';
+
+type BuilderType = XxpSymbolTableBuilder | EspaceSymbolTableBuilder;
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function addSymbolOfTypeWithContext<T extends BaseSymbol>(
-  builder: XxpSymbolTableBuilder,
+  builder: BuilderType,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   type: new (...args: any[]) => T,
   name: string,
@@ -36,7 +39,7 @@ export function addSymbolOfTypeWithContext<T extends BaseSymbol>(
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function addSymbolOfTypeWithInheritanceCheck<T extends BaseSymbol>(
-  builder: XxpSymbolTableBuilder,
+  builder: BuilderType,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   type: new (...args: any[]) => T,
   name: string,
@@ -59,7 +62,7 @@ export function addSymbolOfTypeWithInheritanceCheck<T extends BaseSymbol>(
 }
 
 export function visitScopeSymbol<T extends ScopeSymbolWithSymbolReference>(
-  builder: XxpSymbolTableBuilder,
+  builder: BuilderType,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   type: new (...args: any[]) => T,
   ctx: ScopedParserRuleContext,

@@ -1,8 +1,208 @@
 import { Provider } from './Provider.js';
 import { Logger } from '../utils/Logger.js';
+import { CompletionParams, CompletionItem, CompletionItemKind } from 'vscode-languageserver';
+import { BaseSymbol, CodeCompletionCore, ICandidateRule, TokenList } from 'antlr4-c3';
+import { Document } from '../core/documents/Document.js';
+import { DataSymbol } from '../core/models/symbols/DataSymbol.js';
+import { TaskSymbol } from '../core/models/symbols/TaskSymbol.js';
+import { SpaceSymbol } from '../core/models/symbols/SpaceSymbol.js';
+import { ParamSymbol } from '../core/models/symbols/ParamSymbol.js';
+import { WorkflowSymbol } from '../core/models/symbols/WorkflowSymbol.js';
+import { TokenPosition } from '../core/models/TokenPosition.js';
+import { DocumentSymbolTable } from '../language/symbolTable/DocumentSymbolTable.js';
+import { CommonTokenStream, Vocabulary } from 'antlr4ng';
+import { ESPACEParser } from '@extremexp/core';
 
-export class XxpSpaceSuggestionsProvider extends Provider {
+export class EspaceSuggestionsProvider extends Provider {
   private logger = Logger.getLogger();
 
-  addHandlers(): void {}
+  private static readonly ignoredTokens = new Set([
+    ESPACEParser.NUMBER,
+    ESPACEParser.COMMENT,
+    ESPACEParser.STRING,
+  ]);
+
+  private static readonly preferredRules = new Set([
+    ESPACEParser.RULE_workflowNameRead,
+    ESPACEParser.RULE_taskNameRead,
+    ESPACEParser.RULE_spaceNameRead,
+  ]);
+
+  private static readonly visualSymbolsMap = new Map<number, string>([
+    [ESPACEParser.SEMICOLON, ';'],
+    [ESPACEParser.ARROW, '->'],
+    [ESPACEParser.CONDITION_ARROW, '-?>'],
+    [ESPACEParser.LBRACE, '{'],
+    [ESPACEParser.RBRACE, '}'],
+    [ESPACEParser.LPAREN, '('],
+    [ESPACEParser.RPAREN, ')'],
+    [ESPACEParser.EQUALS, '='],
+    [ESPACEParser.COMMA, ','],
+  ]);
+
+  addHandlers(): void {
+    this.connection!.onCompletion(completionParams => this.onCompletion(completionParams));
+    this.connection!.onCompletionResolve(completionItem =>
+      this.onCompletionResolve(completionItem)
+    );
+  }
+
+  private async onCompletion(params: CompletionParams): Promise<CompletionItem[] | null> {
+    this.logger.info(`Received completion request for document: ${params.textDocument.uri}`);
+
+    const result = super.getDocumentAndPosition(params.textDocument, params.position);
+    if (!result) return null;
+    const [document, tokenPosition] = result;
+
+    this.ensureCodeCompletionCoreInitialized(document);
+    const candidates = document.codeCompletionCore!.collectCandidates(tokenPosition.index);
+
+    const symbols: CompletionItem[] = [];
+
+    symbols.push(
+      ...(await this.processRules(
+        candidates.rules,
+        tokenPosition,
+        document.symbolTable!,
+        document.uri
+      ))
+    );
+    symbols.push(...this.processTokens(candidates.tokens, document.parser!.vocabulary));
+
+    return symbols;
+  }
+
+  private ensureCodeCompletionCoreInitialized(document: Document): void {
+    if (document.codeCompletionCore) return;
+
+    const parser = document.parser;
+
+    const core = new CodeCompletionCore(parser!);
+    core.ignoredTokens = EspaceSuggestionsProvider.ignoredTokens;
+    core.preferredRules = EspaceSuggestionsProvider.preferredRules;
+
+    document.codeCompletionCore = core;
+  }
+
+  private async processRules(
+    rules: Map<number, ICandidateRule>,
+    position: TokenPosition,
+    symbolTable: DocumentSymbolTable,
+    documentUri: string
+  ): Promise<CompletionItem[]> {
+    const proposedSymbols: CompletionItem[] = [];
+
+    if (rules.has(ESPACEParser.RULE_workflowNameRead)) {
+      // For workflows, we need to suggest available workflow files
+      await this.suggestWorkflowFiles(proposedSymbols, documentUri);
+    }
+
+    if (rules.has(ESPACEParser.RULE_taskNameRead)) {
+      // For tasks, suggest from the referenced workflow
+      await this.suggestTasksFromReferencedWorkflow(position, proposedSymbols, symbolTable);
+    }
+
+    if (rules.has(ESPACEParser.RULE_spaceNameRead)) {
+      await this.suggestAndStoreSymbols(
+        position,
+        SpaceSymbol,
+        proposedSymbols,
+        symbolTable,
+        CompletionItemKind.Module
+      );
+    }
+
+    return proposedSymbols;
+  }
+
+  private processTokens(tokens: Map<number, TokenList>, vocabulary: Vocabulary): CompletionItem[] {
+    const proposedSymbols: CompletionItem[] = [];
+
+    tokens.forEach((_, k) => {
+      if (EspaceSuggestionsProvider.visualSymbolsMap.has(k)) {
+        proposedSymbols.push({
+          label: EspaceSuggestionsProvider.visualSymbolsMap.get(k) || '',
+          kind: CompletionItemKind.Operator,
+        });
+      } else if (k !== ESPACEParser.IDENTIFIER) {
+        const symbolicName = vocabulary.getSymbolicName(k);
+        if (symbolicName) {
+          proposedSymbols.push({
+            label: symbolicName.toLowerCase(),
+            kind: CompletionItemKind.Keyword,
+          });
+        }
+      }
+    });
+
+    return proposedSymbols;
+  }
+
+  private async suggestAndStoreSymbols<T extends BaseSymbol>(
+    position: TokenPosition,
+    type: new (...args: any[]) => T,
+    proposedSymbols: CompletionItem[],
+    symbolTable: DocumentSymbolTable,
+    kind: CompletionItemKind
+  ): Promise<void> {
+    (await symbolTable.getValidSymbolsAtPosition(position.parseTree, type)).forEach(s => {
+      proposedSymbols.push({
+        label: s,
+        kind,
+      });
+    });
+  }
+
+  private async suggestWorkflowFiles(
+    proposedSymbols: CompletionItem[],
+    documentUri: string
+  ): Promise<void> {
+    // Get the folder symbol table for the current document
+    const folderSymbolTable = this.documentManager?.getDocumentSymbolTableForFile(documentUri);
+
+    if (folderSymbolTable) {
+      // Get all workflows that have been parsed in this folder
+      const workflows = await folderSymbolTable.getSymbolsOfType(WorkflowSymbol);
+
+      // Create a set to avoid duplicates
+      const addedWorkflows = new Set<string>();
+
+      workflows.forEach(workflow => {
+        if (!addedWorkflows.has(workflow.name)) {
+          addedWorkflows.add(workflow.name);
+          proposedSymbols.push({
+            label: workflow.name,
+            kind: CompletionItemKind.Class,
+            detail: `Workflow defined in ${workflow.document.uri.split('/').pop()}`,
+          });
+        }
+      });
+    }
+  }
+
+  private async suggestTasksFromReferencedWorkflow(
+    position: TokenPosition,
+    proposedSymbols: CompletionItem[],
+    symbolTable: DocumentSymbolTable
+  ): Promise<void> {
+    // Find the parent space and its referenced workflow
+    const spaces = await symbolTable.getSymbolsOfType(SpaceSymbol);
+    for (const space of spaces) {
+      if (space.workflowReference) {
+        const tasks = await space.workflowReference.getSymbolsOfType(TaskSymbol);
+        tasks.forEach(task => {
+          proposedSymbols.push({
+            label: task.name,
+            kind: CompletionItemKind.Variable,
+            detail: `Task from ${space!.workflowReference!.name}`,
+          });
+        });
+      }
+    }
+  }
+
+  private async onCompletionResolve(item: CompletionItem): Promise<CompletionItem> {
+    this.logger.debug(`Resolving completion item: ${item.label}`);
+    return item;
+  }
 }

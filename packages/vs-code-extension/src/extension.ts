@@ -51,15 +51,20 @@ export async function activate(context: vscode.ExtensionContext) {
     initializeServices(context),
     initializeWorkflowRepository(context),
     initializeLanguageServer(context),
-    setupWorkflowFeatures()
+    setupWorkflowFeatures(),
   ];
 
   // Start all features simultaneously and handle failures gracefully
   const results = await Promise.allSettled(initializationPromises);
-  
+
   // Log any failures but don't block extension activation
   results.forEach((result, index) => {
-    const featureNames = ['Services', 'Workflow Repository', 'Language Server', 'Workflow Features'];
+    const featureNames = [
+      'Services',
+      'Workflow Repository',
+      'Language Server',
+      'Workflow Features',
+    ];
     if (result.status === 'rejected') {
       console.error(`Failed to initialize ${featureNames[index]}:`, result.reason);
     } else {
@@ -78,10 +83,10 @@ async function initializeServices(context: vscode.ExtensionContext): Promise<voi
   try {
     // Initialize server manager with tool executor
     serverManager = new ServerManager(context, toolExecutor);
-    
+
     // Update status bar listener now that server manager exists
     updateStatusBarWithServerManager();
-    
+
     // Start server in background without blocking
     serverManager.ensureServerRunning().catch(error => {
       console.error('Failed to start experiment server:', error);
@@ -93,7 +98,7 @@ async function initializeServices(context: vscode.ExtensionContext): Promise<voi
     // Initialize other services (these don't depend on server being ready)
     experimentService = new ExperimentService(serverManager);
     progressPanelManager = new ProgressPanelManager(context, experimentService);
-    
+
     console.log('Core services initialized');
   } catch (error) {
     console.error('Failed to initialize core services:', error);
@@ -116,7 +121,7 @@ async function initializeWorkflowRepository(context: vscode.ExtensionContext): P
       repositoryConfigManager,
       workflowRepositoryProvider
     );
-    
+
     console.log('Workflow repository system initialized');
   } catch (error) {
     console.error('Failed to initialize workflow repository:', error);
@@ -168,7 +173,9 @@ function registerCommands(context: vscode.ExtensionContext): void {
     if (experimentService && progressPanelManager) {
       return runExperimentCommand.execute();
     } else {
-      vscode.window.showErrorMessage('Experiment service not available. Please restart the extension.');
+      vscode.window.showErrorMessage(
+        'Experiment service not available. Please restart the extension.'
+      );
       return Promise.resolve();
     }
   });
@@ -199,7 +206,9 @@ function registerCommands(context: vscode.ExtensionContext): void {
       await languageClientManager.restart();
       vscode.window.showInformationMessage('ExtremeXP Language Server restarted');
     } else {
-      vscode.window.showErrorMessage('Language server not available. Please restart the extension.');
+      vscode.window.showErrorMessage(
+        'Language server not available. Please restart the extension.'
+      );
     }
   });
 
@@ -305,7 +314,7 @@ function setupStatusBarListener(): void {
     serverManager.onStatusChange(status => {
       updateStatusBarItem(statusBarItem, status);
     });
-    
+
     // Get current status and update immediately
     const currentStatus = serverManager.getStatus();
     updateStatusBarItem(statusBarItem, currentStatus);

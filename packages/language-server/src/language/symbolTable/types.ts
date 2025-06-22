@@ -1,4 +1,7 @@
 import {
+  EspaceTaskConfigurationBodyContext,
+  EspaceControlBodyContext,
+  EspaceSpaceBodyContext,
   XxpDataNameReadContext,
   XxpTaskConfigurationBodyContext,
   XxpTaskNameReadContext,
@@ -14,4 +17,8 @@ export type ReadNameContext =
   | XxpDataNameReadContext
   | XxpTaskNameReadContext
   | XxpWorkflowNameReadContext;
-export type ScopedParserRuleContext = XxpTaskConfigurationBodyContext;
+export type ScopedParserRuleContext =
+  | XxpTaskConfigurationBodyContext
+  | EspaceControlBodyContext
+  | EspaceSpaceBodyContext
+  | EspaceTaskConfigurationBodyContext;

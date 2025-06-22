@@ -7,7 +7,7 @@ import { HoverProvider } from '../../providers/HoverProvider.js';
 import { ReferencesProvider } from '../../providers/ReferencesProvider.js';
 import { RenamerProvider } from '../../providers/RenamerProvider.js';
 import { XxpSuggestionsProvider } from '../../providers/XxpSuggestionsProvider.js';
-import { XxpSpaceSuggestionsProvider } from '../../providers/EspaceSuggestionsProvider.js';
+import { EspaceSuggestionsProvider } from '../../providers/EspaceSuggestionsProvider.js';
 
 export class ProvidersManager {
   private readonly logger = Logger.getLogger();
@@ -17,7 +17,7 @@ export class ProvidersManager {
     new ReferencesProvider(),
     new RenamerProvider(),
     new XxpSuggestionsProvider(),
-    new XxpSpaceSuggestionsProvider(),
+    new EspaceSuggestionsProvider(),
   ];
 
   constructor(

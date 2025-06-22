@@ -2,11 +2,14 @@ import { ParserRuleContext, TerminalNode } from 'antlr4ng';
 import { DiagnosticSeverity } from 'vscode-languageserver';
 import { Logger } from '../../../utils/Logger.js';
 import { XxpSymbolTableBuilder } from '../builders/XxpSymbolTableBuilder.js';
+import { EspaceSymbolTableBuilder } from '../builders/EspaceSymbolTableBuilder.js';
+
+type BuilderType = XxpSymbolTableBuilder | EspaceSymbolTableBuilder;
 
 const logger = Logger.getLogger();
 
 export function addDiagnostic(
-  builder: XxpSymbolTableBuilder,
+  builder: BuilderType,
   ctx: ParserRuleContext,
   message: string,
   severity: DiagnosticSeverity = DiagnosticSeverity.Error
@@ -25,7 +28,7 @@ export function addDiagnostic(
 }
 
 export function addDiagnosticForTerminalNode(
-  builder: XxpSymbolTableBuilder,
+  builder: BuilderType,
   node: TerminalNode,
   message: string,
   severity: DiagnosticSeverity = DiagnosticSeverity.Error
@@ -44,7 +47,7 @@ export function addDiagnosticForTerminalNode(
 }
 
 export function addDiagnosticAndContinue(
-  builder: XxpSymbolTableBuilder,
+  builder: BuilderType,
   ctx: ParserRuleContext,
   message: string
 ) {

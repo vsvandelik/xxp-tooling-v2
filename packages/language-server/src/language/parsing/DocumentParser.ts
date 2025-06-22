@@ -13,13 +13,13 @@ import { Diagnostic, DiagnosticSeverity } from 'vscode-languageserver';
 import { DiagnosticReportingErrorListener } from './DiagnosticReportingErrorListener.js';
 import { Logger } from '../../utils/Logger.js';
 import { DocumentSymbolTable } from '../symbolTable/DocumentSymbolTable.js';
-import { XxpSpaceSymbolTableBuilder } from '../symbolTable/builders/EspaceSymbolTableBuilder.js';
 import { XxpSymbolTableBuilder } from '../symbolTable/builders/XxpSymbolTableBuilder.js';
 import { XxpDocument } from '../../core/documents/XxpDocument.js';
 import { EspaceDocument } from '../../core/documents/EspaceDocument.js';
 import { Document } from '../../core/documents/Document.js';
 import { WorkflowSymbol } from '../../core/models/symbols/WorkflowSymbol.js';
 import { ESPACELexer, ESPACEParser, XXPLexer, XXPParser } from '@extremexp/core';
+import { EspaceSymbolTableBuilder } from '../symbolTable/builders/EspaceSymbolTableBuilder.js';
 
 export class DocumentParser {
   private logger = Logger.getLogger();
@@ -132,7 +132,7 @@ export class DocumentParser {
       tokenStream => new ESPACEParser(tokenStream),
       parser => (parser as ESPACEParser).program(),
       (documentsManager, document, symbolTable) =>
-        new XxpSpaceSymbolTableBuilder(documentsManager, document, symbolTable),
+        new EspaceSymbolTableBuilder(documentsManager, document, symbolTable),
       'Extra content found after the end of the experiment space declaration.',
       forcedFsParsing
     );
