@@ -1,11 +1,6 @@
 import { ParseTree } from 'antlr4ng';
 import { XXPVisitor } from '@extremexp/core';
-import {
-  DocumentAnalysis,
-  WorkflowAnalysis,
-  TaskAnalysis,
-  Reference,
-} from '../types/AnalysisTypes.js';
+import { DocumentAnalysis, WorkflowAnalysis, TaskAnalysis, Reference } from '../types/AnalysisTypes.js';
 import { Symbol } from './SymbolTable.js';
 import { ASTUtils } from '../utils/ASTUtils.js';
 
@@ -21,7 +16,9 @@ export class XXPAnalyzer extends XXPVisitor<any> {
     this.symbols = [];
     this.references = [];
     this.imports = [];
-    this.workflow = undefined; // Visit the parse tree
+    this.workflow = undefined;
+
+    // Visit the parse tree
     this.visit(parseTree);
 
     const result: DocumentAnalysis = {
@@ -48,13 +45,10 @@ export class XXPAnalyzer extends XXPVisitor<any> {
 
     if (ctx.workflowHeader().workflowNameRead()) {
       parentWorkflow = ctx.workflowHeader().workflowNameRead().IDENTIFIER().getText();
-      // Get the full range of the parent workflow reference
       parentWorkflowRange = ASTUtils.getNodeRange(ctx.workflowHeader().workflowNameRead());
-      // Add parent workflow to imports
+      
       if (parentWorkflow) {
         this.imports.push(parentWorkflow);
-
-        // Add reference to parent workflow
         this.references.push({
           name: parentWorkflow,
           type: 'workflow',
@@ -76,7 +70,9 @@ export class XXPAnalyzer extends XXPVisitor<any> {
       scope: 'global',
     };
 
-    this.symbols.push(workflowSymbol); // Create workflow analysis
+    this.symbols.push(workflowSymbol);
+
+    // Create workflow analysis
     this.workflow = {
       name,
       nameRange,
@@ -112,7 +108,7 @@ export class XXPAnalyzer extends XXPVisitor<any> {
     return null;
   };
 
-  handleTaskDefinition(ctx: any): any {
+  override visitTaskDefinition = (ctx: any): any => {
     const name = ctx.IDENTIFIER().getText();
     const nameRange = ASTUtils.getNodeRange(ctx.IDENTIFIER());
 
@@ -141,15 +137,26 @@ export class XXPAnalyzer extends XXPVisitor<any> {
       this.workflow.tasks.push(taskAnalysis);
     }
 
-    return null;
-  }
+    return this.visitChildren(ctx);
+  };
 
-  handleTaskConfiguration(ctx: any): any {
+  override visitTaskConfiguration = (ctx: any): any => {
     const taskName = ctx.taskConfigurationHeader().taskNameRead().IDENTIFIER().getText();
+
+    // Add task reference
+    this.references.push({
+      name: taskName,
+      type: 'task',
+      scope: this.workflow?.name || 'global',
+      range: ASTUtils.getNodeRange(ctx.taskConfigurationHeader().taskNameRead().IDENTIFIER()),
+      isDefinition: false,
+    });
 
     // Find the task in workflow
     const task = this.workflow?.tasks.find(t => t.name === taskName);
-    if (!task) return null;
+    if (!task) {
+      return this.visitChildren(ctx);
+    }
 
     // Process configuration content
     const body = ctx.taskConfigurationBody();
@@ -217,11 +224,11 @@ export class XXPAnalyzer extends XXPVisitor<any> {
       }
     }
 
-    return null;
-  }
+    return this.visitChildren(ctx);
+  };
 
-  handleTaskChain(ctx: any): any {
-    if (!this.workflow) return null;
+  override visitTaskChain = (ctx: any): any => {
+    if (!this.workflow) return this.visitChildren(ctx);
 
     const elements: string[] = [];
     const elementRanges: Record<string, any> = {};
@@ -258,10 +265,10 @@ export class XXPAnalyzer extends XXPVisitor<any> {
       range: ASTUtils.getNodeRange(ctx),
     };
 
-    return null;
-  }
+    return this.visitChildren(ctx);
+  };
 
-  handleDataDefinition(ctx: any): any {
+  override visitDataDefinition = (ctx: any): any => {
     const name = ctx.IDENTIFIER().getText();
     const nameRange = ASTUtils.getNodeRange(ctx.IDENTIFIER());
 
@@ -294,6 +301,6 @@ export class XXPAnalyzer extends XXPVisitor<any> {
       });
     }
 
-    return null;
-  }
+    return this.visitChildren(ctx);
+  };
 }

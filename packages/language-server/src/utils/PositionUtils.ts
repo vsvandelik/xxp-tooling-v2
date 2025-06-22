@@ -1,66 +1,95 @@
-import { Position, Range } from 'vscode-languageserver/node.js';
+import { ParseTree, TokenStream, ParserRuleContext, TerminalNode, Token } from 'antlr4ng';
+import { Position } from 'vscode-languageserver-textdocument';
+import { CaretPosition, TokenPosition } from '../core/types/Position.js';
 
 export class PositionUtils {
-  static isPositionInRange(position: Position, range: Range): boolean {
-    if (position.line < range.start.line || position.line > range.end.line) {
-      return false;
+    public static getCurrentPosition(
+        parseTree: ParseTree,
+        tokens: TokenStream,
+        position: Position
+    ): TokenPosition | undefined {
+        const caretPosition: CaretPosition = {
+            line: position.line + 1,
+            column: position.character
+        };
+        return this.getCurrentPositionFromCaretPosition(parseTree, tokens, caretPosition);
     }
 
-    if (position.line === range.start.line && position.character < range.start.character) {
-      return false;
+    public static getCurrentPositionFromCaretPosition(
+        parseTree: ParseTree,
+        tokens: TokenStream,
+        caretPosition: CaretPosition
+    ): TokenPosition | undefined {
+        const { index, token } = this.getNearestTokenIndex(tokens, caretPosition);
+        const terminalNodeOrParentRule = this.findTerminalNodeOrParentRule(
+            parseTree as ParserRuleContext,
+            index
+        );
+
+        let terminalNode: TerminalNode | undefined;
+        let parserRule: ParserRuleContext;
+
+        if (terminalNodeOrParentRule instanceof TerminalNode) {
+            terminalNode = terminalNodeOrParentRule;
+            parserRule = terminalNode.parent as ParserRuleContext;
+        } else {
+            parserRule = terminalNodeOrParentRule as ParserRuleContext;
+        }
+
+        if (token && parserRule) {
+            const text = token.text || "";
+            return {
+                index,
+                parseTree: parserRule,
+                text: text.trim(),
+                terminalNode
+            };
+        }
+
+        return undefined;
     }
 
-    if (position.line === range.end.line && position.character > range.end.character) {
-      return false;
+    private static getNearestTokenIndex(
+        tokens: TokenStream,
+        caretPosition: CaretPosition
+    ): { index: number; token: Token } {
+        let index = 0;
+        let token: Token = tokens.get(index);
+
+        for (index = 0; ; ++index) {
+            token = tokens.get(index);
+            if (token.type === Token.EOF || token.line > caretPosition.line || index === tokens.size - 1) {
+                break;
+            }
+            if (token.line < caretPosition.line) {
+                continue;
+            }
+            const length = token.text ? token.text.length : 0;
+            if ((token.column + length) >= caretPosition.column) {
+                break;
+            }
+        }
+
+        return { index, token };
     }
 
-    return true;
-  }
-
-  static comparePositions(a: Position, b: Position): number {
-    if (a.line !== b.line) {
-      return a.line - b.line;
+    private static findTerminalNodeOrParentRule(
+        parseTree: ParserRuleContext,
+        tokenIndex: number
+    ): TerminalNode | ParserRuleContext {
+        for (const child of parseTree.children) {
+            if (child instanceof TerminalNode && child.symbol.tokenIndex === tokenIndex) {
+                return child;
+            } else if (
+                child instanceof ParserRuleContext &&
+                child.start &&
+                child.stop &&
+                child.start.tokenIndex <= tokenIndex &&
+                child.stop.tokenIndex >= tokenIndex
+            ) {
+                return this.findTerminalNodeOrParentRule(child, tokenIndex);
+            }
+        }
+        return parseTree;
     }
-    return a.character - b.character;
-  }
-
-  static rangeContains(outer: Range, inner: Range): boolean {
-    return (
-      this.comparePositions(outer.start, inner.start) <= 0 &&
-      this.comparePositions(outer.end, inner.end) >= 0
-    );
-  }
-
-  static rangesOverlap(a: Range, b: Range): boolean {
-    return !(
-      this.comparePositions(a.end, b.start) < 0 || this.comparePositions(b.end, a.start) < 0
-    );
-  }
-
-  static offsetToPosition(text: string, offset: number): Position {
-    let line = 0;
-    let character = 0;
-
-    for (let i = 0; i < offset && i < text.length; i++) {
-      if (text[i] === '\n') {
-        line++;
-        character = 0;
-      } else {
-        character++;
-      }
-    }
-
-    return { line, character };
-  }
-
-  static positionToOffset(text: string, position: Position): number {
-    const lines = text.split('\n');
-    let offset = 0;
-    for (let i = 0; i < position.line && i < lines.length; i++) {
-      offset += (lines[i]?.length || 0) + 1; // +1 for newline
-    }
-
-    offset += position.character;
-    return offset;
-  }
 }

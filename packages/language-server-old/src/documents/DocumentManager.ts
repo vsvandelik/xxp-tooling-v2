@@ -9,6 +9,7 @@ import { SymbolTable } from '../analysis/SymbolTable.js';
 import { ParsedDocument } from '../types/ParsedDocument.js';
 import { ErrorListener } from '../utils/ErrorListener.js';
 import { Diagnostic } from 'vscode-languageserver/node.js';
+import { ASTUtils } from '../utils/ASTUtils.js';
 
 export class DocumentManager {
   private documents: Map<string, ParsedDocument> = new Map();
@@ -201,26 +202,9 @@ export class DocumentManager {
   }
 
   getNodeAtPosition(uri: string, line: number, character: number): ParseTree | null {
-    const doc = this.documents.get(uri);
-    if (!doc || !doc.parseTree) return null;
+  const doc = this.documents.get(uri);
+  if (!doc || !doc.parseTree) return null;
 
-    // TODO: Implement tree traversal to find node at position
-    // This is a simplified version - you'd want a more sophisticated implementation
-    const visitor = new PositionVisitor(line, character);
-    return visitor.findNode(doc.parseTree);
-  }
-}
-
-// Helper class to find nodes at specific positions
-class PositionVisitor {
-  constructor(
-    private line: number,
-    private character: number
-  ) {}
-
-  findNode(tree: ParseTree): ParseTree | null {
-    // TODO: Implementation would traverse the tree and find the most specific node
-    // at the given position. This is a placeholder.
-    return tree;
+  return ASTUtils.findNodeAtPosition(doc.parseTree, line, character);
   }
 }

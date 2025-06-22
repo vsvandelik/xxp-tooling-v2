@@ -70,7 +70,6 @@ export class ESPACEAnalyzer extends ESPACEVisitor<any> {
     const nameRange = ASTUtils.getNodeRange(ctx.spaceHeader().IDENTIFIER());
 
     const workflowName = ctx.spaceHeader().workflowNameRead().IDENTIFIER().getText();
-    // Get the full range of the workflow reference including "of WorkflowName"
     const workflowNameRange = ASTUtils.getNodeRange(ctx.spaceHeader().workflowNameRead());
 
     // Add workflow import
@@ -120,6 +119,8 @@ export class ESPACEAnalyzer extends ESPACEVisitor<any> {
         this.handleParamDefinition(content.paramDefinition(), spaceAnalysis);
       } else if (content.taskConfiguration()) {
         this.visitSpaceTaskConfiguration(content.taskConfiguration(), spaceAnalysis);
+      } else if (content.dataDefinition()) {
+        this.handleSpaceDataDefinition(content.dataDefinition(), spaceAnalysis);
       }
     }
 
@@ -127,7 +128,59 @@ export class ESPACEAnalyzer extends ESPACEVisitor<any> {
       this.experiment.spaces.push(spaceAnalysis);
     }
 
-    return null;
+    return this.visitChildren(ctx);
+  };
+
+  override visitControlBlock = (ctx: any): any => {
+    if (!this.experiment) return this.visitChildren(ctx);
+
+    const transitions: any[] = [];
+    const body = ctx.controlBody();
+
+    for (const content of body.controlContent()) {
+      if (content.simpleTransition()) {
+        this.processSimpleTransition(content.simpleTransition(), transitions);
+      } else if (content.conditionalTransition()) {
+        this.processConditionalTransition(content.conditionalTransition(), transitions);
+      }
+    }
+
+    this.experiment.controlFlow = {
+      transitions,
+      range: ASTUtils.getNodeRange(ctx),
+    };
+
+    return this.visitChildren(ctx);
+  };
+
+  override visitDataDefinition = (ctx: any): any => {
+    const name = ctx.IDENTIFIER().getText();
+    const nameRange = ASTUtils.getNodeRange(ctx.IDENTIFIER());
+    const value = ctx.STRING().getText().slice(1, -1);
+    const valueRange = ASTUtils.getNodeRange(ctx.STRING());
+
+    // Create data symbol
+    this.symbols.push({
+      name,
+      type: 'data',
+      kind: 'definition',
+      uri: this.uri,
+      range: ASTUtils.getNodeRange(ctx),
+      selectionRange: nameRange,
+      scope: this.experiment?.name || 'global',
+    });
+
+    // Add to experiment analysis
+    if (this.experiment) {
+      this.experiment.dataDefinitions.push({
+        name,
+        nameRange,
+        value,
+        valueRange,
+      });
+    }
+
+    return this.visitChildren(ctx);
   };
 
   private handleParamDefinition(ctx: any, spaceAnalysis: any): void {
@@ -211,27 +264,34 @@ export class ESPACEAnalyzer extends ESPACEVisitor<any> {
     spaceAnalysis.taskConfigurations.push(taskConfig);
   }
 
-  override visitControlBlock = (ctx: any): any => {
-    if (!this.experiment) return null;
+  private handleSpaceDataDefinition(ctx: any, spaceAnalysis: any): void {
+    const name = ctx.IDENTIFIER().getText();
+    const nameRange = ASTUtils.getNodeRange(ctx.IDENTIFIER());
+    const value = ctx.STRING().getText().slice(1, -1);
+    const valueRange = ASTUtils.getNodeRange(ctx.STRING());
 
-    const transitions: any[] = [];
-    const body = ctx.controlBody();
-
-    for (const content of body.controlContent()) {
-      if (content.simpleTransition()) {
-        this.processSimpleTransition(content.simpleTransition(), transitions);
-      } else if (content.conditionalTransition()) {
-        this.processConditionalTransition(content.conditionalTransition(), transitions);
-      }
-    }
-
-    this.experiment.controlFlow = {
-      transitions,
+    // Create data symbol with space scope
+    this.symbols.push({
+      name,
+      type: 'data',
+      kind: 'definition',
+      uri: this.uri,
       range: ASTUtils.getNodeRange(ctx),
-    };
+      selectionRange: nameRange,
+      scope: `${this.experiment?.name}:${spaceAnalysis.name}`,
+    });
 
-    return null;
-  };
+    // Add to space data definitions
+    if (!spaceAnalysis.dataDefinitions) {
+      spaceAnalysis.dataDefinitions = [];
+    }
+    spaceAnalysis.dataDefinitions.push({
+      name,
+      nameRange,
+      value,
+      valueRange,
+    });
+  }
 
   private processSimpleTransition(ctx: any, transitions: any[]): void {
     const spaceNames = ctx.spaceNameRead();
