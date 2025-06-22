@@ -32,11 +32,10 @@ export class VariableReadVisitor {
     prefix: string
   ): DocumentSymbolTable {
     const identifierText = ctx.IDENTIFIER().getText();
-    const symbols = this.builder.currentScope
-      .getNestedSymbolsOfTypeSync(type)
-      .filter(symbol => symbol.name === identifierText);
+    const symbol = this.builder.currentScope
+      .resolveSync(identifierText);
 
-    if (symbols.length === 0) {
+    if (symbol === null || symbol === undefined || !(symbol instanceof type)) {
       return addDiagnosticAndContinue(
         this.builder,
         ctx,
@@ -44,15 +43,7 @@ export class VariableReadVisitor {
       );
     }
 
-    if (symbols.length > 1) {
-      return addDiagnosticAndContinue(
-        this.builder,
-        ctx,
-        `${prefix} '${identifierText}' is defined multiple times`
-      );
-    }
-
-    const matchedSymbol = symbols[0];
+    const matchedSymbol = symbol;
     if (matchedSymbol instanceof TerminalSymbolWithReferences) {
       matchedSymbol.addReference(ctx.IDENTIFIER(), this.builder.document);
     } else if (matchedSymbol instanceof WorkflowSymbol) {

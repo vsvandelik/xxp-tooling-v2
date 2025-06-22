@@ -53,6 +53,8 @@ export class TaskVisitor {
 
     this.builder.visitChildren(ctx.taskConfigurationHeader()!);
 
+    /* TODO: don't allow configuring START and END tasks */
+
     return visitScopeSymbol(
       this.builder,
       TaskConfigurationScopeSymbol,

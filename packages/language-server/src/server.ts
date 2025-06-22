@@ -2,7 +2,6 @@ import {
   createConnection,
   TextDocuments,
   ProposedFeatures,
-  InitializeParams,
   TextDocumentSyncKind,
   InitializeResult,
   Connection,
@@ -18,6 +17,10 @@ import { ProvidersManager } from './core/managers/ProvidersManager.js';
 const connection: Connection = createConnection(ProposedFeatures.all);
 const logger = Logger.setupLogger(connection);
 
+console.log('Language server starting...');
+console.log('Process args:', process.argv);
+console.log('Debug port should be available on 6009');
+
 // Create a document manager with all open documents
 const documents: TextDocuments<TextDocument> = new TextDocuments(TextDocument);
 
@@ -27,7 +30,7 @@ const documentManager = new DocumentManager();
 // Create a providers manager
 const providersManager = new ProvidersManager(connection, documentManager);
 
-connection.onInitialize((params: InitializeParams): InitializeResult => {
+connection.onInitialize((): InitializeResult => {
   logger.info('Initializing XXP Language Server');
 
   // Declare server capabilities

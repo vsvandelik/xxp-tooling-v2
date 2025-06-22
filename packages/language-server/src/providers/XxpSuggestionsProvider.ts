@@ -116,6 +116,8 @@ export class XxpSuggestionsProvider extends Provider {
         symbolTable,
         CompletionItemKind.Variable
       );
+
+      /* TODO: don't allow configuring START and END tasks */
     }
 
     return proposedSymbols;

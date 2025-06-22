@@ -25,6 +25,8 @@ export class DataVisitor {
       this.builder.document
     );
 
+    /* TODO: Handle define data which are overriding existing data -> error */
+
     return this.builder.visitChildren(ctx) as DocumentSymbolTable;
   }
 }
