@@ -484,10 +484,34 @@ export class XxpSymbolTableBuilder
     return undefined;
   }
 
-  private addWorkflowReference(_ctx: ParserRuleContext, _workflowName: string): void {
-    // Add reference tracking for workflow names
-    // This could be used for go-to-definition and find references
-  } // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private addWorkflowReference(ctx: ParserRuleContext, workflowName: string): void {
+    // First, try to find the workflow in the current document
+    let workflowSymbol = this.findWorkflowSymbol(workflowName);
+
+    // If not found locally, try to find it in other documents
+    if (!workflowSymbol) {
+      const workflowDocument = this.loadParentWorkflowDocument(workflowName);
+      if (workflowDocument && workflowDocument.symbolTable) {
+        workflowSymbol = this.findWorkflowInDocument(workflowDocument, workflowName);
+      }
+    }
+
+    // Add reference if symbol found
+    if (workflowSymbol) {
+      workflowSymbol.addReference(ctx, this.document);
+    }
+  }
+
+  private findWorkflowSymbol(workflowName: string): WorkflowSymbol | undefined {
+    // Search in folder symbol table
+    for (const child of this.folderSymbolTable.children) {
+      if (child instanceof WorkflowSymbol && child.name === workflowName) {
+        return child;
+      }
+    }
+    return undefined;
+  }
+
   private addSymbol<T extends BaseSymbol>(
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     type: new (...args: any[]) => T,

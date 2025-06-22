@@ -7,6 +7,7 @@ import {
   InitializeResult,
   Connection,
   ServerCapabilities,
+  CodeActionKind,
 } from 'vscode-languageserver/node';
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import { DocumentManager } from './core/managers/DocumentManager.js';
@@ -24,11 +25,23 @@ connection.onInitialize((params: InitializeParams): InitializeResult => {
 
   const capabilities: ServerCapabilities = {
     textDocumentSync: TextDocumentSyncKind.Incremental,
-    completionProvider: { resolveProvider: true },
+    completionProvider: {
+      resolveProvider: true,
+      triggerCharacters: ['.', ':', ' ', '"'],
+    },
     hoverProvider: true,
     definitionProvider: true,
     referencesProvider: true,
     renameProvider: { prepareProvider: false },
+    documentSymbolProvider: true,
+    codeActionProvider: {
+      codeActionKinds: [
+        CodeActionKind.QuickFix,
+        CodeActionKind.Refactor,
+        CodeActionKind.RefactorExtract,
+        CodeActionKind.RefactorInline,
+      ],
+    },
     diagnosticProvider: {
       interFileDependencies: true,
       workspaceDiagnostics: false,
@@ -41,6 +54,11 @@ connection.onInitialize((params: InitializeParams): InitializeResult => {
 connection.onInitialized(() => {
   logger.info('DSL Language Server initialized');
   providersManager.registerProviders();
+});
+
+// Handle shutdown request
+connection.onShutdown(() => {
+  logger.info('DSL Language Server shutting down');
 });
 
 documents.onDidOpen(e => documentManager.onDocumentOpened(e.document));

@@ -6,6 +6,9 @@ import { HoverProvider } from '../../providers/HoverProvider.js';
 import { CompletionProvider } from '../../providers/CompletionProvider.js';
 import { ReferencesProvider } from '../../providers/ReferencesProvider.js';
 import { RenameProvider } from '../../providers/RenameProvider.js';
+import { DefinitionProvider } from '../../providers/DefinitionProvider.js';
+import { CodeActionProvider } from '../../providers/CodeActionProvider.js';
+import { DocumentSymbolProvider } from '../../providers/DocumentSymbolProvider.js';
 import { Logger } from '../../utils/Logger.js';
 
 export class ProvidersManager {
@@ -16,6 +19,9 @@ export class ProvidersManager {
     new CompletionProvider(),
     new ReferencesProvider(),
     new RenameProvider(),
+    new DefinitionProvider(),
+    new CodeActionProvider(),
+    new DocumentSymbolProvider(),
   ];
 
   constructor(

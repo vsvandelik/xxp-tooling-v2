@@ -33,6 +33,7 @@ import {
   EnumFunctionContext,
   RangeFunctionContext,
 } from '@extremexp/core/src/language/generated/ESPACEParser.js';
+import { WorkflowSymbol } from '../WorkflowSymbol.js';
 
 interface ControlFlowTransition {
   from: string;
@@ -582,10 +583,35 @@ export class EspaceSymbolTableBuilder
     return numbers.map(num => parseFloat(num.getText()));
   }
 
-  private addWorkflowReference(_ctx: ParserRuleContext, _workflowName: string): void {
-    // Add reference tracking for workflow names
-    // This could be used for go-to-definition and find references
-  } // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private addWorkflowReference(ctx: ParserRuleContext, workflowName: string): void {
+    // First, try to find the workflow in the folder symbol table
+    let workflowSymbol: WorkflowSymbol | undefined;
+
+    // Search in all documents managed by DocumentManager
+    const allDocuments = this.documentManager.getAllDocuments();
+    for (const [uri, doc] of allDocuments) {
+      if (!doc.symbolTable || !uri.endsWith('.xxp')) continue;
+
+      const workflows = doc.symbolTable.getNestedSymbolsOfTypeSync(WorkflowSymbol);
+      workflowSymbol = workflows.find(w => w.name === workflowName);
+      if (workflowSymbol) break;
+    }
+
+    // If not found in loaded documents, try to load the workflow document
+    if (!workflowSymbol) {
+      const workflowDocument = this.loadWorkflowDocument(workflowName);
+      if (workflowDocument && workflowDocument.symbolTable) {
+        const workflows = workflowDocument.symbolTable.getNestedSymbolsOfTypeSync(WorkflowSymbol);
+        workflowSymbol = workflows.find(w => w.name === workflowName);
+      }
+    }
+
+    // Add reference if symbol found
+    if (workflowSymbol) {
+      workflowSymbol.addReference(ctx, this.document);
+    }
+  }
+
   private addSymbol<T extends BaseSymbol>(
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     type: new (...args: any[]) => T,
