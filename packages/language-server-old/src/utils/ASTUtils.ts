@@ -18,19 +18,19 @@ export class ASTUtils {
   static getRuleName(node: ParseTree, parser?: any): string | null {
     if (node instanceof ParserRuleContext) {
       const ruleIndex = node.ruleIndex;
-      
+
       // Try to get rule name from parser if available
       if (parser && parser.ruleNames && parser.ruleNames[ruleIndex]) {
         return parser.ruleNames[ruleIndex];
       }
-      
+
       // Fallback to common rule names based on context
       // This is a temporary solution until we have proper parser integration
       const className = node.constructor.name;
       if (className.endsWith('Context')) {
         return className.replace('Context', '').toLowerCase();
       }
-      
+
       return `rule_${ruleIndex}`;
     }
     return null;
@@ -45,7 +45,7 @@ export class ASTUtils {
 
     // Walk up the tree to find context
     const context = this.findContextType(node);
-    
+
     if (languageId === 'xxp') {
       return this.getXXPReferenceInfo(text, context, node);
     } else if (languageId === 'espace') {
@@ -126,7 +126,7 @@ export class ASTUtils {
 
   static findNodeAtPosition(tree: ParseTree, line: number, character: number): ParseTree | null {
     const targetLine = line + 1; // Convert to 1-based for ANTLR
-    
+
     // If this is a terminal node, check if position is within it
     if (tree instanceof TerminalNode) {
       const token = tree.symbol;
@@ -166,7 +166,10 @@ export class ASTUtils {
     return null;
   }
 
-  private static isPositionInRange(position: { line: number; character: number }, range: Range): boolean {
+  private static isPositionInRange(
+    position: { line: number; character: number },
+    range: Range
+  ): boolean {
     if (position.line < range.start.line || position.line > range.end.line) {
       return false;
     }
@@ -188,7 +191,7 @@ export class ASTUtils {
     while (current) {
       if (current instanceof ParserRuleContext) {
         const className = current.constructor.name;
-        
+
         // Map class names to context types
         if (className.includes('WorkflowHeader')) return 'workflowHeader';
         if (className.includes('WorkflowDeclaration')) return 'workflowDeclaration';
@@ -199,7 +202,7 @@ export class ASTUtils {
         if (className.includes('WorkflowNameRead')) return 'workflowNameRead';
         if (className.includes('TaskNameRead')) return 'taskNameRead';
         if (className.includes('DataNameRead')) return 'dataNameRead';
-        
+
         if (className.includes('ExperimentHeader')) return 'experimentHeader';
         if (className.includes('ExperimentDeclaration')) return 'experimentDeclaration';
         if (className.includes('SpaceHeader')) return 'spaceHeader';
@@ -243,7 +246,11 @@ export class ASTUtils {
     }
   }
 
-  private static getESPACEReferenceInfo(text: string, context: string, node: ParseTree): any | null {
+  private static getESPACEReferenceInfo(
+    text: string,
+    context: string,
+    node: ParseTree
+  ): any | null {
     switch (context) {
       case 'workflowNameRead':
         return {
@@ -397,7 +404,10 @@ export class ASTUtils {
     return undefined;
   }
 
-  private static extractIdentifierFromContext(context: ParserRuleContext, headerType: string): string | null {
+  private static extractIdentifierFromContext(
+    context: ParserRuleContext,
+    headerType: string
+  ): string | null {
     // This is a simplified extraction - in a real implementation you'd traverse the tree properly
     for (let i = 0; i < context.getChildCount(); i++) {
       const child = context.getChild(i);

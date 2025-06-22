@@ -1,12 +1,12 @@
 import {
-    createConnection,
-    TextDocuments,
-    ProposedFeatures,
-    InitializeParams,
-    TextDocumentSyncKind,
-    InitializeResult,
-    Connection,
-    ServerCapabilities,
+  createConnection,
+  TextDocuments,
+  ProposedFeatures,
+  InitializeParams,
+  TextDocumentSyncKind,
+  InitializeResult,
+  Connection,
+  ServerCapabilities,
 } from 'vscode-languageserver/node';
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import { DocumentManager } from './core/managers/DocumentManager.js';
@@ -20,27 +20,27 @@ const documentManager = new DocumentManager();
 const providersManager = new ProvidersManager(connection, documentManager);
 
 connection.onInitialize((params: InitializeParams): InitializeResult => {
-    logger.info('Initializing DSL Language Server');
-    
-    const capabilities: ServerCapabilities = {
-        textDocumentSync: TextDocumentSyncKind.Incremental,
-        completionProvider: { resolveProvider: true },
-        hoverProvider: true,
-        definitionProvider: true,
-        referencesProvider: true,
-        renameProvider: { prepareProvider: false },
-        diagnosticProvider: {
-            interFileDependencies: true,
-            workspaceDiagnostics: false
-        },
-    };
+  logger.info('Initializing DSL Language Server');
 
-    return { capabilities };
+  const capabilities: ServerCapabilities = {
+    textDocumentSync: TextDocumentSyncKind.Incremental,
+    completionProvider: { resolveProvider: true },
+    hoverProvider: true,
+    definitionProvider: true,
+    referencesProvider: true,
+    renameProvider: { prepareProvider: false },
+    diagnosticProvider: {
+      interFileDependencies: true,
+      workspaceDiagnostics: false,
+    },
+  };
+
+  return { capabilities };
 });
 
 connection.onInitialized(() => {
-    logger.info('DSL Language Server initialized');
-    providersManager.registerProviders();
+  logger.info('DSL Language Server initialized');
+  providersManager.registerProviders();
 });
 
 documents.onDidOpen(e => documentManager.onDocumentOpened(e.document));

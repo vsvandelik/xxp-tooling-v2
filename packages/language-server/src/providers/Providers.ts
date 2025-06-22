@@ -5,23 +5,30 @@ import { PositionUtils } from '../utils/PositionUtils.js';
 import { TokenPosition } from '../core/types/Position.js';
 
 export abstract class Provider {
-    protected documentManager?: DocumentManager;
-    protected connection?: Connection;
+  protected documentManager?: DocumentManager;
+  protected connection?: Connection;
 
-    public initialize(connection: Connection, documentManager: DocumentManager): void {
-        this.connection = connection;
-        this.documentManager = documentManager;
-    }
+  public initialize(connection: Connection, documentManager: DocumentManager): void {
+    this.connection = connection;
+    this.documentManager = documentManager;
+  }
 
-    protected getDocumentAndPosition(textDocument: TextDocumentIdentifier, position: Position): [Document, TokenPosition] | undefined {
-        const document = this.documentManager?.getDocument(textDocument.uri);
-        if (!document || !document.rootParseTree || !document.tokenStream) return undefined;
+  protected getDocumentAndPosition(
+    textDocument: TextDocumentIdentifier,
+    position: Position
+  ): [Document, TokenPosition] | undefined {
+    const document = this.documentManager?.getDocument(textDocument.uri);
+    if (!document || !document.rootParseTree || !document.tokenStream) return undefined;
 
-        const tokenPosition = PositionUtils.getCurrentPosition(document.rootParseTree, document.tokenStream, position);
-        if (!tokenPosition) return undefined;
+    const tokenPosition = PositionUtils.getCurrentPosition(
+      document.rootParseTree,
+      document.tokenStream,
+      position
+    );
+    if (!tokenPosition) return undefined;
 
-        return [document, tokenPosition];
-    }
+    return [document, tokenPosition];
+  }
 
-    public abstract addHandlers(): void;
+  public abstract addHandlers(): void;
 }

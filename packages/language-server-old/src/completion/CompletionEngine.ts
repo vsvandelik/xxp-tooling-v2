@@ -151,79 +151,79 @@ export class CompletionEngine {
     }
   }
   private analyzeExpectedElements(
-  context: CompletionContext,
-  document: ParsedDocument,
-  line: number,
-  character: number
-): void {
-  if (!document.tokens) return;
+    context: CompletionContext,
+    document: ParsedDocument,
+    line: number,
+    character: number
+  ): void {
+    if (!document.tokens) return;
 
-  try {
-    // Get the token index at the cursor position
-    const tokenIndex = this.getTokenIndexAtPosition(document.tokens, line, character);
-    if (tokenIndex === -1) return;
+    try {
+      // Get the token index at the cursor position
+      const tokenIndex = this.getTokenIndexAtPosition(document.tokens, line, character);
+      if (tokenIndex === -1) return;
 
-    // For now, implement basic context-based completion
-    // This is a simplified version - full ANTLR4-C3 integration would be more complex
-    
-    // Based on the current line content, determine what we expect
-    const lineText = context.lineText.trim();
-    
-    if (document.languageId === 'xxp') {
-      this.analyzeXXPContext(context, lineText);
-    } else if (document.languageId === 'espace') {
-      this.analyzeESPACEContext(context, lineText);
+      // For now, implement basic context-based completion
+      // This is a simplified version - full ANTLR4-C3 integration would be more complex
+
+      // Based on the current line content, determine what we expect
+      const lineText = context.lineText.trim();
+
+      if (document.languageId === 'xxp') {
+        this.analyzeXXPContext(context, lineText);
+      } else if (document.languageId === 'espace') {
+        this.analyzeESPACEContext(context, lineText);
+      }
+    } catch (error) {
+      console.error('Error in completion analysis:', error);
     }
-  } catch (error) {
-    console.error('Error in completion analysis:', error);
   }
-}
 
-private analyzeXXPContext(context: CompletionContext, lineText: string): void {
-  if (context.isTopLevel) {
-    context.expectsKeyword = true;
-    context.possibleKeywords.push('workflow');
-  } else if (context.isInWorkflowBody) {
-    context.expectsKeyword = true;
-    context.possibleKeywords.push('define', 'configure');
-    
-    if (lineText.includes('task')) {
-      context.expectsTaskName = true;
-    } else if (lineText.includes('from')) {
-      context.expectsWorkflowName = true;
-    }
-  } else if (context.isInTaskConfiguration) {
-    context.expectsKeyword = true;
-    context.possibleKeywords.push('implementation', 'param', 'input', 'output');
-  } else if (context.isInTaskChain) {
-    context.expectsTaskName = true;
-  }
-}
+  private analyzeXXPContext(context: CompletionContext, lineText: string): void {
+    if (context.isTopLevel) {
+      context.expectsKeyword = true;
+      context.possibleKeywords.push('workflow');
+    } else if (context.isInWorkflowBody) {
+      context.expectsKeyword = true;
+      context.possibleKeywords.push('define', 'configure');
 
-private analyzeESPACEContext(context: CompletionContext, lineText: string): void {
-  if (context.isTopLevel) {
-    context.expectsKeyword = true;
-    context.possibleKeywords.push('experiment');
-  } else if (context.isInExperimentBody) {
-    context.expectsKeyword = true;
-    context.possibleKeywords.push('space', 'control', 'define');
-    
-    if (lineText.includes('of')) {
-      context.expectsWorkflowName = true;
-    }
-  } else if (context.isInSpaceBody) {
-    context.expectsKeyword = true;
-    context.possibleKeywords.push('strategy', 'param', 'configure', 'define');
-    
-    if (lineText.includes('strategy')) {
-      context.expectsStrategyName = true;
-    } else if (lineText.includes('task')) {
+      if (lineText.includes('task')) {
+        context.expectsTaskName = true;
+      } else if (lineText.includes('from')) {
+        context.expectsWorkflowName = true;
+      }
+    } else if (context.isInTaskConfiguration) {
+      context.expectsKeyword = true;
+      context.possibleKeywords.push('implementation', 'param', 'input', 'output');
+    } else if (context.isInTaskChain) {
       context.expectsTaskName = true;
     }
-  } else if (context.isInControlBlock) {
-    context.expectsSpaceName = true;
   }
-}
+
+  private analyzeESPACEContext(context: CompletionContext, lineText: string): void {
+    if (context.isTopLevel) {
+      context.expectsKeyword = true;
+      context.possibleKeywords.push('experiment');
+    } else if (context.isInExperimentBody) {
+      context.expectsKeyword = true;
+      context.possibleKeywords.push('space', 'control', 'define');
+
+      if (lineText.includes('of')) {
+        context.expectsWorkflowName = true;
+      }
+    } else if (context.isInSpaceBody) {
+      context.expectsKeyword = true;
+      context.possibleKeywords.push('strategy', 'param', 'configure', 'define');
+
+      if (lineText.includes('strategy')) {
+        context.expectsStrategyName = true;
+      } else if (lineText.includes('task')) {
+        context.expectsTaskName = true;
+      }
+    } else if (context.isInControlBlock) {
+      context.expectsSpaceName = true;
+    }
+  }
 
   private getTokenIndexAtPosition(
     tokens: CommonTokenStream,

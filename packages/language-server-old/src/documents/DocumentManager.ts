@@ -202,9 +202,9 @@ export class DocumentManager {
   }
 
   getNodeAtPosition(uri: string, line: number, character: number): ParseTree | null {
-  const doc = this.documents.get(uri);
-  if (!doc || !doc.parseTree) return null;
+    const doc = this.documents.get(uri);
+    if (!doc || !doc.parseTree) return null;
 
-  return ASTUtils.findNodeAtPosition(doc.parseTree, line, character);
+    return ASTUtils.findNodeAtPosition(doc.parseTree, line, character);
   }
 }

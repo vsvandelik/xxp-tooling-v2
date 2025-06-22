@@ -1,13 +1,15 @@
 
 {
-  "extends": "../../tsconfig.json",  
-  "compilerOptions": {
+  "extends": "../../tsconfig.json",    "compilerOptions": {
       "outDir": "./dist",
       "rootDir": "./src",
       "composite": true,
       "declaration": true,
       "declarationMap": true,
-      "exactOptionalPropertyTypes": false
+      "exactOptionalPropertyTypes": false,
+      "strict": false,
+      "strictNullChecks": false,
+      "strictPropertyInitialization": false
   },
   "include": [
     "src/**/*"

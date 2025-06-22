@@ -1,6 +1,11 @@
 import { ParseTree } from 'antlr4ng';
 import { XXPVisitor } from '@extremexp/core';
-import { DocumentAnalysis, WorkflowAnalysis, TaskAnalysis, Reference } from '../types/AnalysisTypes.js';
+import {
+  DocumentAnalysis,
+  WorkflowAnalysis,
+  TaskAnalysis,
+  Reference,
+} from '../types/AnalysisTypes.js';
 import { Symbol } from './SymbolTable.js';
 import { ASTUtils } from '../utils/ASTUtils.js';
 
@@ -46,7 +51,7 @@ export class XXPAnalyzer extends XXPVisitor<any> {
     if (ctx.workflowHeader().workflowNameRead()) {
       parentWorkflow = ctx.workflowHeader().workflowNameRead().IDENTIFIER().getText();
       parentWorkflowRange = ASTUtils.getNodeRange(ctx.workflowHeader().workflowNameRead());
-      
+
       if (parentWorkflow) {
         this.imports.push(parentWorkflow);
         this.references.push({

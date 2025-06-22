@@ -9,29 +9,29 @@ import { RenameProvider } from '../../providers/RenameProvider.js';
 import { Logger } from '../../utils/Logger.js';
 
 export class ProvidersManager {
-    private readonly logger = Logger.getInstance();
-    private readonly providers: Provider[] = [
-        new DiagnosticsProvider(),
-        new HoverProvider(),
-        new CompletionProvider(),
-        new ReferencesProvider(),
-        new RenameProvider(),
-    ];
+  private readonly logger = Logger.getInstance();
+  private readonly providers: Provider[] = [
+    new DiagnosticsProvider(),
+    new HoverProvider(),
+    new CompletionProvider(),
+    new ReferencesProvider(),
+    new RenameProvider(),
+  ];
 
-    constructor(
-        private readonly connection: Connection,
-        private readonly documentsManager: DocumentManager
-    ) {}
+  constructor(
+    private readonly connection: Connection,
+    private readonly documentsManager: DocumentManager
+  ) {}
 
-    public registerProviders(): void {
-        for (const provider of this.providers) {
-            this.registerProvider(provider);
-        }
+  public registerProviders(): void {
+    for (const provider of this.providers) {
+      this.registerProvider(provider);
     }
+  }
 
-    private registerProvider(provider: Provider): void {
-        provider.initialize(this.connection, this.documentsManager);
-        provider.addHandlers();
-        this.logger.info(`Registered provider: ${provider.constructor.name}`);
-    }
+  private registerProvider(provider: Provider): void {
+    provider.initialize(this.connection, this.documentsManager);
+    provider.addHandlers();
+    this.logger.info(`Registered provider: ${provider.constructor.name}`);
+  }
 }

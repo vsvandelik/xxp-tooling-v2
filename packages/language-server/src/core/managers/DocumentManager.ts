@@ -10,141 +10,141 @@ import { FileUtils } from '../../utils/FileUtils.js';
 import { Logger } from '../../utils/Logger.js';
 
 export class DocumentManager {
-    private readonly parsedDocuments = new Map<string, Document>();
-    private readonly folderSymbolTables = new Map<string, DocumentSymbolTable>();
-    private readonly documentParser = new DocumentParser(this);
-    private readonly semanticAnalyzer = new SemanticAnalyzer();
-    private readonly logger = Logger.getInstance();
+  private readonly parsedDocuments = new Map<string, Document>();
+  private readonly folderSymbolTables = new Map<string, DocumentSymbolTable>();
+  private readonly documentParser = new DocumentParser(this);
+  private readonly semanticAnalyzer = new SemanticAnalyzer();
+  private readonly logger = Logger.getInstance();
 
-    public onDocumentOpened(document: TextDocument): void {
-        this.logger.info(`Document opened: ${document.uri}`);
-        this.parseAndUpdateDocument(document);
-        this.runSemanticAnalysis();
+  public onDocumentOpened(document: TextDocument): void {
+    this.logger.info(`Document opened: ${document.uri}`);
+    this.parseAndUpdateDocument(document);
+    this.runSemanticAnalysis();
+  }
+
+  public onDocumentChanged(document: TextDocument): void {
+    this.logger.info(`Document changed: ${document.uri}`);
+    this.parseAndUpdateDocument(document);
+    this.runSemanticAnalysis();
+  }
+
+  public onDocumentClosed(document: TextDocument): void {
+    this.logger.info(`Document closed: ${document.uri}`);
+
+    const closedDocument = this.parsedDocuments.get(document.uri);
+    if (closedDocument) {
+      // Clean up dependencies
+      this.cleanupDocumentDependencies(closedDocument);
     }
 
-    public onDocumentChanged(document: TextDocument): void {
-        this.logger.info(`Document changed: ${document.uri}`);
-        this.parseAndUpdateDocument(document);
-        this.runSemanticAnalysis();
+    this.parsedDocuments.delete(document.uri);
+    this.cleanupUnusedSymbolTables();
+  }
+
+  private parseAndUpdateDocument(document: TextDocument): void {
+    const existingDocument = this.parsedDocuments.get(document.uri);
+    if (existingDocument) {
+      existingDocument.updateDocument(document);
+      return;
     }
 
-    public onDocumentClosed(document: TextDocument): void {
-        this.logger.info(`Document closed: ${document.uri}`);
-        
-        const closedDocument = this.parsedDocuments.get(document.uri);
-        if (closedDocument) {
-            // Clean up dependencies
-            this.cleanupDocumentDependencies(closedDocument);
-        }
-        
-        this.parsedDocuments.delete(document.uri);
-        this.cleanupUnusedSymbolTables();
+    const newDocument = this.createDocument(document);
+    if (newDocument) {
+      this.parsedDocuments.set(document.uri, newDocument);
+      newDocument.updateDocument(document);
+    }
+  }
+
+  private createDocument(document: TextDocument): Document | undefined {
+    const fileType = FileUtils.getDocumentType(document.uri);
+    if (!fileType) {
+      this.logger.warn(`Unknown file type for ${document.uri}`);
+      return undefined;
     }
 
-    private parseAndUpdateDocument(document: TextDocument): void {
-        const existingDocument = this.parsedDocuments.get(document.uri);
-        if (existingDocument) {
-            existingDocument.updateDocument(document);
-            return;
-        }
+    switch (fileType) {
+      case DocumentType.XXP:
+        return new XxpDocument(document.uri, this.documentParser);
+      case DocumentType.ESPACE:
+        return new EspaceDocument(document.uri, this.documentParser);
+      default:
+        this.logger.warn(`Unsupported file type for ${document.uri}`);
+        return undefined;
+    }
+  }
 
-        const newDocument = this.createDocument(document);
-        if (newDocument) {
-            this.parsedDocuments.set(document.uri, newDocument);
-            newDocument.updateDocument(document);
-        }
+  public getDocument(uri: string): Document | undefined {
+    return this.parsedDocuments.get(uri);
+  }
+
+  public getAllDocuments(): Map<string, Document> {
+    return new Map(this.parsedDocuments);
+  }
+
+  public loadDocumentFromFileSystem(uri: string): Document | undefined {
+    if (this.parsedDocuments.has(uri)) {
+      return this.parsedDocuments.get(uri);
     }
 
-    private createDocument(document: TextDocument): Document | undefined {
-        const fileType = FileUtils.getDocumentType(document.uri);
-        if (!fileType) {
-            this.logger.warn(`Unknown file type for ${document.uri}`);
-            return undefined;
-        }
+    const textDocument = FileUtils.readTextDocument(uri);
+    if (!textDocument) return undefined;
 
-        switch (fileType) {
-            case DocumentType.XXP:
-                return new XxpDocument(document.uri, this.documentParser);
-            case DocumentType.ESPACE:
-                return new EspaceDocument(document.uri, this.documentParser);
-            default:
-                this.logger.warn(`Unsupported file type for ${document.uri}`);
-                return undefined;
-        }
+    const document = this.createDocument(textDocument);
+    if (document) {
+      this.parsedDocuments.set(uri, document);
+      document.updateDocument(textDocument);
+    }
+    return document;
+  }
+
+  public getFolderSymbolTable(uri: string): DocumentSymbolTable {
+    const folderPath = FileUtils.getFolderPath(uri);
+    let symbolTable = this.folderSymbolTables.get(folderPath);
+
+    if (!symbolTable) {
+      symbolTable = new DocumentSymbolTable(folderPath);
+      this.folderSymbolTables.set(folderPath, symbolTable);
     }
 
-    public getDocument(uri: string): Document | undefined {
-        return this.parsedDocuments.get(uri);
+    return symbolTable;
+  }
+
+  private runSemanticAnalysis(): void {
+    try {
+      this.semanticAnalyzer.analyzeDocuments(this.parsedDocuments);
+    } catch (error) {
+      this.logger.error(`Error during semantic analysis: ${error}`);
+    }
+  }
+
+  private cleanupDocumentDependencies(document: Document): void {
+    // Remove this document from all dependencies
+    for (const dependency of document.dependencies) {
+      dependency.dependents.delete(document);
     }
 
-    public getAllDocuments(): Map<string, Document> {
-        return new Map(this.parsedDocuments);
+    // Remove this document from all dependents
+    for (const dependent of document.dependents) {
+      dependent.dependencies.delete(document);
     }
 
-    public loadDocumentFromFileSystem(uri: string): Document | undefined {
-        if (this.parsedDocuments.has(uri)) {
-            return this.parsedDocuments.get(uri);
-        }
+    document.dependencies.clear();
+    document.dependents.clear();
+  }
 
-        const textDocument = FileUtils.readTextDocument(uri);
-        if (!textDocument) return undefined;
+  private cleanupUnusedSymbolTables(): void {
+    const usedFolders = new Set<string>();
 
-        const document = this.createDocument(textDocument);
-        if (document) {
-            this.parsedDocuments.set(uri, document);
-            document.updateDocument(textDocument);
-        }
-        return document;
+    for (const document of this.parsedDocuments.values()) {
+      const folderPath = FileUtils.getFolderPath(document.uri);
+      usedFolders.add(folderPath);
     }
 
-    public getFolderSymbolTable(uri: string): DocumentSymbolTable {
-        const folderPath = FileUtils.getFolderPath(uri);
-        let symbolTable = this.folderSymbolTables.get(folderPath);
-        
-        if (!symbolTable) {
-            symbolTable = new DocumentSymbolTable(folderPath);
-            this.folderSymbolTables.set(folderPath, symbolTable);
-        }
-        
-        return symbolTable;
+    for (const [folderPath, symbolTable] of this.folderSymbolTables.entries()) {
+      if (!usedFolders.has(folderPath)) {
+        symbolTable.clear();
+        this.folderSymbolTables.delete(folderPath);
+      }
     }
-
-    private runSemanticAnalysis(): void {
-        try {
-            this.semanticAnalyzer.analyzeDocuments(this.parsedDocuments);
-        } catch (error) {
-            this.logger.error(`Error during semantic analysis: ${error}`);
-        }
-    }
-
-    private cleanupDocumentDependencies(document: Document): void {
-        // Remove this document from all dependencies
-        for (const dependency of document.dependencies) {
-            dependency.dependents.delete(document);
-        }
-        
-        // Remove this document from all dependents
-        for (const dependent of document.dependents) {
-            dependent.dependencies.delete(document);
-        }
-        
-        document.dependencies.clear();
-        document.dependents.clear();
-    }
-
-    private cleanupUnusedSymbolTables(): void {
-        const usedFolders = new Set<string>();
-        
-        for (const document of this.parsedDocuments.values()) {
-            const folderPath = FileUtils.getFolderPath(document.uri);
-            usedFolders.add(folderPath);
-        }
-
-        for (const [folderPath, symbolTable] of this.folderSymbolTables.entries()) {
-            if (!usedFolders.has(folderPath)) {
-                symbolTable.clear();
-                this.folderSymbolTables.delete(folderPath);
-            }
-        }
-    }
+  }
 }
