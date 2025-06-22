@@ -28,50 +28,103 @@ let repositoryConfigManager: RepositoryConfigManager;
 let workflowRepositoryProvider: WorkflowRepositoryProvider;
 let workflowCommands: WorkflowCommands;
 
+// Status bar item reference
+let statusBarItem: vscode.StatusBarItem;
+
 /**
  * This method is called when your extension is activated
  */
 export async function activate(context: vscode.ExtensionContext) {
   console.log('ExtremeXP extension is now active!');
 
-  await initializeServices(context);
-  await initializeWorkflowRepository(context);
-  await initializeLanguageServer(context);
-  await setupWorkflowFeatures();
+  // Initialize tool resolution system first (required by other services)
+  toolResolver = new ToolResolver(context);
+  toolExecutor = new ToolExecutor(toolResolver);
+
+  // Register commands immediately (they can handle service unavailability)
   registerCommands(context);
   setupStatusBar(context);
   setupConfigurationListener(context);
+
+  // Initialize all features in parallel without blocking each other
+  const initializationPromises = [
+    initializeServices(context),
+    initializeWorkflowRepository(context),
+    initializeLanguageServer(context),
+    setupWorkflowFeatures()
+  ];
+
+  // Start all features simultaneously and handle failures gracefully
+  const results = await Promise.allSettled(initializationPromises);
+  
+  // Log any failures but don't block extension activation
+  results.forEach((result, index) => {
+    const featureNames = ['Services', 'Workflow Repository', 'Language Server', 'Workflow Features'];
+    if (result.status === 'rejected') {
+      console.error(`Failed to initialize ${featureNames[index]}:`, result.reason);
+    } else {
+      console.log(`${featureNames[index]} initialized successfully`);
+    }
+  });
+
   setupWorkflowRepositoryView(context);
+  console.log('ExtremeXP extension activation completed');
 }
 
 /**
  * Initialize core services
  */
 async function initializeServices(context: vscode.ExtensionContext): Promise<void> {
-  // Initialize tool resolution system
-  toolResolver = new ToolResolver(context);
-  toolExecutor = new ToolExecutor(toolResolver);
+  try {
+    // Initialize server manager with tool executor
+    serverManager = new ServerManager(context, toolExecutor);
+    
+    // Update status bar listener now that server manager exists
+    updateStatusBarWithServerManager();
+    
+    // Start server in background without blocking
+    serverManager.ensureServerRunning().catch(error => {
+      console.error('Failed to start experiment server:', error);
+      vscode.window.showWarningMessage(
+        'Failed to start ExtremeXP experiment server. Experiment features may not work correctly.'
+      );
+    });
 
-  // Initialize server manager with tool executor
-  serverManager = new ServerManager(context, toolExecutor);
-  await serverManager.ensureServerRunning();
-
-  // Initialize other services
-  experimentService = new ExperimentService(serverManager);
-  progressPanelManager = new ProgressPanelManager(context, experimentService);
+    // Initialize other services (these don't depend on server being ready)
+    experimentService = new ExperimentService(serverManager);
+    progressPanelManager = new ProgressPanelManager(context, experimentService);
+    
+    console.log('Core services initialized');
+  } catch (error) {
+    console.error('Failed to initialize core services:', error);
+    vscode.window.showErrorMessage(
+      'Failed to initialize ExtremeXP core services. Some features may not work correctly.'
+    );
+    throw error;
+  }
 }
 
 /**
  * Initialize workflow repository system
  */
 async function initializeWorkflowRepository(context: vscode.ExtensionContext): Promise<void> {
-  repositoryConfigManager = new RepositoryConfigManager(context);
-  workflowRepositoryProvider = new WorkflowRepositoryProvider(repositoryConfigManager);
-  workflowCommands = new WorkflowCommands(
-    context,
-    repositoryConfigManager,
-    workflowRepositoryProvider
-  );
+  try {
+    repositoryConfigManager = new RepositoryConfigManager(context);
+    workflowRepositoryProvider = new WorkflowRepositoryProvider(repositoryConfigManager);
+    workflowCommands = new WorkflowCommands(
+      context,
+      repositoryConfigManager,
+      workflowRepositoryProvider
+    );
+    
+    console.log('Workflow repository system initialized');
+  } catch (error) {
+    console.error('Failed to initialize workflow repository:', error);
+    vscode.window.showErrorMessage(
+      'Failed to initialize workflow repository. Workflow features may not work correctly.'
+    );
+    throw error;
+  }
 }
 
 /**
@@ -80,16 +133,16 @@ async function initializeWorkflowRepository(context: vscode.ExtensionContext): P
 async function initializeLanguageServer(context: vscode.ExtensionContext): Promise<void> {
   console.log('Initializing ExtremeXP Language Server...');
 
-  languageClientManager = new LanguageClientManager(context);
-
   try {
+    languageClientManager = new LanguageClientManager(context);
     await languageClientManager.start();
     console.log('Language Server started successfully');
   } catch (error) {
     console.error('Failed to start Language Server:', error);
-    vscode.window.showErrorMessage(
-      'Failed to start ExtremeXP Language Server. Some features may not work correctly.'
+    vscode.window.showWarningMessage(
+      'Failed to start ExtremeXP Language Server. Language features may not work correctly.'
     );
+    throw error;
   }
 }
 
@@ -97,43 +150,83 @@ async function initializeLanguageServer(context: vscode.ExtensionContext): Promi
  * Register all extension commands
  */
 function registerCommands(context: vscode.ExtensionContext): void {
-  // Existing commands
+  // Initialize commands with null checks for services
   const generateArtifactCommand = new GenerateArtifactCommand(toolExecutor);
   const runExperimentCommand = new RunExperimentCommand(experimentService, progressPanelManager);
 
-  registerCommand(context, 'extremexp.generateArtifact', () => generateArtifactCommand.execute());
-  registerCommand(context, 'extremexp.runExperiment', () => runExperimentCommand.execute());
-  registerCommand(context, 'extremexp.showProgress', () => progressPanelManager.showPanel());
+  // Register commands with error handling for uninitialized services
+  registerCommand(context, 'extremexp.generateArtifact', () => {
+    if (toolExecutor) {
+      return generateArtifactCommand.execute();
+    } else {
+      vscode.window.showErrorMessage('Tool executor not available. Please restart the extension.');
+      return Promise.resolve();
+    }
+  });
+
+  registerCommand(context, 'extremexp.runExperiment', () => {
+    if (experimentService && progressPanelManager) {
+      return runExperimentCommand.execute();
+    } else {
+      vscode.window.showErrorMessage('Experiment service not available. Please restart the extension.');
+      return Promise.resolve();
+    }
+  });
+
+  registerCommand(context, 'extremexp.showProgress', () => {
+    if (progressPanelManager) {
+      progressPanelManager.showPanel();
+    } else {
+      vscode.window.showErrorMessage('Progress panel not available. Please restart the extension.');
+    }
+  });
+
   registerCommand(context, 'extremexp.stopServer', handleStopServer);
   registerCommand(context, 'extremexp.restartServer', handleRestartServer);
 
   registerCommand(context, 'extremexp.clearToolCache', () => {
-    toolResolver.clearCache();
-    vscode.window.showInformationMessage('Tool cache cleared');
+    if (toolResolver) {
+      toolResolver.clearCache();
+      vscode.window.showInformationMessage('Tool cache cleared');
+    } else {
+      vscode.window.showErrorMessage('Tool resolver not available. Please restart the extension.');
+    }
   });
 
   // Language Server commands
   registerCommand(context, 'extremexp.restartLanguageServer', async () => {
-    await languageClientManager.restart();
-    vscode.window.showInformationMessage('ExtremeXP Language Server restarted');
+    if (languageClientManager) {
+      await languageClientManager.restart();
+      vscode.window.showInformationMessage('ExtremeXP Language Server restarted');
+    } else {
+      vscode.window.showErrorMessage('Language server not available. Please restart the extension.');
+    }
   });
 
-  // Register workflow repository commands
-  workflowCommands.registerCommands();
+  // Register workflow repository commands (with delayed registration)
+  // This will be called after workflow repository is initialized
+  setTimeout(() => {
+    if (workflowCommands) {
+      workflowCommands.registerCommands();
+    }
+  }, 100);
 }
 
 /**
  * Setup workflow repository tree view
  */
 function setupWorkflowRepositoryView(context: vscode.ExtensionContext): void {
-  // Register tree data provider
-  const treeView = vscode.window.createTreeView('extremexp.workflows.repositories', {
-    treeDataProvider: workflowRepositoryProvider,
-    showCollapseAll: true,
-    canSelectMany: false,
-  });
+  // Only setup if workflow repository is initialized
+  if (workflowRepositoryProvider) {
+    // Register tree data provider
+    const treeView = vscode.window.createTreeView('extremexp.workflows.repositories', {
+      treeDataProvider: workflowRepositoryProvider,
+      showCollapseAll: true,
+      canSelectMany: false,
+    });
 
-  context.subscriptions.push(treeView);
+    context.subscriptions.push(treeView);
+  }
 }
 
 /**
@@ -151,27 +244,35 @@ function registerCommand(
  * Handle stop server command
  */
 async function handleStopServer(): Promise<void> {
-  await serverManager.stopServer();
-  vscode.window.showInformationMessage('ExtremeXP server stopped');
+  if (serverManager) {
+    await serverManager.stopServer();
+    vscode.window.showInformationMessage('ExtremeXP server stopped');
+  } else {
+    vscode.window.showWarningMessage('Server manager not available');
+  }
 }
 
 /**
  * Handle restart server command
  */
 async function handleRestartServer(): Promise<void> {
-  await serverManager.restartServer();
-  vscode.window.showInformationMessage('ExtremeXP server restarted');
+  if (serverManager) {
+    await serverManager.restartServer();
+    vscode.window.showInformationMessage('ExtremeXP server restarted');
+  } else {
+    vscode.window.showWarningMessage('Server manager not available');
+  }
 }
 
 /**
  * Setup status bar item
  */
 function setupStatusBar(context: vscode.ExtensionContext): void {
-  const statusBarItem = createStatusBarItem();
+  statusBarItem = createStatusBarItem();
   context.subscriptions.push(statusBarItem);
 
-  updateStatusBarItem(statusBarItem, 'running');
-  setupStatusBarListener(statusBarItem);
+  // Set initial status - will be updated when server manager is available
+  updateStatusBarItem(statusBarItem, 'stopped');
 }
 
 /**
@@ -187,12 +288,33 @@ function createStatusBarItem(): vscode.StatusBarItem {
 }
 
 /**
+ * Update status bar with server manager when it becomes available
+ */
+function updateStatusBarWithServerManager(): void {
+  if (statusBarItem && serverManager) {
+    setupStatusBarListener();
+  }
+}
+
+/**
  * Setup status bar change listener
  */
-function setupStatusBarListener(statusBarItem: vscode.StatusBarItem): void {
-  serverManager.onStatusChange(status => {
-    updateStatusBarItem(statusBarItem, status);
-  });
+function setupStatusBarListener(): void {
+  if (serverManager && statusBarItem) {
+    // Set up the status change listener
+    serverManager.onStatusChange(status => {
+      updateStatusBarItem(statusBarItem, status);
+    });
+    
+    // Get current status and update immediately
+    const currentStatus = serverManager.getStatus();
+    updateStatusBarItem(statusBarItem, currentStatus);
+  } else {
+    // Set error status if server manager is not available
+    if (statusBarItem) {
+      updateStatusBarItem(statusBarItem, 'error');
+    }
+  }
 }
 
 /**
@@ -222,13 +344,13 @@ function setupConfigurationListener(context: vscode.ExtensionContext): void {
   context.subscriptions.push(
     vscode.workspace.onDidChangeConfiguration(async e => {
       if (e.affectsConfiguration('extremexp')) {
-        // Only reload server configuration if server-related settings changed
-        if (e.affectsConfiguration('extremexp.server')) {
+        // Only reload server configuration if server-related settings changed and server manager exists
+        if (e.affectsConfiguration('extremexp.server') && serverManager) {
           serverManager.reloadConfiguration();
         }
 
-        // Clear cache when tool-related configuration changes
-        if (e.affectsConfiguration('extremexp.tools')) {
+        // Clear cache when tool-related configuration changes and tool resolver exists
+        if (e.affectsConfiguration('extremexp.tools') && toolResolver) {
           toolResolver.clearCache();
         }
 
@@ -237,9 +359,13 @@ function setupConfigurationListener(context: vscode.ExtensionContext): void {
           await setupWorkflowFeatures();
         }
 
-        // Restart language server if language-related settings changed
-        if (e.affectsConfiguration('extremexp.language')) {
-          await languageClientManager.restart();
+        // Restart language server if language-related settings changed and language client manager exists
+        if (e.affectsConfiguration('extremexp.language') && languageClientManager) {
+          try {
+            await languageClientManager.restart();
+          } catch (error) {
+            console.error('Failed to restart language server after configuration change:', error);
+          }
         }
       }
     })
