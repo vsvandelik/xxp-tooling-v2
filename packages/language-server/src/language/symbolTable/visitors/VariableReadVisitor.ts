@@ -32,8 +32,7 @@ export class VariableReadVisitor {
     prefix: string
   ): DocumentSymbolTable {
     const identifierText = ctx.IDENTIFIER().getText();
-    const symbol = this.builder.currentScope
-      .resolveSync(identifierText);
+    const symbol = this.builder.currentScope.resolveSync(identifierText);
 
     if (symbol === null || symbol === undefined || !(symbol instanceof type)) {
       return addDiagnosticAndContinue(

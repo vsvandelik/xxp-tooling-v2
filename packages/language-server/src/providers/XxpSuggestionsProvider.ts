@@ -181,13 +181,12 @@ export class XxpSuggestionsProvider extends Provider {
         });
       } else if (k !== XXPParser.IDENTIFIER) {
         const symbolicName = vocabulary.getSymbolicName(k);
-        if (symbolicName === "START" || symbolicName === "END") {
+        if (symbolicName === 'START' || symbolicName === 'END') {
           proposedSymbols.push({
             label: symbolicName,
             kind: CompletionItemKind.Keyword,
           });
-        }
-        else if (symbolicName) {
+        } else if (symbolicName) {
           proposedSymbols.push({
             label: symbolicName.toLowerCase(),
             kind: CompletionItemKind.Keyword,

@@ -8,7 +8,7 @@ import {
   DataDefinitionContext,
   TaskDefinitionContext,
   WorkflowHeaderContext,
-} from '@extremexp/core';
+} from '@extremexp/core/src/language/generated/XXPParser.js';
 
 type RuleWithIdentifiers = DataDefinitionContext | TaskDefinitionContext | WorkflowHeaderContext;
 

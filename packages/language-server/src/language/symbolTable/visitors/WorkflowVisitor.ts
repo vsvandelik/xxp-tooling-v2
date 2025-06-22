@@ -10,7 +10,7 @@ import {
   WorkflowHeaderContext,
   WorkflowBodyContext,
   WorkflowNameReadContext,
-} from '@extremexp/core';
+} from '@extremexp/core/src/language/generated/XXPParser.js';
 
 export class WorkflowVisitor {
   constructor(private readonly builder: XxpSymbolTableBuilder) {}

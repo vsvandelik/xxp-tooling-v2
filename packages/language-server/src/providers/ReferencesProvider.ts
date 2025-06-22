@@ -5,7 +5,7 @@ import { TerminalSymbolWithReferences } from '../core/models/symbols/TerminalSym
 import { RangeUtils } from '../utils/RangeUtils.js';
 import { WorkflowSymbol } from '../core/models/symbols/WorkflowSymbol.js';
 import { TerminalSymbolReference } from '../core/models/TerminalSymbolReference.js';
-import { WorkflowNameReadContext } from '@extremexp/core';
+import { WorkflowNameReadContext } from '@extremexp/core/src/language/generated/XXPParser.js';
 
 export class ReferencesProvider extends Provider {
   private logger = Logger.getLogger();

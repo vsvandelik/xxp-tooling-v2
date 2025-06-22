@@ -10,21 +10,5 @@ export { XXPLexer } from './language/generated/XXPLexer.js';
 export { XXPVisitor } from './language/generated/XXPVisitor.js';
 export { XXPListener } from './language/generated/XXPListener.js';
 
-// Export XXP context classes
-export {
-  WorkflowHeaderContext,
-  WorkflowBodyContext,
-  WorkflowNameReadContext,
-  DataDefinitionContext,
-  TaskDefinitionContext,
-  TaskConfigurationContext,
-  TaskConfigurationBodyContext,
-  ImplementationContext,
-  ParamAssignmentContext,
-  DataNameReadContext,
-  TaskNameReadContext,
-  FileNameStringContext,
-} from './language/generated/XXPParser.js';
-
 // Export utility functions
 export { workflowNameToFileName } from './utils/naming.js';

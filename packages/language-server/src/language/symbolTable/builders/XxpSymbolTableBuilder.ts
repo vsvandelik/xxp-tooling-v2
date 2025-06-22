@@ -9,21 +9,21 @@ import { TaskVisitor } from '../visitors/TaskVisitor.js';
 import { ScopedSymbol } from 'antlr4-c3';
 import { FileVisitor } from '../visitors/FileVisitor.js';
 import { Document } from '../../../core/documents/Document.js';
-import { FileNameStringContext, ParamAssignmentContext, XXPVisitor } from '@extremexp/core';
+import { XXPVisitor } from '@extremexp/core';
 import {
+  DataDefinitionContext,
+  TaskConfigurationContext,
+  ParamAssignmentContext,
+  WorkflowNameReadContext,
+  TaskNameReadContext,
   WorkflowHeaderContext,
   WorkflowBodyContext,
-  DataDefinitionContext,
   TaskDefinitionContext,
-  TaskConfigurationContext,
   ImplementationContext,
-  DataNameReadContext,
-} from '@extremexp/core';
-import {
   InputStatementContext,
   OutputStatementContext,
-  TaskNameReadContext,
-  WorkflowNameReadContext,
+  DataNameReadContext,
+  FileNameStringContext,
 } from '@extremexp/core/src/language/generated/XXPParser.js';
 
 export class XxpSymbolTableBuilder

@@ -3,7 +3,7 @@ import {
   TaskConfigurationBodyContext,
   TaskNameReadContext,
   WorkflowNameReadContext,
-} from '@extremexp/core';
+} from '@extremexp/core/src/language/generated/XXPParser.js';
 
 export enum ChainPartType {
   Data,

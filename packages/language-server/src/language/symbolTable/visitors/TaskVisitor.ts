@@ -5,14 +5,12 @@ import { addSymbolOfTypeWithInheritanceCheck, visitScopeSymbol } from '../helper
 import { addDiagnostic } from '../helpers/Diagnostics.js';
 import { XxpSymbolTableBuilder } from '../builders/XxpSymbolTableBuilder.js';
 import { DiagnosticSeverity } from 'vscode-languageserver';
-import {
-  ImplementationContext,
-  ParamAssignmentContext,
-  TaskConfigurationContext,
-  TaskDefinitionContext,
-} from '@extremexp/core';
 import { Param } from '../../../core/models/Param.js';
 import {
+  TaskConfigurationContext,
+  ParamAssignmentContext,
+  TaskDefinitionContext,
+  ImplementationContext,
   InputStatementContext,
   OutputStatementContext,
 } from '@extremexp/core/src/language/generated/XXPParser.js';

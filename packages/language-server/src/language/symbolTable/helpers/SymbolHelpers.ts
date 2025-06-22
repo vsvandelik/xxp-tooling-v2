@@ -48,10 +48,10 @@ export function addSymbolOfTypeWithInheritanceCheck<T extends BaseSymbol>(
 ): T | undefined {
   if (scope instanceof WorkflowSymbol && scope.parentWorkflowSymbol) {
     const parentSymbol = scope.parentWorkflowSymbol.resolveSync(name, true); // Check only parent locally
-      if (parentSymbol && parentSymbol.name === name) {
-        addDiagnostic(builder, ctx, `Cannot override ${symbolType} '${name}' from parent workflow`);
-        return undefined;
-      }
+    if (parentSymbol && parentSymbol.name === name) {
+      addDiagnostic(builder, ctx, `Cannot override ${symbolType} '${name}' from parent workflow`);
+      return undefined;
+    }
   }
 
   // Proceed with normal symbol addition
