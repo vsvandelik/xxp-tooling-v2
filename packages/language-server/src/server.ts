@@ -8,7 +8,7 @@ import {
   Connection,
   ServerCapabilities,
   CodeActionKind,
-} from 'vscode-languageserver/node';
+} from 'vscode-languageserver/node.js';
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import { DocumentManager } from './core/managers/DocumentManager.js';
 import { ProvidersManager } from './core/managers/ProvidersManager.js';

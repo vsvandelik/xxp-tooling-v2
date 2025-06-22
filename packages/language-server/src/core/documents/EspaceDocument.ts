@@ -1,4 +1,4 @@
-import { Document } from './Document';
+import { Document } from './Document.js';
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import { DocumentParser } from '../parsing/DocumentParser.js';
 

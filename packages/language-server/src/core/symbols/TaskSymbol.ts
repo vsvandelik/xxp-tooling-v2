@@ -22,6 +22,9 @@ export class TaskSymbol extends BaseSymbol {
   ) {
     super(name);
     this.context = context;
+    this.params = this.params || [];
+    this.inputs = this.inputs || [];
+    this.outputs = this.outputs || [];
   }
 
   public addReference(node: ParserRuleContext, document: Document): void {

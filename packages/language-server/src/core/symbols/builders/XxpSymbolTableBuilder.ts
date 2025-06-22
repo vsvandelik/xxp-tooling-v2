@@ -220,11 +220,13 @@ export class XxpSymbolTableBuilder
       );
       return this.visitChildren(ctx) as DocumentSymbolTable;
     }
-
     const identifier = ctx.IDENTIFIER();
     if (identifier) {
       const paramName = identifier.getText();
-      (this.currentScope as unknown as TaskSymbol).params.push(paramName);
+      const taskSymbol = this.currentScope as unknown as TaskSymbol;
+      if (taskSymbol.params) {
+        taskSymbol.params.push(paramName);
+      }
     }
 
     return this.visitChildren(ctx) as DocumentSymbolTable;
@@ -239,11 +241,13 @@ export class XxpSymbolTableBuilder
       );
       return this.visitChildren(ctx) as DocumentSymbolTable;
     }
-
     const dataNames = ctx.dataNameList().dataNameRead();
     for (const dataNameCtx of dataNames) {
       const dataName = dataNameCtx.getText();
-      (this.currentScope as unknown as TaskSymbol).inputs.push(dataName);
+      const taskSymbol = this.currentScope as unknown as TaskSymbol;
+      if (taskSymbol.inputs) {
+        taskSymbol.inputs.push(dataName);
+      }
       this.validateDataReference(dataNameCtx, dataName);
     }
 
@@ -259,11 +263,13 @@ export class XxpSymbolTableBuilder
       );
       return this.visitChildren(ctx) as DocumentSymbolTable;
     }
-
     const dataNames = ctx.dataNameList().dataNameRead();
     for (const dataNameCtx of dataNames) {
       const dataName = dataNameCtx.getText();
-      (this.currentScope as unknown as TaskSymbol).outputs.push(dataName);
+      const taskSymbol = this.currentScope as unknown as TaskSymbol;
+      if (taskSymbol.outputs) {
+        taskSymbol.outputs.push(dataName);
+      }
     }
 
     return this.visitChildren(ctx) as DocumentSymbolTable;
