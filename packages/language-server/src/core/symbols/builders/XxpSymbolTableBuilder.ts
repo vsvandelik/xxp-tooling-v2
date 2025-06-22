@@ -50,7 +50,7 @@ export class XxpSymbolTableBuilder
   }
 
   visitProgram(ctx: ProgramContext): DocumentSymbolTable {
-    return this.visitChildren(ctx);
+    return this.visitChildren(ctx) as DocumentSymbolTable;
   }
 
   visitWorkflowDeclaration(ctx: WorkflowDeclarationContext): DocumentSymbolTable {
@@ -78,19 +78,21 @@ export class XxpSymbolTableBuilder
       existingWorkflow.clear();
       workflowSymbol = existingWorkflow;
     } else {
-      workflowSymbol = this.addSymbol(
+      const newWorkflowSymbol = this.addSymbol(
         WorkflowSymbol,
         workflowName,
         ctx,
         workflowName,
         this.document
       );
-      if (!workflowSymbol) return this.defaultResult();
+      if (!newWorkflowSymbol) return this.defaultResult();
+      workflowSymbol = newWorkflowSymbol;
     }
 
     // Handle parent workflow if specified
-    if (ctx.workflowNameRead()) {
-      this.handleParentWorkflow(ctx.workflowNameRead(), workflowSymbol);
+    const workflowNameRead = ctx.workflowNameRead();
+    if (workflowNameRead) {
+      this.handleParentWorkflow(workflowNameRead, workflowSymbol);
     }
 
     this.currentScope = workflowSymbol;
@@ -104,39 +106,40 @@ export class XxpSymbolTableBuilder
       this.addSymbol(TaskSymbol, 'END', ctx, 'END', this.document);
     }
 
-    return this.visitChildren(ctx);
+    return this.visitChildren(ctx) as DocumentSymbolTable;
   }
 
   visitDataDefinition(ctx: DataDefinitionContext): DocumentSymbolTable {
     const identifier = ctx.IDENTIFIER();
     if (!identifier) {
       this.addDiagnostic(ctx, 'Data name is required', DiagnosticSeverity.Error);
-      return this.visitChildren(ctx);
+      return this.visitChildren(ctx) as DocumentSymbolTable;
     }
 
     const dataName = identifier.getText();
     const dataSymbol = this.addSymbol(DataSymbol, dataName, ctx, dataName, this.document);
 
-    if (dataSymbol && ctx.STRING()) {
-      dataSymbol.value = this.cleanString(ctx.STRING().getText());
-      this.validateFilePath(ctx.STRING(), dataSymbol.value);
+    const stringNode = ctx.STRING();
+    if (dataSymbol && stringNode) {
+      dataSymbol.value = this.cleanString(stringNode.getText());
+      this.validateFilePath(stringNode, dataSymbol.value);
     }
 
-    return this.visitChildren(ctx);
+    return this.visitChildren(ctx) as DocumentSymbolTable;
   }
 
   visitTaskDefinition(ctx: TaskDefinitionContext): DocumentSymbolTable {
     const identifier = ctx.IDENTIFIER();
     if (!identifier) {
       this.addDiagnostic(ctx, 'Task name is required', DiagnosticSeverity.Error);
-      return this.visitChildren(ctx);
+      return this.visitChildren(ctx) as DocumentSymbolTable;
     }
 
     const taskName = identifier.getText();
     this.validateTaskName(identifier, taskName);
     this.addSymbol(TaskSymbol, taskName, ctx, taskName, this.document);
 
-    return this.visitChildren(ctx);
+    return this.visitChildren(ctx) as DocumentSymbolTable;
   }
 
   visitTaskChain(ctx: TaskChainContext): DocumentSymbolTable {
@@ -147,7 +150,7 @@ export class XxpSymbolTableBuilder
         'Task chain must have at least two elements',
         DiagnosticSeverity.Error
       );
-      return this.visitChildren(ctx);
+      return this.visitChildren(ctx) as DocumentSymbolTable;
     }
 
     // Validate chain elements
@@ -158,14 +161,14 @@ export class XxpSymbolTableBuilder
     // Validate control flow rules
     this.validateControlFlowRules(elements);
 
-    return this.visitChildren(ctx);
+    return this.visitChildren(ctx) as DocumentSymbolTable;
   }
 
   visitTaskConfiguration(ctx: TaskConfigurationContext): DocumentSymbolTable {
     const taskNameContext = ctx.taskConfigurationHeader()?.taskNameRead();
     if (!taskNameContext) {
       this.addDiagnostic(ctx, 'Task name is required for configuration', DiagnosticSeverity.Error);
-      return this.visitChildren(ctx);
+      return this.visitChildren(ctx) as DocumentSymbolTable;
     }
 
     const taskName = taskNameContext.getText();
@@ -176,7 +179,7 @@ export class XxpSymbolTableBuilder
         `Task '${taskName}' is not defined`,
         DiagnosticSeverity.Error
       );
-      return this.visitChildren(ctx);
+      return this.visitChildren(ctx) as DocumentSymbolTable;
     }
 
     // Store current task for parameter and implementation processing
@@ -185,7 +188,7 @@ export class XxpSymbolTableBuilder
     const result = this.visitChildren(ctx);
     this.currentScope = previousScope;
 
-    return result;
+    return result as DocumentSymbolTable;
   }
 
   visitImplementation(ctx: ImplementationContext): DocumentSymbolTable {
@@ -195,7 +198,7 @@ export class XxpSymbolTableBuilder
         'Implementation can only be defined within task configuration',
         DiagnosticSeverity.Error
       );
-      return this.visitChildren(ctx);
+      return this.visitChildren(ctx) as DocumentSymbolTable;
     }
 
     const stringNode = ctx.STRING();
@@ -205,7 +208,7 @@ export class XxpSymbolTableBuilder
       this.validateFilePath(stringNode, implementation);
     }
 
-    return this.visitChildren(ctx);
+    return this.visitChildren(ctx) as DocumentSymbolTable;
   }
 
   visitParamAssignment(ctx: ParamAssignmentContext): DocumentSymbolTable {
@@ -215,7 +218,7 @@ export class XxpSymbolTableBuilder
         'Parameters can only be defined within task configuration',
         DiagnosticSeverity.Error
       );
-      return this.visitChildren(ctx);
+      return this.visitChildren(ctx) as DocumentSymbolTable;
     }
 
     const identifier = ctx.IDENTIFIER();
@@ -224,7 +227,7 @@ export class XxpSymbolTableBuilder
       (this.currentScope as unknown as TaskSymbol).params.push(paramName);
     }
 
-    return this.visitChildren(ctx);
+    return this.visitChildren(ctx) as DocumentSymbolTable;
   }
 
   visitInputStatement(ctx: InputStatementContext): DocumentSymbolTable {
@@ -234,7 +237,7 @@ export class XxpSymbolTableBuilder
         'Input statement can only be defined within task configuration',
         DiagnosticSeverity.Error
       );
-      return this.visitChildren(ctx);
+      return this.visitChildren(ctx) as DocumentSymbolTable;
     }
 
     const dataNames = ctx.dataNameList().dataNameRead();
@@ -244,7 +247,7 @@ export class XxpSymbolTableBuilder
       this.validateDataReference(dataNameCtx, dataName);
     }
 
-    return this.visitChildren(ctx);
+    return this.visitChildren(ctx) as DocumentSymbolTable;
   }
 
   visitOutputStatement(ctx: OutputStatementContext): DocumentSymbolTable {
@@ -254,7 +257,7 @@ export class XxpSymbolTableBuilder
         'Output statement can only be defined within task configuration',
         DiagnosticSeverity.Error
       );
-      return this.visitChildren(ctx);
+      return this.visitChildren(ctx) as DocumentSymbolTable;
     }
 
     const dataNames = ctx.dataNameList().dataNameRead();
@@ -263,25 +266,25 @@ export class XxpSymbolTableBuilder
       (this.currentScope as unknown as TaskSymbol).outputs.push(dataName);
     }
 
-    return this.visitChildren(ctx);
+    return this.visitChildren(ctx) as DocumentSymbolTable;
   }
 
   visitWorkflowNameRead(ctx: WorkflowNameReadContext): DocumentSymbolTable {
     const workflowName = ctx.getText();
     this.addWorkflowReference(ctx, workflowName);
-    return this.visitChildren(ctx);
+    return this.visitChildren(ctx) as DocumentSymbolTable;
   }
 
   visitDataNameRead(ctx: DataNameReadContext): DocumentSymbolTable {
     const dataName = ctx.getText();
     this.validateDataReference(ctx, dataName);
-    return this.visitChildren(ctx);
+    return this.visitChildren(ctx) as DocumentSymbolTable;
   }
 
   visitTaskNameRead(ctx: TaskNameReadContext): DocumentSymbolTable {
     const taskName = ctx.getText();
     this.validateTaskReference(ctx, taskName);
-    return this.visitChildren(ctx);
+    return this.visitChildren(ctx) as DocumentSymbolTable;
   }
 
   // Validation methods
@@ -313,9 +316,10 @@ export class XxpSymbolTableBuilder
   }
 
   private validateChainElement(element: ChainElementContext): void {
-    if (element.taskNameRead()) {
-      const taskName = element.taskNameRead().getText();
-      this.validateTaskReference(element.taskNameRead(), taskName);
+    const taskNameRead = element.taskNameRead();
+    if (taskNameRead) {
+      const taskName = taskNameRead.getText();
+      this.validateTaskReference(taskNameRead, taskName);
     }
   }
 
@@ -326,6 +330,7 @@ export class XxpSymbolTableBuilder
 
     for (let i = 0; i < elements.length; i++) {
       const element = elements[i];
+      if (!element) continue;
 
       if (element.START()) {
         if (hasStart) {
@@ -360,11 +365,14 @@ export class XxpSymbolTableBuilder
     }
 
     if (endIndex !== -1 && endIndex !== elements.length - 1) {
-      this.addDiagnostic(
-        elements[endIndex],
-        'END should be the last element in chain',
-        DiagnosticSeverity.Warning
-      );
+      const endElement = elements[endIndex];
+      if (endElement) {
+        this.addDiagnostic(
+          endElement,
+          'END should be the last element in chain',
+          DiagnosticSeverity.Warning
+        );
+      }
     }
   }
 
@@ -466,15 +474,17 @@ export class XxpSymbolTableBuilder
     return this.findSymbolOfType(DataSymbol, dataName);
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private findSymbolOfType<T>(type: new (...args: any[]) => T, name: string): T | undefined {
     if (this.currentScope instanceof WorkflowSymbol) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const symbols = this.currentScope.getNestedSymbolsOfTypeSync(type as any);
       return symbols.find(s => s.name === name) as T | undefined;
     }
     return undefined;
   }
 
-  private addWorkflowReference(ctx: ParserRuleContext, workflowName: string): void {
+  private addWorkflowReference(_ctx: ParserRuleContext, _workflowName: string): void {
     // Add reference tracking for workflow names
     // This could be used for go-to-definition and find references
   } // eslint-disable-next-line @typescript-eslint/no-explicit-any

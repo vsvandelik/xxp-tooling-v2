@@ -102,7 +102,7 @@ export class EspaceSymbolTableBuilder
   }
 
   visitExperimentBody(ctx: ExperimentBodyContext): DocumentSymbolTable {
-    return this.visitChildren(ctx);
+    return this.visitChildren(ctx) as DocumentSymbolTable;
   }
 
   visitSpaceDeclaration(ctx: SpaceDeclarationContext): DocumentSymbolTable {
@@ -150,7 +150,7 @@ export class EspaceSymbolTableBuilder
   }
 
   visitSpaceBody(ctx: SpaceBodyContext): DocumentSymbolTable {
-    return this.visitChildren(ctx);
+    return this.visitChildren(ctx) as DocumentSymbolTable;
   }
 
   visitControlBlock(ctx: ControlBlockContext): DocumentSymbolTable {
@@ -160,7 +160,7 @@ export class EspaceSymbolTableBuilder
         'Control block must be defined within an experiment',
         DiagnosticSeverity.Error
       );
-      return this.visitChildren(ctx);
+      return this.visitChildren(ctx) as DocumentSymbolTable;
     }
 
     // Reset current space when processing control block
@@ -168,19 +168,23 @@ export class EspaceSymbolTableBuilder
     this.currentSpace = undefined;
     const result = this.visitChildren(ctx);
     this.currentSpace = previousSpace;
-    return result;
+    return result as DocumentSymbolTable;
   }
 
   visitSimpleTransition(ctx: SimpleTransitionContext): DocumentSymbolTable {
     const spaceReads = ctx.spaceNameRead();
     if (spaceReads.length < 2) {
       this.addDiagnostic(ctx, 'Transition must have at least two spaces', DiagnosticSeverity.Error);
-      return this.visitChildren(ctx);
+      return this.visitChildren(ctx) as DocumentSymbolTable;
     }
 
     for (let i = 0; i < spaceReads.length - 1; i++) {
-      const fromSpace = spaceReads[i].getText();
-      const toSpace = spaceReads[i + 1].getText();
+      const fromSpaceNode = spaceReads[i];
+      const toSpaceNode = spaceReads[i + 1];
+      if (!fromSpaceNode || !toSpaceNode) continue;
+
+      const fromSpace = fromSpaceNode.getText();
+      const toSpace = toSpaceNode.getText();
 
       this.controlFlowTransitions.push({
         from: fromSpace,
@@ -190,12 +194,12 @@ export class EspaceSymbolTableBuilder
       });
     }
 
-    return this.visitChildren(ctx);
+    return this.visitChildren(ctx) as DocumentSymbolTable;
   }
 
   visitConditionalTransition(ctx: ConditionalTransitionContext): DocumentSymbolTable {
     const header = ctx.conditionalTransitionHeader();
-    if (!header) return this.visitChildren(ctx);
+    if (!header) return this.visitChildren(ctx) ?? this.folderSymbolTable;
 
     const spaceReads = header.spaceNameRead();
     if (spaceReads.length !== 2) {
@@ -204,11 +208,17 @@ export class EspaceSymbolTableBuilder
         'Conditional transition must have exactly two spaces',
         DiagnosticSeverity.Error
       );
-      return this.visitChildren(ctx);
+      return this.visitChildren(ctx) as DocumentSymbolTable;
     }
 
-    const fromSpace = spaceReads[0].getText();
-    const toSpace = spaceReads[1].getText();
+    const fromSpaceNode = spaceReads[0];
+    const toSpaceNode = spaceReads[1];
+    if (!fromSpaceNode || !toSpaceNode) {
+      return this.visitChildren(ctx) ?? this.folderSymbolTable;
+    }
+
+    const fromSpace = fromSpaceNode.getText();
+    const toSpace = toSpaceNode.getText();
 
     this.controlFlowTransitions.push({
       from: fromSpace,
@@ -226,7 +236,7 @@ export class EspaceSymbolTableBuilder
       );
     }
 
-    return this.visitChildren(ctx);
+    return this.visitChildren(ctx) as DocumentSymbolTable;
   }
 
   visitDataDefinition(ctx: DataDefinitionContext): DocumentSymbolTable {
@@ -235,7 +245,7 @@ export class EspaceSymbolTableBuilder
 
     if (!identifier || !stringValue) {
       this.addDiagnostic(ctx, 'Data definition requires name and value', DiagnosticSeverity.Error);
-      return this.visitChildren(ctx);
+      return this.visitChildren(ctx) as DocumentSymbolTable;
     }
 
     const dataName = identifier.getText();
@@ -247,7 +257,7 @@ export class EspaceSymbolTableBuilder
       this.validateFilePath(stringValue, dataValue);
     }
 
-    return this.visitChildren(ctx);
+    return this.visitChildren(ctx) as DocumentSymbolTable;
   }
 
   visitStrategyStatement(ctx: StrategyStatementContext): DocumentSymbolTable {
@@ -257,7 +267,7 @@ export class EspaceSymbolTableBuilder
         'Strategy can only be defined within a space',
         DiagnosticSeverity.Error
       );
-      return this.visitChildren(ctx);
+      return this.visitChildren(ctx) as DocumentSymbolTable;
     }
 
     const strategyName = ctx.IDENTIFIER()?.getText();
@@ -266,14 +276,14 @@ export class EspaceSymbolTableBuilder
       this.currentSpace.strategy = strategyName;
     }
 
-    return this.visitChildren(ctx);
+    return this.visitChildren(ctx) as DocumentSymbolTable;
   }
 
   visitParamDefinition(ctx: ParamDefinitionContext): DocumentSymbolTable {
     const identifier = ctx.IDENTIFIER();
     if (!identifier) {
       this.addDiagnostic(ctx, 'Parameter name is required', DiagnosticSeverity.Error);
-      return this.visitChildren(ctx);
+      return this.visitChildren(ctx) as DocumentSymbolTable;
     }
 
     const paramName = identifier.getText();
@@ -286,7 +296,7 @@ export class EspaceSymbolTableBuilder
       this.addDiagnostic(ctx, 'Global parameters not yet supported', DiagnosticSeverity.Warning);
     }
 
-    return this.visitChildren(ctx);
+    return this.visitChildren(ctx) as DocumentSymbolTable;
   }
 
   visitTaskConfiguration(ctx: TaskConfigurationContext): DocumentSymbolTable {
@@ -296,26 +306,26 @@ export class EspaceSymbolTableBuilder
         'Task configuration can only be defined within a space',
         DiagnosticSeverity.Error
       );
-      return this.visitChildren(ctx);
+      return this.visitChildren(ctx) as DocumentSymbolTable;
     }
 
     const taskNameCtx = ctx.taskConfigurationHeader()?.taskNameRead();
     if (!taskNameCtx) {
       this.addDiagnostic(ctx, 'Task name is required for configuration', DiagnosticSeverity.Error);
-      return this.visitChildren(ctx);
+      return this.visitChildren(ctx) as DocumentSymbolTable;
     }
 
     const taskName = taskNameCtx.getText();
     this.validateTaskInWorkflow(taskNameCtx, taskName);
 
-    return this.visitChildren(ctx);
+    return this.visitChildren(ctx) as DocumentSymbolTable;
   }
 
   visitParamAssignment(ctx: ParamAssignmentContext): DocumentSymbolTable {
     const identifier = ctx.IDENTIFIER();
     if (!identifier) {
       this.addDiagnostic(ctx, 'Parameter name is required', DiagnosticSeverity.Error);
-      return this.visitChildren(ctx);
+      return this.visitChildren(ctx) as DocumentSymbolTable;
     }
 
     const paramName = identifier.getText();
@@ -325,25 +335,25 @@ export class EspaceSymbolTableBuilder
       this.currentSpace.params.set(paramName, paramValue);
     }
 
-    return this.visitChildren(ctx);
+    return this.visitChildren(ctx) as DocumentSymbolTable;
   }
 
   visitWorkflowNameRead(ctx: WorkflowNameReadContext): DocumentSymbolTable {
     const workflowName = ctx.getText();
     this.addWorkflowReference(ctx, workflowName);
-    return this.visitChildren(ctx);
+    return this.visitChildren(ctx) as DocumentSymbolTable;
   }
 
   visitSpaceNameRead(ctx: SpaceNameReadContext): DocumentSymbolTable {
     const spaceName = ctx.getText();
     this.validateSpaceReference(ctx, spaceName);
-    return this.visitChildren(ctx);
+    return this.visitChildren(ctx) as DocumentSymbolTable;
   }
 
   visitTaskNameRead(ctx: TaskNameReadContext): DocumentSymbolTable {
     const taskName = ctx.getText();
     // Task validation happens in context of space/workflow
-    return this.visitChildren(ctx);
+    return this.visitChildren(ctx) as DocumentSymbolTable;
   }
 
   // Validation methods
@@ -458,11 +468,14 @@ export class EspaceSymbolTableBuilder
     }
 
     if (startTransitions.length > 1) {
-      this.addDiagnostic(
-        startTransitions[1].context,
-        'Only one transition from START is allowed',
-        DiagnosticSeverity.Error
-      );
+      const secondTransition = startTransitions[1];
+      if (secondTransition) {
+        this.addDiagnostic(
+          secondTransition.context,
+          'Only one transition from START is allowed',
+          DiagnosticSeverity.Error
+        );
+      }
     }
 
     if (endTransitions.length === 0) {
@@ -474,11 +487,14 @@ export class EspaceSymbolTableBuilder
     }
 
     if (fromEndTransitions.length > 0) {
-      this.addDiagnostic(
-        fromEndTransitions[0].context,
-        'No transitions allowed from END',
-        DiagnosticSeverity.Error
-      );
+      const firstEndTransition = fromEndTransitions[0];
+      if (firstEndTransition) {
+        this.addDiagnostic(
+          firstEndTransition.context,
+          'No transitions allowed from END',
+          DiagnosticSeverity.Error
+        );
+      }
     }
   }
 
@@ -530,14 +546,22 @@ export class EspaceSymbolTableBuilder
     return this.documentManager.loadDocumentFromFileSystem(workflowUri);
   }
 
-  private extractParamValue(paramValueCtx: ParamValueContext): any {
-    if (paramValueCtx.enumFunction()) {
-      return this.extractEnumValue(paramValueCtx.enumFunction());
-    } else if (paramValueCtx.rangeFunction()) {
-      return this.extractRangeValue(paramValueCtx.rangeFunction());
-    } else if (paramValueCtx.expression()) {
-      return paramValueCtx.expression().getText();
+  private extractParamValue(paramValueCtx: ParamValueContext): unknown {
+    const enumFunc = paramValueCtx.enumFunction();
+    if (enumFunc) {
+      return this.extractEnumValue(enumFunc);
     }
+
+    const rangeFunc = paramValueCtx.rangeFunction();
+    if (rangeFunc) {
+      return this.extractRangeValue(rangeFunc);
+    }
+
+    const expr = paramValueCtx.expression();
+    if (expr) {
+      return expr.getText();
+    }
+
     return null;
   }
 
@@ -558,7 +582,7 @@ export class EspaceSymbolTableBuilder
     return numbers.map(num => parseFloat(num.getText()));
   }
 
-  private addWorkflowReference(ctx: ParserRuleContext, workflowName: string): void {
+  private addWorkflowReference(_ctx: ParserRuleContext, _workflowName: string): void {
     // Add reference tracking for workflow names
     // This could be used for go-to-definition and find references
   } // eslint-disable-next-line @typescript-eslint/no-explicit-any
