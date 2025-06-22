@@ -7,18 +7,18 @@ import { XxpSymbolTableBuilder } from '../builders/XxpSymbolTableBuilder.js';
 import { DiagnosticSeverity } from 'vscode-languageserver';
 import { Param } from '../../../core/models/Param.js';
 import {
-  TaskConfigurationContext,
-  ParamAssignmentContext,
-  TaskDefinitionContext,
-  ImplementationContext,
-  InputStatementContext,
-  OutputStatementContext,
-} from '@extremexp/core/src/language/generated/XXPParser.js';
+  XxpTaskConfigurationContext,
+  XxpParamAssignmentContext,
+  XxpTaskDefinitionContext,
+  XxpImplementationContext,
+  XxpInputStatementContext,
+  XxpOutputStatementContext,
+} from '@extremexp/core';
 
 export class TaskVisitor {
   constructor(private readonly builder: XxpSymbolTableBuilder) {}
 
-  public visitDefinition(ctx: TaskDefinitionContext): DocumentSymbolTable {
+  public visitDefinition(ctx: XxpTaskDefinitionContext): DocumentSymbolTable {
     const identifier = ctx.IDENTIFIER();
     if (!identifier) {
       return this.builder.visitChildren(ctx) as DocumentSymbolTable;
@@ -41,7 +41,7 @@ export class TaskVisitor {
     return this.builder.visitChildren(ctx) as DocumentSymbolTable;
   }
 
-  public visitConfiguration(ctx: TaskConfigurationContext): DocumentSymbolTable {
+  public visitConfiguration(ctx: XxpTaskConfigurationContext): DocumentSymbolTable {
     const nameContext = ctx.taskConfigurationHeader()?.taskNameRead();
     if (!nameContext) {
       return this.builder.visitChildren(ctx) as DocumentSymbolTable;
@@ -74,7 +74,7 @@ export class TaskVisitor {
     ) as DocumentSymbolTable;
   }
 
-  public visitImplementation(ctx: ImplementationContext): DocumentSymbolTable {
+  public visitImplementation(ctx: XxpImplementationContext): DocumentSymbolTable {
     const fileContext = ctx.fileNameString();
     if (!fileContext) {
       return this.builder.visitChildren(ctx) as DocumentSymbolTable;
@@ -94,7 +94,7 @@ export class TaskVisitor {
     return this.builder.visitChildren(ctx) as DocumentSymbolTable;
   }
 
-  public visitParam(ctx: ParamAssignmentContext): DocumentSymbolTable {
+  public visitParam(ctx: XxpParamAssignmentContext): DocumentSymbolTable {
     const identifier = ctx.IDENTIFIER();
     if (!identifier) {
       return this.builder.visitChildren(ctx) as DocumentSymbolTable;
@@ -117,7 +117,7 @@ export class TaskVisitor {
     return this.builder.visitChildren(ctx) as DocumentSymbolTable;
   }
 
-  public visitInput(ctx: InputStatementContext): DocumentSymbolTable {
+  public visitInput(ctx: XxpInputStatementContext): DocumentSymbolTable {
     const taskSymbol = this.getTaskSymbolFromCurrentScope();
     if (!taskSymbol) {
       return this.builder.visitChildren(ctx) as DocumentSymbolTable;
@@ -142,7 +142,7 @@ export class TaskVisitor {
     return this.builder.visitChildren(ctx) as DocumentSymbolTable;
   }
 
-  public visitOutput(ctx: OutputStatementContext): DocumentSymbolTable {
+  public visitOutput(ctx: XxpOutputStatementContext): DocumentSymbolTable {
     const taskSymbol = this.getTaskSymbolFromCurrentScope();
     if (!taskSymbol) {
       return this.builder.visitChildren(ctx) as DocumentSymbolTable;

@@ -5,7 +5,7 @@ import { TerminalSymbolWithReferences } from '../core/models/symbols/TerminalSym
 import { RangeUtils } from '../utils/RangeUtils.js';
 import { WorkflowSymbol } from '../core/models/symbols/WorkflowSymbol.js';
 import { TerminalSymbolReference } from '../core/models/TerminalSymbolReference.js';
-import { WorkflowNameReadContext } from '@extremexp/core/src/language/generated/XXPParser.js';
+import { XxpWorkflowNameReadContext } from '@extremexp/core';
 
 export class ReferencesProvider extends Provider {
   private logger = Logger.getLogger();
@@ -24,7 +24,7 @@ export class ReferencesProvider extends Provider {
 
     let symbol: TerminalSymbolWithReferences | WorkflowSymbol;
 
-    if (tokenPosition.parseTree instanceof WorkflowNameReadContext) {
+    if (tokenPosition.parseTree instanceof XxpWorkflowNameReadContext) {
       const folderSymbolTable = document.workflowSymbolTable?.parent;
       const workflowSymbol = await folderSymbolTable?.resolve(tokenPosition.text, true);
       if (!(workflowSymbol instanceof WorkflowSymbol)) return null;
@@ -54,7 +54,7 @@ export class ReferencesProvider extends Provider {
 
     let defitionSymbol: TerminalSymbolWithReferences | WorkflowSymbol;
 
-    if (tokenPosition.parseTree instanceof WorkflowNameReadContext) {
+    if (tokenPosition.parseTree instanceof XxpWorkflowNameReadContext) {
       const folderSymbolTable = document.workflowSymbolTable?.parent;
       const workflowSymbol = await folderSymbolTable?.resolve(tokenPosition.text, true);
       if (!(workflowSymbol instanceof WorkflowSymbol)) return null;

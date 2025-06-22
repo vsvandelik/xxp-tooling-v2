@@ -2,12 +2,12 @@ import { DataSymbol } from '../../../core/models/symbols/DataSymbol.js';
 import { DocumentSymbolTable } from '../DocumentSymbolTable.js';
 import { addSymbolOfTypeWithInheritanceCheck } from '../helpers/SymbolHelpers.js';
 import { XxpSymbolTableBuilder } from '../builders/XxpSymbolTableBuilder.js';
-import { DataDefinitionContext } from '@extremexp/core/src/language/generated/XXPParser.js';
+import { XxpDataDefinitionContext } from '@extremexp/core';
 
 export class DataVisitor {
   constructor(private readonly builder: XxpSymbolTableBuilder) {}
 
-  public visitDefinition(ctx: DataDefinitionContext): DocumentSymbolTable {
+  public visitDefinition(ctx: XxpDataDefinitionContext): DocumentSymbolTable {
     const identifier = ctx.IDENTIFIER();
     if (!identifier) {
       return this.builder.visitChildren(ctx) as DocumentSymbolTable;

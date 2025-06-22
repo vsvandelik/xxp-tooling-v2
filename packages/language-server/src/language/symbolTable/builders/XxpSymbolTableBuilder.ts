@@ -11,20 +11,20 @@ import { FileVisitor } from '../visitors/FileVisitor.js';
 import { Document } from '../../../core/documents/Document.js';
 import { XXPVisitor } from '@extremexp/core';
 import {
-  DataDefinitionContext,
-  TaskConfigurationContext,
-  ParamAssignmentContext,
-  WorkflowNameReadContext,
-  TaskNameReadContext,
-  WorkflowHeaderContext,
-  WorkflowBodyContext,
-  TaskDefinitionContext,
-  ImplementationContext,
-  InputStatementContext,
-  OutputStatementContext,
-  DataNameReadContext,
-  FileNameStringContext,
-} from '@extremexp/core/src/language/generated/XXPParser.js';
+  XxpDataDefinitionContext,
+  XxpTaskConfigurationContext,
+  XxpParamAssignmentContext,
+  XxpWorkflowNameReadContext,
+  XxpTaskNameReadContext,
+  XxpWorkflowHeaderContext,
+  XxpWorkflowBodyContext,
+  XxpTaskDefinitionContext,
+  XxpImplementationContext,
+  XxpInputStatementContext,
+  XxpOutputStatementContext,
+  XxpDataNameReadContext,
+  XxpFileNameStringContext,
+} from '@extremexp/core';
 
 export class XxpSymbolTableBuilder
   extends AbstractParseTreeVisitor<DocumentSymbolTable>
@@ -57,44 +57,44 @@ export class XxpSymbolTableBuilder
     return this.symbolTable;
   }
 
-  visitWorkflowHeader(ctx: WorkflowHeaderContext): DocumentSymbolTable {
+  visitWorkflowHeader(ctx: XxpWorkflowHeaderContext): DocumentSymbolTable {
     return this.workflowVisitor.visitHeader(ctx);
   }
-  visitWorkflowBody(ctx: WorkflowBodyContext): DocumentSymbolTable {
+  visitWorkflowBody(ctx: XxpWorkflowBodyContext): DocumentSymbolTable {
     return this.workflowVisitor.visitBody(ctx);
   }
-  visitDataDefinition(ctx: DataDefinitionContext): DocumentSymbolTable {
+  visitDataDefinition(ctx: XxpDataDefinitionContext): DocumentSymbolTable {
     return this.dataVisitor.visitDefinition(ctx);
   }
-  visitTaskDefinition(ctx: TaskDefinitionContext): DocumentSymbolTable {
+  visitTaskDefinition(ctx: XxpTaskDefinitionContext): DocumentSymbolTable {
     return this.taskVisitor.visitDefinition(ctx);
   }
-  visitTaskConfiguration(ctx: TaskConfigurationContext): DocumentSymbolTable {
+  visitTaskConfiguration(ctx: XxpTaskConfigurationContext): DocumentSymbolTable {
     return this.taskVisitor.visitConfiguration(ctx);
   }
-  visitImplementation(ctx: ImplementationContext): DocumentSymbolTable {
+  visitImplementation(ctx: XxpImplementationContext): DocumentSymbolTable {
     return this.taskVisitor.visitImplementation(ctx);
   }
-  visitParamAssignment(ctx: ParamAssignmentContext): DocumentSymbolTable {
+  visitParamAssignment(ctx: XxpParamAssignmentContext): DocumentSymbolTable {
     return this.taskVisitor.visitParam(ctx);
   }
-  visitInputStatement(ctx: InputStatementContext): DocumentSymbolTable {
+  visitInputStatement(ctx: XxpInputStatementContext): DocumentSymbolTable {
     return this.taskVisitor.visitInput(ctx);
   }
-  visitOutputStatement(ctx: OutputStatementContext): DocumentSymbolTable {
+  visitOutputStatement(ctx: XxpOutputStatementContext): DocumentSymbolTable {
     return this.taskVisitor.visitOutput(ctx);
   }
 
-  visitWorkflowNameRead(ctx: WorkflowNameReadContext): DocumentSymbolTable {
+  visitWorkflowNameRead(ctx: XxpWorkflowNameReadContext): DocumentSymbolTable {
     return this.variableReadVisitor.visitWorkflow(ctx);
   }
-  visitDataNameRead(ctx: DataNameReadContext): DocumentSymbolTable {
+  visitDataNameRead(ctx: XxpDataNameReadContext): DocumentSymbolTable {
     return this.variableReadVisitor.visitData(ctx);
   }
-  visitTaskNameRead(ctx: TaskNameReadContext): DocumentSymbolTable {
+  visitTaskNameRead(ctx: XxpTaskNameReadContext): DocumentSymbolTable {
     return this.variableReadVisitor.visitTask(ctx);
   }
-  visitFileNameString(ctx: FileNameStringContext): DocumentSymbolTable {
+  visitFileNameString(ctx: XxpFileNameStringContext): DocumentSymbolTable {
     return this.fileVisitor.visitFileName(ctx);
   }
 }

@@ -7,15 +7,15 @@ import { XxpSymbolTableBuilder } from '../builders/XxpSymbolTableBuilder.js';
 import { Document } from '../../../core/documents/Document.js';
 import { TerminalNode } from 'antlr4ng';
 import {
-  WorkflowHeaderContext,
-  WorkflowBodyContext,
-  WorkflowNameReadContext,
-} from '@extremexp/core/src/language/generated/XXPParser.js';
+  XxpWorkflowHeaderContext,
+  XxpWorkflowBodyContext,
+  XxpWorkflowNameReadContext,
+} from '@extremexp/core';
 
 export class WorkflowVisitor {
   constructor(private readonly builder: XxpSymbolTableBuilder) {}
 
-  public visitHeader(ctx: WorkflowHeaderContext): DocumentSymbolTable {
+  public visitHeader(ctx: XxpWorkflowHeaderContext): DocumentSymbolTable {
     const identifier = ctx.IDENTIFIER();
     if (!identifier) {
       return this.builder.visitChildren(ctx) as DocumentSymbolTable;
@@ -49,7 +49,7 @@ export class WorkflowVisitor {
     return this.builder.defaultResult();
   }
 
-  public visitBody(ctx: WorkflowBodyContext): DocumentSymbolTable {
+  public visitBody(ctx: XxpWorkflowBodyContext): DocumentSymbolTable {
     return this.builder.visitChildren(ctx) as DocumentSymbolTable;
 
     /* TODO: check if the task chains exists */
@@ -75,7 +75,7 @@ export class WorkflowVisitor {
   }
 
   private linkParentWorkflowSymbol(
-    ctx: WorkflowHeaderContext,
+    ctx: XxpWorkflowHeaderContext,
     workflowSymbol: WorkflowSymbol
   ): void {
     const parentContext = ctx.workflowNameRead();
@@ -96,7 +96,9 @@ export class WorkflowVisitor {
     }
   }
 
-  private getParentWorkflowDocument(parentContext: WorkflowNameReadContext): Document | undefined {
+  private getParentWorkflowDocument(
+    parentContext: XxpWorkflowNameReadContext
+  ): Document | undefined {
     const parentName = parentContext.getText();
     const parentFileName = FileUtils.getWorkflowFileFromWorkflowName(parentName);
     const parentUri = this.builder.document.uri.replace(/[^/\\]+$/, parentFileName);

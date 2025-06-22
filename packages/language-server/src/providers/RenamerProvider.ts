@@ -5,12 +5,15 @@ import { TerminalSymbolWithReferences } from '../core/models/symbols/TerminalSym
 import { TerminalSymbolReference } from '../core/models/TerminalSymbolReference.js';
 import { RangeUtils } from '../utils/RangeUtils.js';
 import {
-  DataDefinitionContext,
-  TaskDefinitionContext,
-  WorkflowHeaderContext,
-} from '@extremexp/core/src/language/generated/XXPParser.js';
+  XxpDataDefinitionContext,
+  XxpTaskDefinitionContext,
+  XxpWorkflowHeaderContext,
+} from '@extremexp/core';
 
-type RuleWithIdentifiers = DataDefinitionContext | TaskDefinitionContext | WorkflowHeaderContext;
+type RuleWithIdentifiers =
+  | XxpDataDefinitionContext
+  | XxpTaskDefinitionContext
+  | XxpWorkflowHeaderContext;
 
 export class RenamerProvider extends Provider {
   private logger = Logger.getLogger();
