@@ -200,9 +200,12 @@ export class TaskResolver {
     const staticParameters: Record<string, ExpressionType> = {};
     const allParameters = new Map<string, ExpressionType>();
 
-    // Start with task's own parameters that have values
+    // First, collect all static parameters from the task definition (workflow level)
+    // These are parameters that have defined values in the XXP file
+    // They should be listed as static parameters no matter of overriding the value with spaces
     for (const param of task.parameters) {
       if (param.value !== null) {
+        staticParameters[param.name] = param.value;
         allParameters.set(param.name, param.value);
       }
     }
@@ -210,7 +213,8 @@ export class TaskResolver {
     // Create a set of parameter names that the task actually defines
     const taskParameterNames = new Set(task.parameters.map(p => p.name));
 
-    // Apply all space parameters to the task
+    // Determine which parameters are dynamic based on space parameter usage
+    // Dynamic parameters are those that don't have defined values in the workflow
     for (const [paramName, paramDef] of spaceParameters) {
       // Include parameters that are either:
       // 1. Actually used in parameter combinations, OR
@@ -219,11 +223,15 @@ export class TaskResolver {
       const isRequiredByTask = taskParameterNames.has(paramName);
       
       if (isUsedInCombinations || isRequiredByTask) {
-        if (paramDef.type === 'value') {
-          staticParameters[paramName] = paramDef.values[0]!;
-          allParameters.set(paramName, paramDef.values[0]!);
-        } else {
-          dynamicParameters.push(paramName);
+        // Check if this parameter was defined in the workflow
+        const taskParam = task.parameters.find(p => p.name === paramName);
+        
+        // If parameter was not defined in workflow OR was defined without a value, it's dynamic
+        if (!taskParam || taskParam.value === null) {
+          // Only add to dynamic if not already there
+          if (!dynamicParameters.includes(paramName)) {
+            dynamicParameters.push(paramName);
+          }
         }
       }
     }
@@ -233,13 +241,6 @@ export class TaskResolver {
       const isProvided = allParameters.has(param.name) || dynamicParameters.includes(param.name);
       if (param.isRequired && !isProvided) {
         throw new Error(`Required parameter '${param.name}' not provided for task '${task.name}'`);
-      }
-      if (
-        !param.isRequired &&
-        !staticParameters[param.name] &&
-        !dynamicParameters.includes(param.name)
-      ) {
-        staticParameters[param.name] = param.value!;
       }
     }
 
