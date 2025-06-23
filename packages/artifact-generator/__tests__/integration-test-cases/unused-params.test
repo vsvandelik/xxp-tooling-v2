@@ -41,10 +41,10 @@ experiment UnusedParamsTest {
         "taskId": "UnusedParamWorkflow:simpleTask",
         "workflow": "UnusedParamWorkflow",
         "implementation": "simple.py",
-        "dynamicParameters": [
-          "usedParam"
-        ],
-        "staticParameters": {},
+        "dynamicParameters": [],
+        "staticParameters": {
+          "usedParam": 1
+        },
         "inputData": [],
         "outputData": []
       }

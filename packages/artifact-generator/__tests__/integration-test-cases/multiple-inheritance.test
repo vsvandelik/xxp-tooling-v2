@@ -69,11 +69,12 @@ experiment MultipleInheritanceTest {
         "workflow": "FinalWorkflow",
         "implementation": "base.py",
         "dynamicParameters": [
-          "baseParam",
-          "middleParam",
           "finalParam"
         ],
-        "staticParameters": {},
+        "staticParameters": {
+          "baseParam": 1,
+          "middleParam": 2
+        },
         "inputData": [
           "baseData"
         ],
@@ -87,10 +88,11 @@ experiment MultipleInheritanceTest {
         "implementation": "middle.py",
         "dynamicParameters": [
           "baseParam",
-          "middleParam",
-          "finalParam"
+          "middleParam"
         ],
-        "staticParameters": {},
+        "staticParameters": {
+          "finalParam": 3
+        },
         "inputData": [
           "middleData"
         ],

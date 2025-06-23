@@ -45,6 +45,10 @@ experiment TaskParamOverrideTest {
     }
 }
 
+=== WARNINGS ===
+- Implementation file 'task.py' for task 'taskWithParams' in workflow 'TaskParamWorkflow' not found
+- Parameter 'fifthParam' is defined but never used
+
 === OUTPUT ===
 
 {
@@ -58,7 +62,13 @@ experiment TaskParamOverrideTest {
         "implementation": "task.py",
         "dynamicParameters": [
           "thirdParam",
-          "fourthParam"
+          "expressionParamString1",
+          "expressionParamNumber1",
+          "expressionParamBool1",
+          "fourthParam",
+          "expressionParamString2",
+          "expressionParamNumber2",
+          "expressionParamBool2"
         ],
         "staticParameters": {
           "taskOnlyParam": 20,
