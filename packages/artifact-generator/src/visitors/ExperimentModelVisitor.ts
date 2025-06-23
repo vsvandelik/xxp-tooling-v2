@@ -1,6 +1,7 @@
 import { ESPACEVisitor } from '@extremexp/core';
 import {
   ControlBlockContext,
+  ControlChainElementContext,
   DataDefinitionContext,
   ExperimentDeclarationContext,
   ExpressionContext,
@@ -142,8 +143,19 @@ export class ExperimentModelVisitor extends ESPACEVisitor<any> {
       }
       if (content.simpleTransition()) {
         const simpleTransition = content.simpleTransition();
-        const spaceNames =
-          simpleTransition?.spaceNameRead().map(space => space.IDENTIFIER().getText()) || [];
+        const controlChainElements = simpleTransition?.controlChainElement() || [];
+        const spaceNames: string[] = [];
+        
+        for (const element of controlChainElements) {
+          if (element.spaceNameRead()) {
+            spaceNames.push(element.spaceNameRead()!.IDENTIFIER().getText());
+          } else if (element.START()) {
+            spaceNames.push('START');
+          } else if (element.END()) {
+            spaceNames.push('END');
+          }
+        }
+        
         if (spaceNames.length < 2) {
           throw new Error('Simple transition must have at least two spaces');
         }
@@ -163,12 +175,13 @@ export class ExperimentModelVisitor extends ESPACEVisitor<any> {
         const header = conditionalTransition!.conditionalTransitionHeader();
         const body = conditionalTransition!.conditionalTransitionBody();
 
-        if (header.spaceNameRead().length !== 2) {
+        const controlChainElements = header.controlChainElement();
+        if (controlChainElements.length !== 2) {
           throw new Error('Conditional transition must have exactly two spaces');
         }
 
-        const fromSpace = header.spaceNameRead()[0]!.IDENTIFIER().getText();
-        const toSpace = header.spaceNameRead()[1]!.IDENTIFIER().getText();
+        const fromSpace = this.getSpaceNameFromControlChainElement(controlChainElements[0]!);
+        const toSpace = this.getSpaceNameFromControlChainElement(controlChainElements[1]!);
 
         const conditions = body.condition().map(cond => cond.STRING().getText().slice(1, -1)); // Remove quotes
 
@@ -197,5 +210,20 @@ export class ExperimentModelVisitor extends ESPACEVisitor<any> {
       return ctx.BOOLEAN()!.getText() === 'true';
     }
     throw new Error('Unknown expression type');
+  }
+
+  /**
+   * Helper method to extract space name from ControlChainElement
+   */
+  private getSpaceNameFromControlChainElement(element: ControlChainElementContext): string {
+    if (element.spaceNameRead()) {
+      return element.spaceNameRead()!.IDENTIFIER().getText();
+    } else if (element.START()) {
+      return 'START';
+    } else if (element.END()) {
+      return 'END';
+    } else {
+      throw new Error('Invalid control chain element');
+    }
   }
 }
