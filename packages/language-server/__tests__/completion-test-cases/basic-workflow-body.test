@@ -1,0 +1,14 @@
+=== parentWorkflow.xxp ===
+workflow ParentWorkflow {
+    define data existingData;
+    define task existingTask;
+    define data anotherData;
+    
+    <-CURSOR->
+}
+
+=== SUGGESTIONS ===
+- existingTask
+- define
+- configure
+- }

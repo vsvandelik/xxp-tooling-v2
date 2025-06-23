@@ -26,10 +26,13 @@ export class EspaceControlVisitor {
   }
 
   public visitSimpleTransition(ctx: EspaceSimpleTransitionContext): DocumentSymbolTable {
-    // Visit all space name reads to register references
-    const spaceNames = ctx.spaceNameRead();
-    for (const spaceName of spaceNames) {
-      this.builder.visit(spaceName);
+    // Visit all control chain elements to find space name reads
+    const chainElements = ctx.controlChainElement();
+    for (const chainElement of chainElements) {
+      const spaceName = chainElement.spaceNameRead();
+      if (spaceName) {
+        this.builder.visit(spaceName);
+      }
     }
 
     return this.builder.defaultResult();
