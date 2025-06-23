@@ -212,8 +212,13 @@ export class TaskResolver {
 
     // Apply all space parameters to the task
     for (const [paramName, paramDef] of spaceParameters) {
-      // Only include parameters that are actually used (if filtering is provided)
-      if (!usedParameters || usedParameters.has(paramName)) {
+      // Include parameters that are either:
+      // 1. Actually used in parameter combinations, OR
+      // 2. Required by this specific task (to satisfy required parameters)
+      const isUsedInCombinations = !usedParameters || usedParameters.has(paramName);
+      const isRequiredByTask = taskParameterNames.has(paramName);
+      
+      if (isUsedInCombinations || isRequiredByTask) {
         if (paramDef.type === 'value') {
           staticParameters[paramName] = paramDef.values[0]!;
           allParameters.set(paramName, paramDef.values[0]!);

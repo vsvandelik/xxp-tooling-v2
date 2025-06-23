@@ -51,10 +51,9 @@ experiment MixedParamOverrideTest {
         "taskId": "MixedParamWorkflow:task1",
         "workflow": "MixedParamWorkflow",
         "implementation": "task1.py",
-        "dynamicParameters": [
-          "globalParam"
-        ],
+        "dynamicParameters": [],
         "staticParameters": {
+          "globalParam": 1,
           "task1Param": 2
         },
         "inputData": [],
@@ -66,7 +65,7 @@ experiment MixedParamOverrideTest {
         "implementation": "task2.py",
         "dynamicParameters": [],
         "staticParameters": {
-          "globalParam": 999,
+          "globalParam": 3,
           "task2Param": 4
         },
         "inputData": [],

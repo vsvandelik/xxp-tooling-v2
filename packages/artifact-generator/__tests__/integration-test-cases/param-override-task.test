@@ -24,7 +24,7 @@ experiment TaskParamOverrideTest {
     space TestSpace of TaskParamWorkflow {
         strategy gridsearch;
         param sharedParam = enum(100, 200);
-        param thirdPram = range(5, 15, 5);
+        param thirdParam = range(5, 15, 5);
         param fifthParam = true;
         param expressionParamString1 = "hello";
         param expressionParamNumber1 = 5.123;
@@ -43,4 +43,363 @@ experiment TaskParamOverrideTest {
     control {
         START -> TestSpace -> END;
     }
+}
+
+=== OUTPUT ===
+
+{
+  "experiment": "TaskParamOverrideTest",
+  "version": "1.0",
+  "tasks": [
+    [
+      {
+        "taskId": "TaskParamWorkflow:taskWithParams",
+        "workflow": "TaskParamWorkflow",
+        "implementation": "task.py",
+        "dynamicParameters": [
+          "thirdParam",
+          "fourthParam"
+        ],
+        "staticParameters": {
+          "taskOnlyParam": 20,
+          "sharedParam": 10
+        },
+        "inputData": [],
+        "outputData": []
+      }
+    ]
+  ],
+  "spaces": [
+    {
+      "spaceId": "TestSpace",
+      "tasksOrder": [
+        "TaskParamWorkflow:taskWithParams"
+      ],
+      "parameters": [
+        {
+          "sharedParam": 100,
+          "thirdParam": 5,
+          "expressionParamString1": "hello",
+          "expressionParamNumber1": 5.123,
+          "expressionParamBool1": false,
+          "taskWithParams:sharedParam": 999,
+          "taskWithParams:taskOnlyParam": 30,
+          "taskWithParams:fourthParam": 1,
+          "taskWithParams:expressionParamString2": "world",
+          "taskWithParams:expressionParamNumber2": 9999,
+          "taskWithParams:expressionParamBool2": true
+        },
+        {
+          "sharedParam": 100,
+          "thirdParam": 5,
+          "expressionParamString1": "hello",
+          "expressionParamNumber1": 5.123,
+          "expressionParamBool1": false,
+          "taskWithParams:sharedParam": 999,
+          "taskWithParams:taskOnlyParam": 30,
+          "taskWithParams:fourthParam": 7,
+          "taskWithParams:expressionParamString2": "world",
+          "taskWithParams:expressionParamNumber2": 9999,
+          "taskWithParams:expressionParamBool2": true
+        },
+        {
+          "sharedParam": 100,
+          "thirdParam": 5,
+          "expressionParamString1": "hello",
+          "expressionParamNumber1": 5.123,
+          "expressionParamBool1": false,
+          "taskWithParams:sharedParam": 999,
+          "taskWithParams:taskOnlyParam": 40,
+          "taskWithParams:fourthParam": 1,
+          "taskWithParams:expressionParamString2": "world",
+          "taskWithParams:expressionParamNumber2": 9999,
+          "taskWithParams:expressionParamBool2": true
+        },
+        {
+          "sharedParam": 100,
+          "thirdParam": 5,
+          "expressionParamString1": "hello",
+          "expressionParamNumber1": 5.123,
+          "expressionParamBool1": false,
+          "taskWithParams:sharedParam": 999,
+          "taskWithParams:taskOnlyParam": 40,
+          "taskWithParams:fourthParam": 7,
+          "taskWithParams:expressionParamString2": "world",
+          "taskWithParams:expressionParamNumber2": 9999,
+          "taskWithParams:expressionParamBool2": true
+        },
+        {
+          "sharedParam": 100,
+          "thirdParam": 10,
+          "expressionParamString1": "hello",
+          "expressionParamNumber1": 5.123,
+          "expressionParamBool1": false,
+          "taskWithParams:sharedParam": 999,
+          "taskWithParams:taskOnlyParam": 30,
+          "taskWithParams:fourthParam": 1,
+          "taskWithParams:expressionParamString2": "world",
+          "taskWithParams:expressionParamNumber2": 9999,
+          "taskWithParams:expressionParamBool2": true
+        },
+        {
+          "sharedParam": 100,
+          "thirdParam": 10,
+          "expressionParamString1": "hello",
+          "expressionParamNumber1": 5.123,
+          "expressionParamBool1": false,
+          "taskWithParams:sharedParam": 999,
+          "taskWithParams:taskOnlyParam": 30,
+          "taskWithParams:fourthParam": 7,
+          "taskWithParams:expressionParamString2": "world",
+          "taskWithParams:expressionParamNumber2": 9999,
+          "taskWithParams:expressionParamBool2": true
+        },
+        {
+          "sharedParam": 100,
+          "thirdParam": 10,
+          "expressionParamString1": "hello",
+          "expressionParamNumber1": 5.123,
+          "expressionParamBool1": false,
+          "taskWithParams:sharedParam": 999,
+          "taskWithParams:taskOnlyParam": 40,
+          "taskWithParams:fourthParam": 1,
+          "taskWithParams:expressionParamString2": "world",
+          "taskWithParams:expressionParamNumber2": 9999,
+          "taskWithParams:expressionParamBool2": true
+        },
+        {
+          "sharedParam": 100,
+          "thirdParam": 10,
+          "expressionParamString1": "hello",
+          "expressionParamNumber1": 5.123,
+          "expressionParamBool1": false,
+          "taskWithParams:sharedParam": 999,
+          "taskWithParams:taskOnlyParam": 40,
+          "taskWithParams:fourthParam": 7,
+          "taskWithParams:expressionParamString2": "world",
+          "taskWithParams:expressionParamNumber2": 9999,
+          "taskWithParams:expressionParamBool2": true
+        },
+        {
+          "sharedParam": 100,
+          "thirdParam": 15,
+          "expressionParamString1": "hello",
+          "expressionParamNumber1": 5.123,
+          "expressionParamBool1": false,
+          "taskWithParams:sharedParam": 999,
+          "taskWithParams:taskOnlyParam": 30,
+          "taskWithParams:fourthParam": 1,
+          "taskWithParams:expressionParamString2": "world",
+          "taskWithParams:expressionParamNumber2": 9999,
+          "taskWithParams:expressionParamBool2": true
+        },
+        {
+          "sharedParam": 100,
+          "thirdParam": 15,
+          "expressionParamString1": "hello",
+          "expressionParamNumber1": 5.123,
+          "expressionParamBool1": false,
+          "taskWithParams:sharedParam": 999,
+          "taskWithParams:taskOnlyParam": 30,
+          "taskWithParams:fourthParam": 7,
+          "taskWithParams:expressionParamString2": "world",
+          "taskWithParams:expressionParamNumber2": 9999,
+          "taskWithParams:expressionParamBool2": true
+        },
+        {
+          "sharedParam": 100,
+          "thirdParam": 15,
+          "expressionParamString1": "hello",
+          "expressionParamNumber1": 5.123,
+          "expressionParamBool1": false,
+          "taskWithParams:sharedParam": 999,
+          "taskWithParams:taskOnlyParam": 40,
+          "taskWithParams:fourthParam": 1,
+          "taskWithParams:expressionParamString2": "world",
+          "taskWithParams:expressionParamNumber2": 9999,
+          "taskWithParams:expressionParamBool2": true
+        },
+        {
+          "sharedParam": 100,
+          "thirdParam": 15,
+          "expressionParamString1": "hello",
+          "expressionParamNumber1": 5.123,
+          "expressionParamBool1": false,
+          "taskWithParams:sharedParam": 999,
+          "taskWithParams:taskOnlyParam": 40,
+          "taskWithParams:fourthParam": 7,
+          "taskWithParams:expressionParamString2": "world",
+          "taskWithParams:expressionParamNumber2": 9999,
+          "taskWithParams:expressionParamBool2": true
+        },
+        {
+          "sharedParam": 200,
+          "thirdParam": 5,
+          "expressionParamString1": "hello",
+          "expressionParamNumber1": 5.123,
+          "expressionParamBool1": false,
+          "taskWithParams:sharedParam": 999,
+          "taskWithParams:taskOnlyParam": 30,
+          "taskWithParams:fourthParam": 1,
+          "taskWithParams:expressionParamString2": "world",
+          "taskWithParams:expressionParamNumber2": 9999,
+          "taskWithParams:expressionParamBool2": true
+        },
+        {
+          "sharedParam": 200,
+          "thirdParam": 5,
+          "expressionParamString1": "hello",
+          "expressionParamNumber1": 5.123,
+          "expressionParamBool1": false,
+          "taskWithParams:sharedParam": 999,
+          "taskWithParams:taskOnlyParam": 30,
+          "taskWithParams:fourthParam": 7,
+          "taskWithParams:expressionParamString2": "world",
+          "taskWithParams:expressionParamNumber2": 9999,
+          "taskWithParams:expressionParamBool2": true
+        },
+        {
+          "sharedParam": 200,
+          "thirdParam": 5,
+          "expressionParamString1": "hello",
+          "expressionParamNumber1": 5.123,
+          "expressionParamBool1": false,
+          "taskWithParams:sharedParam": 999,
+          "taskWithParams:taskOnlyParam": 40,
+          "taskWithParams:fourthParam": 1,
+          "taskWithParams:expressionParamString2": "world",
+          "taskWithParams:expressionParamNumber2": 9999,
+          "taskWithParams:expressionParamBool2": true
+        },
+        {
+          "sharedParam": 200,
+          "thirdParam": 5,
+          "expressionParamString1": "hello",
+          "expressionParamNumber1": 5.123,
+          "expressionParamBool1": false,
+          "taskWithParams:sharedParam": 999,
+          "taskWithParams:taskOnlyParam": 40,
+          "taskWithParams:fourthParam": 7,
+          "taskWithParams:expressionParamString2": "world",
+          "taskWithParams:expressionParamNumber2": 9999,
+          "taskWithParams:expressionParamBool2": true
+        },
+        {
+          "sharedParam": 200,
+          "thirdParam": 10,
+          "expressionParamString1": "hello",
+          "expressionParamNumber1": 5.123,
+          "expressionParamBool1": false,
+          "taskWithParams:sharedParam": 999,
+          "taskWithParams:taskOnlyParam": 30,
+          "taskWithParams:fourthParam": 1,
+          "taskWithParams:expressionParamString2": "world",
+          "taskWithParams:expressionParamNumber2": 9999,
+          "taskWithParams:expressionParamBool2": true
+        },
+        {
+          "sharedParam": 200,
+          "thirdParam": 10,
+          "expressionParamString1": "hello",
+          "expressionParamNumber1": 5.123,
+          "expressionParamBool1": false,
+          "taskWithParams:sharedParam": 999,
+          "taskWithParams:taskOnlyParam": 30,
+          "taskWithParams:fourthParam": 7,
+          "taskWithParams:expressionParamString2": "world",
+          "taskWithParams:expressionParamNumber2": 9999,
+          "taskWithParams:expressionParamBool2": true
+        },
+        {
+          "sharedParam": 200,
+          "thirdParam": 10,
+          "expressionParamString1": "hello",
+          "expressionParamNumber1": 5.123,
+          "expressionParamBool1": false,
+          "taskWithParams:sharedParam": 999,
+          "taskWithParams:taskOnlyParam": 40,
+          "taskWithParams:fourthParam": 1,
+          "taskWithParams:expressionParamString2": "world",
+          "taskWithParams:expressionParamNumber2": 9999,
+          "taskWithParams:expressionParamBool2": true
+        },
+        {
+          "sharedParam": 200,
+          "thirdParam": 10,
+          "expressionParamString1": "hello",
+          "expressionParamNumber1": 5.123,
+          "expressionParamBool1": false,
+          "taskWithParams:sharedParam": 999,
+          "taskWithParams:taskOnlyParam": 40,
+          "taskWithParams:fourthParam": 7,
+          "taskWithParams:expressionParamString2": "world",
+          "taskWithParams:expressionParamNumber2": 9999,
+          "taskWithParams:expressionParamBool2": true
+        },
+        {
+          "sharedParam": 200,
+          "thirdParam": 15,
+          "expressionParamString1": "hello",
+          "expressionParamNumber1": 5.123,
+          "expressionParamBool1": false,
+          "taskWithParams:sharedParam": 999,
+          "taskWithParams:taskOnlyParam": 30,
+          "taskWithParams:fourthParam": 1,
+          "taskWithParams:expressionParamString2": "world",
+          "taskWithParams:expressionParamNumber2": 9999,
+          "taskWithParams:expressionParamBool2": true
+        },
+        {
+          "sharedParam": 200,
+          "thirdParam": 15,
+          "expressionParamString1": "hello",
+          "expressionParamNumber1": 5.123,
+          "expressionParamBool1": false,
+          "taskWithParams:sharedParam": 999,
+          "taskWithParams:taskOnlyParam": 30,
+          "taskWithParams:fourthParam": 7,
+          "taskWithParams:expressionParamString2": "world",
+          "taskWithParams:expressionParamNumber2": 9999,
+          "taskWithParams:expressionParamBool2": true
+        },
+        {
+          "sharedParam": 200,
+          "thirdParam": 15,
+          "expressionParamString1": "hello",
+          "expressionParamNumber1": 5.123,
+          "expressionParamBool1": false,
+          "taskWithParams:sharedParam": 999,
+          "taskWithParams:taskOnlyParam": 40,
+          "taskWithParams:fourthParam": 1,
+          "taskWithParams:expressionParamString2": "world",
+          "taskWithParams:expressionParamNumber2": 9999,
+          "taskWithParams:expressionParamBool2": true
+        },
+        {
+          "sharedParam": 200,
+          "thirdParam": 15,
+          "expressionParamString1": "hello",
+          "expressionParamNumber1": 5.123,
+          "expressionParamBool1": false,
+          "taskWithParams:sharedParam": 999,
+          "taskWithParams:taskOnlyParam": 40,
+          "taskWithParams:fourthParam": 7,
+          "taskWithParams:expressionParamString2": "world",
+          "taskWithParams:expressionParamNumber2": 9999,
+          "taskWithParams:expressionParamBool2": true
+        }
+      ],
+      "inputData": {}
+    }
+  ],
+  "control": {
+    "START": "TestSpace",
+    "transitions": [
+      {
+        "from": "TestSpace",
+        "to": "END"
+      }
+    ]
+  },
+  "inputData": {}
 }

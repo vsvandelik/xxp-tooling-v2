@@ -1,0 +1,618 @@
+=== genericWorkflow.xxp ===
+
+workflow GenericWorkflow {
+    define task preProcessing;
+    define task processing;
+    define task postProcessing;
+
+    define data inputData;
+    define data outputData;
+    define data trainingSet;
+    define data validationSet;
+
+    define data processedData;
+
+    configure task preProcessing {
+        input inputData;
+        output trainingSet, validationSet;
+        param trainingSetSize;
+        param method = "basic";
+    }
+
+    configure task processing {
+        input trainingSet;
+        output processedData;
+        param hyperparameter;
+    }
+
+    configure task postProcessing {
+        input processedData, validationSet;
+        output outputData;
+        param threshold;
+    }
+
+    START -> preProcessing -> processing -> postProcessing -> END;
+}
+
+=== concreteInheritedWorkflow.xxp === 
+
+workflow ConcreteInheritedWorkflow from GenericWorkflow {
+    configure task preProcessing {
+        implementation "scripts/preprocessing.py";
+    }
+
+    configure task processing {
+        implementation "scripts/processing.py";
+    }   
+
+    configure task postProcessing {
+        implementation "scripts/postprocessing.py";
+    }  
+}
+
+=== experiment.espace ===
+
+experiment E1 {
+    space Set1 of ConcreteInheritedWorkflow {
+        param trainingSetSize = range(100, 1000, 100);
+        param hyperparameter = enum(0.5, 0.6, 0.9, 1.0, 1.5);
+
+        configure task postProcessing {
+            param threshold = 0.8;
+        }
+    }
+
+    space Set2 of ConcreteInheritedWorkflow {
+        param trainingSetSize = 50;
+        param hyperparameter = range(0.1, 1.0, 0.1);
+        param threshold = 0.8;
+    }
+
+    space Set3 of ConcreteInheritedWorkflow {
+        configure task preProcessing {
+            param trainingSetSize = enum(100, 200, 300);
+        }
+
+        configure task processing {
+            param hyperparameter = 1.0;
+        }
+
+        configure task postProcessing {
+            param threshold = range(0.5, 1.0, 0.1);
+        }
+    }
+
+    control {
+        START -> Set1;
+        Set1 -?> Set2 {
+            condition "input() == 'yes'";
+        }
+        Set1 -?> Set3 {
+            condition "input() == 'no'";
+        }
+        Set2 -> END;
+        Set3 -> END;
+    }
+
+    define data inputData = "data/inputData.csv";
+}
+
+=== scripts/preprocessing.py ===
+
+=== scripts/processing.py ===
+
+=== scripts/postprocessing.py ===
+
+=== OUTPUT ===
+
+{
+  "experiment": "E1",
+  "version": "1.0",
+  "tasks": [
+    [
+      {
+        "taskId": "ConcreteInheritedWorkflow:preProcessing",
+        "workflow": "ConcreteInheritedWorkflow",
+        "implementation": "scripts/preprocessing.py",
+        "dynamicParameters": [
+          "trainingSetSize",
+          "hyperparameter"
+        ],
+        "staticParameters": {
+          "method": "basic"
+        },
+        "inputData": [
+          "inputData"
+        ],
+        "outputData": [
+          "trainingSet",
+          "validationSet"
+        ]
+      },
+      {
+        "taskId": "ConcreteInheritedWorkflow:processing",
+        "workflow": "ConcreteInheritedWorkflow",
+        "implementation": "scripts/processing.py",
+        "dynamicParameters": [
+          "trainingSetSize",
+          "hyperparameter"
+        ],
+        "staticParameters": {},
+        "inputData": [
+          "trainingSet"
+        ],
+        "outputData": [
+          "processedData"
+        ]
+      },
+      {
+        "taskId": "ConcreteInheritedWorkflow:postProcessing",
+        "workflow": "ConcreteInheritedWorkflow",
+        "implementation": "scripts/postprocessing.py",
+        "dynamicParameters": [
+          "trainingSetSize",
+          "hyperparameter"
+        ],
+        "staticParameters": {},
+        "inputData": [
+          "processedData",
+          "validationSet"
+        ],
+        "outputData": [
+          "outputData"
+        ]
+      }
+    ]
+  ],
+  "spaces": [
+    {
+      "spaceId": "Set1",
+      "tasksOrder": [
+        "ConcreteInheritedWorkflow:preProcessing",
+        "ConcreteInheritedWorkflow:processing",
+        "ConcreteInheritedWorkflow:postProcessing"
+      ],
+      "parameters": [
+        {
+          "trainingSetSize": 100,
+          "hyperparameter": 0.5,
+          "postProcessing:threshold": 0.8
+        },
+        {
+          "trainingSetSize": 100,
+          "hyperparameter": 0.6,
+          "postProcessing:threshold": 0.8
+        },
+        {
+          "trainingSetSize": 100,
+          "hyperparameter": 0.9,
+          "postProcessing:threshold": 0.8
+        },
+        {
+          "trainingSetSize": 100,
+          "hyperparameter": 1,
+          "postProcessing:threshold": 0.8
+        },
+        {
+          "trainingSetSize": 100,
+          "hyperparameter": 1.5,
+          "postProcessing:threshold": 0.8
+        },
+        {
+          "trainingSetSize": 200,
+          "hyperparameter": 0.5,
+          "postProcessing:threshold": 0.8
+        },
+        {
+          "trainingSetSize": 200,
+          "hyperparameter": 0.6,
+          "postProcessing:threshold": 0.8
+        },
+        {
+          "trainingSetSize": 200,
+          "hyperparameter": 0.9,
+          "postProcessing:threshold": 0.8
+        },
+        {
+          "trainingSetSize": 200,
+          "hyperparameter": 1,
+          "postProcessing:threshold": 0.8
+        },
+        {
+          "trainingSetSize": 200,
+          "hyperparameter": 1.5,
+          "postProcessing:threshold": 0.8
+        },
+        {
+          "trainingSetSize": 300,
+          "hyperparameter": 0.5,
+          "postProcessing:threshold": 0.8
+        },
+        {
+          "trainingSetSize": 300,
+          "hyperparameter": 0.6,
+          "postProcessing:threshold": 0.8
+        },
+        {
+          "trainingSetSize": 300,
+          "hyperparameter": 0.9,
+          "postProcessing:threshold": 0.8
+        },
+        {
+          "trainingSetSize": 300,
+          "hyperparameter": 1,
+          "postProcessing:threshold": 0.8
+        },
+        {
+          "trainingSetSize": 300,
+          "hyperparameter": 1.5,
+          "postProcessing:threshold": 0.8
+        },
+        {
+          "trainingSetSize": 400,
+          "hyperparameter": 0.5,
+          "postProcessing:threshold": 0.8
+        },
+        {
+          "trainingSetSize": 400,
+          "hyperparameter": 0.6,
+          "postProcessing:threshold": 0.8
+        },
+        {
+          "trainingSetSize": 400,
+          "hyperparameter": 0.9,
+          "postProcessing:threshold": 0.8
+        },
+        {
+          "trainingSetSize": 400,
+          "hyperparameter": 1,
+          "postProcessing:threshold": 0.8
+        },
+        {
+          "trainingSetSize": 400,
+          "hyperparameter": 1.5,
+          "postProcessing:threshold": 0.8
+        },
+        {
+          "trainingSetSize": 500,
+          "hyperparameter": 0.5,
+          "postProcessing:threshold": 0.8
+        },
+        {
+          "trainingSetSize": 500,
+          "hyperparameter": 0.6,
+          "postProcessing:threshold": 0.8
+        },
+        {
+          "trainingSetSize": 500,
+          "hyperparameter": 0.9,
+          "postProcessing:threshold": 0.8
+        },
+        {
+          "trainingSetSize": 500,
+          "hyperparameter": 1,
+          "postProcessing:threshold": 0.8
+        },
+        {
+          "trainingSetSize": 500,
+          "hyperparameter": 1.5,
+          "postProcessing:threshold": 0.8
+        },
+        {
+          "trainingSetSize": 600,
+          "hyperparameter": 0.5,
+          "postProcessing:threshold": 0.8
+        },
+        {
+          "trainingSetSize": 600,
+          "hyperparameter": 0.6,
+          "postProcessing:threshold": 0.8
+        },
+        {
+          "trainingSetSize": 600,
+          "hyperparameter": 0.9,
+          "postProcessing:threshold": 0.8
+        },
+        {
+          "trainingSetSize": 600,
+          "hyperparameter": 1,
+          "postProcessing:threshold": 0.8
+        },
+        {
+          "trainingSetSize": 600,
+          "hyperparameter": 1.5,
+          "postProcessing:threshold": 0.8
+        },
+        {
+          "trainingSetSize": 700,
+          "hyperparameter": 0.5,
+          "postProcessing:threshold": 0.8
+        },
+        {
+          "trainingSetSize": 700,
+          "hyperparameter": 0.6,
+          "postProcessing:threshold": 0.8
+        },
+        {
+          "trainingSetSize": 700,
+          "hyperparameter": 0.9,
+          "postProcessing:threshold": 0.8
+        },
+        {
+          "trainingSetSize": 700,
+          "hyperparameter": 1,
+          "postProcessing:threshold": 0.8
+        },
+        {
+          "trainingSetSize": 700,
+          "hyperparameter": 1.5,
+          "postProcessing:threshold": 0.8
+        },
+        {
+          "trainingSetSize": 800,
+          "hyperparameter": 0.5,
+          "postProcessing:threshold": 0.8
+        },
+        {
+          "trainingSetSize": 800,
+          "hyperparameter": 0.6,
+          "postProcessing:threshold": 0.8
+        },
+        {
+          "trainingSetSize": 800,
+          "hyperparameter": 0.9,
+          "postProcessing:threshold": 0.8
+        },
+        {
+          "trainingSetSize": 800,
+          "hyperparameter": 1,
+          "postProcessing:threshold": 0.8
+        },
+        {
+          "trainingSetSize": 800,
+          "hyperparameter": 1.5,
+          "postProcessing:threshold": 0.8
+        },
+        {
+          "trainingSetSize": 900,
+          "hyperparameter": 0.5,
+          "postProcessing:threshold": 0.8
+        },
+        {
+          "trainingSetSize": 900,
+          "hyperparameter": 0.6,
+          "postProcessing:threshold": 0.8
+        },
+        {
+          "trainingSetSize": 900,
+          "hyperparameter": 0.9,
+          "postProcessing:threshold": 0.8
+        },
+        {
+          "trainingSetSize": 900,
+          "hyperparameter": 1,
+          "postProcessing:threshold": 0.8
+        },
+        {
+          "trainingSetSize": 900,
+          "hyperparameter": 1.5,
+          "postProcessing:threshold": 0.8
+        },
+        {
+          "trainingSetSize": 1000,
+          "hyperparameter": 0.5,
+          "postProcessing:threshold": 0.8
+        },
+        {
+          "trainingSetSize": 1000,
+          "hyperparameter": 0.6,
+          "postProcessing:threshold": 0.8
+        },
+        {
+          "trainingSetSize": 1000,
+          "hyperparameter": 0.9,
+          "postProcessing:threshold": 0.8
+        },
+        {
+          "trainingSetSize": 1000,
+          "hyperparameter": 1,
+          "postProcessing:threshold": 0.8
+        },
+        {
+          "trainingSetSize": 1000,
+          "hyperparameter": 1.5,
+          "postProcessing:threshold": 0.8
+        }
+      ],
+      "inputData": {}
+    },
+    {
+      "spaceId": "Set2",
+      "tasksOrder": [
+        "ConcreteInheritedWorkflow:preProcessing",
+        "ConcreteInheritedWorkflow:processing",
+        "ConcreteInheritedWorkflow:postProcessing"
+      ],
+      "parameters": [
+        {
+          "trainingSetSize": 50,
+          "hyperparameter": 0.1,
+          "threshold": 0.8
+        },
+        {
+          "trainingSetSize": 50,
+          "hyperparameter": 0.2,
+          "threshold": 0.8
+        },
+        {
+          "trainingSetSize": 50,
+          "hyperparameter": 0.3,
+          "threshold": 0.8
+        },
+        {
+          "trainingSetSize": 50,
+          "hyperparameter": 0.4,
+          "threshold": 0.8
+        },
+        {
+          "trainingSetSize": 50,
+          "hyperparameter": 0.5,
+          "threshold": 0.8
+        },
+        {
+          "trainingSetSize": 50,
+          "hyperparameter": 0.6,
+          "threshold": 0.8
+        },
+        {
+          "trainingSetSize": 50,
+          "hyperparameter": 0.7,
+          "threshold": 0.8
+        },
+        {
+          "trainingSetSize": 50,
+          "hyperparameter": 0.8,
+          "threshold": 0.8
+        },
+        {
+          "trainingSetSize": 50,
+          "hyperparameter": 0.9,
+          "threshold": 0.8
+        },
+        {
+          "trainingSetSize": 50,
+          "hyperparameter": 1,
+          "threshold": 0.8
+        }
+      ],
+      "inputData": {}
+    },
+    {
+      "spaceId": "Set3",
+      "tasksOrder": [
+        "ConcreteInheritedWorkflow:preProcessing",
+        "ConcreteInheritedWorkflow:processing",
+        "ConcreteInheritedWorkflow:postProcessing"
+      ],
+      "parameters": [
+        {
+          "preProcessing:trainingSetSize": 100,
+          "processing:hyperparameter": 1,
+          "postProcessing:threshold": 0.5
+        },
+        {
+          "preProcessing:trainingSetSize": 100,
+          "processing:hyperparameter": 1,
+          "postProcessing:threshold": 0.6
+        },
+        {
+          "preProcessing:trainingSetSize": 100,
+          "processing:hyperparameter": 1,
+          "postProcessing:threshold": 0.7
+        },
+        {
+          "preProcessing:trainingSetSize": 100,
+          "processing:hyperparameter": 1,
+          "postProcessing:threshold": 0.8
+        },
+        {
+          "preProcessing:trainingSetSize": 100,
+          "processing:hyperparameter": 1,
+          "postProcessing:threshold": 0.9
+        },
+        {
+          "preProcessing:trainingSetSize": 100,
+          "processing:hyperparameter": 1,
+          "postProcessing:threshold": 1
+        },
+        {
+          "preProcessing:trainingSetSize": 200,
+          "processing:hyperparameter": 1,
+          "postProcessing:threshold": 0.5
+        },
+        {
+          "preProcessing:trainingSetSize": 200,
+          "processing:hyperparameter": 1,
+          "postProcessing:threshold": 0.6
+        },
+        {
+          "preProcessing:trainingSetSize": 200,
+          "processing:hyperparameter": 1,
+          "postProcessing:threshold": 0.7
+        },
+        {
+          "preProcessing:trainingSetSize": 200,
+          "processing:hyperparameter": 1,
+          "postProcessing:threshold": 0.8
+        },
+        {
+          "preProcessing:trainingSetSize": 200,
+          "processing:hyperparameter": 1,
+          "postProcessing:threshold": 0.9
+        },
+        {
+          "preProcessing:trainingSetSize": 200,
+          "processing:hyperparameter": 1,
+          "postProcessing:threshold": 1
+        },
+        {
+          "preProcessing:trainingSetSize": 300,
+          "processing:hyperparameter": 1,
+          "postProcessing:threshold": 0.5
+        },
+        {
+          "preProcessing:trainingSetSize": 300,
+          "processing:hyperparameter": 1,
+          "postProcessing:threshold": 0.6
+        },
+        {
+          "preProcessing:trainingSetSize": 300,
+          "processing:hyperparameter": 1,
+          "postProcessing:threshold": 0.7
+        },
+        {
+          "preProcessing:trainingSetSize": 300,
+          "processing:hyperparameter": 1,
+          "postProcessing:threshold": 0.8
+        },
+        {
+          "preProcessing:trainingSetSize": 300,
+          "processing:hyperparameter": 1,
+          "postProcessing:threshold": 0.9
+        },
+        {
+          "preProcessing:trainingSetSize": 300,
+          "processing:hyperparameter": 1,
+          "postProcessing:threshold": 1
+        }
+      ],
+      "inputData": {}
+    }
+  ],
+  "control": {
+    "START": "Set1",
+    "transitions": [
+      {
+        "from": "Set1",
+        "to": "Set2",
+        "condition": "input() == 'yes'"
+      },
+      {
+        "from": "Set1",
+        "to": "Set3",
+        "condition": "input() == 'no'"
+      },
+      {
+        "from": "Set2",
+        "to": "END"
+      },
+      {
+        "from": "Set3",
+        "to": "END"
+      }
+    ]
+  },
+  "inputData": {
+    "inputData": "data/inputData.csv"
+  }
+}

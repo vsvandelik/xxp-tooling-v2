@@ -13,7 +13,7 @@ interface TestCase {
   isNegativeTest: boolean;
 }
 
-describe.skip('Single Integration Test', () => {
+//describe.skip('Single Integration Test', () => {
 describe('Single Integration Test', () => {
   let tempDir: string;
 
@@ -113,7 +113,7 @@ describe('Single Integration Test', () => {
     }
   });
 });
-});
+//});
 
 /**
  * Parse a test case file and extract file contents and expected output
