@@ -14,6 +14,8 @@ import {
   EspaceSpaceNameReadContext,
   EspaceDataDefinitionContext,
   EspaceParamDefinitionContext,
+  EspaceExperimentHeaderContext,
+  EspaceSpaceHeaderContext,
 } from '@extremexp/core';
 import { BaseSymbol } from 'antlr4-c3';
 import { TerminalNode } from 'antlr4ng';
@@ -98,6 +100,27 @@ export class ReferencesProvider extends Provider {
             if (workflowSymbol) return workflowSymbol;
           }
         }
+      }
+    }
+
+    // Handle space definitions in ESPACE files
+    if (tokenPosition.parseTree instanceof EspaceSpaceHeaderContext) {
+      // Look for space symbols in the experiment's symbol table
+      const experimentSymbol = document.symbolTable?.children.find(
+        (c: BaseSymbol) => c instanceof ExperimentSymbol
+      ) as ExperimentSymbol;
+      if (experimentSymbol) {
+        const result = (await experimentSymbol.resolve(tokenPosition.text, false)) || null;
+        return result;
+      }
+    }
+
+    // Handle experiment definitions in ESPACE files
+    if (tokenPosition.parseTree instanceof EspaceExperimentHeaderContext) {
+      // Look for experiment symbols in the current document's symbol table
+      if (document.symbolTable) {
+        const result = (await document.symbolTable.resolve(tokenPosition.text, false)) || null;
+        return result;
       }
     }
 
