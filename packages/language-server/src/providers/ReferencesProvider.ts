@@ -203,12 +203,18 @@ export class ReferencesProvider extends Provider {
     let parseTree = symbol.context;
     
     if (symbol.context && symbol.context instanceof ParserRuleContext) {
-      const identifier = this.findIdentifierInContext(symbol.context);
-      if (identifier) {
-        this.logger.info(`Found identifier node in context for symbol: ${symbol.name}`);
-        parseTree = identifier;
-      } else {
-        this.logger.info(`No identifier node found in context for symbol: ${symbol.name}, falling back to original context`);
+      this.logger.info(`Attempting to find identifier in context for symbol: ${symbol.name}`);
+      try {
+        const identifier = this.findIdentifierInContext(symbol.context);
+        if (identifier) {
+          this.logger.info(`Found identifier node in context for symbol: ${symbol.name}`);
+          parseTree = identifier;
+        } else {
+          this.logger.info(`No identifier node found in context for symbol: ${symbol.name}, falling back to original context`);
+        }
+      } catch (error) {
+        this.logger.info(`Error in findIdentifierInContext for symbol ${symbol.name}: ${error}`);
+        this.logger.info(`Falling back to original context`);
       }
     }
     
