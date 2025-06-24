@@ -229,6 +229,14 @@ export class ReferencesProvider extends Provider {
     }
 
     this.logger.info(`Calling RangeUtils.getRangeFromParseTree with parseTree type: ${parseTree.constructor.name}`);
+    
+    // Add additional debugging for TerminalNode case
+    if (parseTree instanceof TerminalNode) {
+      this.logger.info(`TerminalNode details: symbol exists: ${!!parseTree.symbol}, text: "${parseTree.getText()}", symbol.line: ${parseTree.symbol?.line}, symbol.column: ${parseTree.symbol?.column}`);
+    } else if (parseTree instanceof ParserRuleContext) {
+      this.logger.info(`ParserRuleContext details: start exists: ${!!parseTree.start}, stop exists: ${!!parseTree.stop}, text: "${parseTree.getText()}"`);
+    }
+    
     try {
       const definitionRange = RangeUtils.getRangeFromParseTree(parseTree);
       if (!definitionRange) {
