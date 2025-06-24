@@ -41,13 +41,9 @@ export class EspaceSuggestionsProvider extends Provider {
   ]);
 
   addHandlers(): void {
-    this.connection!.onCompletion(completionParams => this.onCompletion(completionParams));
-    this.connection!.onCompletionResolve(completionItem =>
-      this.onCompletionResolve(completionItem)
-    );
   }
 
-  private async onCompletion(params: CompletionParams): Promise<CompletionItem[] | null> {
+  public async onCompletion(params: CompletionParams): Promise<CompletionItem[] | null> {
     this.logger.info(`Received completion request for document: ${params.textDocument.uri}`);
 
     const result = super.getDocumentAndPosition(params.textDocument, params.position);
@@ -199,10 +195,5 @@ export class EspaceSuggestionsProvider extends Provider {
         });
       }
     }
-  }
-
-  private async onCompletionResolve(item: CompletionItem): Promise<CompletionItem> {
-    this.logger.debug(`Resolving completion item: ${item.label}`);
-    return item;
   }
 }

@@ -32,14 +32,9 @@ export class XxpSuggestionsProvider extends Provider {
     [XXPParser.EQUALS, '='],
   ]);
 
-  addHandlers(): void {
-    this.connection!.onCompletion(completionParams => this.onCompletion(completionParams));
-    this.connection!.onCompletionResolve(completionItem =>
-      this.onCompletionResolve(completionItem)
-    );
-  }
+  addHandlers(): void {}
 
-  private async onCompletion(params: CompletionParams): Promise<CompletionItem[] | null> {
+  public async onCompletion(params: CompletionParams): Promise<CompletionItem[] | null> {
     this.logger.info(`Received completion request for document: ${params.textDocument.uri}`);
 
     const result = super.getDocumentAndPosition(params.textDocument, params.position);
@@ -211,11 +206,5 @@ export class XxpSuggestionsProvider extends Provider {
         kind,
       });
     });
-  }
-
-  private async onCompletionResolve(item: CompletionItem): Promise<CompletionItem> {
-    this.logger.debug(`Resolving completion item: ${item.label}`);
-
-    return item;
   }
 }
