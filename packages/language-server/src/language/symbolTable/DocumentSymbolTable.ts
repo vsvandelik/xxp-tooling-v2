@@ -13,29 +13,33 @@ export class DocumentSymbolTable extends SymbolTable {
   ): Promise<string[]> {
     const currentContext = parseTree;
     
-    // For TaskSymbol, always use the comprehensive approach to ensure inheritance works
-    if (type.name === 'TaskSymbol') {
-      const workflows = await this.getSymbolsOfType(WorkflowSymbol as any);
-      const allTasks: T[] = [];
-      const taskNames = new Set<string>(); // Use Set to avoid duplicates
+    // Generic approach: always try to get symbols from all workflows first
+    // This ensures inheritance works for any symbol type (TaskSymbol, DataSymbol, etc.)
+    const workflows = await this.getSymbolsOfType(WorkflowSymbol as any);
+    if (workflows.length > 0) {
+      const allSymbols: T[] = [];
+      const symbolNames = new Set<string>(); // Use Set to avoid duplicates
       
       for (const workflow of workflows) {
         if (workflow instanceof WorkflowSymbol) {
-          const workflowTasks = await workflow.getSymbolsOfType(type);
-          for (const task of workflowTasks) {
-            if (!taskNames.has(task.name)) {
-              taskNames.add(task.name);
-              allTasks.push(task);
+          const workflowSymbols = await workflow.getSymbolsOfType(type);
+          for (const symbol of workflowSymbols) {
+            if (!symbolNames.has(symbol.name)) {
+              symbolNames.add(symbol.name);
+              allSymbols.push(symbol);
             }
           }
         }
       }
-      return allTasks.map(s => s.name);
+      
+      // If we found symbols using the workflow approach, return them
+      if (allSymbols.length > 0) {
+        return allSymbols.map(s => s.name);
+      }
     }
     
+    // Fall back to original scope-based logic if no workflows exist or no symbols found
     if (!currentContext) return [];
-    
-    // For non-TaskSymbol types, use the original logic
     let scope = DocumentSymbolTable.symbolWithContextRecursive(this, currentContext);
     while (scope && !(scope instanceof ScopedSymbol)) {
       scope = scope.parent;
