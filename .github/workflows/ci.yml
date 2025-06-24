@@ -27,17 +27,23 @@ jobs:
     - name: Install dependencies
       run: npm ci
       
-    - name: Type check
-      run: npm run type-check
-      
     #- name: Lint
     #  run: npm run lint
 
     #- name: Format check
     #  run: npm run format:check
       
-    - name: Build
+    - name: Build core dependencies
+      run: |
+        cd packages/core && npm run build
+        cd ../workflow-repository && npm run build
+        cd ../experiment-runner && npm run build
+      
+    - name: Build all packages
       run: npm run build
+      
+    - name: Type check
+      run: npm run type-check
       
     - name: Run tests
       run: npm run test
