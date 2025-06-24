@@ -39,43 +39,22 @@ npm install @extremexp/workflow-repository-server
 # Start with default configuration
 workflow-repository-server
 
-# Start with custom configuration
-workflow-repository-server --port 8080 --data-dir /var/lib/workflows
+# Start with environment variables
+PORT=8080 STORAGE_PATH=/var/lib/workflows workflow-repository-server
 
-# Start with authentication enabled
-workflow-repository-server --auth-required --jwt-secret your-secret-key
+# Start with JWT secret
+JWT_SECRET=your-secret-key workflow-repository-server
 ```
 
-### Server Options
+### Configuration
 
-```
-Usage: workflow-repository-server [options]
-
-Options:
-  --port <number>           Server port (default: 3001)
-  --host <string>           Server host (default: "localhost")
-  --data-dir <path>         Data directory (default: "./data")
-  --auth-required           Require authentication (default: false)
-  --jwt-secret <string>     JWT secret key (required if auth enabled)
-  --jwt-expiry <string>     JWT token expiry (default: "24h")
-  --max-file-size <size>    Max file upload size (default: "10MB")
-  --cors-origin <string>    CORS allowed origins (default: "*")
-  --verbose                 Enable verbose logging
-  -h, --help               Display help information
-```
-
-### Environment Variables
+The server is configured through environment variables:
 
 ```bash
-PORT=3001                    # Server port
-HOST=0.0.0.0                # Server host
-DATA_DIR=./data             # Data storage directory
-AUTH_REQUIRED=true          # Require authentication
-JWT_SECRET=your-secret-key  # JWT signing secret
-JWT_EXPIRY=24h              # Token expiry time
-MAX_FILE_SIZE=10MB          # Maximum file upload size
-CORS_ORIGIN=*               # CORS allowed origins
-VERBOSE=true                # Enable verbose logging
+PORT=3001                                    # Server port (default: 3001)
+STORAGE_PATH=./workflow-repository          # Data storage directory (default: ./workflow-repository)
+JWT_SECRET=your-secret-key-change-in-production  # JWT signing secret
+CORS_ORIGIN=*                               # CORS allowed origins (default: *)
 ```
 
 ## API Reference

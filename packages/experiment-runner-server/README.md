@@ -38,41 +38,22 @@ npm install @extremexp/experiment-runner-server
 # Start with default configuration
 experiment-runner-server
 
-# Start with custom configuration
-experiment-runner-server --port 8080 --database /path/to/experiments.db
+# Start with environment variables
+PORT=8080 DATABASE_PATH=/path/to/experiments.db experiment-runner-server
 
 # Start with verbose logging
-experiment-runner-server --verbose
+VERBOSE=true experiment-runner-server
 ```
 
-### Server Options
+### Configuration
 
-```
-Usage: experiment-runner-server [options]
-
-Options:
-  --port <number>           Server port (default: 3000)
-  --host <string>           Server host (default: "localhost")
-  --database <path>         Database file path (default: "./experiments.db")
-  --max-concurrent <n>      Maximum concurrent experiments (default: 3)
-  --upload-dir <path>       Directory for uploaded files (default: "./uploads")
-  --cors-origin <string>    CORS allowed origins (default: "*")
-  --auth-required           Require authentication
-  --verbose                 Enable verbose logging
-  -h, --help               Display help information
-```
-
-### Environment Variables
+The server is configured through environment variables:
 
 ```bash
-PORT=3000                    # Server port
-HOST=0.0.0.0                # Server host (for production)
-DATABASE_PATH=./experiments.db  # Database file path
-MAX_CONCURRENT=3             # Max concurrent experiments
-VERBOSE=true                 # Enable verbose logging
-CORS_ORIGIN=*                # CORS allowed origins
-AUTH_REQUIRED=false          # Authentication requirement
-UPLOAD_DIR=./uploads         # File upload directory
+PORT=3000                           # Server port (default: 3000)
+VERBOSE=true                        # Enable verbose logging (default: false)
+DATABASE_PATH=./experiment_runs.db  # Database file path (default: ./experiment_runs.db)
+MAX_CONCURRENT=3                    # Max concurrent experiments (default: 3)
 ```
 
 ## API Reference

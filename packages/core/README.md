@@ -76,21 +76,7 @@ const espaceResult = parser.parseDocument(espaceContent, DocumentType.ESPACE);
 
 ### Working with AST
 
-```typescript
-import { XXPVisitor, ESPACEVisitor } from '@extremexp/core';
-
-// Custom visitor for XXP
-class MyXXPVisitor extends XXPVisitor {
-  visitWorkflowDeclaration(ctx: WorkflowDeclarationContext) {
-    console.log(`Found workflow: ${ctx.workflowName().getText()}`);
-    return super.visitWorkflowDeclaration(ctx);
-  }
-}
-
-// Use visitor
-const visitor = new MyXXPVisitor();
-xxpResult.parseTree?.accept(visitor);
-```
+For detailed information on working with ANTLR parse trees, visitors, and listeners, please refer to the [ANTLR documentation](https://www.antlr.org/). The generated lexers and parsers follow standard ANTLR patterns for TypeScript/JavaScript targets.
 
 ## API Reference
 

@@ -34,50 +34,57 @@ npm install @extremexp/experiment-runner
 ### Command Line Interface
 
 ```bash
-# Run a single experiment
-experiment-runner run experiment.espace
+# Run an experiment from an artifact file
+experiment-runner run artifact.json
 
-# Run with specific parameters
-experiment-runner run experiment.espace --params "inputFile=data.csv,iterations=100"
+# Resume interrupted experiment
+experiment-runner run artifact.json --resume
 
-# List execution history
-experiment-runner list
+# Use custom database path
+experiment-runner run artifact.json --db ./custom-experiments.db
 
-# Show experiment details
-experiment-runner show <experiment-id>
+# Check experiment status
+experiment-runner status myexperiment 1.0
 
-# Clean up old runs
-experiment-runner cleanup --older-than 30d
+# Terminate running experiment
+experiment-runner terminate myexperiment 1.0
 ```
 
 ### Command Options
 
 ```
-Usage: experiment-runner <command> [options]
-
-Commands:
-  run <file>                Run an experiment
-  list                      List experiment runs
-  show <id>                 Show experiment details
-  status <id>               Check experiment status
-  stop <id>                 Stop running experiment
-  cleanup                   Clean up old experiments
+Usage: experiment-runner [options] [command]
 
 Options:
-  --params <params>         Parameter overrides (key=value,key=value)
-  --database <path>         Database file path (default: ./experiments.db)
-  --max-concurrent <n>      Maximum concurrent runs (default: 3)
-  --timeout <seconds>       Execution timeout (default: 3600)
-  --verbose                 Enable verbose logging
-  -h, --help               Display help information
+  -V, --version                               output the version number
+  -h, --help                                  display help for command
+
+Commands:
+  run [options] <artifact>                    Run an experiment from an artifact file
+  status [options] <experiment> <version>     Check status of an experiment
+  terminate [options] <experiment> <version>  Terminate a running experiment
+  help [command]                              display help for command
+```
+
+#### Run Command Options
+
+```
+Usage: experiment-runner run [options] <artifact>
+
+Run an experiment from an artifact file
+
+Options:
+  -r, --resume     Resume interrupted experiment (default: false)
+  -d, --db <path>  Database path (default: "./experiment_runs.db")
+  -h, --help       display help for command
 ```
 
 ### Examples
 
 #### Basic Experiment Execution
 ```bash
-# Run a parameter sweep experiment
-experiment-runner run parameter-sweep.espace
+# Run an experiment from JSON artifact
+experiment-runner run myexperiment-artifact.json
 
 # Output:
 # Starting experiment: ParameterSweepExperiment

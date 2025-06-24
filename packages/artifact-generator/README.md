@@ -1,24 +1,17 @@
 # @extremexp/artifact-generator
 
-Command-line tool for generating artifacts from XXP and ESPACE source files, providing automated code generation for the ExtremeXP ecosystem.
+Command-line tool for generating experiment artifacts from ESPACE experiment files.
 
 ## Overview
 
-The Artifact Generator is a CLI tool that parses XXP workflow definitions and ESPACE experiment configurations to generate various output artifacts such as:
-
-- Python execution scripts
-- Configuration files  
-- Documentation
-- Experiment setup files
-- Parameter validation scripts
+The Artifact Generator is a CLI tool that parses ESPACE experiment configurations and their associated XXP workflow definitions to generate JSON artifacts for experiment execution.
 
 ## Features
 
-- **Multi-format Output**: Generate Python scripts, JSON configs, Markdown docs
-- **Template-based Generation**: Extensible template system for custom outputs
-- **Parameter Resolution**: Handle parameter inheritance and overrides
-- **Validation**: Verify workflow and experiment definitions
-- **Batch Processing**: Process multiple files in a single run
+- **JSON Artifact Generation**: Creates structured experiment artifacts for execution engines
+- **Parameter Resolution**: Handle parameter inheritance and overrides across workflow hierarchies
+- **Validation**: Verify workflow and experiment definitions with detailed error reporting
+- **Control Flow Analysis**: Validates experiment control flow and detects unreachable spaces
 
 ## Installation
 
@@ -39,149 +32,92 @@ npm install @extremexp/artifact-generator
 ### Basic Usage
 
 ```bash
-# Generate artifacts from a single XXP file
-artifact-generator --input workflow.xxp --output ./generated
+# Generate artifact from ESPACE experiment file
+artifact-generator experiment.espace
 
-# Generate from ESPACE experiment file
-artifact-generator --input experiment.espace --output ./generated
+# Generate with custom output location
+artifact-generator experiment.espace -o /path/to/output.json
 
-# Process multiple files
-artifact-generator --input "*.xxp" --input "*.espace" --output ./generated
+# Validate only without generating artifacts
+artifact-generator experiment.espace --validate-only
+
+# Enable verbose logging
+artifact-generator experiment.espace --verbose
 ```
 
 ### Command Line Options
 
 ```
-Usage: artifact-generator [options]
+Usage: artifact-generator [options] <espace-file>
+
+Arguments:
+  espace-file          Path to the ESPACE experiment file
 
 Options:
-  -i, --input <files...>     Input XXP or ESPACE files (supports globs)
-  -o, --output <directory>   Output directory for generated artifacts
-  -t, --template <name>      Template set to use (default: "python")
-  -f, --format <formats...>  Output formats: python, json, markdown
-  --validate-only            Only validate files without generating
-  --verbose                  Enable verbose logging
-  -h, --help                 Display help information
+  -V, --version        output the version number
+  -o, --output <path>  Output file path (default: artifact.json in same directory as input file)
+  --validate-only      Only validate, do not generate artifact
+  --verbose            Enable verbose logging
+  -h, --help           display help for command
 ```
 
 ### Examples
 
-#### Generate Python Scripts
+#### Generate Experiment Artifact
 ```bash
-# Generate Python execution scripts from workflow
-artifact-generator -i myworkflow.xxp -o ./scripts -f python
+# Generate JSON artifact from experiment file
+artifact-generator myexperiment.espace
+# Creates artifact.json in the same directory
 
-# Generated files:
-# ./scripts/myworkflow.py
-# ./scripts/config.json
-# ./scripts/run.sh
-```
-
-#### Generate Documentation
-```bash
-# Generate Markdown documentation
-artifact-generator -i experiment.espace -o ./docs -f markdown
-
-# Generated files:
-# ./docs/experiment-overview.md
-# ./docs/parameter-reference.md
-# ./docs/workflow-diagram.md
+# Generate with specific output path
+artifact-generator myexperiment.espace -o /output/experiment-artifact.json
 ```
 
 #### Validation Only
 ```bash
-# Validate files without generating artifacts
-artifact-generator --validate-only -i "**/*.xxp" -i "**/*.espace"
+# Validate experiment and workflow files without generating artifacts
+artifact-generator myexperiment.espace --validate-only
 ```
 
 ## Programmatic Usage
 
 ```typescript
-import { ArtifactGenerator, GeneratorOptions } from '@extremexp/artifact-generator';
+import { ArtifactGenerator, ArtifactGeneratorOptions } from '@extremexp/artifact-generator';
 
-const generator = new ArtifactGenerator();
-
-const options: GeneratorOptions = {
-  inputFiles: ['workflow.xxp', 'experiment.espace'],
-  outputDirectory: './generated',
-  templates: ['python', 'markdown'],
-  validateOnly: false
-};
+const generator = new ArtifactGenerator({
+  verbose: true
+});
 
 try {
-  const results = await generator.generate(options);
-  console.log(`Generated ${results.length} artifacts`);
+  const { artifact, validation } = await generator.generate('experiment.espace');
+  console.log('Generated artifact:', artifact);
+  if (validation.warnings.length > 0) {
+    console.warn('Warnings:', validation.warnings);
+  }
 } catch (error) {
   console.error('Generation failed:', error);
 }
 ```
 
-## Templates
+## Output Format
 
-### Built-in Templates
+The generated artifact is a JSON file containing:
 
-#### Python Template
-Generates executable Python scripts with:
-- Parameter validation
-- Task execution logic
-- Error handling and logging
-- Configuration file support
+- **Experiment metadata**: Name and version
+- **Tasks**: Resolved task definitions with parameters and implementations
+- **Spaces**: Parameter space configurations and execution orders
+- **Control flow**: Experiment transitions and flow control
+- **Data dependencies**: Input and output data definitions
 
-#### JSON Template  
-Creates structured configuration files:
-- Parameter definitions
-- Task configurations
-- Execution metadata
-
-#### Markdown Template
-Produces documentation:
-- Workflow diagrams
-- Parameter reference
-- Usage instructions
-
-### Custom Templates
-
-Create custom templates by extending the base template class:
-
-```typescript
-import { BaseTemplate, GeneratorContext } from '@extremexp/artifact-generator';
-
-export class CustomTemplate extends BaseTemplate {
-  name = 'custom';
-  description = 'Custom output format';
-
-  async generate(context: GeneratorContext): Promise<GeneratedFile[]> {
-    // Implement custom generation logic
-    return [
-      {
-        path: 'custom-output.txt',
-        content: this.renderTemplate('custom.mustache', context)
-      }
-    ];
-  }
-}
-```
-
-## Configuration
-
-### Generator Configuration File
-
-Create `.artifactrc.json` in your project root:
-
+Example artifact structure:
 ```json
 {
-  "defaultTemplate": "python",
-  "outputDirectory": "./generated",
-  "templates": {
-    "python": {
-      "scriptHeader": "#!/usr/bin/env python3",
-      "includeDocs": true
-    }
-  },
-  "validation": {
-    "strictMode": true,
-    "requireDocumentation": false
-  }
+  "experiment": "MyExperiment",
+  "version": "1.0",
+  "tasks": [...],
+  "spaces": [...],
+  "control": {...},
+  "inputData": {...}
 }
 ```
 
@@ -190,29 +126,25 @@ Create `.artifactrc.json` in your project root:
 ```
 src/
 ├── cli.ts                 # Command-line interface
-├── generators/            # Code generation engines
+├── generators/            # Artifact generation engines
 │   ├── ArtifactGenerator.ts
-│   ├── PythonGenerator.ts
-│   ├── JsonGenerator.ts
-│   └── MarkdownGenerator.ts
-├── templates/             # Template definitions
-│   ├── BaseTemplate.ts
-│   ├── python/
-│   ├── json/
-│   └── markdown/
+│   ├── ControlFlowGenerator.ts
+│   ├── SpaceGenerator.ts
+│   └── TaskGenerator.ts
 ├── parsers/               # Input file parsers
-│   ├── XXPParser.ts
-│   └── ESPACEParser.ts
-├── resolvers/             # Parameter resolution
+│   ├── ExperimentParser.ts
+│   ├── WorkflowParser.ts
+│   └── DataFlowResolver.ts
+├── resolvers/             # Parameter and dependency resolution
 │   ├── ParameterResolver.ts
-│   └── DependencyResolver.ts
+│   ├── TaskResolver.ts
+│   ├── DataResolver.ts
+│   └── FileResolver.ts
 ├── visitors/              # AST processing
-│   ├── GeneratorVisitor.ts
-│   └── ValidationVisitor.ts
 └── models/                # Data models
-    ├── Workflow.ts
-    ├── Experiment.ts
-    └── Parameter.ts
+    ├── ArtifactModel.ts
+    ├── ExperimentModel.ts
+    └── WorkflowModel.ts
 ```
 
 ## Development
@@ -233,22 +165,27 @@ npm run test:coverage
 ### Running Development Version
 
 ```bash
-npm run cli:dev -- --input test.xxp --output ./test-output
+npm run cli:dev -- experiment.espace --output ./test-output.json
 ```
 
 ## Error Handling
 
-The generator provides detailed error reporting:
+The generator provides detailed error reporting for common issues:
 
+- **Syntax errors**: Parse errors in XXP or ESPACE files
+- **Missing references**: Undefined workflows, tasks, or parameters  
+- **Control flow issues**: Unreachable spaces, infinite loops
+- **Data flow problems**: Missing inputs, circular dependencies
+- **File system errors**: Missing implementation files
+
+Example error output:
 ```bash
-$ artifact-generator -i invalid.xxp -o ./output
+$ artifact-generator invalid.espace
 
-Error: Parse error in invalid.xxp:line 5:12
-  Expected 'parameter' or 'task' declaration
-  
-  workflow Example {
-    invalid syntax here
-            ^
+Validation errors:
+  - Workflow 'MissingWorkflow' referenced in space 'Space1' not found
+  - Space 'UnreachableSpace' is defined but unreachable in control flow
+  - Implementation file 'missing_script.py' for task 'task1' not found
 ```
 
 ## Integration
@@ -256,8 +193,7 @@ Error: Parse error in invalid.xxp:line 5:12
 ### VS Code Extension
 The artifact generator is integrated into the VS Code extension and can be triggered via:
 - Command palette: "ExtremeXP: Generate Artifact"
-- Right-click context menu on XXP/ESPACE files
-- Automatic generation on file save (if configured)
+- Right-click context menu on ESPACE files
 
 ### Build Systems
 Integrate with build tools:
@@ -266,7 +202,7 @@ Integrate with build tools:
 // package.json
 {
   "scripts": {
-    "build:artifacts": "artifact-generator -i src/**/*.xxp -o generated/",
+    "build:artifacts": "artifact-generator experiment.espace -o artifacts/",
     "prebuild": "npm run build:artifacts"
   }
 }
@@ -274,12 +210,12 @@ Integrate with build tools:
 
 ## Contributing
 
-When adding new templates or generators:
+When contributing to the artifact generator:
 
-1. Create template class extending `BaseTemplate`
-2. Add template files in `src/templates/`
-3. Register template in `TemplateRegistry`
-4. Add tests covering the new functionality
+1. Ensure new features have corresponding tests
+2. Update the CLI interface if adding new options
+3. Maintain backward compatibility in the output format
+4. Add validation for new language features
 5. Update documentation
 
 ## License
