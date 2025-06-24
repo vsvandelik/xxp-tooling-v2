@@ -16,7 +16,7 @@ import {
   ESPACEParser,
 } from '@extremexp/core';
 import { BaseSymbol } from 'antlr4-c3';
-import { TerminalNode, ParserRuleContext } from 'antlr4ng';
+import { TerminalNode, ParserRuleContext, ParseTree } from 'antlr4ng';
 import { Document } from '../core/documents/Document.js';
 import { TokenPosition } from '../core/models/TokenPosition.js';
 
@@ -213,7 +213,8 @@ export class ReferencesProvider extends Provider {
         typeof symbol.context.getText === 'function') {
       
       this.logger.info(`Attempting to find identifier in context for symbol: ${symbol.name}`);
-      this.logger.info(`Original context details: start=${symbol.context.start ? `line ${symbol.context.start.line}, col ${symbol.context.start.column}` : 'null'}, stop=${symbol.context.stop ? `line ${symbol.context.stop.line}, col ${symbol.context.stop.column}` : 'null'}, text="${symbol.context.getText()}"`);
+      const contextAsRule = symbol.context as ParserRuleContext;
+      this.logger.info(`Original context details: start=${contextAsRule.start ? `line ${contextAsRule.start.line}, col ${contextAsRule.start.column}` : 'null'}, stop=${contextAsRule.stop ? `line ${contextAsRule.stop.line}, col ${contextAsRule.stop.column}` : 'null'}, text="${symbol.context.getText()}"`);
       
       try {
         const identifier = this.findIdentifierInContext(symbol.context as ParserRuleContext);
