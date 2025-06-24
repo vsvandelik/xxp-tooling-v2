@@ -19,9 +19,13 @@ export class DocumentSymbolTable extends SymbolTable {
 
     let symbols: T[];
     if (scope instanceof ScopedSymbol) {
+      console.log(`Debug - getValidSymbolsAtPosition: found scope of type ${scope.constructor.name}, name: ${scope.name}`);
       symbols = await scope.getSymbolsOfType(type);
+      console.log(`Debug - getValidSymbolsAtPosition: scope.getSymbolsOfType(${type.name}) returned:`, symbols.map(s => s.name));
     } else {
+      console.log(`Debug - getValidSymbolsAtPosition: no scoped symbol found, using document symbol table`);
       symbols = await this.getSymbolsOfType(type);
+      console.log(`Debug - getValidSymbolsAtPosition: this.getSymbolsOfType(${type.name}) returned:`, symbols.map(s => s.name));
     }
     return symbols.map(s => s.name);
   }
