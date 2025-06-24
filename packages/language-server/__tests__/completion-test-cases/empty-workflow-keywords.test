@@ -1,0 +1,11 @@
+=== emptyWorkflow.xxp ===
+workflow EmptyWorkflow {
+    <-CURSOR->
+}
+
+=== SUGGESTIONS ===
+- define
+- configure
+- }
+- START
+- END

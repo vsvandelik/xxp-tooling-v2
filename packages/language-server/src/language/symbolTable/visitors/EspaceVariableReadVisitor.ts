@@ -22,8 +22,18 @@ export class EspaceVariableReadVisitor {
 
     const workflowName = identifier.getText();
 
-    // In ESPACE, workflows are referenced from external files
-    // We don't validate them here as they're validated in SpaceVisitor
+    // Look up the workflow in the folder symbol table
+    const folderSymbolTable = this.builder.documentsManager.getDocumentSymbolTableForFile(
+      this.builder.document.uri
+    );
+
+    if (folderSymbolTable) {
+      const workflowSymbol = folderSymbolTable.resolveSync(workflowName) as WorkflowSymbol;
+      if (workflowSymbol) {
+        // Add reference to the workflow
+        workflowSymbol.addReference(identifier, this.builder.document);
+      }
+    }
 
     return this.builder.visitChildren(ctx) as DocumentSymbolTable;
   }
@@ -38,6 +48,13 @@ export class EspaceVariableReadVisitor {
   public visitSpace(ctx: EspaceSpaceNameReadContext): DocumentSymbolTable {
     const identifier = ctx.IDENTIFIER();
     if (!identifier) return this.builder.visitChildren(ctx) as DocumentSymbolTable;
+
+    const spaceName = identifier.getText();
+    
+    // START and END are special control flow keywords, not regular space declarations
+    if (spaceName === 'START' || spaceName === 'END') {
+      return this.builder.visitChildren(ctx) as DocumentSymbolTable;
+    }
 
     return this.visitSymbolRead(SpaceSymbol, ctx, 'Space');
   }

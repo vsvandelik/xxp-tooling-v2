@@ -243,10 +243,26 @@ export class TaskResolver {
         // Parameter has a value in workflow - it's static
         staticParameters[param.name] = param.value;
         allParameters.set(param.name, param.value);
-      } else {
-        // Parameter has no value in workflow - it's dynamic (if defined in space)
-        if (spaceParameters.has(param.name)) {
-          dynamicParameters.push(param.name);
+      }
+    }
+
+    // Create a set of parameter names that the task actually defines
+    const taskParameterNames = new Set(task.parameters.map(p => p.name));
+
+    // Apply all space parameters to the task
+    for (const [paramName, paramDef] of spaceParameters) {
+      // Include parameters that are either:
+      // 1. Actually used in parameter combinations, OR
+      // 2. Required by this specific task (to satisfy required parameters)
+      const isUsedInCombinations = !usedParameters || usedParameters.has(paramName);
+      const isRequiredByTask = taskParameterNames.has(paramName);
+
+      if (isUsedInCombinations || isRequiredByTask) {
+        if (paramDef.type === 'value') {
+          staticParameters[paramName] = paramDef.values[0]!;
+          allParameters.set(paramName, paramDef.values[0]!);
+        } else {
+          dynamicParameters.push(paramName);
         }
       }
     }

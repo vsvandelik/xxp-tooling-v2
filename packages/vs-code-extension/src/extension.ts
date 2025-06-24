@@ -41,14 +41,18 @@ export async function activate(context: vscode.ExtensionContext) {
   toolResolver = new ToolResolver(context);
   toolExecutor = new ToolExecutor(toolResolver);
 
-  // Register commands immediately (they can handle service unavailability)
-  registerCommands(context);
+  // Setup basic UI elements immediately
   setupStatusBar(context);
   setupConfigurationListener(context);
 
-  // Initialize all features in parallel without blocking each other
+  // Initialize core services first (needed for experiment commands)
+  await initializeServices(context);
+
+  // Register experiment commands after services are ready
+  registerExperimentCommands(context);
+
+  // Initialize other features in parallel without blocking each other
   const initializationPromises = [
-    initializeServices(context),
     initializeWorkflowRepository(context),
     initializeLanguageServer(context),
     setupWorkflowFeatures(),
@@ -60,7 +64,6 @@ export async function activate(context: vscode.ExtensionContext) {
   // Log any failures but don't block extension activation
   results.forEach((result, index) => {
     const featureNames = [
-      'Services',
       'Workflow Repository',
       'Language Server',
       'Workflow Features',
@@ -72,6 +75,9 @@ export async function activate(context: vscode.ExtensionContext) {
     }
   });
 
+  // Register remaining commands after all dependencies are initialized
+  registerUtilityCommands(context);
+  
   setupWorkflowRepositoryView(context);
   console.log('ExtremeXP extension activation completed');
 }
@@ -81,13 +87,23 @@ export async function activate(context: vscode.ExtensionContext) {
  */
 async function initializeServices(context: vscode.ExtensionContext): Promise<void> {
   try {
+    console.log('Initializing core services...');
+
     // Initialize server manager with tool executor
     serverManager = new ServerManager(context, toolExecutor);
 
     // Update status bar listener now that server manager exists
     updateStatusBarWithServerManager();
 
-    // Start server in background without blocking
+    // Initialize experiment service (doesn't require server to be running)
+    experimentService = new ExperimentService(serverManager);
+    
+    // Initialize progress panel manager
+    progressPanelManager = new ProgressPanelManager(context, experimentService);
+
+    console.log('Core services initialized successfully');
+
+    // Start server in background without blocking (this can happen asynchronously)
     serverManager.ensureServerRunning().catch(error => {
       console.error('Failed to start experiment server:', error);
       vscode.window.showWarningMessage(
@@ -95,11 +111,6 @@ async function initializeServices(context: vscode.ExtensionContext): Promise<voi
       );
     });
 
-    // Initialize other services (these don't depend on server being ready)
-    experimentService = new ExperimentService(serverManager);
-    progressPanelManager = new ProgressPanelManager(context, experimentService);
-
-    console.log('Core services initialized');
   } catch (error) {
     console.error('Failed to initialize core services:', error);
     vscode.window.showErrorMessage(
@@ -152,45 +163,48 @@ async function initializeLanguageServer(context: vscode.ExtensionContext): Promi
 }
 
 /**
- * Register all extension commands
+ * Register experiment-related commands after services are initialized
  */
-function registerCommands(context: vscode.ExtensionContext): void {
-  // Initialize commands with null checks for services
+function registerExperimentCommands(context: vscode.ExtensionContext): void {
+  // Services should be initialized by now, but add safety checks
+  if (!experimentService || !progressPanelManager) {
+    console.error('Cannot register experiment commands: services not initialized');
+    return;
+  }
+
+  console.log('Registering experiment commands...');
+
+  // Initialize commands with properly initialized services
   const generateArtifactCommand = new GenerateArtifactCommand(toolExecutor);
   const runExperimentCommand = new RunExperimentCommand(experimentService, progressPanelManager);
 
-  // Register commands with error handling for uninitialized services
+  // Register experiment commands
   registerCommand(context, 'extremexp.generateArtifact', () => {
-    if (toolExecutor) {
-      return generateArtifactCommand.execute();
-    } else {
-      vscode.window.showErrorMessage('Tool executor not available. Please restart the extension.');
-      return Promise.resolve();
-    }
+    return generateArtifactCommand.execute();
   });
 
   registerCommand(context, 'extremexp.runExperiment', () => {
-    if (experimentService && progressPanelManager) {
-      return runExperimentCommand.execute();
-    } else {
-      vscode.window.showErrorMessage(
-        'Experiment service not available. Please restart the extension.'
-      );
-      return Promise.resolve();
-    }
+    return runExperimentCommand.execute();
   });
 
   registerCommand(context, 'extremexp.showProgress', () => {
-    if (progressPanelManager) {
-      progressPanelManager.showPanel();
-    } else {
-      vscode.window.showErrorMessage('Progress panel not available. Please restart the extension.');
-    }
+    progressPanelManager.showPanel();
   });
 
+  console.log('Experiment commands registered successfully');
+}
+
+/**
+ * Register utility and server management commands
+ */
+function registerUtilityCommands(context: vscode.ExtensionContext): void {
+  console.log('Registering utility commands...');
+
+  // Server management commands
   registerCommand(context, 'extremexp.stopServer', handleStopServer);
   registerCommand(context, 'extremexp.restartServer', handleRestartServer);
 
+  // Tool management commands
   registerCommand(context, 'extremexp.clearToolCache', () => {
     if (toolResolver) {
       toolResolver.clearCache();
@@ -219,6 +233,8 @@ function registerCommands(context: vscode.ExtensionContext): void {
       workflowCommands.registerCommands();
     }
   }, 100);
+
+  console.log('Utility commands registered successfully');
 }
 
 /**

@@ -1,5 +1,6 @@
 import { BaseSymbol, ScopedSymbol, SymbolTable } from 'antlr4-c3';
 import { ParseTree } from 'antlr4ng';
+import { WorkflowSymbol } from '../../core/models/symbols/WorkflowSymbol.js';
 
 export class DocumentSymbolTable extends SymbolTable {
   constructor(name: string) {
@@ -11,6 +12,33 @@ export class DocumentSymbolTable extends SymbolTable {
     type: new (...args: any[]) => T
   ): Promise<string[]> {
     const currentContext = parseTree;
+    
+    // Generic approach: always try to get symbols from all workflows first
+    // This ensures inheritance works for any symbol type (TaskSymbol, DataSymbol, etc.)
+    const workflows = await this.getSymbolsOfType(WorkflowSymbol as any);
+    if (workflows.length > 0) {
+      const allSymbols: T[] = [];
+      const symbolNames = new Set<string>(); // Use Set to avoid duplicates
+      
+      for (const workflow of workflows) {
+        if (workflow instanceof WorkflowSymbol) {
+          const workflowSymbols = await workflow.getSymbolsOfType(type);
+          for (const symbol of workflowSymbols) {
+            if (!symbolNames.has(symbol.name)) {
+              symbolNames.add(symbol.name);
+              allSymbols.push(symbol);
+            }
+          }
+        }
+      }
+      
+      // If we found symbols using the workflow approach, return them
+      if (allSymbols.length > 0) {
+        return allSymbols.map(s => s.name);
+      }
+    }
+    
+    // Fall back to original scope-based logic if no workflows exist or no symbols found
     if (!currentContext) return [];
     let scope = DocumentSymbolTable.symbolWithContextRecursive(this, currentContext);
     while (scope && !(scope instanceof ScopedSymbol)) {

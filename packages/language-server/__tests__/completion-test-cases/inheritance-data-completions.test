@@ -1,0 +1,21 @@
+=== parentWorkflow.xxp ===
+workflow ParentWorkflow {
+    define data parentData;
+    define task parentTask;
+    
+    parentTask -> END;
+}
+
+=== childWorkflow.xxp ===
+workflow ChildWorkflow from ParentWorkflow {
+    define data childData;
+    define task childTask;
+    
+    configure task childTask {
+        input <-CURSOR->
+    }
+}
+
+=== SUGGESTIONS ===
+- parentData
+- childData

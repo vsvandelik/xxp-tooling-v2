@@ -1,0 +1,8 @@
+=== workflow.xxp ===
+workflow SimpleWorkflow {
+    define task myTask;
+    
+    myTask -> ###nonExistentTask###;
+}
+
+=== HOVER ===

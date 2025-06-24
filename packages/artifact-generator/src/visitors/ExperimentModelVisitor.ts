@@ -145,7 +145,7 @@ export class ExperimentModelVisitor extends ESPACEVisitor<any> {
         const simpleTransition = content.simpleTransition();
         const controlChainElements = simpleTransition?.controlChainElement() || [];
         const spaceNames: string[] = [];
-        
+
         for (const element of controlChainElements) {
           if (element.spaceNameRead()) {
             spaceNames.push(element.spaceNameRead()!.IDENTIFIER().getText());
@@ -155,7 +155,7 @@ export class ExperimentModelVisitor extends ESPACEVisitor<any> {
             spaceNames.push('END');
           }
         }
-        
+
         if (spaceNames.length < 2) {
           throw new Error('Simple transition must have at least two spaces');
         }

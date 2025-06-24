@@ -1,0 +1,17 @@
+=== testWorkflow.xxp ===
+workflow TestWorkflow {
+    define data testData;
+    define data anotherData;
+    define task taskA;
+    define task taskB;
+    define task taskC;
+    
+    taskA -> <-CURSOR->
+}
+
+=== SUGGESTIONS ===
+- taskA
+- taskB
+- taskC
+- END
+- START

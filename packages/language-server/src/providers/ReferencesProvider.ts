@@ -4,8 +4,16 @@ import { ReferenceParams, Location, Range, DefinitionParams } from 'vscode-langu
 import { TerminalSymbolWithReferences } from '../core/models/symbols/TerminalSymbolWithReferences.js';
 import { RangeUtils } from '../utils/RangeUtils.js';
 import { WorkflowSymbol } from '../core/models/symbols/WorkflowSymbol.js';
+import { ExperimentSymbol } from '../core/models/symbols/ExperimentSymbol.js';
 import { TerminalSymbolReference } from '../core/models/TerminalSymbolReference.js';
-import { XxpWorkflowNameReadContext } from '@extremexp/core';
+import { SpaceSymbol } from '../core/models/symbols/SpaceSymbol.js';
+import {
+  XxpWorkflowNameReadContext,
+  EspaceWorkflowNameReadContext,
+  EspaceTaskNameReadContext,
+  EspaceSpaceNameReadContext,
+} from '@extremexp/core';
+import { BaseSymbol } from 'antlr4-c3';
 
 export class ReferencesProvider extends Provider {
   private logger = Logger.getLogger();
@@ -22,22 +30,12 @@ export class ReferencesProvider extends Provider {
     if (!result) return Promise.resolve(null);
     const [document, tokenPosition] = result;
 
-    let symbol: TerminalSymbolWithReferences | WorkflowSymbol;
+    const symbol = await this.resolveSymbol(document, tokenPosition);
+    if (!symbol) return null;
 
-    if (tokenPosition.parseTree instanceof XxpWorkflowNameReadContext) {
-      const folderSymbolTable = document.workflowSymbolTable?.parent;
-      const workflowSymbol = await folderSymbolTable?.resolve(tokenPosition.text, true);
-      if (!(workflowSymbol instanceof WorkflowSymbol)) return null;
-      symbol = workflowSymbol;
-    } else {
-      const terminalSymbol = await document.workflowSymbolTable?.resolve(tokenPosition.text, true);
-      if (!(terminalSymbol instanceof TerminalSymbolWithReferences)) return null;
-      symbol = terminalSymbol;
-    }
+    const locations = await this.getAllReferences(symbol);
 
-    const locations = this.getLocationsFromReferences(symbol.references);
-
-    if (params.context.includeDeclaration && symbol.context) {
+    if (params.context.includeDeclaration && this.hasDeclaration(symbol)) {
       const definitionLocation = this.getLocationFromDeclaration(symbol);
       if (definitionLocation) locations.push(definitionLocation);
     }
@@ -52,21 +50,104 @@ export class ReferencesProvider extends Provider {
     if (!result) return Promise.resolve(null);
     const [document, tokenPosition] = result;
 
-    let defitionSymbol: TerminalSymbolWithReferences | WorkflowSymbol;
+    const symbol = await this.resolveSymbol(document, tokenPosition);
+    if (!symbol || !this.hasDeclaration(symbol)) return null;
 
-    if (tokenPosition.parseTree instanceof XxpWorkflowNameReadContext) {
-      const folderSymbolTable = document.workflowSymbolTable?.parent;
-      const workflowSymbol = await folderSymbolTable?.resolve(tokenPosition.text, true);
-      if (!(workflowSymbol instanceof WorkflowSymbol)) return null;
-      defitionSymbol = workflowSymbol;
-    } else {
-      const terminalSymbol = await document.workflowSymbolTable?.resolve(tokenPosition.text, true);
-      if (!(terminalSymbol instanceof TerminalSymbolWithReferences)) return null;
-      defitionSymbol = terminalSymbol;
+    return this.getLocationFromDeclaration(symbol);
+  }
+
+  private async resolveSymbol(document: any, tokenPosition: any): Promise<BaseSymbol | null> {
+    // Handle workflow references
+    if (
+      tokenPosition.parseTree instanceof XxpWorkflowNameReadContext ||
+      tokenPosition.parseTree instanceof EspaceWorkflowNameReadContext
+    ) {
+      // For workflows, we need to look in the folder symbol table
+      const folderSymbolTable = this.documentManager?.getDocumentSymbolTableForFile(document.uri);
+      return (await folderSymbolTable?.resolve(tokenPosition.text, false)) || null;
     }
 
-    if (!defitionSymbol.context) return null;
-    return this.getLocationFromDeclaration(defitionSymbol);
+    // Handle space references in ESPACE files
+    if (tokenPosition.parseTree instanceof EspaceSpaceNameReadContext) {
+      const experimentSymbol = document.symbolTable?.children.find(
+        (c: BaseSymbol) => c instanceof ExperimentSymbol
+      ) as ExperimentSymbol;
+      if (experimentSymbol) {
+        return (await experimentSymbol.resolve(tokenPosition.text, false)) || null;
+      }
+    }
+
+    // Handle task references in ESPACE files
+    if (tokenPosition.parseTree instanceof EspaceTaskNameReadContext) {
+      // First try local resolution
+      const experimentSymbol = document.symbolTable?.children.find(
+        (c: BaseSymbol) => c instanceof ExperimentSymbol
+      ) as ExperimentSymbol;
+      if (experimentSymbol) {
+        const localSymbol = await experimentSymbol.resolve(tokenPosition.text, true);
+        if (localSymbol) return localSymbol;
+
+        // If not found locally, search in referenced workflows
+        const spaces = await experimentSymbol.getSymbolsOfType(SpaceSymbol);
+        for (const space of spaces) {
+          if (space.workflowReference) {
+            const workflowSymbol = await space.workflowReference.resolve(tokenPosition.text, false);
+            if (workflowSymbol) return workflowSymbol;
+          }
+        }
+      }
+    }
+
+    // Default resolution for other symbols
+    if (document.workflowSymbolTable) {
+      return (await document.workflowSymbolTable.resolve(tokenPosition.text, false)) || null;
+    }
+
+    return null;
+  }
+
+  private async getAllReferences(symbol: BaseSymbol): Promise<Location[]> {
+    const references: TerminalSymbolReference[] = [];
+
+    if (
+      symbol instanceof TerminalSymbolWithReferences ||
+      symbol instanceof WorkflowSymbol ||
+      symbol instanceof ExperimentSymbol
+    ) {
+      references.push(...symbol.references);
+    }
+
+    // For workflow symbols, also check in ESPACE files
+    if (symbol instanceof WorkflowSymbol) {
+      const folderSymbolTable = this.documentManager?.getDocumentSymbolTableForFile(
+        symbol.document.uri
+      );
+      if (folderSymbolTable) {
+        // Find all experiment symbols that might reference this workflow
+        const experiments = await folderSymbolTable.getSymbolsOfType(ExperimentSymbol);
+        for (const experiment of experiments) {
+          const spaces = await experiment.getSymbolsOfType(SpaceSymbol);
+          for (const space of spaces) {
+            if (space.workflowReference?.name === symbol.name) {
+              references.push(...space.workflowReference.references);
+            }
+          }
+        }
+      }
+    }
+
+    return this.getLocationsFromReferences(references);
+  }
+
+  private hasDeclaration(symbol: BaseSymbol): boolean {
+    if (
+      symbol instanceof TerminalSymbolWithReferences ||
+      symbol instanceof WorkflowSymbol ||
+      symbol instanceof ExperimentSymbol
+    ) {
+      return symbol.context !== undefined;
+    }
+    return false;
   }
 
   private getLocationsFromReferences(references: TerminalSymbolReference[]): Location[] {
@@ -81,12 +162,21 @@ export class ReferencesProvider extends Provider {
     }));
   }
 
-  private getLocationFromDeclaration(
-    symbol: TerminalSymbolWithReferences | WorkflowSymbol
-  ): Location | undefined {
-    const parseTree =
-      symbol instanceof TerminalSymbolWithReferences ? symbol.context : symbol.context?.getChild(0);
-    const definitionRange = RangeUtils.getRangeFromParseTree(parseTree!);
+  private getLocationFromDeclaration(symbol: BaseSymbol): Location | undefined {
+    if (
+      !(
+        symbol instanceof TerminalSymbolWithReferences ||
+        symbol instanceof WorkflowSymbol ||
+        symbol instanceof ExperimentSymbol
+      )
+    ) {
+      return undefined;
+    }
+
+    const parseTree = symbol.context?.getChild(0) || symbol.context;
+    if (!parseTree) return undefined;
+
+    const definitionRange = RangeUtils.getRangeFromParseTree(parseTree);
     if (!definitionRange) return undefined;
 
     return {

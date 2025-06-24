@@ -32,14 +32,9 @@ export class XxpSuggestionsProvider extends Provider {
     [XXPParser.EQUALS, '='],
   ]);
 
-  addHandlers(): void {
-    this.connection!.onCompletion(completionParams => this.onCompletion(completionParams));
-    this.connection!.onCompletionResolve(completionItem =>
-      this.onCompletionResolve(completionItem)
-    );
-  }
+  addHandlers(): void {}
 
-  private async onCompletion(params: CompletionParams): Promise<CompletionItem[] | null> {
+  public async onCompletion(params: CompletionParams): Promise<CompletionItem[] | null> {
     this.logger.info(`Received completion request for document: ${params.textDocument.uri}`);
 
     const result = super.getDocumentAndPosition(params.textDocument, params.position);
@@ -119,6 +114,16 @@ export class XxpSuggestionsProvider extends Provider {
     }
 
     return proposedSymbols;
+  }
+
+  private getRuleName(ruleIndex: number): string {
+    // Helper method to get rule names for debugging
+    const ruleNames: { [key: number]: string } = {
+      [XXPParser.RULE_workflowNameRead]: 'workflowNameRead',
+      [XXPParser.RULE_dataNameRead]: 'dataNameRead', 
+      [XXPParser.RULE_taskNameRead]: 'taskNameRead'
+    };
+    return ruleNames[ruleIndex] || `rule_${ruleIndex}`;
   }
 
   private async fixTokensSuggestionForChains(
@@ -205,17 +210,12 @@ export class XxpSuggestionsProvider extends Provider {
     symbolTable: DocumentSymbolTable,
     kind: CompletionItemKind
   ): Promise<void> {
-    (await symbolTable.getValidSymbolsAtPosition(position.parseTree, type)).forEach(s => {
+    const validSymbols = await symbolTable.getValidSymbolsAtPosition(position.parseTree, type);
+    validSymbols.forEach(s => {
       proposedSymbols.push({
         label: s,
         kind,
       });
     });
-  }
-
-  private async onCompletionResolve(item: CompletionItem): Promise<CompletionItem> {
-    this.logger.debug(`Resolving completion item: ${item.label}`);
-
-    return item;
   }
 }

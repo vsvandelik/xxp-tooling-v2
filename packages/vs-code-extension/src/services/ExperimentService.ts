@@ -136,9 +136,12 @@ export class ExperimentService {
       onError?: (error: Error) => void;
     } = {}
   ): Promise<string> {
+    // Ensure server is running
+    await this.serverManager.ensureServerRunning();
+    
     const serverUrl = await this.serverManager.getServerUrl();
     if (!serverUrl) {
-      throw new Error('Server not running');
+      throw new Error('ExtremeXP server is not running. Please start the server first.');
     }
 
     // Ensure WebSocket connection is established
@@ -149,57 +152,64 @@ export class ExperimentService {
     // Generate a unique experiment ID
     const experimentId = `exp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
-    // Make API call to start experiment
-    const response = await fetch(`${serverUrl}/api/experiments/run`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        artifactPath,
-        experimentId,
-        resume: options.resume,
-      }),
-    });
+    try {
+      // Make API call to start experiment
+      const response = await fetch(`${serverUrl}/api/experiments/run`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          artifactPath,
+          experimentId,
+          resume: options.resume,
+        }),
+      });
 
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.message || 'Failed to start experiment');
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+        throw new Error(errorData.message || errorData.error || 'Failed to start experiment');
+      }
+
+      const data: StartExperimentResponse = await response.json();
+      // Server should return the same experimentId we provided
+      const returnedExperimentId = data.experimentId;
+
+      console.log(
+        `Generated experiment ID: ${experimentId}, Server returned: ${returnedExperimentId}`
+      );
+
+      // Use the returned experiment ID (should be the same as what we sent)
+      const finalExperimentId = returnedExperimentId;
+
+      // Register callbacks
+      const callbacks: ExperimentCallbacks = {};
+      if (options.onProgress) callbacks.onProgress = options.onProgress;
+      if (options.onComplete) callbacks.onComplete = options.onComplete;
+      if (options.onError) callbacks.onError = options.onError;
+      this.activeExperiments.set(finalExperimentId, callbacks);
+
+      // Subscribe to updates - connection should be established by now
+      if (this.socket && this.socket.connected) {
+        console.log(`Subscribing to experiment: ${finalExperimentId}`);
+        this.socket.emit('subscribe', finalExperimentId);
+      } else {
+        console.log('No socket connection available for subscription');
+        throw new Error('WebSocket connection not available');
+      }
+
+      // Set up user input handler
+      this.userInputCallbacks.set(finalExperimentId, async (request: UserInputRequest) => {
+        await this.handleUserInput(request);
+      });
+
+      return finalExperimentId;
+    } catch (error) {
+      if (error instanceof TypeError && error.message.includes('fetch')) {
+        throw new Error('Cannot connect to ExtremeXP server. Please check if the server is running.');
+      }
+      throw error;
     }
-
-    const data: StartExperimentResponse = await response.json();
-    // Server should return the same experimentId we provided
-    const returnedExperimentId = data.experimentId;
-
-    console.log(
-      `Generated experiment ID: ${experimentId}, Server returned: ${returnedExperimentId}`
-    );
-
-    // Use the returned experiment ID (should be the same as what we sent)
-    const finalExperimentId = returnedExperimentId;
-
-    // Register callbacks
-    const callbacks: ExperimentCallbacks = {};
-    if (options.onProgress) callbacks.onProgress = options.onProgress;
-    if (options.onComplete) callbacks.onComplete = options.onComplete;
-    if (options.onError) callbacks.onError = options.onError;
-    this.activeExperiments.set(finalExperimentId, callbacks);
-
-    // Subscribe to updates - connection should be established by now
-    if (this.socket && this.socket.connected) {
-      console.log(`Subscribing to experiment: ${finalExperimentId}`);
-      this.socket.emit('subscribe', finalExperimentId);
-    } else {
-      console.log('No socket connection available for subscription');
-      throw new Error('WebSocket connection not available');
-    }
-
-    // Set up user input handler
-    this.userInputCallbacks.set(finalExperimentId, async (request: UserInputRequest) => {
-      await this.handleUserInput(request);
-    });
-
-    return finalExperimentId;
   }
 
   async terminateExperiment(experimentId: string): Promise<boolean> {
@@ -279,24 +289,35 @@ export class ExperimentService {
   }
 
   async validateArtifact(artifactPath: string): Promise<ValidationResult> {
+    // Ensure server is running
+    await this.serverManager.ensureServerRunning();
+    
     const serverUrl = await this.serverManager.getServerUrl();
     if (!serverUrl) {
-      throw new Error('Server not running');
+      throw new Error('ExtremeXP server is not running. Please start the server first.');
     }
 
-    const response = await fetch(`${serverUrl}/api/experiments/validate-artifact`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ artifactPath }),
-    });
+    try {
+      const response = await fetch(`${serverUrl}/api/experiments/validate-artifact`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ artifactPath }),
+      });
 
-    if (!response.ok) {
-      throw new Error('Failed to validate artifact');
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+        throw new Error(`Failed to validate artifact: ${errorData.error || response.statusText}`);
+      }
+
+      return await response.json();
+    } catch (error) {
+      if (error instanceof TypeError && error.message.includes('fetch')) {
+        throw new Error('Cannot connect to ExtremeXP server. Please check if the server is running.');
+      }
+      throw error;
     }
-
-    return await response.json();
   }
 
   private async handleUserInput(request: UserInputRequest): Promise<void> {
