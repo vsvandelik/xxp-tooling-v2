@@ -235,45 +235,35 @@ export class TaskResolver {
     // Based on the comment requirements:
     // Static parameters: Parameters defined WITH values in workflow (XXP) files - keep workflow values
     // Dynamic parameters: Parameters defined WITHOUT values in workflow files - get values from space
-    // Only include parameters that are mentioned in task configurations in workflow or inheritance
+    // Space overrides only affect runtime execution, not artifact classification
 
-    // Classify all task parameters based on workflow definitions
+    // Classify all task parameters based ONLY on workflow definitions
+    // Only parameters actually defined in the workflow for this task should be included
     for (const param of task.parameters) {
       if (param.value !== null) {
-        // Parameter has a value in workflow - it's static
+        // Parameter has a value in workflow - it's static, keep workflow value
         staticParameters[param.name] = param.value;
         allParameters.set(param.name, param.value);
-      }
-    }
-
-    // Create a set of parameter names that the task actually defines
-    const taskParameterNames = new Set(task.parameters.map(p => p.name));
-
-    // Apply all space parameters to the task
-    for (const [paramName, paramDef] of spaceParameters) {
-      // Include parameters that are either:
-      // 1. Actually used in parameter combinations, OR
-      // 2. Required by this specific task (to satisfy required parameters)
-      const isUsedInCombinations = !usedParameters || usedParameters.has(paramName);
-      const isRequiredByTask = taskParameterNames.has(paramName);
-
-      if (isUsedInCombinations || isRequiredByTask) {
-        if (paramDef.type === 'value') {
-          staticParameters[paramName] = paramDef.values[0]!;
-          allParameters.set(paramName, paramDef.values[0]!);
-        } else {
-          dynamicParameters.push(paramName);
+      } else {
+        // Parameter has no value in workflow - check if space provides values
+        const spaceParam = spaceParameters.get(param.name);
+        if (spaceParam) {
+          if (spaceParam.type === 'enum' || spaceParam.type === 'range') {
+            // Space provides enum/range values for this workflow parameter - it's dynamic
+            dynamicParameters.push(param.name);
+          } else if (spaceParam.type === 'value') {
+            // Space provides a single value for this workflow parameter - it's dynamic
+            // The value will be used in parameter combinations
+            dynamicParameters.push(param.name);
+          }
+        } else if (param.isRequired) {
+          throw new Error(`Required parameter '${param.name}' not provided for task '${task.name}'`);
         }
       }
     }
 
-    // Check for remaining required parameters
-    for (const param of task.parameters) {
-      const isProvided = allParameters.has(param.name) || dynamicParameters.includes(param.name);
-      if (param.isRequired && !isProvided) {
-        throw new Error(`Required parameter '${param.name}' not provided for task '${task.name}'`);
-      }
-    }
+    // Note: Space parameters that are not defined in the workflow should NOT be added
+    // to the task's dynamic/static parameters. They only affect runtime parameter combinations.
 
     return {
       id: task.id,
