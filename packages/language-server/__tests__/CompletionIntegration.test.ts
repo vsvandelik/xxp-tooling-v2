@@ -12,6 +12,7 @@ interface TestCase {
   files: Map<string, string>;
   cursorPosition: { line: number; character: number };
   expectedSuggestions: string[];
+  mainFileName?: string; // File that contains the cursor
 }
 
 interface CompletionTestFile {
@@ -88,16 +89,25 @@ describe('Language Server Completion Tests', () => {
           createdFiles.set(fileName, filePath);
         }
 
-        // Find the main .xxp file to test completions on
-        const xxpFiles = Array.from(createdFiles.entries())
-          .filter(([fileName]) => fileName.endsWith('.xxp'));        expect(xxpFiles.length).toBeGreaterThan(0);
-        
-        // Test completions on the main file (assuming first .xxp file is the main one)
-        const firstFile = xxpFiles[0];
-        if (!firstFile) {
-          throw new Error('No .xxp files found');
-        }
-        const [, mainFilePath] = firstFile;        const completions = await getCompletionsAtPosition(
+        // Find the main .xxp file to test completions on (the one with the cursor)
+        let mainFilePath: string;
+        if (testCase.mainFileName) {
+          mainFilePath = createdFiles.get(testCase.mainFileName)!;
+          if (!mainFilePath) {
+            throw new Error(`Main file ${testCase.mainFileName} not found in created files`);
+          }
+        } else {
+          // Fallback to first .xxp file if no cursor file specified
+          const xxpFiles = Array.from(createdFiles.entries())
+            .filter(([fileName]) => fileName.endsWith('.xxp'));
+          expect(xxpFiles.length).toBeGreaterThan(0);
+          
+          const firstFile = xxpFiles[0];
+          if (!firstFile) {
+            throw new Error('No .xxp files found');
+          }
+          mainFilePath = firstFile[1];
+        }        const completions = await getCompletionsAtPosition(
           mainFilePath,
           testCase.cursorPosition,
           Array.from(createdFiles.values()) // Pass all file paths
@@ -145,6 +155,7 @@ function parseCompletionTestCaseFile(filePath: string): TestCase {
   const files = new Map<string, string>();
   const expectedSuggestions: string[] = [];
   let cursorPosition: { line: number; character: number } = { line: 0, character: 0 };
+  let mainFileName: string | undefined;
 
   // Split content by === markers
   const sections = content.split(/=== (.+?) ===/);
@@ -163,8 +174,9 @@ function parseCompletionTestCaseFile(filePath: string): TestCase {
       // This is a file section - process cursor marker
       const processedFile = processFileWithCursor(sectionContent);
       files.set(sectionName, processedFile.content);
-      if (processedFile.cursorPosition) {
+      if (processedFile.cursorPosition && sectionContent.includes('<-CURSOR->')) {
         cursorPosition = processedFile.cursorPosition;
+        mainFileName = sectionName;
       }
     }
   }
@@ -177,7 +189,8 @@ function parseCompletionTestCaseFile(filePath: string): TestCase {
     name: testName,
     files,
     cursorPosition,
-    expectedSuggestions
+    expectedSuggestions,
+    mainFileName
   };
 }
 

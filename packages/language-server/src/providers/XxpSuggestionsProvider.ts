@@ -116,6 +116,16 @@ export class XxpSuggestionsProvider extends Provider {
     return proposedSymbols;
   }
 
+  private getRuleName(ruleIndex: number): string {
+    // Helper method to get rule names for debugging
+    const ruleNames: { [key: number]: string } = {
+      [XXPParser.RULE_workflowNameRead]: 'workflowNameRead',
+      [XXPParser.RULE_dataNameRead]: 'dataNameRead', 
+      [XXPParser.RULE_taskNameRead]: 'taskNameRead'
+    };
+    return ruleNames[ruleIndex] || `rule_${ruleIndex}`;
+  }
+
   private async fixTokensSuggestionForChains(
     tokens: Map<number, TokenList>,
     position: TokenPosition,
@@ -200,7 +210,8 @@ export class XxpSuggestionsProvider extends Provider {
     symbolTable: DocumentSymbolTable,
     kind: CompletionItemKind
   ): Promise<void> {
-    (await symbolTable.getValidSymbolsAtPosition(position.parseTree, type)).forEach(s => {
+    const validSymbols = await symbolTable.getValidSymbolsAtPosition(position.parseTree, type);
+    validSymbols.forEach(s => {
       proposedSymbols.push({
         label: s,
         kind,
