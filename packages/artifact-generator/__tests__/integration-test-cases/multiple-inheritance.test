@@ -68,9 +68,7 @@ experiment MultipleInheritanceTest {
         "taskId": "FinalWorkflow:baseTask",
         "workflow": "FinalWorkflow",
         "implementation": "base.py",
-        "dynamicParameters": [
-          "finalParam"
-        ],
+        "dynamicParameters": [],
         "staticParameters": {
           "baseParam": 1,
           "middleParam": 2
@@ -86,10 +84,7 @@ experiment MultipleInheritanceTest {
         "taskId": "FinalWorkflow:middleTask",
         "workflow": "FinalWorkflow",
         "implementation": "middle.py",
-        "dynamicParameters": [
-          "baseParam",
-          "middleParam"
-        ],
+        "dynamicParameters": [],
         "staticParameters": {
           "finalParam": 3
         },

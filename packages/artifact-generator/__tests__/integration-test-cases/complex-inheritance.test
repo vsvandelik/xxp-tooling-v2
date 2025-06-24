@@ -89,12 +89,9 @@ experiment ComplexInheritanceTest {
         "taskId": "ChildWorkflow:baseTask",
         "workflow": "ChildWorkflow",
         "implementation": "base.py",
-        "dynamicParameters": [
-          "sharedParam",
-          "childParam"
-        ],
+        "dynamicParameters": [],
         "staticParameters": {
-          "grandparentParam": "space_override",
+          "grandparentParam": "original",
           "parentParam": "added"
         },
         "inputData": [
@@ -108,11 +105,9 @@ experiment ComplexInheritanceTest {
         "taskId": "ChildWorkflow:inheritedTask",
         "workflow": "ChildWorkflow",
         "implementation": "inherited.py",
-        "dynamicParameters": [
-          "sharedParam",
-          "childParam"
-        ],
+        "dynamicParameters": [],
         "staticParameters": {
+          "sharedParam": 3,
           "grandparentParam": "overridden"
         },
         "inputData": [],
@@ -122,11 +117,11 @@ experiment ComplexInheritanceTest {
         "taskId": "ChildWorkflow:parentTask",
         "workflow": "ChildWorkflow",
         "implementation": "parent.py",
-        "dynamicParameters": [
-          "sharedParam",
-          "childParam"
-        ],
-        "staticParameters": {},
+        "dynamicParameters": [],
+        "staticParameters": {
+          "childParam": "final",
+          "sharedParam": 4
+        },
         "inputData": [
           "parentData"
         ],

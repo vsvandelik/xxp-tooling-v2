@@ -62,12 +62,12 @@ experiment TaskParamOverrideTest {
         "implementation": "task.py",
         "dynamicParameters": [
           "thirdParam",
-          "expressionParamString1",
-          "expressionParamNumber1",
-          "expressionParamBool1",
           "fourthParam",
+          "expressionParamString1",
           "expressionParamString2",
+          "expressionParamNumber1",
           "expressionParamNumber2",
+          "expressionParamBool1",
           "expressionParamBool2"
         ],
         "staticParameters": {
