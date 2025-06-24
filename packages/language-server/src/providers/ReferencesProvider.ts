@@ -12,6 +12,8 @@ import {
   EspaceWorkflowNameReadContext,
   EspaceTaskNameReadContext,
   EspaceSpaceNameReadContext,
+  EspaceDataDefinitionContext,
+  EspaceParamDefinitionContext,
 } from '@extremexp/core';
 import { BaseSymbol } from 'antlr4-c3';
 import { TerminalNode } from 'antlr4ng';
@@ -96,6 +98,28 @@ export class ReferencesProvider extends Provider {
             if (workflowSymbol) return workflowSymbol;
           }
         }
+      }
+    }
+
+    // Handle data definitions in ESPACE files
+    if (tokenPosition.parseTree instanceof EspaceDataDefinitionContext) {
+      // Look for data symbols in the current document's symbol table
+      const experimentSymbol = document.symbolTable?.children.find(
+        (c: BaseSymbol) => c instanceof ExperimentSymbol
+      ) as ExperimentSymbol;
+      if (experimentSymbol) {
+        const result = (await experimentSymbol.resolve(tokenPosition.text, false)) || null;
+        return result;
+      }
+    }
+
+    // Handle param definitions in ESPACE files
+    if (tokenPosition.parseTree instanceof EspaceParamDefinitionContext) {
+      // For param definitions, resolve directly from the document's symbol table
+      // which will search through all scopes including space scopes
+      if (document.symbolTable) {
+        const result = (await document.symbolTable.resolve(tokenPosition.text, true)) || null;
+        return result;
       }
     }
 
