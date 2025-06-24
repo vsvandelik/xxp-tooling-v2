@@ -75,6 +75,12 @@ jobs:
     - name: Clean build
       run: npm run clean
       
+    - name: Build core dependencies
+      run: |
+        cd packages/core && npm run build
+        cd ../workflow-repository && npm run build
+        cd ../experiment-runner && npm run build
+      
     - name: Build from scratch
       run: npm run build
       
