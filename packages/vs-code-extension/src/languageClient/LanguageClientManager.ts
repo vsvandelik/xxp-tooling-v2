@@ -6,6 +6,7 @@ import {
   LanguageClientOptions,
   ServerOptions,
   TransportKind,
+  Trace
 } from 'vscode-languageclient/node';
 import { ToolResolver } from '../services/ToolResolver';
 
@@ -13,6 +14,7 @@ export class LanguageClientManager {
   private client: LanguageClient | undefined;
   private context: vscode.ExtensionContext;
   private toolResolver: ToolResolver;
+  private commandDisposables: vscode.Disposable[] = [];
 
   constructor(context: vscode.ExtensionContext) {
     this.context = context;
@@ -76,6 +78,7 @@ export class LanguageClientManager {
 
     // Start the client. This will also launch the server
     await this.client.start();
+    await this.client.setTrace(Trace.Verbose);
 
     console.log('ExtremeXP Language Server started');
 
@@ -88,6 +91,10 @@ export class LanguageClientManager {
     if (!this.client) {
       return;
     }
+
+    // Dispose of registered commands
+    this.commandDisposables.forEach(disposable => disposable.dispose());
+    this.commandDisposables = [];
 
     await this.client.stop();
     this.client = undefined;
@@ -112,8 +119,12 @@ export class LanguageClientManager {
   }
 
   private registerCommands(): void {
+    // Clear any existing command registrations
+    this.commandDisposables.forEach(disposable => disposable.dispose());
+    this.commandDisposables = [];
+
     // Register quick fix commands
-    this.context.subscriptions.push(
+    this.commandDisposables.push(
       vscode.commands.registerCommand(
         'extremexp.quickfix.addMissingParameter',
         async (uri: string, param: string, location: vscode.Range) => {
@@ -130,7 +141,7 @@ export class LanguageClientManager {
       )
     );
 
-    this.context.subscriptions.push(
+    this.commandDisposables.push(
       vscode.commands.registerCommand(
         'extremexp.quickfix.removeUnusedParameter',
         async (uri: string, location: vscode.Range) => {
@@ -142,7 +153,7 @@ export class LanguageClientManager {
       )
     );
 
-    this.context.subscriptions.push(
+    this.commandDisposables.push(
       vscode.commands.registerCommand(
         'extremexp.quickfix.createMissingWorkflow',
         async (workflowName: string) => {
@@ -168,20 +179,25 @@ export class LanguageClientManager {
         }
       )
     );
+
+    // Add all command disposables to the extension context
+    this.commandDisposables.forEach(disposable => {
+      this.context.subscriptions.push(disposable);
+    });
   }
 
   private registerNotificationHandlers(): void {
     if (!this.client) return;
 
     // Handle custom notifications from server
-    this.client.onNotification('extremexp/validationStatus', (params: any) => {
+    this.client.onNotification('extremexp/validationStatus', (params: { hasErrors: boolean; uri: string }) => {
       // Update status bar or show notifications based on validation status
       if (params.hasErrors) {
         vscode.window.showErrorMessage(`Validation errors found in ${params.uri}`);
       }
     });
 
-    this.client.onNotification('extremexp/progressUpdate', (params: any) => {
+    this.client.onNotification('extremexp/progressUpdate', (params: { title: string; percentage: number }) => {
       // Show progress for long-running operations
       vscode.window.withProgress(
         {
