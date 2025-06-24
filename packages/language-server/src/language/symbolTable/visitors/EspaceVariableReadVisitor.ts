@@ -50,7 +50,7 @@ export class EspaceVariableReadVisitor {
     if (!identifier) return this.builder.visitChildren(ctx) as DocumentSymbolTable;
 
     const spaceName = identifier.getText();
-    
+
     // START and END are special control flow keywords, not regular space declarations
     if (spaceName === 'START' || spaceName === 'END') {
       return this.builder.visitChildren(ctx) as DocumentSymbolTable;

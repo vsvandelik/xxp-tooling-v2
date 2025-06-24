@@ -203,8 +203,9 @@ export class TaskExecutor {
           inputValues.push(inputValue);
         }
       }
+
       if (inputValues.length > 0) {
-        args.push(inputValues.map(val => `"${val}"`).join(','));
+        args.push(...inputValues.map(val => String(val)));
       }
 
       const proc = spawn('python', [scriptPath, ...args], {

@@ -120,8 +120,8 @@ export class XxpSuggestionsProvider extends Provider {
     // Helper method to get rule names for debugging
     const ruleNames: { [key: number]: string } = {
       [XXPParser.RULE_workflowNameRead]: 'workflowNameRead',
-      [XXPParser.RULE_dataNameRead]: 'dataNameRead', 
-      [XXPParser.RULE_taskNameRead]: 'taskNameRead'
+      [XXPParser.RULE_dataNameRead]: 'dataNameRead',
+      [XXPParser.RULE_taskNameRead]: 'taskNameRead',
     };
     return ruleNames[ruleIndex] || `rule_${ruleIndex}`;
   }

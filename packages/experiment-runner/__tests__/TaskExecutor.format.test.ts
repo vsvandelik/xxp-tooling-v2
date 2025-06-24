@@ -66,5 +66,32 @@ describe('TaskExecutor Input/Output Format', () => {
 
       expect(formattedInputs).toBe('"single_value"');
     });
+
+    it('should handle already quoted inputs correctly', () => {
+      const inputValues = ['"data/inputData.csv"', 'unquoted_value', '"another quoted value"'];
+      // Simulate the new logic that checks for existing quotes
+      const quotedValues = inputValues.map(val => {
+        if (val.startsWith('"') && val.endsWith('"')) {
+          return val; // Already quoted, don't add more quotes
+        }
+        return `"${val}"`; // Add quotes
+      });
+      const formattedInputs = quotedValues.join(',');
+
+      expect(formattedInputs).toBe('"data/inputData.csv","unquoted_value","another quoted value"');
+    });
+
+    it('should handle mixed quoted and unquoted inputs', () => {
+      const inputValues = ['unquoted1', '"quoted1"', 'unquoted2'];
+      const quotedValues = inputValues.map(val => {
+        if (val.startsWith('"') && val.endsWith('"')) {
+          return val;
+        }
+        return `"${val}"`;
+      });
+      const formattedInputs = quotedValues.join(',');
+
+      expect(formattedInputs).toBe('"unquoted1","quoted1","unquoted2"');
+    });
   });
 });

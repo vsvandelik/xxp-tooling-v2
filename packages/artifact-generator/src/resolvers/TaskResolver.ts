@@ -139,7 +139,7 @@ export class TaskResolver {
         // Merge task configurations, child overrides parent
         const mergedTask = new TaskModel(task.name, workflow.name);
         mergedTask.implementation = task.implementation || existingTask.implementation;
-        
+
         // Merge parameters properly - child parameters override parent parameters with same name
         const mergedParametersMap = new Map<string, any>();
         // Add parent parameters first
@@ -151,7 +151,7 @@ export class TaskResolver {
           mergedParametersMap.set(param.name, param);
         }
         mergedTask.parameters = Array.from(mergedParametersMap.values());
-        
+
         mergedTask.inputs = task.inputs.length > 0 ? task.inputs : existingTask.inputs;
         mergedTask.outputs = task.outputs.length > 0 ? task.outputs : existingTask.outputs;
         mergedTasks.set(task.name, mergedTask);
@@ -257,7 +257,9 @@ export class TaskResolver {
             dynamicParameters.push(param.name);
           }
         } else if (param.isRequired) {
-          throw new Error(`Required parameter '${param.name}' not provided for task '${task.name}'`);
+          throw new Error(
+            `Required parameter '${param.name}' not provided for task '${task.name}'`
+          );
         }
       }
     }

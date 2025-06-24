@@ -136,16 +136,15 @@ describe('TaskExecutor', () => {
       expect(result).toEqual({
         output1: 'output_value_1',
         output2: 'output_value_2',
-      });
-
-      // Verify spawn was called with correct arguments
+      });      // Verify spawn was called with correct arguments
       expect(mockSpawn).toHaveBeenCalledWith('python', [
         'test_script.py',
         '--param1',
         'value1',
         '--param2',
         'value2',
-        '"input_value_1","input_value_2"',
+        'input_value_1',
+        'input_value_2',
       ], {
         cwd: '/mock/artifact/folder',
       });
@@ -199,16 +198,15 @@ describe('TaskExecutor', () => {
         mockProcess.emit('close', 0);
       }, 10);
 
-      await executePromise;
-
-      // Verify spawn was called with space input values since no data mapping exists
+      await executePromise;      // Verify spawn was called with space input values since no data mapping exists
       expect(mockSpawn).toHaveBeenCalledWith('python', [
         'test_script.py',
         '--param1',
         'value1',
         '--param2',
         'value2',
-        '"space_input1_value","space_input2_value"',
+        'space_input1_value',
+        'space_input2_value',
       ], {
         cwd: '/mock/artifact/folder',
       });

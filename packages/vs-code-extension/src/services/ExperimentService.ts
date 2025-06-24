@@ -138,7 +138,7 @@ export class ExperimentService {
   ): Promise<string> {
     // Ensure server is running
     await this.serverManager.ensureServerRunning();
-    
+
     const serverUrl = await this.serverManager.getServerUrl();
     if (!serverUrl) {
       throw new Error('ExtremeXP server is not running. Please start the server first.');
@@ -206,7 +206,9 @@ export class ExperimentService {
       return finalExperimentId;
     } catch (error) {
       if (error instanceof TypeError && error.message.includes('fetch')) {
-        throw new Error('Cannot connect to ExtremeXP server. Please check if the server is running.');
+        throw new Error(
+          'Cannot connect to ExtremeXP server. Please check if the server is running.'
+        );
       }
       throw error;
     }
@@ -291,7 +293,7 @@ export class ExperimentService {
   async validateArtifact(artifactPath: string): Promise<ValidationResult> {
     // Ensure server is running
     await this.serverManager.ensureServerRunning();
-    
+
     const serverUrl = await this.serverManager.getServerUrl();
     if (!serverUrl) {
       throw new Error('ExtremeXP server is not running. Please start the server first.');
@@ -314,7 +316,9 @@ export class ExperimentService {
       return await response.json();
     } catch (error) {
       if (error instanceof TypeError && error.message.includes('fetch')) {
-        throw new Error('Cannot connect to ExtremeXP server. Please check if the server is running.');
+        throw new Error(
+          'Cannot connect to ExtremeXP server. Please check if the server is running.'
+        );
       }
       throw error;
     }

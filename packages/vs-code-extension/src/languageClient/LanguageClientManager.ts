@@ -6,7 +6,7 @@ import {
   LanguageClientOptions,
   ServerOptions,
   TransportKind,
-  Trace
+  Trace,
 } from 'vscode-languageclient/node';
 import { ToolResolver } from '../services/ToolResolver';
 
@@ -190,25 +190,31 @@ export class LanguageClientManager {
     if (!this.client) return;
 
     // Handle custom notifications from server
-    this.client.onNotification('extremexp/validationStatus', (params: { hasErrors: boolean; uri: string }) => {
-      // Update status bar or show notifications based on validation status
-      if (params.hasErrors) {
-        vscode.window.showErrorMessage(`Validation errors found in ${params.uri}`);
-      }
-    });
-
-    this.client.onNotification('extremexp/progressUpdate', (params: { title: string; percentage: number }) => {
-      // Show progress for long-running operations
-      vscode.window.withProgress(
-        {
-          location: vscode.ProgressLocation.Window,
-          title: params.title,
-        },
-        async progress => {
-          progress.report({ increment: params.percentage });
+    this.client.onNotification(
+      'extremexp/validationStatus',
+      (params: { hasErrors: boolean; uri: string }) => {
+        // Update status bar or show notifications based on validation status
+        if (params.hasErrors) {
+          vscode.window.showErrorMessage(`Validation errors found in ${params.uri}`);
         }
-      );
-    });
+      }
+    );
+
+    this.client.onNotification(
+      'extremexp/progressUpdate',
+      (params: { title: string; percentage: number }) => {
+        // Show progress for long-running operations
+        vscode.window.withProgress(
+          {
+            location: vscode.ProgressLocation.Window,
+            title: params.title,
+          },
+          async progress => {
+            progress.report({ increment: params.percentage });
+          }
+        );
+      }
+    );
   }
 
   private findParameterInsertPosition(

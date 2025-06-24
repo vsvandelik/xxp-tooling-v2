@@ -63,11 +63,7 @@ export async function activate(context: vscode.ExtensionContext) {
 
   // Log any failures but don't block extension activation
   results.forEach((result, index) => {
-    const featureNames = [
-      'Workflow Repository',
-      'Language Server',
-      'Workflow Features',
-    ];
+    const featureNames = ['Workflow Repository', 'Language Server', 'Workflow Features'];
     if (result.status === 'rejected') {
       console.error(`Failed to initialize ${featureNames[index]}:`, result.reason);
     } else {
@@ -77,7 +73,7 @@ export async function activate(context: vscode.ExtensionContext) {
 
   // Register remaining commands after all dependencies are initialized
   registerUtilityCommands(context);
-  
+
   setupWorkflowRepositoryView(context);
   console.log('ExtremeXP extension activation completed');
 }
@@ -97,7 +93,7 @@ async function initializeServices(context: vscode.ExtensionContext): Promise<voi
 
     // Initialize experiment service (doesn't require server to be running)
     experimentService = new ExperimentService(serverManager);
-    
+
     // Initialize progress panel manager
     progressPanelManager = new ProgressPanelManager(context, experimentService);
 
@@ -110,7 +106,6 @@ async function initializeServices(context: vscode.ExtensionContext): Promise<voi
         'Failed to start ExtremeXP experiment server. Experiment features may not work correctly.'
       );
     });
-
   } catch (error) {
     console.error('Failed to initialize core services:', error);
     vscode.window.showErrorMessage(
