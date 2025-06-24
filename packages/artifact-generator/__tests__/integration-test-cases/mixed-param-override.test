@@ -39,6 +39,10 @@ experiment MixedParamOverrideTest {
     }
 }
 
+=== WARNINGS ===
+- Implementation file 'task1.py' for task 'task1' in workflow 'MixedParamWorkflow' not found
+- Implementation file 'task2.py' for task 'task2' in workflow 'MixedParamWorkflow' not found
+
 
 === OUTPUT === 
 

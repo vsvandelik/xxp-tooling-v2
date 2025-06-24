@@ -115,8 +115,7 @@ experiment E1 {
         "workflow": "ConcreteInheritedWorkflow",
         "implementation": "scripts/preprocessing.py",
         "dynamicParameters": [
-          "trainingSetSize",
-          "hyperparameter"
+          "trainingSetSize"
         ],
         "staticParameters": {
           "method": "basic"
@@ -134,7 +133,6 @@ experiment E1 {
         "workflow": "ConcreteInheritedWorkflow",
         "implementation": "scripts/processing.py",
         "dynamicParameters": [
-          "trainingSetSize",
           "hyperparameter"
         ],
         "staticParameters": {},
@@ -150,8 +148,7 @@ experiment E1 {
         "workflow": "ConcreteInheritedWorkflow",
         "implementation": "scripts/postprocessing.py",
         "dynamicParameters": [
-          "trainingSetSize",
-          "hyperparameter"
+          "threshold"
         ],
         "staticParameters": {},
         "inputData": [

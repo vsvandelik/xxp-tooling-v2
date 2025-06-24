@@ -37,12 +37,11 @@ experiment staticParam1sTest {
         "taskId": "staticParam1Workflow:simpleTask",
         "workflow": "staticParam1Workflow",
         "implementation": "simple.py",
-        "dynamicParameters": [
-          "usedParam"
-        ],
+        "dynamicParameters": [],
         "staticParameters": {
           "staticParam1": 2,
-          "staticParam2": 3
+          "staticParam2": 3,
+          "usedParam": 1
         },
         "inputData": [],
         "outputData": []

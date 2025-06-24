@@ -108,6 +108,7 @@ export class TaskExecutor {
   private resolveParameters(task: Task, paramSet: ParameterSet): Record<string, Expression> {
     const params = { ...task.staticParameters };
 
+    // First, handle dynamic parameters
     for (const dynParam of task.dynamicParameters) {
       // Check for task-specific override
       const overrideKey = `${task.taskId}:${dynParam}`;
@@ -115,6 +116,17 @@ export class TaskExecutor {
         params[dynParam] = paramSet[overrideKey]!;
       } else if (dynParam in paramSet) {
         params[dynParam] = paramSet[dynParam]!;
+      }
+    }
+
+    // Then, handle static parameter overrides from space
+    for (const staticParam of Object.keys(task.staticParameters)) {
+      // Check for task-specific override
+      const overrideKey = `${task.taskId}:${staticParam}`;
+      if (overrideKey in paramSet) {
+        params[staticParam] = paramSet[overrideKey]!;
+      } else if (staticParam in paramSet) {
+        params[staticParam] = paramSet[staticParam]!;
       }
     }
 

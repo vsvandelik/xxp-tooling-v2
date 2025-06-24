@@ -37,11 +37,11 @@ experiment ParamOverrideTest {
         "taskId": "ParamWorkflow:paramTask",
         "workflow": "ParamWorkflow",
         "implementation": "param.py",
-        "dynamicParameters": [
-          "globalParam",
-          "spaceParam"
-        ],
-        "staticParameters": {},
+        "dynamicParameters": [],
+        "staticParameters": {
+          "globalParam": 100,
+          "spaceParam": 200
+        },
         "inputData": [],
         "outputData": []
       }
