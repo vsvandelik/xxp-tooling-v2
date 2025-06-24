@@ -14,6 +14,7 @@ import {
   EspaceSpaceNameReadContext,
 } from '@extremexp/core';
 import { BaseSymbol } from 'antlr4-c3';
+import { TerminalNode } from 'antlr4ng';
 
 export class ReferencesProvider extends Provider {
   private logger = Logger.getLogger();
@@ -44,8 +45,6 @@ export class ReferencesProvider extends Provider {
   }
 
   public async onDefinition(params: DefinitionParams): Promise<Location | null | undefined> {
-    this.logger.info(`Received definition request for document: ${params.textDocument.uri}`);
-
     const result = super.getDocumentAndPosition(params.textDocument, params.position);
     if (!result) return Promise.resolve(null);
     const [document, tokenPosition] = result;
@@ -64,7 +63,8 @@ export class ReferencesProvider extends Provider {
     ) {
       // For workflows, we need to look in the folder symbol table
       const folderSymbolTable = this.documentManager?.getDocumentSymbolTableForFile(document.uri);
-      return (await folderSymbolTable?.resolve(tokenPosition.text, false)) || null;
+      const result = (await folderSymbolTable?.resolve(tokenPosition.text, false)) || null;
+      return result;
     }
 
     // Handle space references in ESPACE files
@@ -73,7 +73,8 @@ export class ReferencesProvider extends Provider {
         (c: BaseSymbol) => c instanceof ExperimentSymbol
       ) as ExperimentSymbol;
       if (experimentSymbol) {
-        return (await experimentSymbol.resolve(tokenPosition.text, false)) || null;
+        const result = (await experimentSymbol.resolve(tokenPosition.text, false)) || null;
+        return result;
       }
     }
 
@@ -140,6 +141,10 @@ export class ReferencesProvider extends Provider {
   }
 
   private hasDeclaration(symbol: BaseSymbol): boolean {
+    if (!symbol) {
+      return false;
+    }
+
     if (
       symbol instanceof TerminalSymbolWithReferences ||
       symbol instanceof WorkflowSymbol ||
@@ -173,10 +178,44 @@ export class ReferencesProvider extends Provider {
       return undefined;
     }
 
-    const parseTree = symbol.context?.getChild(0) || symbol.context;
-    if (!parseTree) return undefined;
+    const parseTree = symbol.context;
+    if (!parseTree) {
+      return undefined;
+    }
 
-    const definitionRange = RangeUtils.getRangeFromParseTree(parseTree);
+    // Find the identifier node within the declaration context
+    let identifierNode: TerminalNode | null = null;
+    
+    // Search through all children to find the matching identifier
+    for (let i = 0; i < parseTree.getChildCount(); i++) {
+      const child = parseTree.getChild(i);
+      
+      // Check by constructor name and instanceof to handle different TerminalNode types
+      const isTerminalNode = child?.constructor?.name === 'TerminalNode' || child instanceof TerminalNode;
+      const textMatches = child?.getText() === symbol.name;
+      
+      if (isTerminalNode && textMatches) {
+        identifierNode = child as TerminalNode;
+        break;
+      }
+    }
+    
+    if (!identifierNode) {
+      return undefined;
+    }
+
+    // Try RangeUtils first, fallback to manual range creation
+    let definitionRange = RangeUtils.getRangeFromParseTree(identifierNode);
+    
+    if (!definitionRange && identifierNode.symbol) {
+      definitionRange = Range.create(
+        identifierNode.symbol.line - 1,
+        identifierNode.symbol.column,
+        identifierNode.symbol.line - 1,
+        identifierNode.symbol.column + identifierNode.getText().length
+      );
+    }
+    
     if (!definitionRange) return undefined;
 
     return {

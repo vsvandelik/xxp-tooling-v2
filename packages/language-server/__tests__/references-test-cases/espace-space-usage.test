@@ -1,0 +1,17 @@
+=== experiment.espace ===
+experiment MyExperiment {
+    space s1 of SimpleWorkflow {
+        strategy randomSearch;
+    }
+    
+    control {
+        start -> ###s1### -> end;
+    }
+}
+
+=== DEFINITION ===
+experiment.espace:2:11-13
+
+=== REFERENCES ===
+experiment.espace:2:11-13
+experiment.espace:7:18-20

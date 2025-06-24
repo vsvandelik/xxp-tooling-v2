@@ -70,7 +70,7 @@ export class EspaceSpaceVisitor {
       this.builder,
       SpaceSymbol,
       spaceName,
-      ctx.parent!,
+      ctx,
       this.builder.currentScope,
       this.builder.document,
       workflowSymbol

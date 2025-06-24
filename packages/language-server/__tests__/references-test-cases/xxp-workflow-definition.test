@@ -1,0 +1,14 @@
+=== workflow.xxp ===
+workflow ###MyWorkflow### {
+    define task myTask;
+    
+    configure task myTask {}
+
+    START -> myTask -> END;
+}
+
+=== DEFINITION ===
+workflow.xxp:1:10-20
+
+=== REFERENCES ===
+workflow.xxp:1:10-20

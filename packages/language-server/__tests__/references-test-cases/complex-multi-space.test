@@ -1,0 +1,43 @@
+=== CommonWorkflow.xxp ===
+workflow CommonWorkflow {
+    define task process;
+    
+    configure task process {}
+
+    START -> process -> END;
+}
+
+=== experiment.espace ===
+experiment MultiSpaceExperiment {
+    space space1 of CommonWorkflow {
+        strategy randomSearch;
+        
+        configure task process {
+            param param1 = enum(1, 2, 3);
+        }
+    }
+    
+    space ###space2### of CommonWorkflow {
+        strategy gridSearch;
+        
+        configure task process {
+            param param2 = range(0.1, 1.0, 0.1);
+        }
+    }
+    
+    control {
+        start -> space1 -?> space2 {
+            condition "metric > threshold";
+        }
+        space1 -> end;
+        space2 -> end;
+    }
+}
+
+=== DEFINITION ===
+experiment.espace:19:11-17
+
+=== REFERENCES ===
+experiment.espace:19:11-17
+experiment.espace:28:29-35
+experiment.espace:32:9-15

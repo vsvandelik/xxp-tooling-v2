@@ -1,0 +1,36 @@
+=== DataProcessing.xxp ===
+workflow DataProcessing {
+    define data inputData = "data.csv";
+    define task preprocess;
+    define task analyze;
+    
+    configure task preprocess {
+        input inputData;
+    }
+    
+    configure task analyze {}
+
+    START -> preprocess -> analyze -> END;
+}
+
+=== MLExperiment.espace ===
+experiment MLExperiment {
+    space preprocessing of ###DataProcessing### {
+        strategy exhaustive;
+        
+        configure task preprocess {
+            param normalizeData = true;
+        }
+    }
+    
+    control {
+        start -> preprocessing -> end;
+    }
+}
+
+=== DEFINITION ===
+DataProcessing.xxp:1:10-24
+
+=== REFERENCES ===
+DataProcessing.xxp:1:10-24
+MLExperiment.espace:18:18-32
