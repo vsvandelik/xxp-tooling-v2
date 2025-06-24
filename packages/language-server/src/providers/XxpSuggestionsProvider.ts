@@ -85,10 +85,7 @@ export class XxpSuggestionsProvider extends Provider {
   ): Promise<CompletionItem[]> {
     const proposedSymbols: CompletionItem[] = [];
 
-    console.log(`Debug - processRules called with rules:`, Array.from(rules.keys()).map(k => `${k} (${this.getRuleName(k)})`));
-
     if (rules.has(XXPParser.RULE_workflowNameRead)) {
-      console.log('Debug - Processing RULE_workflowNameRead');
       await this.suggestAndStoreSymbols(
         position,
         WorkflowSymbol,
@@ -98,7 +95,6 @@ export class XxpSuggestionsProvider extends Provider {
       );
     }
     if (rules.has(XXPParser.RULE_dataNameRead)) {
-      console.log('Debug - Processing RULE_dataNameRead');
       await this.suggestAndStoreSymbols(
         position,
         DataSymbol,
@@ -108,7 +104,6 @@ export class XxpSuggestionsProvider extends Provider {
       );
     }
     if (rules.has(XXPParser.RULE_taskNameRead)) {
-      console.log('Debug - Processing RULE_taskNameRead');
       await this.suggestAndStoreSymbols(
         position,
         TaskSymbol,
@@ -215,9 +210,7 @@ export class XxpSuggestionsProvider extends Provider {
     symbolTable: DocumentSymbolTable,
     kind: CompletionItemKind
   ): Promise<void> {
-    console.log(`Debug - suggestAndStoreSymbols called for type: ${type.name}`);
     const validSymbols = await symbolTable.getValidSymbolsAtPosition(position.parseTree, type);
-    console.log(`Debug - getValidSymbolsAtPosition returned for ${type.name}:`, validSymbols);
     validSymbols.forEach(s => {
       proposedSymbols.push({
         label: s,

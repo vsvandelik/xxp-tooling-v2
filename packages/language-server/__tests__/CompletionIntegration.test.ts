@@ -292,25 +292,6 @@ async function getCompletionsAtPosition(
     if (doc && doc.symbolTable) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       console.log(`Debug - Document ${uri} has symbol table with:`, Object.keys(doc.symbolTable as any));
-      // Try to get workflows and examine their structure
-      try {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const workflows = await (doc.symbolTable as any).getSymbolsOfType(require('../src/core/models/symbols/WorkflowSymbol.js').WorkflowSymbol);
-        console.log(`Debug - Found ${workflows.length} workflows in document`);
-        for (const workflow of workflows) {
-          console.log(`Debug - Workflow: ${workflow.name}`);
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const tasks = await (workflow as any).getSymbolsOfType(require('../src/core/models/symbols/TaskSymbol.js').TaskSymbol);
-          console.log(`Debug - Workflow ${workflow.name} has ${tasks.length} task symbols:`, tasks.map((t: any) => t.name));
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          if ((workflow as any).parentWorkflowSymbol) {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            console.log(`Debug - Workflow ${workflow.name} has parent workflow: ${(workflow as any).parentWorkflowSymbol.name}`);
-          }
-        }
-      } catch (error) {
-        console.log(`Debug - Error while examining workflows:`, error);
-      }
     } else {
       console.log(`Debug - Document ${uri} has no symbol table or document not found`);
     }

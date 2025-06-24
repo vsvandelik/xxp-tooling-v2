@@ -1,5 +1,6 @@
 import { BaseSymbol, ScopedSymbol, SymbolTable } from 'antlr4-c3';
 import { ParseTree } from 'antlr4ng';
+import { WorkflowSymbol } from '../../core/models/symbols/WorkflowSymbol.js';
 
 export class DocumentSymbolTable extends SymbolTable {
   constructor(name: string) {
@@ -11,7 +12,30 @@ export class DocumentSymbolTable extends SymbolTable {
     type: new (...args: any[]) => T
   ): Promise<string[]> {
     const currentContext = parseTree;
+    
+    // For TaskSymbol, always use the comprehensive approach to ensure inheritance works
+    if (type.name === 'TaskSymbol') {
+      const workflows = await this.getSymbolsOfType(WorkflowSymbol as any);
+      const allTasks: T[] = [];
+      const taskNames = new Set<string>(); // Use Set to avoid duplicates
+      
+      for (const workflow of workflows) {
+        if (workflow instanceof WorkflowSymbol) {
+          const workflowTasks = await workflow.getSymbolsOfType(type);
+          for (const task of workflowTasks) {
+            if (!taskNames.has(task.name)) {
+              taskNames.add(task.name);
+              allTasks.push(task);
+            }
+          }
+        }
+      }
+      return allTasks.map(s => s.name);
+    }
+    
     if (!currentContext) return [];
+    
+    // For non-TaskSymbol types, use the original logic
     let scope = DocumentSymbolTable.symbolWithContextRecursive(this, currentContext);
     while (scope && !(scope instanceof ScopedSymbol)) {
       scope = scope.parent;
@@ -19,13 +43,9 @@ export class DocumentSymbolTable extends SymbolTable {
 
     let symbols: T[];
     if (scope instanceof ScopedSymbol) {
-      console.log(`Debug - getValidSymbolsAtPosition: found scope of type ${scope.constructor.name}, name: ${scope.name}`);
       symbols = await scope.getSymbolsOfType(type);
-      console.log(`Debug - getValidSymbolsAtPosition: scope.getSymbolsOfType(${type.name}) returned:`, symbols.map(s => s.name));
     } else {
-      console.log(`Debug - getValidSymbolsAtPosition: no scoped symbol found, using document symbol table`);
       symbols = await this.getSymbolsOfType(type);
-      console.log(`Debug - getValidSymbolsAtPosition: this.getSymbolsOfType(${type.name}) returned:`, symbols.map(s => s.name));
     }
     return symbols.map(s => s.name);
   }
