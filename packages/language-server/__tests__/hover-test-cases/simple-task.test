@@ -1,0 +1,13 @@
+=== workflow.xxp ===
+workflow SimpleWorkflow {
+    define task myTask;
+    define task anotherTask;
+    
+    ###myTask### -> anotherTask;
+    anotherTask -> END;
+}
+
+=== HOVER ===
+### Task: myTask
+
+**Implementation:** None
