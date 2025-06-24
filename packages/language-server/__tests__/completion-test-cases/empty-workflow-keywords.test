@@ -7,3 +7,5 @@ workflow EmptyWorkflow {
 - define
 - configure
 - }
+- START
+- END

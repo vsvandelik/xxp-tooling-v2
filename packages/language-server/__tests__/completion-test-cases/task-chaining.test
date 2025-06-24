@@ -10,13 +10,8 @@ workflow TestWorkflow {
 }
 
 === SUGGESTIONS ===
+- taskA
 - taskB
 - taskC
 - END
 - START
-
-=== NOT_EXPECTED ===
-- testData
-- anotherData
-- define
-- configure

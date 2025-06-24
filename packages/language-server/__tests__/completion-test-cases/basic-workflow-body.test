@@ -10,5 +10,7 @@ workflow ParentWorkflow {
 === SUGGESTIONS ===
 - existingTask
 - define
-- configure
 - }
+- START
+- END
+- configure

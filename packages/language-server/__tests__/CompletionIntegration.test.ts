@@ -12,7 +12,6 @@ interface TestCase {
   files: Map<string, string>;
   cursorPosition: { line: number; character: number };
   expectedSuggestions: string[];
-  notExpectedSuggestions?: string[];
 }
 
 interface CompletionTestFile {
@@ -102,20 +101,28 @@ describe('Language Server Completion Tests', () => {
           mainFilePath,
           testCase.cursorPosition,
           Array.from(createdFiles.values()) // Pass all file paths
-        );
-
-        // Check that expected suggestions are present
+        );        // Check that expected suggestions are present
         const completionLabels = completions.map(c => c.label);
-        
-        for (const expectedSuggestion of testCase.expectedSuggestions) {
-          expect(completionLabels).toContain(expectedSuggestion);
-        }
-
-        // Check that not expected suggestions are not present (if specified)
-        if (testCase.notExpectedSuggestions) {
-          for (const notExpectedSuggestion of testCase.notExpectedSuggestions) {
-            expect(completionLabels).not.toContain(notExpectedSuggestion);
+          // Verify exact set of suggestions (no more, no less)
+        try {
+          expect(completionLabels.sort()).toEqual(testCase.expectedSuggestions.sort());
+        } catch (error) {
+          // Enhanced error reporting for exact match failures
+          console.error(`Exact match failed for test case '${testCase.name}':`);
+          console.error(`Expected: [${testCase.expectedSuggestions.sort().join(', ')}]`);
+          console.error(`Actual:   [${completionLabels.sort().join(', ')}]`);
+          
+          const missing = testCase.expectedSuggestions.filter(s => !completionLabels.includes(s));
+          const unexpected = completionLabels.filter(s => !testCase.expectedSuggestions.includes(s));
+          
+          if (missing.length > 0) {
+            console.error(`Missing suggestions: [${missing.join(', ')}]`);
           }
+          if (unexpected.length > 0) {
+            console.error(`Unexpected suggestions: [${unexpected.join(', ')}]`);
+          }
+          
+          throw error;
         }
 
       } catch (error) {
@@ -127,92 +134,6 @@ describe('Language Server Completion Tests', () => {
       }
     });
   });
-
-  // Manual test cases for specific completion scenarios
-  it('should suggest data and task names in workflow body', async () => {
-    const content = `workflow ParentWorkflow {
-    define data existingData;
-    define task existingTask;
-    define data anotherData;
-    
-    
-}`;
-
-    const filePath = path.join(tempDir, 'parentWorkflow.xxp');
-    fs.writeFileSync(filePath, content, 'utf8');    // Position after the empty lines in the workflow body
-    const completions = await getCompletionsAtPosition(
-      filePath,
-      { line: 5, character: 4 }, // Inside workflow body
-      [filePath]
-    );const completionLabels = completions.map(c => c.label);
-    
-    // Should suggest defined tasks (but not data)
-    expect(completionLabels).toContain('existingTask');
-    
-    // Should suggest keywords
-    expect(completionLabels).toContain('define');
-    expect(completionLabels).toContain('configure');
-  });
-
-  it('should suggest inherited data and tasks in child workflow', async () => {
-    const parentContent = `workflow ParentWorkflow {
-    define data parentData;
-    define task parentTask;
-    
-    parentTask -> END;
-}`;
-
-    const childContent = `workflow ChildWorkflow from ParentWorkflow {
-    define data childData;
-    define task childTask;
-    
-    
-}`;
-
-    const parentFile = path.join(tempDir, 'parentWorkflow.xxp');
-    const childFile = path.join(tempDir, 'childWorkflow.xxp');
-    
-    fs.writeFileSync(parentFile, parentContent, 'utf8');
-    fs.writeFileSync(childFile, childContent, 'utf8');    // Test completions in child workflow
-    const completions = await getCompletionsAtPosition(
-      childFile,
-      { line: 4, character: 4 }, // Inside child workflow body
-      [parentFile, childFile] // Pass both files for inheritance
-    );const completionLabels = completions.map(c => c.label);
-    
-    // Should suggest child's own tasks (but not data)
-    expect(completionLabels).toContain('childTask');
-    
-    // Should suggest inherited tasks from parent (but not data)
-    expect(completionLabels).toContain('parentTask');
-  });
-
-  it('should suggest only tasks after arrow in chains', async () => {
-    const content = `workflow TestWorkflow {
-    define data testData;
-    define task taskA;
-    define task taskB;
-    
-    taskA -> 
-}`;
-
-    const filePath = path.join(tempDir, 'testWorkflow.xxp');
-    fs.writeFileSync(filePath, content, 'utf8');    // Position after the arrow
-    const completions = await getCompletionsAtPosition(
-      filePath,
-      { line: 5, character: 13 }, // After "taskA -> "
-      [filePath]
-    );
-
-    const completionLabels = completions.map(c => c.label);
-    
-    // Should suggest tasks
-    expect(completionLabels).toContain('taskB');
-    expect(completionLabels).toContain('END');
-    
-    // Should NOT suggest data
-    expect(completionLabels).not.toContain('testData');
-  });
 });
 
 /**
@@ -223,7 +144,6 @@ function parseCompletionTestCaseFile(filePath: string): TestCase {
   const testName = path.basename(filePath, '.test');
   const files = new Map<string, string>();
   const expectedSuggestions: string[] = [];
-  const notExpectedSuggestions: string[] = [];
   let cursorPosition: { line: number; character: number } = { line: 0, character: 0 };
 
   // Split content by === markers
@@ -239,9 +159,6 @@ function parseCompletionTestCaseFile(filePath: string): TestCase {
     if (sectionName === 'SUGGESTIONS') {
       // Parse expected suggestions
       parseExpectedSuggestions(sectionContent, expectedSuggestions);
-    } else if (sectionName === 'NOT_EXPECTED') {
-      // Parse suggestions that should NOT be present
-      parseExpectedSuggestions(sectionContent, notExpectedSuggestions);
     } else {
       // This is a file section - process cursor marker
       const processedFile = processFileWithCursor(sectionContent);
@@ -260,8 +177,7 @@ function parseCompletionTestCaseFile(filePath: string): TestCase {
     name: testName,
     files,
     cursorPosition,
-    expectedSuggestions,
-    notExpectedSuggestions
+    expectedSuggestions
   };
 }
 
