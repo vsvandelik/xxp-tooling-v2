@@ -7,7 +7,6 @@ import { XxpDocument } from '../documents/XxpDocument.js';
 import { EspaceDocument } from '../documents/EspaceDocument.js';
 import { DocumentType } from '../models/DocumentType.js';
 import { Document } from '../documents/Document.js';
-import { BaseSymbol } from 'antlr4-c3';
 
 export class DocumentManager {
   private readonly parsedDocuments = new Map<string, Document>();
@@ -120,8 +119,6 @@ export class DocumentManager {
       this.logger.info(`Clearing symbol table for folder: ${folderPath}`);
       folderSymbolTable.clear();
     }
-    // Note: If there are still documents in the folder, stale symbol cleanup 
-    // will be handled by cleanupStaleSymbols when the next document is parsed
   }
 
   private getDocumentsInFolder(folderPath: string): Document[] {
@@ -132,31 +129,6 @@ export class DocumentManager {
       }
     }
     return documentsInFolder;
-  }
-
-  private cleanupStaleSymbols(symbolTable: DocumentSymbolTable, folderPath: string): void {
-    const openDocumentsInFolder = this.getDocumentsInFolder(folderPath);
-    const openDocumentUris = new Set(openDocumentsInFolder.map(doc => doc.uri));
-    
-    // Get all symbols and remove those from documents that are no longer open
-    const allSymbols = symbolTable.getAllSymbolsSync(BaseSymbol);
-    const symbolsToRemove: BaseSymbol[] = [];
-    
-    for (const symbol of allSymbols) {
-      // Check if symbol belongs to a document that is no longer open
-      if ('document' in symbol && (symbol as any).document) {
-        const symbolDocumentUri = (symbol as any).document.uri;
-        if (!openDocumentUris.has(symbolDocumentUri)) {
-          symbolsToRemove.push(symbol);
-        }
-      }
-    }
-    
-    // Remove stale symbols
-    for (const symbol of symbolsToRemove) {
-      this.logger.info(`Removing stale symbol '${symbol.name}' from folder symbol table`);
-      symbolTable.removeSymbol(symbol);
-    }
   }
 
   public getDocument(uri: string): Document | undefined {
@@ -183,9 +155,6 @@ export class DocumentManager {
     if (!symbolTable) {
       symbolTable = new DocumentSymbolTable(folderPath);
       this.symbolTablesBasedOnFolders.set(folderPath, symbolTable);
-    } else {
-      // Clean up stale symbols from documents that are no longer open
-      this.cleanupStaleSymbols(symbolTable, folderPath);
     }
     return symbolTable;
   }
