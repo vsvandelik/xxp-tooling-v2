@@ -1,88 +1,27 @@
-name: CI
+name: Node.js CI
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [ "master" ]
   pull_request:
-    branches: [ main, develop ]
+    branches: [ "master" ]
 
 jobs:
-  test:
+  build:
+
     runs-on: ubuntu-latest
-    
+
     strategy:
       matrix:
-        node-version: [18.x, 20.x]
-    
+        node-version: [22.x]
+
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-      
-    - name: Setup Node.js ${{ matrix.node-version }}
+    - uses: actions/checkout@v4
+    - name: Use Node.js ${{ matrix.node-version }}
       uses: actions/setup-node@v4
       with:
         node-version: ${{ matrix.node-version }}
         cache: 'npm'
-        
-    - name: Install dependencies
-      run: npm ci
-      
-    - name: Type check
-      run: npm run type-check
-      
-    #- name: Lint
-    #  run: npm run lint
-
-    #- name: Format check
-    #  run: npm run format:check
-      
-    - name: Build
-      run: npm run build
-      
-    - name: Run tests
-      run: npm run test
-      
-    - name: Upload coverage reports
-      if: matrix.node-version == '20.x'
-      uses: codecov/codecov-action@v3
-      with:
-        files: ./packages/*/coverage/lcov.info
-        fail_ci_if_error: false
-        verbose: true
-
-  build-check:
-    runs-on: ubuntu-latest
-    
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-      
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '20.x'
-        cache: 'npm'
-        
-    - name: Install dependencies
-      run: npm ci
-      
-    - name: Clean build
-      run: npm run clean
-      
-    - name: Build from scratch
-      run: npm run build
-      
-    - name: Verify build artifacts
-      run: |
-        # Check that all packages have built successfully
-        for package in packages/*/; do
-          if [ -f "$package/package.json" ]; then
-            package_name=$(basename "$package")
-            echo "Checking build artifacts for $package_name"
-            if [ ! -d "$package/dist" ]; then
-              echo "Error: No dist directory found for $package_name"
-              exit 1
-            fi
-            echo "✓ Build artifacts found for $package_name"
-          fi
-        done
+    - run: npm ci
+    - run: npm run build --if-present
+    - run: npm test

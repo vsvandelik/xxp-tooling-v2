@@ -4,6 +4,7 @@ import {
   WorkflowTreeNode,
   WorkflowMetadata,
   RepositoryConfig,
+  WorkflowAttachment,
 } from '@extremexp/workflow-repository';
 import { RepositoryConfigManager } from './RepositoryConfigManager.js';
 
@@ -203,7 +204,7 @@ export class WorkflowRepositoryProvider implements vscode.TreeDataProvider<Workf
 
       // Create tree items for each attachment
       return workflowItem.attachments.map(
-        attachment =>
+        (attachment: WorkflowAttachment) =>
           new WorkflowTreeItem(
             attachment.name,
             'attachment',
@@ -243,7 +244,7 @@ export class WorkflowRepositoryProvider implements vscode.TreeDataProvider<Workf
             metadata.name.toLowerCase().includes(lowerFilter) ||
             metadata.description.toLowerCase().includes(lowerFilter) ||
             metadata.author.toLowerCase().includes(lowerFilter) ||
-            metadata.tags.some(tag => tag.toLowerCase().includes(lowerFilter));
+            metadata.tags.some((tag: string) => tag.toLowerCase().includes(lowerFilter));
 
           if (matches) {
             filtered.push(item);

@@ -161,7 +161,7 @@ export class WorkflowCommands {
       );
 
       if (confirmed === 'Remove') {
-        await this.configManager.removeRepository(nameToRemove);
+        await this.configManager.removeRepository(nameToRemove!);
         this.repositoryProvider.refresh();
 
         vscode.window.showInformationMessage(`Repository "${nameToRemove}" removed successfully`);
