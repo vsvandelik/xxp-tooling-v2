@@ -12,8 +12,13 @@ import {
   EspaceWorkflowNameReadContext,
   EspaceTaskNameReadContext,
   EspaceSpaceNameReadContext,
+  XXPParser,
+  ESPACEParser,
 } from '@extremexp/core';
 import { BaseSymbol } from 'antlr4-c3';
+import { TerminalNode, ParserRuleContext } from 'antlr4ng';
+import { Document } from '../core/documents/Document.js';
+import { TokenPosition } from '../core/models/TokenPosition.js';
 
 export class ReferencesProvider extends Provider {
   private logger = Logger.getLogger();
@@ -56,7 +61,7 @@ export class ReferencesProvider extends Provider {
     return this.getLocationFromDeclaration(symbol);
   }
 
-  private async resolveSymbol(document: any, tokenPosition: any): Promise<BaseSymbol | null> {
+  private async resolveSymbol(document: Document, tokenPosition: TokenPosition): Promise<BaseSymbol | null> {
     // Handle workflow references
     if (
       tokenPosition.parseTree instanceof XxpWorkflowNameReadContext ||
@@ -173,7 +178,16 @@ export class ReferencesProvider extends Provider {
       return undefined;
     }
 
-    const parseTree = symbol.context?.getChild(0) || symbol.context;
+    // Find the identifier terminal node in the context
+    let parseTree = symbol.context;
+    
+    if (symbol.context && symbol.context instanceof ParserRuleContext) {
+      const identifier = this.findIdentifierInContext(symbol.context);
+      if (identifier) {
+        parseTree = identifier;
+      }
+    }
+    
     if (!parseTree) return undefined;
 
     const definitionRange = RangeUtils.getRangeFromParseTree(parseTree);
@@ -183,5 +197,32 @@ export class ReferencesProvider extends Provider {
       uri: symbol.document.uri,
       range: definitionRange,
     };
+  }
+
+  private findIdentifierInContext(context: ParserRuleContext): TerminalNode | null {
+    if (!context) return null;
+
+    // For contexts that have an IDENTIFIER() method (like TaskDefinitionContext, DataDefinitionContext)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    if (typeof (context as any).IDENTIFIER === 'function') {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const identifier = (context as any).IDENTIFIER();
+      if (identifier) return identifier;
+    }
+
+    // For other contexts, try to find the identifier by traversing children
+    if (context.children) {
+      for (const child of context.children) {
+        // Look for terminal nodes that are identifiers
+        if (child instanceof TerminalNode) {
+          // Check if it's an IDENTIFIER token for either XXP or ESPACE
+          if (child.symbol.type === XXPParser.IDENTIFIER || child.symbol.type === ESPACEParser.IDENTIFIER) {
+            return child;
+          }
+        }
+      }
+    }
+
+    return null;
   }
 }
