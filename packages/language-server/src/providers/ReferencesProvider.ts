@@ -243,14 +243,20 @@ export class ReferencesProvider extends Provider {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     if (typeof (context as any).IDENTIFIER === 'function') {
       this.logger.info(`findIdentifierInContext: context has IDENTIFIER() method`);
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const identifier = (context as any).IDENTIFIER();
-      if (identifier) {
-        this.logger.info(`findIdentifierInContext: found identifier via IDENTIFIER() method`);
-        return identifier;
-      } else {
-        this.logger.info(`findIdentifierInContext: IDENTIFIER() method returned null`);
+      try {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const identifier = (context as any).IDENTIFIER();
+        if (identifier) {
+          this.logger.info(`findIdentifierInContext: found identifier via IDENTIFIER() method, text: ${identifier.getText()}`);
+          return identifier;
+        } else {
+          this.logger.info(`findIdentifierInContext: IDENTIFIER() method returned null/undefined`);
+        }
+      } catch (error) {
+        this.logger.info(`findIdentifierInContext: error calling IDENTIFIER() method: ${error}`);
       }
+    } else {
+      this.logger.info(`findIdentifierInContext: context does not have IDENTIFIER() method`);
     }
 
     // For other contexts, try to find the identifier by traversing children
@@ -258,21 +264,27 @@ export class ReferencesProvider extends Provider {
       this.logger.info(`findIdentifierInContext: traversing ${context.children.length} children`);
       for (let i = 0; i < context.children.length; i++) {
         const child = context.children[i];
-        this.logger.info(`findIdentifierInContext: child ${i} type: ${child?.constructor.name}`);
+        this.logger.info(`findIdentifierInContext: child ${i} type: ${child?.constructor.name}, text: "${child?.getText() || 'N/A'}"`);
         
         // Look for terminal nodes that are identifiers
         if (child instanceof TerminalNode) {
-          this.logger.info(`findIdentifierInContext: terminal node token type: ${child.symbol.type}, XXP.IDENTIFIER: ${XXPParser.IDENTIFIER}, ESPACE.IDENTIFIER: ${ESPACEParser.IDENTIFIER}`);
+          this.logger.info(`findIdentifierInContext: terminal node token type: ${child.symbol.type}, text: "${child.getText()}", XXP.IDENTIFIER: ${XXPParser.IDENTIFIER}, ESPACE.IDENTIFIER: ${ESPACEParser.IDENTIFIER}`);
           // Check if it's an IDENTIFIER token for either XXP or ESPACE
           if (child.symbol.type === XXPParser.IDENTIFIER || child.symbol.type === ESPACEParser.IDENTIFIER) {
-            this.logger.info(`findIdentifierInContext: found IDENTIFIER terminal node`);
+            this.logger.info(`findIdentifierInContext: found IDENTIFIER terminal node with text: "${child.getText()}"`);
             return child;
+          } else {
+            this.logger.info(`findIdentifierInContext: terminal node is not an IDENTIFIER (type: ${child.symbol.type})`);
           }
+        } else {
+          this.logger.info(`findIdentifierInContext: child ${i} is not a TerminalNode`);
         }
       }
+    } else {
+      this.logger.info(`findIdentifierInContext: context has no children`);
     }
 
-    this.logger.info(`findIdentifierInContext: no identifier found`);
+    this.logger.info(`findIdentifierInContext: no identifier found in context`);
     return null;
   }
 }
