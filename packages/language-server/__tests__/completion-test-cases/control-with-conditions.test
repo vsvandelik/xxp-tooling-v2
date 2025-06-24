@@ -1,0 +1,24 @@
+=== experiment.esp ===
+experiment ControlConditionExperiment {
+    space ValidationSpace of ValidationWorkflow {
+    }
+    
+    space SuccessSpace of SuccessWorkflow {
+    }
+    
+    space FailureSpace of FailureWorkflow {
+    }
+    
+    control {
+        start -> ValidationSpace;
+        ValidationSpace -?> SuccessSpace {
+            condition "validation_passed";
+        }
+        ValidationSpace -?> FailureSpace {
+            condition <-CURSOR->
+        }
+    }
+}
+
+=== SUGGESTIONS ===
+- "

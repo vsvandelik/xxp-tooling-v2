@@ -1,0 +1,9 @@
+=== workflow.xxp ===
+workflow ConfigureWorkflow {
+    define task myTask;
+    
+    configure task <-CURSOR->
+}
+
+=== SUGGESTIONS ===
+- myTask

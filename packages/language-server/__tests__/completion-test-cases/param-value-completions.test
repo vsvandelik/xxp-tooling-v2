@@ -1,0 +1,12 @@
+=== workflow.xxp ===
+workflow ParamValueWorkflow {
+    define task paramTask;
+    
+    configure task paramTask {
+        param timeout = <-CURSOR->
+    }
+}
+
+=== SUGGESTIONS ===
+- true
+- false

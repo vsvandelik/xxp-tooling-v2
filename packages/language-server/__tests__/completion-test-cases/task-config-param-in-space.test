@@ -1,0 +1,19 @@
+=== workflow.xxp ===
+workflow ParamWorkflow {
+    define task paramTask;
+}
+
+=== experiment.esp ===
+experiment ParamExperiment {
+    space ParamSpace of ParamWorkflow {
+        configure task paramTask {
+            param timeout = <-CURSOR->
+        }
+    }
+}
+
+=== SUGGESTIONS ===
+- enum
+- range
+- true
+- false

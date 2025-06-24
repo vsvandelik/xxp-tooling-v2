@@ -1,0 +1,18 @@
+=== experiment.esp ===
+experiment ConditionalExperiment {
+    space ValidationSpace of ValidationWorkflow {
+    }
+    
+    space ErrorSpace of ErrorWorkflow {
+    }
+    
+    control {
+        ValidationSpace -?> <-CURSOR->
+    }
+}
+
+=== SUGGESTIONS ===
+- ValidationSpace
+- ErrorSpace
+- end
+- start

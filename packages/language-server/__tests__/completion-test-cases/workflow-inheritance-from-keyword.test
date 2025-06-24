@@ -1,0 +1,10 @@
+=== baseWorkflow.xxp ===
+workflow BaseWorkflow {
+    define data sharedData;
+}
+
+=== derivedWorkflow.xxp ===
+workflow DerivedWorkflow from <-CURSOR->
+
+=== SUGGESTIONS ===
+- BaseWorkflow

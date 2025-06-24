@@ -1,0 +1,9 @@
+=== experiment.esp ===
+experiment StrategyExperiment {
+    space TestSpace of SomeWorkflow {
+        strategy <-CURSOR->
+    }
+}
+
+=== SUGGESTIONS ===
+- [any identifier for strategy name]

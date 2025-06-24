@@ -1,0 +1,17 @@
+=== experiment.esp ===
+experiment ConditionExperiment {
+    space CheckSpace of CheckWorkflow {
+    }
+    
+    space SuccessSpace of SuccessWorkflow {
+    }
+    
+    control {
+        CheckSpace -?> SuccessSpace {
+            <-CURSOR->
+        }
+    }
+}
+
+=== SUGGESTIONS ===
+- condition

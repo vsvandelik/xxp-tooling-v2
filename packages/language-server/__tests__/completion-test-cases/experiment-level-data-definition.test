@@ -1,0 +1,11 @@
+=== experiment.esp ===
+experiment DataDefinitionExperiment {
+    define data globalData = "global";
+    
+    space TestSpace of TestWorkflow {
+        define <-CURSOR->
+    }
+}
+
+=== SUGGESTIONS ===
+- data

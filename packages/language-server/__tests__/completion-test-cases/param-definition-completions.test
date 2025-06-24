@@ -1,0 +1,12 @@
+=== experiment.esp ===
+experiment ParamExperiment {
+    space ParamSpace of TestWorkflow {
+        param maxIterations = <-CURSOR->
+    }
+}
+
+=== SUGGESTIONS ===
+- enum
+- range
+- true
+- false

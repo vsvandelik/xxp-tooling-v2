@@ -1,0 +1,17 @@
+=== workflow.xxp ===
+workflow DataWorkflow {
+    define data workflowData;
+    define task dataTask;
+}
+
+=== experiment.esp ===
+experiment DataExperiment {
+    define data experimentData = "test";
+    
+    space DataSpace of DataWorkflow {
+        define data spaceData = <-CURSOR->
+    }
+}
+
+=== SUGGESTIONS ===
+- "

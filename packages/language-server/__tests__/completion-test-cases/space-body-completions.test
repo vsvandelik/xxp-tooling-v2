@@ -1,0 +1,19 @@
+=== workflow.xxp ===
+workflow AnalysisWorkflow {
+    define data dataset;
+    define task analyzer;
+}
+
+=== experiment.esp ===
+experiment AnalysisExperiment {
+    space AnalysisSpace of AnalysisWorkflow {
+        <-CURSOR->
+    }
+}
+
+=== SUGGESTIONS ===
+- strategy
+- param
+- configure
+- define
+- }

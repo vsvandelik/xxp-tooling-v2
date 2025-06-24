@@ -1,0 +1,17 @@
+=== workflow.xxp ===
+workflow ComplexChain {
+    define task stepOne;
+    define task stepTwo;
+    define task stepThree;
+    define task stepFour;
+    
+    stepOne -> stepTwo -> <-CURSOR->
+}
+
+=== SUGGESTIONS ===
+- stepOne
+- stepTwo
+- stepThree
+- stepFour
+- END
+- START

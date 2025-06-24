@@ -1,0 +1,7 @@
+=== workflow.xxp ===
+workflow DataDefWorkflow {
+    define data myData = <-CURSOR->
+}
+
+=== SUGGESTIONS ===
+- "

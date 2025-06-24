@@ -1,0 +1,18 @@
+=== experiment.esp ===
+experiment TransitionExperiment {
+    space ProcessSpace of ProcessWorkflow {
+    }
+    
+    space AnalyzeSpace of AnalyzeWorkflow {
+    }
+    
+    control {
+        start -> <-CURSOR->
+    }
+}
+
+=== SUGGESTIONS ===
+- ProcessSpace
+- AnalyzeSpace
+- end
+- start

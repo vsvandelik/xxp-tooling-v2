@@ -1,0 +1,16 @@
+=== workflow.xxp ===
+workflow TestWorkflow {
+    define data inputData;
+    define task processTask;
+    
+    configure task processTask {
+        <-CURSOR->
+    }
+}
+
+=== SUGGESTIONS ===
+- implementation
+- param
+- input
+- output
+- }

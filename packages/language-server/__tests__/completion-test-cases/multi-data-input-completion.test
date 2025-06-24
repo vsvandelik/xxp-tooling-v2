@@ -1,0 +1,14 @@
+=== workflow.xxp ===
+workflow MultiDataWorkflow {
+    define data dataA;
+    define data dataB;
+    define data dataC;
+    define task processor;
+    
+    configure task processor {
+        input dataA, dataB, <-CURSOR->
+    }
+}
+
+=== SUGGESTIONS ===
+- dataC

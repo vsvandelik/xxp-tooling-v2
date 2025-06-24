@@ -1,0 +1,9 @@
+=== experiment.esp ===
+experiment RangeExperiment {
+    space RangeSpace of TestWorkflow {
+        param batchSize = range(<-CURSOR->
+    }
+}
+
+=== SUGGESTIONS ===
+- [number values]

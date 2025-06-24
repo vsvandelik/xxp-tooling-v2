@@ -1,0 +1,24 @@
+=== workflow.xxp ===
+workflow ControlWorkflow {
+    define task taskA;
+    define task taskB;
+}
+
+=== experiment.esp ===
+experiment ControlExperiment {
+    space SpaceA of ControlWorkflow {
+    }
+    
+    space SpaceB of ControlWorkflow {
+    }
+    
+    control {
+        <-CURSOR->
+    }
+}
+
+=== SUGGESTIONS ===
+- start
+- end
+- SpaceA
+- SpaceB

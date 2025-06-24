@@ -1,0 +1,7 @@
+=== workflow.xxp ===
+workflow PartialWorkflow {
+    def<-CURSOR->
+}
+
+=== SUGGESTIONS ===
+- define

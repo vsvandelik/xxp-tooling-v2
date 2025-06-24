@@ -1,0 +1,32 @@
+=== workflowA.xxp ===
+workflow WorkflowA {
+    define data dataA;
+    define task taskA;
+}
+
+=== workflowB.xxp ===
+workflow WorkflowB {
+    define data dataB;
+    define task taskB;
+}
+
+=== experiment.esp ===
+experiment MultiSpaceExperiment {
+    space SpaceA of WorkflowA {
+        strategy strategyA;
+    }
+    
+    space SpaceB of WorkflowB {
+        strategy strategyB;
+    }
+    
+    control {
+        SpaceA -> <-CURSOR->
+    }
+}
+
+=== SUGGESTIONS ===
+- SpaceA
+- SpaceB
+- end
+- start

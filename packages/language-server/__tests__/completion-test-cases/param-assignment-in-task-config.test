@@ -1,0 +1,17 @@
+=== workflow.xxp ===
+workflow TaskWorkflow {
+    define task configurableTask;
+}
+
+=== experiment.esp ===
+experiment TaskExperiment {
+    space TaskSpace of TaskWorkflow {
+        configure task configurableTask {
+            <-CURSOR->
+        }
+    }
+}
+
+=== SUGGESTIONS ===
+- param
+- }

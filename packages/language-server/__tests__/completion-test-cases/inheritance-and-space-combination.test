@@ -1,0 +1,25 @@
+=== baseWorkflow.xxp ===
+workflow BaseWorkflow {
+    define data baseData;
+    define task baseTask;
+}
+
+=== derivedWorkflow.xxp ===
+workflow DerivedWorkflow from BaseWorkflow {
+    define data derivedData;
+    define task derivedTask;
+}
+
+=== experiment.esp ===
+experiment InheritanceExperiment {
+    space BaseSpace of BaseWorkflow {
+    }
+    
+    space DerivedSpace of DerivedWorkflow {
+        configure task <-CURSOR->
+    }
+}
+
+=== SUGGESTIONS ===
+- baseTask
+- derivedTask

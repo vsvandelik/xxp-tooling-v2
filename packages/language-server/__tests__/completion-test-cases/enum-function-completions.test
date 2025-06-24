@@ -1,0 +1,11 @@
+=== experiment.esp ===
+experiment EnumExperiment {
+    space EnumSpace of TestWorkflow {
+        param algorithm = enum(<-CURSOR->
+    }
+}
+
+=== SUGGESTIONS ===
+- "
+- true
+- false

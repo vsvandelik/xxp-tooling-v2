@@ -1,0 +1,38 @@
+=== workflow1.xxp ===
+workflow InitWorkflow {
+    define task initTask;
+}
+
+=== workflow2.xxp ===
+workflow ProcessWorkflow {
+    define task processTask;
+}
+
+=== workflow3.xxp ===
+workflow FinalizeWorkflow {
+    define task finalizeTask;
+}
+
+=== experiment.esp ===
+experiment ComplexExperiment {
+    space InitSpace of InitWorkflow {
+    }
+    
+    space ProcessSpace of ProcessWorkflow {
+    }
+    
+    space FinalizeSpace of FinalizeWorkflow {
+    }
+    
+    control {
+        start -> InitSpace -> ProcessSpace;
+        ProcessSpace -> <-CURSOR->
+    }
+}
+
+=== SUGGESTIONS ===
+- InitSpace
+- ProcessSpace
+- FinalizeSpace
+- end
+- start

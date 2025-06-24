@@ -1,0 +1,11 @@
+=== workflow.xxp ===
+workflow ImplWorkflow {
+    define task scriptTask;
+    
+    configure task scriptTask {
+        impl<-CURSOR->
+    }
+}
+
+=== SUGGESTIONS ===
+- implementation

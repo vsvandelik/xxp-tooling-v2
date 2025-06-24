@@ -1,0 +1,25 @@
+=== workflowA.xxp ===
+workflow WorkflowA {
+    define data dataFromA;
+    define task taskFromA;
+}
+
+=== workflowB.xxp ===
+workflow WorkflowB {
+    define data dataFromB;
+    define task taskFromB;
+}
+
+=== combinedWorkflow.xxp ===
+workflow CombinedWorkflow from WorkflowA {
+    define data localData;
+    define task localTask;
+    
+    configure task localTask {
+        output <-CURSOR->
+    }
+}
+
+=== SUGGESTIONS ===
+- dataFromA
+- localData

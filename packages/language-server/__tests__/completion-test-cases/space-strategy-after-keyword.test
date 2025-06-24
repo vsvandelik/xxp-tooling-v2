@@ -1,0 +1,15 @@
+=== experiment.esp ===
+experiment StrategyAfterExperiment {
+    space StrategySpace of TestWorkflow {
+        strategy optimizationStrategy;
+        param maxIterations = 100;
+        <-CURSOR->
+    }
+}
+
+=== SUGGESTIONS ===
+- strategy
+- param
+- configure
+- define
+- }

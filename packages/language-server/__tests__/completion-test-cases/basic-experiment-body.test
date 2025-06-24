@@ -1,0 +1,10 @@
+=== experiment.esp ===
+experiment TestExperiment {
+    <-CURSOR->
+}
+
+=== SUGGESTIONS ===
+- space
+- control
+- define
+- }

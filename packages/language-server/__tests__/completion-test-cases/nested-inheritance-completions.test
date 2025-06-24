@@ -1,0 +1,29 @@
+=== baseWorkflow.xxp ===
+workflow BaseWorkflow {
+    define data baseData;
+    define task baseTask;
+}
+
+=== middleWorkflow.xxp ===
+workflow MiddleWorkflow from BaseWorkflow {
+    define data middleData;
+    define task middleTask;
+}
+
+=== finalWorkflow.xxp ===
+workflow FinalWorkflow from MiddleWorkflow {
+    define data finalData;
+    define task finalTask;
+    
+    <-CURSOR->
+}
+
+=== SUGGESTIONS ===
+- baseTask
+- middleTask
+- finalTask
+- define
+- configure
+- }
+- START
+- END

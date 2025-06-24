@@ -1,0 +1,15 @@
+=== workflow.xxp ===
+workflow DataWorkflow {
+    define data customerData;
+    define data orderData;
+    define data productData;
+    define task analyzeTask;
+    
+    configure task analyzeTask {
+        input customerData, <-CURSOR->
+    }
+}
+
+=== SUGGESTIONS ===
+- orderData
+- productData

@@ -1,0 +1,16 @@
+=== workflow.xxp ===
+workflow OutputWorkflow {
+    define data rawData;
+    define data processedData;
+    define data reportData;
+    define task processor;
+    
+    configure task processor {
+        output <-CURSOR->
+    }
+}
+
+=== SUGGESTIONS ===
+- rawData
+- processedData
+- reportData

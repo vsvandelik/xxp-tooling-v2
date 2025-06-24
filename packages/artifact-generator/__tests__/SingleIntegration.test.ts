@@ -13,8 +13,11 @@ interface TestCase {
   isNegativeTest: boolean;
 }
 
-//describe.skip('Single Integration Test', () => {
-describe('Single Integration Test', () => {
+const testCaseName = process.env['TEST_CASE'];
+
+const describeFn = testCaseName ? describe : describe.skip;
+
+describeFn('Single Integration Test', () => {
   let tempDir: string;
 
   beforeEach(() => {

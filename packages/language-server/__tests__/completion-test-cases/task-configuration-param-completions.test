@@ -1,0 +1,12 @@
+=== workflow.xxp ===
+workflow ParamWorkflow {
+    define task configTask;
+    
+    configure task configTask {
+        param maxRetries <-CURSOR->
+    }
+}
+
+=== SUGGESTIONS ===
+- =
+- ;

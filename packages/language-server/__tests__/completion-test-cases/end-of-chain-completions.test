@@ -1,0 +1,13 @@
+=== workflow.xxp ===
+workflow EndChainWorkflow {
+    define task processTask;
+    define task validateTask;
+    
+    START -> processTask -> validateTask -> <-CURSOR->
+}
+
+=== SUGGESTIONS ===
+- processTask
+- validateTask
+- END
+- START
