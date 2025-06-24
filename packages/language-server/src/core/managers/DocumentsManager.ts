@@ -7,6 +7,7 @@ import { XxpDocument } from '../documents/XxpDocument.js';
 import { EspaceDocument } from '../documents/EspaceDocument.js';
 import { DocumentType } from '../models/DocumentType.js';
 import { Document } from '../documents/Document.js';
+import { BaseSymbol } from 'antlr4-c3';
 
 export class DocumentManager {
   private readonly parsedDocuments = new Map<string, Document>();
@@ -111,14 +112,46 @@ export class DocumentManager {
       return;
     }
     
+    // Remove symbols that belong to the document being closed
+    this.removeDocumentSymbolsFromTable(folderSymbolTable, document);
+    
     // Check if there are any other documents still open in this folder
     const documentsInFolder = this.getDocumentsInFolder(folderPath);
     
     if (documentsInFolder.length === 0) {
-      // No more documents in this folder, clear the entire symbol table
+      // No more documents in this folder, clear the entire symbol table for safety
       this.logger.info(`Clearing symbol table for folder: ${folderPath}`);
       folderSymbolTable.clear();
     }
+  }
+
+  private removeDocumentSymbolsFromTable(symbolTable: DocumentSymbolTable, document: Document): void {
+    // Get all symbols in the table
+    const allSymbols = symbolTable.getAllSymbolsSync(BaseSymbol);
+    const symbolsToRemove: BaseSymbol[] = [];
+    
+    // Find symbols that belong to the document being closed
+    for (const symbol of allSymbols) {
+      if (this.symbolBelongsToDocument(symbol, document)) {
+        symbolsToRemove.push(symbol);
+      }
+    }
+    
+    // Remove the symbols
+    for (const symbol of symbolsToRemove) {
+      this.logger.info(`Removing symbol '${symbol.name}' from folder symbol table (belonged to ${document.uri})`);
+      symbolTable.removeSymbol(symbol);
+    }
+  }
+
+  private symbolBelongsToDocument(symbol: BaseSymbol, document: Document): boolean {
+    // Check if symbol has a document property that matches the document being closed
+    if ('document' in symbol && (symbol as any).document) {
+      const symbolDocument = (symbol as any).document as Document;
+      return symbolDocument.uri === document.uri;
+    }
+    
+    return false;
   }
 
   private getDocumentsInFolder(folderPath: string): Document[] {
