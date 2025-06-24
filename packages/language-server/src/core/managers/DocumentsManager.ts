@@ -7,6 +7,7 @@ import { XxpDocument } from '../documents/XxpDocument.js';
 import { EspaceDocument } from '../documents/EspaceDocument.js';
 import { DocumentType } from '../models/DocumentType.js';
 import { Document } from '../documents/Document.js';
+import { BaseSymbol } from 'antlr4-c3';
 
 export class DocumentManager {
   private readonly parsedDocuments = new Map<string, Document>();
@@ -30,7 +31,20 @@ export class DocumentManager {
 
   public onDocumentClosed(document: TextDocument): void {
     this.logger.info(`Document closed: ${document.uri}`);
+    
+    // Get the document before removing it from cache
+    const cachedDocument = this.parsedDocuments.get(document.uri);
+    
+    // Remove from document cache
     this.parsedDocuments.delete(document.uri);
+    
+    // Clean up document dependencies if document was cached
+    if (cachedDocument) {
+      this.cleanupDocumentDependencies(cachedDocument);
+      
+      // Clean up symbols from folder symbol table
+      this.cleanupDocumentSymbols(document.uri, cachedDocument);
+    }
   }
 
   private parseAndUpdateDocument(document: TextDocument): void {
@@ -76,6 +90,80 @@ export class DocumentManager {
     return newDocument;
   }
 
+  private cleanupDocumentDependencies(document: Document): void {
+    // Clean up document dependencies
+    for (const dependingDoc of document.documentsDependingOnThis) {
+      dependingDoc.documentsThisDependsOn.delete(document);
+    }
+    for (const dependsOnDoc of document.documentsThisDependsOn) {
+      dependsOnDoc.documentsDependingOnThis.delete(document);
+    }
+    
+    // Clear the dependency sets
+    document.documentsDependingOnThis.clear();
+    document.documentsThisDependsOn.clear();
+  }
+
+  private cleanupDocumentSymbols(uri: string, document: Document): void {
+    const folderPath = FileUtils.getFolderPath(uri);
+    const folderSymbolTable = this.symbolTablesBasedOnFolders.get(folderPath);
+    
+    if (!folderSymbolTable) {
+      return;
+    }
+    
+    // Remove symbols that belong to the document being closed
+    this.removeDocumentSymbolsFromTable(folderSymbolTable, document);
+    
+    // Check if there are any other documents still open in this folder
+    const documentsInFolder = this.getDocumentsInFolder(folderPath);
+    
+    if (documentsInFolder.length === 0) {
+      // No more documents in this folder, clear the entire symbol table for safety
+      this.logger.info(`Clearing symbol table for folder: ${folderPath}`);
+      folderSymbolTable.clear();
+    }
+  }
+
+  private removeDocumentSymbolsFromTable(symbolTable: DocumentSymbolTable, document: Document): void {
+    // Get all symbols in the table
+    const allSymbols = symbolTable.getAllSymbolsSync(BaseSymbol);
+    const symbolsToRemove: BaseSymbol[] = [];
+    
+    // Find symbols that belong to the document being closed
+    for (const symbol of allSymbols) {
+      if (this.symbolBelongsToDocument(symbol, document)) {
+        symbolsToRemove.push(symbol);
+      }
+    }
+    
+    // Remove the symbols
+    for (const symbol of symbolsToRemove) {
+      this.logger.info(`Removing symbol '${symbol.name}' from folder symbol table (belonged to ${document.uri})`);
+      symbolTable.removeSymbol(symbol);
+    }
+  }
+
+  private symbolBelongsToDocument(symbol: BaseSymbol, document: Document): boolean {
+    // Check if symbol has a document property that matches the document being closed
+    if ('document' in symbol && (symbol as any).document) {
+      const symbolDocument = (symbol as any).document as Document;
+      return symbolDocument.uri === document.uri;
+    }
+    
+    return false;
+  }
+
+  private getDocumentsInFolder(folderPath: string): Document[] {
+    const documentsInFolder: Document[] = [];
+    for (const [uri, document] of this.parsedDocuments.entries()) {
+      if (FileUtils.getFolderPath(uri) === folderPath) {
+        documentsInFolder.push(document);
+      }
+    }
+    return documentsInFolder;
+  }
+
   public getDocument(uri: string): Document | undefined {
     const document = this.parsedDocuments.get(uri);
     if (!document) {
@@ -119,7 +207,9 @@ export class DocumentManager {
       if (!shouldUnload) continue;
       this.logger.info(`Unloading unnecessary document: ${uri}`);
       this.parsedDocuments.delete(uri);
-      const symbolTable = this.symbolTablesBasedOnFolders.get(uri);
+      // Fix: Get symbol table by folder path, not URI
+      const folderPath = FileUtils.getFolderPath(uri);
+      const symbolTable = this.symbolTablesBasedOnFolders.get(folderPath);
       symbolTable?.clear();
     }
   }
