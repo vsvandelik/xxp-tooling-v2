@@ -207,16 +207,19 @@ export class ReferencesProvider extends Provider {
     
     if (symbol.context && symbol.context instanceof ParserRuleContext) {
       this.logger.info(`Attempting to find identifier in context for symbol: ${symbol.name}`);
+      this.logger.info(`Original context details: start=${symbol.context.start ? `line ${symbol.context.start.line}, col ${symbol.context.start.column}` : 'null'}, stop=${symbol.context.stop ? `line ${symbol.context.stop.line}, col ${symbol.context.stop.column}` : 'null'}, text="${symbol.context.getText()}"`);
+      
       try {
         const identifier = this.findIdentifierInContext(symbol.context);
         if (identifier) {
-          this.logger.info(`Found identifier node in context for symbol: ${symbol.name}, identifier text: "${identifier.getText()}"`);
+          this.logger.info(`Found identifier node in context for symbol: ${symbol.name}, identifier text: "${identifier.getText()}", line: ${identifier.symbol?.line}, col: ${identifier.symbol?.column}`);
           parseTree = identifier;
         } else {
           this.logger.info(`No identifier node found in context for symbol: ${symbol.name}, falling back to original context`);
         }
       } catch (error) {
         this.logger.info(`Error in findIdentifierInContext for symbol ${symbol.name}: ${error}`);
+        this.logger.info(`Error stack trace: ${error instanceof Error ? error.stack : 'No stack trace'}`);
         this.logger.info(`Falling back to original context`);
       }
     } else {
@@ -232,12 +235,20 @@ export class ReferencesProvider extends Provider {
     
     // Add additional debugging for TerminalNode case
     if (parseTree instanceof TerminalNode) {
-      this.logger.info(`TerminalNode details: symbol exists: ${!!parseTree.symbol}, text: "${parseTree.getText()}", symbol.line: ${parseTree.symbol?.line}, symbol.column: ${parseTree.symbol?.column}`);
+      this.logger.info(`TerminalNode details: symbol exists: ${!!parseTree.symbol}, text: "${parseTree.getText()}", symbol.line: ${parseTree.symbol?.line}, symbol.column: ${parseTree.symbol?.column}, symbol.type: ${parseTree.symbol?.type}`);
+      this.logger.info(`TerminalNode symbol details: text="${parseTree.symbol?.text}", tokenIndex=${parseTree.symbol?.tokenIndex}`);
     } else if (parseTree instanceof ParserRuleContext) {
       this.logger.info(`ParserRuleContext details: start exists: ${!!parseTree.start}, stop exists: ${!!parseTree.stop}, text: "${parseTree.getText()}"`);
+      if (parseTree.start) {
+        this.logger.info(`Start token details: line=${parseTree.start.line}, column=${parseTree.start.column}, text="${parseTree.start.text}", type=${parseTree.start.type}`);
+      }
+      if (parseTree.stop) {
+        this.logger.info(`Stop token details: line=${parseTree.stop.line}, column=${parseTree.stop.column}, text="${parseTree.stop.text}", type=${parseTree.stop.type}`);
+      }
     }
     
     try {
+      this.logger.info(`About to call RangeUtils.getRangeFromParseTree...`);
       const definitionRange = RangeUtils.getRangeFromParseTree(parseTree);
       if (!definitionRange) {
         this.logger.info(`Could not get range from parse tree for symbol: ${symbol.name} - RangeUtils returned null/undefined`);
@@ -252,6 +263,8 @@ export class ReferencesProvider extends Provider {
       };
     } catch (error) {
       this.logger.info(`Exception in RangeUtils.getRangeFromParseTree for symbol ${symbol.name}: ${error}`);
+      this.logger.info(`Exception details: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      this.logger.info(`Exception stack trace: ${error instanceof Error ? error.stack : 'No stack trace'}`);
       return undefined;
     }
   }
@@ -266,6 +279,9 @@ export class ReferencesProvider extends Provider {
 
     try {
       this.logger.info(`findIdentifierInContext: context type ${context.constructor.name}, children count: ${context.children?.length || 0}`);
+      this.logger.info(`findIdentifierInContext: context start: ${context.start ? `line ${context.start.line}, col ${context.start.column}, text "${context.start.text}"` : 'null'}`);
+      this.logger.info(`findIdentifierInContext: context stop: ${context.stop ? `line ${context.stop.line}, col ${context.stop.column}, text "${context.stop.text}"` : 'null'}`);
+      this.logger.info(`findIdentifierInContext: context text: "${context.getText()}"`);
 
       // For contexts that have an IDENTIFIER() method (like TaskDefinitionContext, DataDefinitionContext)
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -275,7 +291,7 @@ export class ReferencesProvider extends Provider {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           const identifier = (context as any).IDENTIFIER();
           if (identifier) {
-            this.logger.info(`findIdentifierInContext: found identifier via IDENTIFIER() method, text: "${identifier.getText()}", symbol type: ${identifier.symbol?.type}`);
+            this.logger.info(`findIdentifierInContext: found identifier via IDENTIFIER() method, text: "${identifier.getText()}", symbol type: ${identifier.symbol?.type}, line: ${identifier.symbol?.line}, col: ${identifier.symbol?.column}`);
             return identifier;
           } else {
             this.logger.info(`findIdentifierInContext: IDENTIFIER() method returned null/undefined`);
@@ -296,7 +312,7 @@ export class ReferencesProvider extends Provider {
           
           // Look for terminal nodes that are identifiers
           if (child instanceof TerminalNode) {
-            this.logger.info(`findIdentifierInContext: terminal node token type: ${child.symbol.type}, text: "${child.getText()}", XXP.IDENTIFIER: ${XXPParser.IDENTIFIER}, ESPACE.IDENTIFIER: ${ESPACEParser.IDENTIFIER}`);
+            this.logger.info(`findIdentifierInContext: terminal node token type: ${child.symbol.type}, text: "${child.getText()}", line: ${child.symbol.line}, col: ${child.symbol.column}, XXP.IDENTIFIER: ${XXPParser.IDENTIFIER}, ESPACE.IDENTIFIER: ${ESPACEParser.IDENTIFIER}`);
             // Check if it's an IDENTIFIER token for either XXP or ESPACE
             if (child.symbol.type === XXPParser.IDENTIFIER || child.symbol.type === ESPACEParser.IDENTIFIER) {
               this.logger.info(`findIdentifierInContext: found IDENTIFIER terminal node with text: "${child.getText()}"`);
@@ -316,6 +332,7 @@ export class ReferencesProvider extends Provider {
       return null;
     } catch (error) {
       this.logger.info(`findIdentifierInContext: caught exception: ${error}`);
+      this.logger.info(`findIdentifierInContext: exception stack trace: ${error instanceof Error ? error.stack : 'No stack trace'}`);
       return null;
     }
   }
