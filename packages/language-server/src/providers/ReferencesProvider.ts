@@ -125,7 +125,8 @@ export class ReferencesProvider extends Provider {
 
     // Default resolution for other symbols
     if (document.workflowSymbolTable) {
-      return (await document.workflowSymbolTable.resolve(tokenPosition.text, false)) || null;
+      const result = (await document.workflowSymbolTable.resolve(tokenPosition.text, false)) || null;
+      return result;
     }
 
     return null;

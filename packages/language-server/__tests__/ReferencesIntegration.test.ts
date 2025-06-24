@@ -4,7 +4,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
 
-const DEBUGGING = true; // Set to true to enable debugging output
+const DEBUGGING = false; // Set to true to enable debugging output
 console.log = DEBUGGING ? console.log.bind(console) : () => {}; // Conditional logging
 
 interface Position {
