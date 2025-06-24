@@ -53,3 +53,10 @@ coverage/
 
 test-files/
 *.db
+
+# Test artifacts
+test-output.log
+test-results/
+summary.md
+simulate_ci.sh
+test_parsing.sh
