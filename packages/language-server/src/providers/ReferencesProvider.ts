@@ -205,12 +205,18 @@ export class ReferencesProvider extends Provider {
     // Find the identifier terminal node in the context
     let parseTree = symbol.context;
     
-    if (symbol.context && symbol.context instanceof ParserRuleContext) {
+    // Check if context exists and has the necessary methods/properties
+    // We use duck typing instead of instanceof to avoid module loading issues
+    if (symbol.context && 
+        typeof symbol.context === 'object' && 
+        'getText' in symbol.context && 
+        typeof symbol.context.getText === 'function') {
+      
       this.logger.info(`Attempting to find identifier in context for symbol: ${symbol.name}`);
       this.logger.info(`Original context details: start=${symbol.context.start ? `line ${symbol.context.start.line}, col ${symbol.context.start.column}` : 'null'}, stop=${symbol.context.stop ? `line ${symbol.context.stop.line}, col ${symbol.context.stop.column}` : 'null'}, text="${symbol.context.getText()}"`);
       
       try {
-        const identifier = this.findIdentifierInContext(symbol.context);
+        const identifier = this.findIdentifierInContext(symbol.context as ParserRuleContext);
         if (identifier) {
           this.logger.info(`Found identifier node in context for symbol: ${symbol.name}, identifier text: "${identifier.getText()}", line: ${identifier.symbol?.line}, col: ${identifier.symbol?.column}`);
           parseTree = identifier;
@@ -223,7 +229,7 @@ export class ReferencesProvider extends Provider {
         this.logger.info(`Falling back to original context`);
       }
     } else {
-      this.logger.info(`Symbol context is not a ParserRuleContext or is null for symbol: ${symbol.name}`);
+      this.logger.info(`Symbol context is not a valid parse tree context or is null for symbol: ${symbol.name}`);
     }
     
     if (!parseTree) {
