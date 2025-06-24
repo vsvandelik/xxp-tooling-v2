@@ -9,6 +9,7 @@ import { TerminalSymbolReference } from '../core/models/TerminalSymbolReference.
 import { SpaceSymbol } from '../core/models/symbols/SpaceSymbol.js';
 import {
   XxpWorkflowNameReadContext,
+  XxpWorkflowHeaderContext,
   EspaceWorkflowNameReadContext,
   EspaceTaskNameReadContext,
   EspaceSpaceNameReadContext,
@@ -60,6 +61,15 @@ export class ReferencesProvider extends Provider {
   }
 
   private async resolveSymbol(document: any, tokenPosition: any): Promise<BaseSymbol | null> {
+    // Handle workflow definitions in XXP files
+    if (tokenPosition.parseTree instanceof XxpWorkflowHeaderContext) {
+      // Look for workflow symbols in the current document's symbol table
+      if (document.workflowSymbolTable) {
+        const result = (await document.workflowSymbolTable.resolve(tokenPosition.text, false)) || null;
+        return result;
+      }
+    }
+
     // Handle workflow references
     if (
       tokenPosition.parseTree instanceof XxpWorkflowNameReadContext ||
