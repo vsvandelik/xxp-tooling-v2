@@ -17,10 +17,13 @@
         "node_modules",
         "**/*.test.ts",
         "**/*.spec.ts"
-    ],    
+    ],  
     "references": [
         {
             "path": "../experiment-runner-server"
+        },
+        {
+            "path": "../workflow-repository"
         }
     ]
 }
