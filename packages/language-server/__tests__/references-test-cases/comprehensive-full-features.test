@@ -1,0 +1,61 @@
+=== BaseWorkflow.xxp ===
+workflow BaseWorkflow {
+    define data baseData = "base.csv";
+    define task baseTask;
+    
+    configure task baseTask {
+        input baseData;
+    }
+
+    START -> baseTask -> END;
+}
+
+=== ExtendedWorkflow.xxp ===
+workflow ExtendedWorkflow from BaseWorkflow {
+    define data extendedData = "extended.csv";
+    define task ###extendedTask###;
+    
+    configure task extendedTask {
+        input extendedData;
+        output baseData;
+    }
+
+    START -> baseTask -> extendedTask -> END;
+}
+
+=== MLExperiment.espace ===
+experiment MLExperiment {
+    define data experimentData = "experiment.csv";
+    
+    space baseSpace of BaseWorkflow {
+        strategy randomSearch;
+        param iterations = range(10, 100, 10);
+        
+        configure task baseTask {
+            param threshold = 0.5;
+        }
+    }
+    
+    space extendedSpace of ExtendedWorkflow {
+        strategy gridSearch;
+        
+        configure task extendedTask {
+            param learningRate = enum(0.01, 0.1, 1.0);
+        }
+    }
+    
+    control {
+        start -> baseSpace -> extendedSpace -> end;
+        baseSpace -?> end {
+            condition "accuracy > 0.9";
+        }
+    }
+}
+
+=== DEFINITION ===
+ExtendedWorkflow.xxp:3:17-30
+
+=== REFERENCES ===
+ExtendedWorkflow.xxp:3:17-30
+ExtendedWorkflow.xxp:5:20-33
+MLExperiment.espace:10:26-39

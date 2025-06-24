@@ -53,3 +53,5 @@ coverage/
 
 test-files/
 *.db
+
+.claude/

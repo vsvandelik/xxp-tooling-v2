@@ -1,0 +1,37 @@
+=== BaseML.xxp ===
+workflow BaseML {
+    define task preprocess;
+    define task train;
+    
+    configure task preprocess {}
+    configure task train {}
+
+    START -> preprocess -> train -> END;
+}
+
+=== AdvancedML.xxp ===
+workflow AdvancedML from ###BaseML### {
+    define task postprocess;
+    
+    configure task postprocess {}
+
+    START -> preprocess -> train -> postprocess -> END;
+}
+
+=== Experiment.espace ===
+experiment MLExperiment {
+    space advanced of AdvancedML {
+        strategy bayesianOptimization;
+    }
+    
+    control {
+        start -> advanced -> end;
+    }
+}
+
+=== DEFINITION ===
+BaseML.xxp:1:10-16
+
+=== REFERENCES ===
+BaseML.xxp:1:10-16
+AdvancedML.xxp:12:27-33

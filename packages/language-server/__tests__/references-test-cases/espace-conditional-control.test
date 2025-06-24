@@ -1,0 +1,26 @@
+=== experiment.espace ===
+experiment MyExperiment {
+    space s1 of WorkflowA {
+        strategy randomSearch;
+    }
+    
+    space s2 of WorkflowB {
+        strategy gridSearch;
+    }
+    
+    control {
+        start -> ###s1### -?> s2 {
+            condition "accuracy > 0.8";
+        }
+        s1 -> end;
+        s2 -> end;
+    }
+}
+
+=== DEFINITION ===
+experiment.espace:2:11-13
+
+=== REFERENCES ===
+experiment.espace:2:11-13
+experiment.espace:11:18-20
+experiment.espace:14:9-11

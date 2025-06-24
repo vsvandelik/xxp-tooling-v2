@@ -1,0 +1,26 @@
+=== SimpleWorkflow.xxp ===
+workflow SimpleWorkflow {
+    define task myTask;
+    
+    configure task myTask {}
+
+    START -> myTask -> END;
+}
+
+=== experiment.espace ===
+experiment MyExperiment {
+    space s1 of ###SimpleWorkflow### {
+        strategy randomSearch;
+    }
+    
+    control {
+        start -> s1 -> end;
+    }
+}
+
+=== DEFINITION ===
+SimpleWorkflow.xxp:1:10-24
+
+=== REFERENCES ===
+SimpleWorkflow.xxp:1:10-24
+experiment.espace:11:19-33

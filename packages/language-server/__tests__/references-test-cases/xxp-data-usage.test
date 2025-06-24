@@ -1,0 +1,18 @@
+=== workflow.xxp ===
+workflow DataWorkflow {
+    define data inputData = "test.csv";
+    define task processTask;
+    
+    configure task processTask {
+        input ###inputData###;
+    }
+
+    START -> processTask -> END;
+}
+
+=== DEFINITION ===
+workflow.xxp:2:17-26
+
+=== REFERENCES ===
+workflow.xxp:2:17-26
+workflow.xxp:6:15-24
