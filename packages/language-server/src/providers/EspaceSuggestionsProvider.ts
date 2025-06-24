@@ -40,8 +40,7 @@ export class EspaceSuggestionsProvider extends Provider {
     [ESPACEParser.COMMA, ','],
   ]);
 
-  addHandlers(): void {
-  }
+  addHandlers(): void {}
 
   public async onCompletion(params: CompletionParams): Promise<CompletionItem[] | null> {
     this.logger.info(`Received completion request for document: ${params.textDocument.uri}`);

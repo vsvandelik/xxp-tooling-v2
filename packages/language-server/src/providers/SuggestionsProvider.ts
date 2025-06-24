@@ -1,6 +1,11 @@
 import { Provider } from './Provider.js';
 import { Logger } from '../utils/Logger.js';
-import { CompletionParams, CompletionItem, CompletionItemKind, Connection } from 'vscode-languageserver';
+import {
+  CompletionParams,
+  CompletionItem,
+  CompletionItemKind,
+  Connection,
+} from 'vscode-languageserver';
 import { BaseSymbol, CodeCompletionCore, ICandidateRule, TokenList } from 'antlr4-c3';
 import { Document } from '../core/documents/Document.js';
 import { DataSymbol } from '../core/models/symbols/DataSymbol.js';
@@ -37,12 +42,12 @@ export class SuggestionsProvider extends Provider {
 
   private async onCompletion(params: CompletionParams): Promise<CompletionItem[] | null> {
     if (params.textDocument.uri.endsWith('.xxp'))
-        return this.XxpSuggestionsProvider.onCompletion(params);
+      return this.XxpSuggestionsProvider.onCompletion(params);
     else if (params.textDocument.uri.endsWith('.espace'))
-        return this.EspaceSuggestionsProvider.onCompletion(params);
+      return this.EspaceSuggestionsProvider.onCompletion(params);
     else {
-        this.logger.warn(`Unsupported document type for completion: ${params.textDocument.uri}`);
-        return null;
+      this.logger.warn(`Unsupported document type for completion: ${params.textDocument.uri}`);
+      return null;
     }
   }
 

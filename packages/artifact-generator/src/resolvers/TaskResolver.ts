@@ -217,7 +217,7 @@ export class TaskResolver {
       // 2. Required by this specific task (to satisfy required parameters)
       const isUsedInCombinations = !usedParameters || usedParameters.has(paramName);
       const isRequiredByTask = taskParameterNames.has(paramName);
-      
+
       if (isUsedInCombinations || isRequiredByTask) {
         if (paramDef.type === 'value') {
           staticParameters[paramName] = paramDef.values[0]!;

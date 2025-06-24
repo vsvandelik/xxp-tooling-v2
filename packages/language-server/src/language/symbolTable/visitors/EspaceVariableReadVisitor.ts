@@ -22,8 +22,18 @@ export class EspaceVariableReadVisitor {
 
     const workflowName = identifier.getText();
 
-    // In ESPACE, workflows are referenced from external files
-    // We don't validate them here as they're validated in SpaceVisitor
+    // Look up the workflow in the folder symbol table
+    const folderSymbolTable = this.builder.documentsManager.getDocumentSymbolTableForFile(
+      this.builder.document.uri
+    );
+
+    if (folderSymbolTable) {
+      const workflowSymbol = folderSymbolTable.resolveSync(workflowName) as WorkflowSymbol;
+      if (workflowSymbol) {
+        // Add reference to the workflow
+        workflowSymbol.addReference(identifier, this.builder.document);
+      }
+    }
 
     return this.builder.visitChildren(ctx) as DocumentSymbolTable;
   }

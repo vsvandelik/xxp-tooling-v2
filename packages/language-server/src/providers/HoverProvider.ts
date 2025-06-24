@@ -4,6 +4,9 @@ import { Hover, HoverParams, MarkupContent } from 'vscode-languageserver';
 import { DataSymbol } from '../core/models/symbols/DataSymbol.js';
 import { TaskSymbol } from '../core/models/symbols/TaskSymbol.js';
 import { WorkflowSymbol } from '../core/models/symbols/WorkflowSymbol.js';
+import { BaseSymbol } from 'antlr4-c3';
+import { ExperimentSymbol } from '../core/models/symbols/ExperimentSymbol.js';
+import { SpaceSymbol } from '../core/models/symbols/SpaceSymbol.js';
 
 export class HoverProvider extends Provider {
   private logger = Logger.getLogger();
@@ -13,7 +16,7 @@ export class HoverProvider extends Provider {
   }
 
   private async onHover(params: HoverParams): Promise<Hover | undefined> {
-    this.logger.info(`Recieved hover request for document: ${params.textDocument.uri}`);
+    this.logger.info(`Received hover request for document: ${params.textDocument.uri}`);
 
     const result = super.getDocumentAndPosition(params.textDocument, params.position);
     if (!result) return;
@@ -21,7 +24,32 @@ export class HoverProvider extends Provider {
 
     if (document.symbolTable === undefined) return;
 
-    const symbol = await document.workflowSymbolTable?.resolve(tokenPosition.text, true);
+    // Try to resolve in different contexts
+    let symbol: BaseSymbol | undefined;
+
+    // First try workflow symbol table
+    if (document.workflowSymbolTable) {
+      symbol = await document.workflowSymbolTable.resolve(tokenPosition.text, true);
+    }
+
+    // If not found, try experiment symbol table for ESPACE files
+    if (!symbol) {
+      const experimentSymbol = document.symbolTable.children.find(
+        c => c instanceof ExperimentSymbol
+      ) as ExperimentSymbol;
+      if (experimentSymbol) {
+        symbol = await experimentSymbol.resolve(tokenPosition.text, true);
+      }
+    }
+
+    // If still not found, try folder symbol table for workflows
+    if (!symbol) {
+      const folderSymbolTable = this.documentManager?.getDocumentSymbolTableForFile(document.uri);
+      if (folderSymbolTable) {
+        symbol = await folderSymbolTable.resolve(tokenPosition.text, false);
+      }
+    }
+
     if (symbol instanceof TaskSymbol) {
       return { contents: this.getTaskHoverInformation(symbol) };
     }
@@ -30,8 +58,50 @@ export class HoverProvider extends Provider {
       return { contents: this.getDataHoverInformation(symbol) };
     }
 
+    if (symbol instanceof WorkflowSymbol) {
+      return { contents: this.getWorkflowHoverInformation(symbol) };
+    }
+
+    if (symbol instanceof SpaceSymbol) {
+      return { contents: this.getSpaceHoverInformation(symbol) };
+    }
+
     this.logger.debug(`No hover information available for symbol: ${tokenPosition.text}`);
     return { contents: [] };
+  }
+
+  // Add new hover information methods:
+
+  private getWorkflowHoverInformation(workflow: WorkflowSymbol): MarkupContent {
+    let content = `### Workflow: ${workflow.name}\n\n`;
+
+    content += `**Defined in:** ${workflow.document.uri.split('/').pop()}\n\n`;
+
+    if (workflow.parentWorkflowSymbol) {
+      content += `**Extends:** ${workflow.parentWorkflowSymbol.name}\n\n`;
+    }
+
+    return {
+      kind: 'markdown',
+      value: content.trim(),
+    };
+  }
+
+  private getSpaceHoverInformation(space: SpaceSymbol): MarkupContent {
+    let content = `### Space: ${space.name}\n\n`;
+
+    if (space.workflowReference) {
+      content += `**Workflow:** ${space.workflowReference.name}\n\n`;
+    }
+
+    if (space.strategy) {
+      content += `**Strategy:** ${space.strategy}\n\n`;
+    }
+
+    return {
+      kind: 'markdown',
+      value: content.trim(),
+    };
   }
 
   private getTaskHoverInformation(task: TaskSymbol): MarkupContent {
@@ -40,7 +110,7 @@ export class HoverProvider extends Provider {
     // Add parameters if available
     if (task.params.length > 0) {
       content += `**Parameters:**\n\n`;
-      content += task.params.map(param => `- \`${param}\``).join('\n') + '\n\n';
+      content += task.params.map(param => `- \`${param.name}\``).join('\n') + '\n\n';
     }
 
     // Add implementation details
