@@ -1,0 +1,1 @@
+{"version":3,"file":"TerminalSymbolReference.d.ts","sourceRoot":"","sources":["../../../src/core/models/TerminalSymbolReference.ts"],"names":[],"mappings":"AAAA,OAAO,EAAE,YAAY,EAAE,MAAM,UAAU,CAAC;AACxC,OAAO,EAAE,QAAQ,EAAE,MAAM,0BAA0B,CAAC;AAEpD,qBAAa,uBAAuB;IAEzB,IAAI,EAAE,YAAY;IAClB,QAAQ,EAAE,QAAQ;gBADlB,IAAI,EAAE,YAAY,EAClB,QAAQ,EAAE,QAAQ;CAE5B"}

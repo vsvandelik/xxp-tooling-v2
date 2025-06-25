@@ -1,0 +1,1 @@
+{"version":3,"file":"RangeUtils.d.ts","sourceRoot":"","sources":["../../src/utils/RangeUtils.ts"],"names":[],"mappings":"AAAA,OAAO,EAAE,SAAS,EAAmC,MAAM,UAAU,CAAC;AACtE,OAAO,EAAE,KAAK,EAAE,MAAM,uBAAuB,CAAC;AAE9C,8BAAsB,UAAU;WAChB,qBAAqB,CAAC,IAAI,EAAE,SAAS,GAAG,KAAK,GAAG,SAAS;CAmBxE"}

@@ -1,0 +1,1 @@
+{"version":3,"file":"ConsoleInputProvider.d.ts","sourceRoot":"","sources":["../../src/userInput/ConsoleInputProvider.ts"],"names":[],"mappings":"AAAA,OAAO,EAAE,iBAAiB,EAAE,MAAM,wBAAwB,CAAC;AAE3D,qBAAa,oBAAqB,YAAW,iBAAiB;IACtD,QAAQ,CAAC,MAAM,EAAE,MAAM,GAAG,OAAO,CAAC,MAAM,CAAC;CAchD"}
