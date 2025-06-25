@@ -17,7 +17,6 @@
         "format:check": "prettier --check \"packages/*/src/**/*.{ts,js,json,md}\"",
         "type-check": "tsc --noEmit",
         "docs:generate": "typedoc",
-        "docs:dev": "npm run docs:generate && cd docs && python3 -m http.server 8080",
         "docs:clean": "rm -rf docs && mkdir docs"
     },
     "devDependencies": {
