@@ -1,0 +1,175 @@
+import { ESPACEVisitor } from '@extremexp/core';
+import { ControlFlow, DataDefinition, ExperimentModel, ParameterDefinition, SpaceModel, TaskConfiguration, Transition, } from '../models/ExperimentModel.js';
+export class ExperimentModelVisitor extends ESPACEVisitor {
+    visitExperimentDeclaration = (ctx) => {
+        const header = ctx.experimentHeader();
+        const body = ctx.experimentBody();
+        const experimentName = header.IDENTIFIER().getText();
+        const spaces = [];
+        const dataDefinitions = [];
+        let controlFlow = null;
+        for (const content of body.experimentContent()) {
+            if (content.spaceDeclaration()) {
+                spaces.push(this.visit(content.spaceDeclaration()));
+            }
+            else if (content.controlBlock()) {
+                controlFlow = this.visit(content.controlBlock());
+            }
+            else if (content.dataDefinition()) {
+                dataDefinitions.push(this.visit(content.dataDefinition()));
+            }
+        }
+        return new ExperimentModel(experimentName, spaces, dataDefinitions, controlFlow);
+    };
+    visitSpaceDeclaration = (ctx) => {
+        const header = ctx.spaceHeader();
+        const body = ctx.spaceBody();
+        const spaceName = header.IDENTIFIER().getText();
+        const workflowName = header.workflowNameRead().IDENTIFIER().getText();
+        const parameters = [];
+        const taskConfigurations = [];
+        const dataDefinitions = [];
+        let strategy = 'gridsearch';
+        for (const content of body.spaceContent()) {
+            if (content.strategyStatement()) {
+                strategy = content.strategyStatement().IDENTIFIER().getText();
+            }
+            else if (content.paramDefinition()) {
+                parameters.push(this.visit(content.paramDefinition()));
+            }
+            else if (content.taskConfiguration()) {
+                taskConfigurations.push(this.visit(content.taskConfiguration()));
+            }
+            else if (content.dataDefinition()) {
+                dataDefinitions.push(this.visit(content.dataDefinition()));
+            }
+        }
+        return new SpaceModel(spaceName, workflowName, strategy, parameters, taskConfigurations, dataDefinitions);
+    };
+    visitParamDefinition = (ctx) => {
+        const paramName = ctx.IDENTIFIER().getText();
+        const paramValue = this.visit(ctx.paramValue());
+        return new ParameterDefinition(paramName, paramValue.type, paramValue.values);
+    };
+    visitParamValue = (ctx) => {
+        if (ctx.enumFunction()) {
+            const expressions = ctx.enumFunction().expression();
+            const values = expressions.map((expr) => this.parseExpression(expr));
+            return { type: 'enum', values };
+        }
+        else if (ctx.rangeFunction()) {
+            const numbers = ctx.rangeFunction().NUMBER();
+            if (numbers.length !== 3) {
+                throw new Error('Range function must have exactly three numbers');
+            }
+            const min = parseFloat(numbers[0].getText());
+            const max = parseFloat(numbers[1].getText());
+            const step = parseFloat(numbers[2].getText());
+            return { type: 'range', values: [min, max, step] };
+        }
+        else if (ctx.expression()) {
+            const value = this.parseExpression(ctx.expression());
+            return { type: 'value', values: [value] };
+        }
+        throw new Error('Unknown parameter value type');
+    };
+    visitTaskConfiguration = (ctx) => {
+        const header = ctx.taskConfigurationHeader();
+        const body = ctx.taskConfigurationBody();
+        const taskName = header.taskNameRead().IDENTIFIER().getText();
+        const parameters = [];
+        for (const content of body.configurationContent()) {
+            if (content.paramAssignment()) {
+                const paramAssignment = content.paramAssignment();
+                const paramName = paramAssignment.IDENTIFIER().getText();
+                const paramValue = this.visit(paramAssignment.paramValue());
+                parameters.push(new ParameterDefinition(paramName, paramValue.type, paramValue.values));
+            }
+        }
+        return new TaskConfiguration(taskName, parameters);
+    };
+    visitControlBlock = (ctx) => {
+        const body = ctx.controlBody();
+        const transitions = [];
+        for (const content of body.controlContent()) {
+            if (!content.simpleTransition() && !content.conditionalTransition()) {
+                throw new Error('Invalid control flow content');
+            }
+            if (content.simpleTransition()) {
+                const simpleTransition = content.simpleTransition();
+                const controlChainElements = simpleTransition?.controlChainElement() || [];
+                const spaceNames = [];
+                for (const element of controlChainElements) {
+                    if (element.spaceNameRead()) {
+                        spaceNames.push(element.spaceNameRead().IDENTIFIER().getText());
+                    }
+                    else if (element.START()) {
+                        spaceNames.push('START');
+                    }
+                    else if (element.END()) {
+                        spaceNames.push('END');
+                    }
+                }
+                if (spaceNames.length < 2) {
+                    throw new Error('Simple transition must have at least two spaces');
+                }
+                for (let i = 0; i < spaceNames.length - 1; i++) {
+                    transitions.push(new Transition(spaceNames[i], spaceNames[i + 1]));
+                }
+            }
+            else if (content.conditionalTransition()) {
+                const conditionalTransition = content.conditionalTransition();
+                if (!conditionalTransition.conditionalTransitionHeader() ||
+                    !conditionalTransition.conditionalTransitionBody()) {
+                    throw new Error('Invalid conditional transition structure');
+                }
+                const header = conditionalTransition.conditionalTransitionHeader();
+                const body = conditionalTransition.conditionalTransitionBody();
+                const controlChainElements = header.controlChainElement();
+                if (controlChainElements.length !== 2) {
+                    throw new Error('Conditional transition must have exactly two spaces');
+                }
+                const fromSpace = this.getSpaceNameFromControlChainElement(controlChainElements[0]);
+                const toSpace = this.getSpaceNameFromControlChainElement(controlChainElements[1]);
+                const conditions = body.condition().map(cond => cond.STRING().getText().slice(1, -1));
+                for (const condition of conditions) {
+                    transitions.push(new Transition(fromSpace, toSpace, condition));
+                }
+            }
+        }
+        return new ControlFlow(transitions);
+    };
+    visitDataDefinition = (ctx) => {
+        const name = ctx.IDENTIFIER().getText();
+        const value = ctx.STRING().getText().slice(1, -1);
+        return new DataDefinition(name, value);
+    };
+    parseExpression(ctx) {
+        if (ctx.NUMBER()) {
+            const text = ctx.NUMBER().getText();
+            return text.includes('.') ? parseFloat(text) : parseInt(text);
+        }
+        else if (ctx.STRING()) {
+            return ctx.STRING().getText().slice(1, -1);
+        }
+        else if (ctx.BOOLEAN()) {
+            return ctx.BOOLEAN().getText() === 'true';
+        }
+        throw new Error('Unknown expression type');
+    }
+    getSpaceNameFromControlChainElement(element) {
+        if (element.spaceNameRead()) {
+            return element.spaceNameRead().IDENTIFIER().getText();
+        }
+        else if (element.START()) {
+            return 'START';
+        }
+        else if (element.END()) {
+            return 'END';
+        }
+        else {
+            throw new Error('Invalid control chain element');
+        }
+    }
+}
+//# sourceMappingURL=ExperimentModelVisitor.js.map

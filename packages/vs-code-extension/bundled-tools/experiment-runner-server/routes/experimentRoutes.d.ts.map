@@ -1,0 +1,1 @@
+{"version":3,"file":"experimentRoutes.d.ts","sourceRoot":"","sources":["../../src/routes/experimentRoutes.ts"],"names":[],"mappings":"AAAA,OAAO,EAAE,MAAM,EAAqB,MAAM,SAAS,CAAC;AACpD,OAAO,EAAE,iBAAiB,EAAE,MAAM,kCAAkC,CAAC;AACrE,OAAO,EAAE,gBAAgB,EAAE,MAAM,iCAAiC,CAAC;AAQnE,wBAAgB,sBAAsB,CACpC,iBAAiB,EAAE,iBAAiB,EACpC,SAAS,EAAE,gBAAgB,GAC1B,MAAM,CA4PR"}
