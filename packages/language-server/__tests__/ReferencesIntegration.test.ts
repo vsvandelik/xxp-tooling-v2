@@ -67,7 +67,7 @@ class SimpleLSPClient {
 
       this.process.stderr?.on('data', (data) => {
         if (!this.isShuttingDown && !data.toString().includes('Debugger')) {
-          console.error('Language server stderr:', data.toString());
+          console.log('Language server stderr:', data.toString());
         }
       });
 

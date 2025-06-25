@@ -6,4 +6,5 @@ experiment StrategyExperiment {
 }
 
 === SUGGESTIONS ===
-- [any identifier for strategy name]
+- gridsearch
+- randomsearch

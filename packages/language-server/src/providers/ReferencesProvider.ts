@@ -9,9 +9,16 @@ import { TerminalSymbolReference } from '../core/models/TerminalSymbolReference.
 import { SpaceSymbol } from '../core/models/symbols/SpaceSymbol.js';
 import {
   XxpWorkflowNameReadContext,
+  XxpWorkflowHeaderContext,
+  XxpTaskDefinitionContext,
+  XxpDataDefinitionContext,
+  XxpParamAssignmentContext,
   EspaceWorkflowNameReadContext,
   EspaceTaskNameReadContext,
   EspaceSpaceNameReadContext,
+  EspaceExperimentHeaderContext,
+  EspaceSpaceHeaderContext,
+  EspaceParamDefinitionContext,
 } from '@extremexp/core';
 import { BaseSymbol } from 'antlr4-c3';
 import { TerminalNode } from 'antlr4ng';
@@ -56,15 +63,85 @@ export class ReferencesProvider extends Provider {
   }
 
   private async resolveSymbol(document: any, tokenPosition: any): Promise<BaseSymbol | null> {
-    // Handle workflow references
+    // Handle workflow header contexts (definitions)
+    if (tokenPosition.parseTree instanceof XxpWorkflowHeaderContext) {
+      // Try multiple symbol tables for workflow definitions
+      if (document.symbolTable) {
+        const result = await document.symbolTable.resolve(tokenPosition.text, false);
+        if (result) return result;
+      }
+      if (document.workflowSymbolTable) {
+        const result = await document.workflowSymbolTable.resolve(tokenPosition.text, false);
+        if (result) return result;
+      }
+      // Try folder symbol table as fallback
+      const folderSymbolTable = this.documentManager?.getDocumentSymbolTableForFile(document.uri);
+      if (folderSymbolTable) {
+        const result = await folderSymbolTable.resolve(tokenPosition.text, false);
+        if (result) return result;
+      }
+    }
+
+    // Handle task definition contexts
+    if (tokenPosition.parseTree instanceof XxpTaskDefinitionContext) {
+      // For task definitions, look in the workflow symbol table
+      if (document.workflowSymbolTable) {
+        return (await document.workflowSymbolTable.resolve(tokenPosition.text, false)) || null;
+      }
+    }
+
+    // Handle data definition contexts
+    if (tokenPosition.parseTree instanceof XxpDataDefinitionContext) {
+      // For data definitions, look in the workflow symbol table
+      if (document.workflowSymbolTable) {
+        return (await document.workflowSymbolTable.resolve(tokenPosition.text, false)) || null;
+      }
+    }
+
+    // Handle parameter assignment contexts
+    if (tokenPosition.parseTree instanceof XxpParamAssignmentContext) {
+      // For param assignments, look in the workflow symbol table
+      if (document.workflowSymbolTable) {
+        return (await document.workflowSymbolTable.resolve(tokenPosition.text, false)) || null;
+      }
+    }
+
+    // Handle experiment header contexts (ESPACE definitions)
+    if (tokenPosition.parseTree instanceof EspaceExperimentHeaderContext) {
+      // For experiment definitions, look in the document's symbol table
+      if (document.symbolTable) {
+        return (await document.symbolTable.resolve(tokenPosition.text, false)) || null;
+      }
+    }
+
+    // Handle space header contexts (ESPACE space definitions)
+    if (tokenPosition.parseTree instanceof EspaceSpaceHeaderContext) {
+      const experimentSymbol = document.symbolTable?.children.find(
+        (c: BaseSymbol) => c instanceof ExperimentSymbol
+      ) as ExperimentSymbol;
+      if (experimentSymbol) {
+        return (await experimentSymbol.resolve(tokenPosition.text, false)) || null;
+      }
+    }
+
+    // Handle parameter definition contexts (ESPACE)
+    if (tokenPosition.parseTree instanceof EspaceParamDefinitionContext) {
+      const experimentSymbol = document.symbolTable?.children.find(
+        (c: BaseSymbol) => c instanceof ExperimentSymbol
+      ) as ExperimentSymbol;
+      if (experimentSymbol) {
+        return (await experimentSymbol.resolve(tokenPosition.text, false)) || null;
+      }
+    }
+
+    // Handle workflow references (usage, not definition)
     if (
       tokenPosition.parseTree instanceof XxpWorkflowNameReadContext ||
       tokenPosition.parseTree instanceof EspaceWorkflowNameReadContext
     ) {
-      // For workflows, we need to look in the folder symbol table
+      // For workflow references, look in the folder symbol table
       const folderSymbolTable = this.documentManager?.getDocumentSymbolTableForFile(document.uri);
-      const result = (await folderSymbolTable?.resolve(tokenPosition.text, false)) || null;
-      return result;
+      return (await folderSymbolTable?.resolve(tokenPosition.text, false)) || null;
     }
 
     // Handle space references in ESPACE files
@@ -73,8 +150,7 @@ export class ReferencesProvider extends Provider {
         (c: BaseSymbol) => c instanceof ExperimentSymbol
       ) as ExperimentSymbol;
       if (experimentSymbol) {
-        const result = (await experimentSymbol.resolve(tokenPosition.text, false)) || null;
-        return result;
+        return (await experimentSymbol.resolve(tokenPosition.text, false)) || null;
       }
     }
 
@@ -99,9 +175,24 @@ export class ReferencesProvider extends Provider {
       }
     }
 
-    // Default resolution for other symbols
+    // Default resolution for other symbols - try all symbol tables
+    // First try workflow symbol table
     if (document.workflowSymbolTable) {
-      return (await document.workflowSymbolTable.resolve(tokenPosition.text, false)) || null;
+      const result = await document.workflowSymbolTable.resolve(tokenPosition.text, false);
+      if (result) return result;
+    }
+    
+    // Then try document symbol table
+    if (document.symbolTable) {
+      const result = await document.symbolTable.resolve(tokenPosition.text, false);
+      if (result) return result;
+    }
+    
+    // Finally try folder symbol table
+    const folderSymbolTable = this.documentManager?.getDocumentSymbolTableForFile(document.uri);
+    if (folderSymbolTable) {
+      const result = await folderSymbolTable.resolve(tokenPosition.text, false);
+      if (result) return result;
     }
 
     return null;
@@ -183,22 +274,8 @@ export class ReferencesProvider extends Provider {
       return undefined;
     }
 
-    // Find the identifier node within the declaration context
-    let identifierNode: TerminalNode | null = null;
-    
-    // Search through all children to find the matching identifier
-    for (let i = 0; i < parseTree.getChildCount(); i++) {
-      const child = parseTree.getChild(i);
-      
-      // Check by constructor name and instanceof to handle different TerminalNode types
-      const isTerminalNode = child?.constructor?.name === 'TerminalNode' || child instanceof TerminalNode;
-      const textMatches = child?.getText() === symbol.name;
-      
-      if (isTerminalNode && textMatches) {
-        identifierNode = child as TerminalNode;
-        break;
-      }
-    }
+    // Find the identifier node using context-specific approach
+    let identifierNode: TerminalNode | null = this.getIdentifierFromContext(parseTree, symbol.name);
     
     if (!identifierNode) {
       return undefined;
@@ -222,5 +299,83 @@ export class ReferencesProvider extends Provider {
       uri: symbol.document.uri,
       range: definitionRange,
     };
+  }
+
+  private getIdentifierFromContext(parseTree: any, symbolName: string): TerminalNode | null {
+    const contextName = parseTree.constructor.name;
+    
+    // Context-specific identifier resolution based on grammar structure
+    switch (contextName) {
+      case 'WorkflowHeaderContext':
+        // workflowHeader: WORKFLOW IDENTIFIER (FROM workflowNameRead)?
+        // IDENTIFIER is at position 1
+        return this.getIdentifierAtPosition(parseTree, 1, symbolName);
+        
+      case 'TaskDefinitionContext':
+        // taskDefinition: DEFINE TASK IDENTIFIER SEMICOLON
+        // IDENTIFIER is at position 2
+        return this.getIdentifierAtPosition(parseTree, 2, symbolName);
+        
+      case 'DataDefinitionContext':
+        // dataDefinition: DEFINE DATA IDENTIFIER (EQUALS STRING)? SEMICOLON
+        // IDENTIFIER is at position 2
+        return this.getIdentifierAtPosition(parseTree, 2, symbolName);
+        
+      case 'ExperimentHeaderContext':
+        // experimentHeader: EXPERIMENT IDENTIFIER
+        // IDENTIFIER is at position 1
+        return this.getIdentifierAtPosition(parseTree, 1, symbolName);
+        
+      case 'SpaceHeaderContext':
+        // spaceHeader: SPACE IDENTIFIER OF workflowNameRead
+        // IDENTIFIER is at position 1
+        return this.getIdentifierAtPosition(parseTree, 1, symbolName);
+        
+      case 'ParamDefinitionContext':
+        // paramDefinition: PARAM IDENTIFIER EQUALS paramValue SEMICOLON
+        // IDENTIFIER is at position 1
+        return this.getIdentifierAtPosition(parseTree, 1, symbolName);
+        
+      case 'ParamAssignmentContext':
+        // paramAssignment: PARAM IDENTIFIER (EQUALS expression)? SEMICOLON
+        // IDENTIFIER is at position 1
+        return this.getIdentifierAtPosition(parseTree, 1, symbolName);
+        
+      default:
+        // Fallback to generic search for unknown contexts
+        return this.getIdentifierGeneric(parseTree, symbolName);
+    }
+  }
+
+  private getIdentifierAtPosition(parseTree: any, position: number, symbolName: string): TerminalNode | null {
+    if (position >= parseTree.getChildCount()) {
+      return null;
+    }
+    
+    const child = parseTree.getChild(position);
+    const isTerminalNode = child?.constructor?.name === 'TerminalNode' || child instanceof TerminalNode;
+    const textMatches = child?.getText() === symbolName;
+    
+    if (isTerminalNode && textMatches) {
+      return child as TerminalNode;
+    }
+    
+    return null;
+  }
+
+  private getIdentifierGeneric(parseTree: any, symbolName: string): TerminalNode | null {
+    // Fallback generic search (original implementation)
+    for (let i = 0; i < parseTree.getChildCount(); i++) {
+      const child = parseTree.getChild(i);
+      
+      const isTerminalNode = child?.constructor?.name === 'TerminalNode' || child instanceof TerminalNode;
+      const textMatches = child?.getText() === symbolName;
+      
+      if (isTerminalNode && textMatches) {
+        return child as TerminalNode;
+      }
+    }
+    
+    return null;
   }
 }
