@@ -1,0 +1,64 @@
+{
+  "entryPoints": [
+    "packages/core/src/index.ts",
+    "packages/artifact-generator/src/cli.ts",
+    "packages/artifact-generator/src/generators/ArtifactGenerator.ts",
+    "packages/workflow-repository/src/index.ts",
+    "packages/language-server/src/server.ts",
+    "packages/language-server/src/core/managers/DocumentsManager.ts",
+    "packages/language-server/src/core/managers/ProvidersManager.ts",
+    "packages/language-server/src/core/managers/WorkspaceManager.ts"
+  ],
+  "out": "docs",
+  "name": "XXP Tooling v2 - ExtremeXP",
+  "readme": "README-docs.md",
+  "includeVersion": true,
+  "excludePrivate": true,
+  "excludeProtected": true,
+  "excludeInternal": true,
+  "categorizeByGroup": true,
+  "categoryOrder": [
+    "Core",
+    "Artifact Generation",
+    "Workflow Repository",
+    "Language Server",
+    "*"
+  ],
+  "sort": ["source-order"],
+  "kindSortOrder": [
+    "Document",
+    "Project",
+    "Module",
+    "Namespace",
+    "Enum",
+    "EnumMember",
+    "Class",
+    "Interface",
+    "TypeAlias",
+    "Constructor",
+    "Property",
+    "Variable",
+    "Function",
+    "Accessor",
+    "Method",
+    "Parameter",
+    "TypeParameter",
+    "TypeLiteral",
+    "CallSignature",
+    "ConstructorSignature",
+    "IndexSignature",
+    "GetSignature",
+    "SetSignature"
+  ],
+  "navigationLinks": {
+    "GitHub": "https://github.com/vsvandelik/xxp-tooling-v2"
+  },
+  "sidebarLinks": {
+    "Documentation": "https://vsvandelik.github.io/xxp-tooling-v2/"
+  },
+  "hideGenerator": false,
+  "cleanOutputDir": true,
+  "titleLink": "https://vsvandelik.github.io/xxp-tooling-v2/",
+  "sourceLinkTemplate": "https://github.com/vsvandelik/xxp-tooling-v2/blob/{gitRevision}/{path}#L{line}",
+  "gitRevision": "main"
+}

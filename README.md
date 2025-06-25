@@ -218,6 +218,39 @@ See [TESTING.md](./TESTING.md) for detailed testing documentation and best pract
 - `npm run format` - Format code with Prettier
 - `npm run format:check` - Check code formatting
 - `npm run type-check` - Run TypeScript type checking
+- `npm run docs:generate` - Generate TypeDoc API documentation
+- `npm run docs:dev` - Generate docs and start local development server
+- `npm run docs:clean` - Clean generated documentation
+
+#### Documentation
+
+This project includes comprehensive API documentation generated with TypeDoc.
+
+**Requirements:**
+1. **Install dependencies**: Run `npm install` to install TypeDoc and other dependencies
+2. **Build packages**: Run `npm run build` to compile TypeScript (required for TypeDoc to work)
+
+**Generate Documentation:**
+```bash
+# Install dependencies (required first time)
+npm install
+
+# Build the packages (required for TypeDoc)
+npm run build
+
+# Generate documentation
+npm run docs:generate
+
+# Generate and serve documentation locally
+npm run docs:dev
+```
+
+The generated documentation includes:
+- **Architecture Overview**: Multi-stage model transformation pipeline
+- **Package Relationships**: Clear dependencies and responsibilities mapping  
+- **API Reference**: Complete TypeScript API documentation with classes, interfaces, methods, and cross-references
+
+Documentation will be available at `http://localhost:8080` when using `npm run docs:dev`, or you can open `docs/index.html` directly after running `npm run docs:generate`.
 
 #### Package-Specific Development
 
