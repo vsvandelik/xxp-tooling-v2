@@ -1,33 +1,41 @@
 {
-  "name": "@extremexp/workflow-repository",
-  "version": "1.0.0",
-  "description": "Client library for managing workflows in ExtremeXP",
-  "main": "./dist/index.js",
-  "types": "./dist/index.d.ts",
-  "type": "module",
-  "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "default": "./dist/index.js"
+    "name": "@extremexp/workflow-repository",
+    "version": "1.0.0",
+    "description": "Client library for managing workflows in ExtremeXP",
+    "type": "module",
+    "main": "./dist/index.js",
+    "types": "./dist/index.d.ts",
+    "exports": {
+        ".": {
+            "types": "./dist/index.d.ts",
+            "default": "./dist/index.js"
+        }
+    },
+    "files": [
+        "dist/**/*",
+        "src/**/*"
+    ],
+    "scripts": {
+        "build": "tsc --build",
+        "build:watch": "tsc --build --watch",
+        "clean": "tsc --build --clean",
+        "test": "jest",
+        "test:watch": "jest --watch",
+        "test:coverage": "jest --coverage"
+    },
+    "keywords": [
+        "extremexp",
+        "workflow",
+        "repository",
+        "client"
+    ],
+    "author": "Vojtech Svandelik",
+    "license": "MIT",
+    "engines": {
+        "node": ">=18.0.0",
+        "npm": ">=9.0.0"
+    },
+    "dependencies": {
+        "jszip": "^3.10.1"
     }
-  },
-  "scripts": {
-    "build": "tsc --build",
-    "build:watch": "tsc --build --watch",
-    "clean": "tsc --build --clean",
-    "test": "jest",
-    "test:watch": "jest --watch",
-    "test:coverage": "jest --coverage"
-  },
-  "dependencies": {
-    "jszip": "^3.10.1"
-  },
-  "devDependencies": {
-    "@jest/globals": "^29.7.0",
-    "@types/jest": "^29.5.12",
-    "@types/node": "^24.0.1",
-    "jest": "^29.7.0",
-    "ts-jest": "^29.1.2",
-    "typescript": "^5.8.3"
-  }
 }

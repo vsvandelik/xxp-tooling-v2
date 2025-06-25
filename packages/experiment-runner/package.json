@@ -1,10 +1,10 @@
 {
     "name": "@extremexp/experiment-runner",
     "version": "1.0.0",
-    "description": "Artifact generation utilities for extremexp",
+    "description": "Experiment execution engine for ExtremeXP workflows",
+    "type": "module",
     "main": "./dist/index.js",
     "types": "./dist/index.d.ts",
-    "type": "module",
     "bin": {
         "experiment-runner": "./dist/cli.js"
     },
@@ -14,6 +14,10 @@
             "default": "./dist/index.js"
         }
     },
+    "files": [
+        "dist/**/*",
+        "src/**/*"
+    ],
     "scripts": {
         "build": "tsc --build",
         "build:watch": "tsc --build --watch",
@@ -22,26 +26,22 @@
         "test:watch": "jest --watch",
         "test:coverage": "jest --coverage"
     },
-    "files": [
-        "dist/**/*",
-        "src/**/*"
-    ],
     "keywords": [
         "extremexp",
         "experiment",
-        "runner"
+        "runner",
+        "execution"
     ],
-    "author": "",
+    "author": "Vojtech Svandelik",
     "license": "MIT",
+    "engines": {
+        "node": ">=18.0.0",
+        "npm": ">=9.0.0"
+    },
     "dependencies": {
         "@extremexp/core": "^1.0.0",
-        "@types/sqlite3": "^3.1.11",
         "ora": "^8.2.0",
         "sqlite": "^5.1.1",
         "sqlite3": "^5.1.7"
-    },
-    "devDependencies": {
-        "@types/prompts": "^2.4.9",
-        "typescript": "^5.4.5"
     }
 }

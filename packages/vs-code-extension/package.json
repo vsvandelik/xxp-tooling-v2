@@ -4,6 +4,7 @@
     "version": "1.0.0",
     "description": "VS Code extension for ExtremeXP workflows and experiments with XXP and ESPACE language support",
     "publisher": "extremexp",
+    "type": "module",
     "main": "./dist/extension.js",
     "types": "./dist/extension.d.ts",
     "exports": {
@@ -12,6 +13,11 @@
             "default": "./dist/extension.js"
         }
     },
+    "files": [
+        "dist/**/*",
+        "src/**/*",
+        "bundled-tools/**/*"
+    ],
     "scripts": {
         "build": "tsc --build",
         "build:watch": "tsc --build --watch",
@@ -36,7 +42,7 @@
         "lsp",
         "language-server"
     ],
-    "author": "ExtremEXP Team",
+    "author": "Vojtech Svandelik",
     "license": "MIT",
     "repository": {
         "type": "git",
@@ -47,7 +53,9 @@
     },
     "homepage": "https://github.com/extremexp/xxp-tooling-v2#readme",
     "engines": {
-        "vscode": "^1.85.0"
+        "vscode": "^1.85.0",
+        "node": ">=18.0.0",
+        "npm": ">=9.0.0"
     },
     "categories": [
         "Programming Languages",
@@ -458,15 +466,10 @@
         }
     },
     "dependencies": {
-        "@extremexp/workflow-repository": "^1.0.0",
         "@extremexp/experiment-runner-server": "^1.0.0",
         "@extremexp/language-server": "^1.0.0",
+        "@extremexp/workflow-repository": "^1.0.0",
         "socket.io-client": "^4.8.1",
         "vscode-languageclient": "^9.0.1"
-    },
-    "devDependencies": {
-        "@types/vscode": "^1.85.0",
-        "@vscode/vsce": "^2.24.0",
-        "typescript": "^5.4.5"
     }
 }

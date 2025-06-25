@@ -1,10 +1,10 @@
 {
     "name": "@extremexp/artifact-generator",
     "version": "1.0.0",
-    "description": "Artifact generation utilities for extremexp",
+    "description": "Artifact generation tool for ExtremeXP workflows",
+    "type": "module",
     "main": "./dist/cli.js",
     "types": "./dist/cli.d.ts",
-    "type": "module",
     "bin": {
         "artifact-generator": "./dist/cli.js"
     },
@@ -14,6 +14,10 @@
             "default": "./dist/cli.js"
         }
     },
+    "files": [
+        "dist/**/*",
+        "src/**/*"
+    ],
     "scripts": {
         "build": "tsc --build",
         "build:watch": "tsc --build --watch",
@@ -25,22 +29,20 @@
         "cli": "node ./dist/cli.js",
         "cli:dev": "npm run build && npm run cli"
     },
-    "files": [
-        "dist/**/*",
-        "src/**/*"
-    ],
     "keywords": [
         "extremexp",
         "artifact",
-        "generator"
+        "generator",
+        "cli"
     ],
-    "author": "",
+    "author": "Vojtech Svandelik",
     "license": "MIT",
+    "engines": {
+        "node": ">=18.0.0",
+        "npm": ">=9.0.0"
+    },
     "dependencies": {
         "@extremexp/core": "^1.0.0",
         "commander": "^11.1.0"
-    },
-    "devDependencies": {
-        "typescript": "^5.4.5"
     }
 }

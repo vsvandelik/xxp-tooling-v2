@@ -1,12 +1,12 @@
 {
     "name": "@extremexp/experiment-runner-server",
     "version": "1.0.0",
-    "description": "Artifact generation utilities for extremexp",
+    "description": "HTTP server for ExtremeXP experiment execution",
+    "type": "module",
     "main": "./dist/server.js",
     "types": "./dist/server.d.ts",
-    "type": "module",
     "bin": {
-        "experiment-runner": "./dist/server.js"
+        "experiment-runner-server": "./dist/server.js"
     },
     "exports": {
         ".": {
@@ -14,6 +14,10 @@
             "default": "./dist/server.js"
         }
     },
+    "files": [
+        "dist/**/*",
+        "src/**/*"
+    ],
     "scripts": {
         "build": "tsc --build",
         "build:watch": "tsc --build --watch",
@@ -22,28 +26,24 @@
         "test:watch": "jest --watch",
         "test:coverage": "jest --coverage"
     },
-    "files": [
-        "dist/**/*",
-        "src/**/*"
-    ],
     "keywords": [
         "extremexp",
         "experiment",
-        "runner"
+        "runner",
+        "server",
+        "http"
     ],
-    "author": "",
+    "author": "Vojtech Svandelik",
     "license": "MIT",
+    "engines": {
+        "node": ">=18.0.0",
+        "npm": ">=9.0.0"
+    },
     "dependencies": {
         "@extremexp/core": "^1.0.0",
         "@extremexp/experiment-runner": "^1.0.0",
-        "socket.io": "^4.8.1",
+        "cors": "^2.8.5",
         "express": "^4.18.2",
-        "cors": "^2.8.5"
-    },
-    "devDependencies": {
-        "@types/cors": "^2.8.18",
-        "@types/express": "^5.0.2",
-        "@types/node": "^22.15.28",
-        "typescript": "^5.4.5"
+        "socket.io": "^4.8.1"
     }
 }
