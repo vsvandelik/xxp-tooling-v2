@@ -1,4 +1,4 @@
-=== experiment.esp ===
+=== experiment.espace ===
 experiment StrategyExperiment {
     space TestSpace of SomeWorkflow {
         strategy <-CURSOR->

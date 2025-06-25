@@ -4,7 +4,7 @@ workflow ControlWorkflow {
     define task taskB;
 }
 
-=== experiment.esp ===
+=== experiment.espace ===
 experiment ControlExperiment {
     space SpaceA of ControlWorkflow {
     }
@@ -22,3 +22,4 @@ experiment ControlExperiment {
 - end
 - SpaceA
 - SpaceB
+- }

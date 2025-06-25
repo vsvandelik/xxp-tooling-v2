@@ -3,7 +3,7 @@ workflow ParamWorkflow {
     define task paramTask;
 }
 
-=== experiment.esp ===
+=== experiment.espace ===
 experiment ParamExperiment {
     space ParamSpace of ParamWorkflow {
         configure task paramTask {

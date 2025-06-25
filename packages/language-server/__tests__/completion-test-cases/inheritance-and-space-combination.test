@@ -10,7 +10,7 @@ workflow DerivedWorkflow from BaseWorkflow {
     define task derivedTask;
 }
 
-=== experiment.esp ===
+=== experiment.espace ===
 experiment InheritanceExperiment {
     space BaseSpace of BaseWorkflow {
     }

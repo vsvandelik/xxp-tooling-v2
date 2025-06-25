@@ -1,4 +1,4 @@
-=== experiment.esp ===
+=== experiment.espace ===
 experiment TransitionExperiment {
     space ProcessSpace of ProcessWorkflow {
     }

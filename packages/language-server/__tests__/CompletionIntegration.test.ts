@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach } from '@jest/globals';
 import { DocumentManager } from '../src/core/managers/DocumentsManager.js';
-import { XxpSuggestionsProvider } from '../src/providers/XxpSuggestionsProvider.js';
+import { SuggestionsProvider } from '../src/providers/SuggestionsProvider.js';
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import { CompletionParams, Position, CompletionItem, Connection } from 'vscode-languageserver';
 import * as fs from 'fs';
@@ -23,7 +23,7 @@ interface CompletionTestFile {
 describe('Language Server Completion Tests', () => {
   let tempDir: string;
   let documentsManager: DocumentManager;
-  let suggestionsProvider: XxpSuggestionsProvider;
+  let suggestionsProvider: SuggestionsProvider;
 
   beforeEach(() => {
     // Create a unique temporary directory for each test
@@ -31,7 +31,7 @@ describe('Language Server Completion Tests', () => {
     
     // Initialize language server components
     documentsManager = new DocumentManager();
-    suggestionsProvider = new XxpSuggestionsProvider();
+    suggestionsProvider = new SuggestionsProvider();
     
     // Mock connection for the provider
     const mockConnection = {
@@ -246,27 +246,32 @@ async function getCompletionsAtPosition(
   const originalConsoleWarn = console.warn;
   const originalConsoleInfo = console.info;
 
-  console.log = () => {};
-  console.error = () => {};
-  console.warn = () => {};
-  console.info = () => {};  try {
+  // Temporarily allow console output for debugging ESPACE rules
+  // console.log = () => {};
+  // console.error = () => {};
+  // console.warn = () => {};
+  // console.info = () => {};
+
+  try {
     // Create document manager and use it to parse all documents
-    const documentsManager = new DocumentManager();
+    const testDocumentsManager = new DocumentManager();
     
     // Open all documents (this is important for inheritance to work properly)
     const filesToOpen = allFilePaths || [xxpFilePath];
     for (const filePath of filesToOpen) {
       const fileContent = fs.readFileSync(filePath, 'utf8');
       const fileUri = `file:///${filePath.replace(/\\/g, '/')}`;
-      const textDocument = TextDocument.create(fileUri, 'xxp', 1, fileContent);
-      await documentsManager.onDocumentOpened(textDocument);
+      // Determine the language type based on file extension
+      const languageId = filePath.endsWith('.espace') ? 'espace' : 'xxp';
+      const textDocument = TextDocument.create(fileUri, languageId, 1, fileContent);
+      await testDocumentsManager.onDocumentOpened(textDocument);
     }
 
     // Use the main file's URI for completion params
     const uri = `file:///${xxpFilePath.replace(/\\/g, '/')}`;
 
     // Create suggestions provider
-    const suggestionsProvider = new XxpSuggestionsProvider();
+    const provider = new SuggestionsProvider();
     
     // Mock the connection 
     const mockConnection = {
@@ -274,21 +279,21 @@ async function getCompletionsAtPosition(
       onCompletionResolve: jest.fn(),
     } as unknown as Connection;
     
-    suggestionsProvider.initialize(mockConnection, documentsManager);
+    provider.initialize(mockConnection, testDocumentsManager);
 
     // Create completion params
     const completionParams: CompletionParams = {
       textDocument: { uri },
       position: position as Position
-    };    // Call the completion method using reflection
-    const completions = await (suggestionsProvider as unknown as { onCompletion: (params: CompletionParams) => Promise<CompletionItem[]> }).onCompletion(completionParams);
+    };    // Call the completion method
+    const completions = await provider.onCompletion(completionParams);
       // Temporarily restore console for debugging
     console.log = originalConsoleLog;
-    console.log(`Debug - Completions for ${xxpFilePath} at line ${position.line}, char ${position.character}:`, completions.map(c => c.label));
+    console.log(`Debug - Completions for ${xxpFilePath} at line ${position.line}, char ${position.character}:`, completions ? completions.map(c => c.label) : 'null');
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    console.log(`Debug - DocumentManager has documents:`, Object.keys((documentsManager as any).parsedDocuments || {}));
+    console.log(`Debug - DocumentManager has documents:`, Object.keys((testDocumentsManager as any).parsedDocuments || {}));
       // Get the specific document and check its symbol table
-    const doc = documentsManager.getDocument(uri);
+    const doc = testDocumentsManager.getDocument(uri);
     if (doc && doc.symbolTable) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       console.log(`Debug - Document ${uri} has symbol table with:`, Object.keys(doc.symbolTable as any));
@@ -296,7 +301,40 @@ async function getCompletionsAtPosition(
       console.log(`Debug - Document ${uri} has no symbol table or document not found`);
     }
     
-    console.log = () => {}; // Suppress again
+    // Debug folder symbol table
+    const folderSymbolTable = testDocumentsManager.getDocumentSymbolTableForFile(uri);
+    if (folderSymbolTable) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      console.log(`Debug - Folder symbol table has:`, Object.keys(folderSymbolTable as any));
+      try {
+        const allSymbols = folderSymbolTable.getAllSymbolsSync(require('antlr4-c3').BaseSymbol);
+        console.log(`Debug - Folder symbol table symbols:`, allSymbols.map((s: any) => s.name));
+      } catch (error) {
+        console.log(`Debug - Error getting folder symbols:`, error);
+      }
+    } else {
+      console.log(`Debug - No folder symbol table found`);
+    }
+    
+    // Debug DocumentManager state
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const docManagerState = (testDocumentsManager as any);
+    if (docManagerState.parsedDocuments) {
+      console.log(`Debug - DocumentManager.parsedDocuments size: ${docManagerState.parsedDocuments.size}`);
+      console.log(`Debug - DocumentManager.parsedDocuments keys: [${Array.from(docManagerState.parsedDocuments.keys()).join(', ')}]`);
+    }
+    
+    // Debug parsing
+    if (doc) {
+      console.log(`Debug - Document has rootParseTree: ${!!doc.rootParseTree}, tokenStream: ${!!doc.tokenStream}, parser: ${!!doc.parser}`);
+      if (doc.diagnostics && doc.diagnostics.length > 0) {
+        console.log(`Debug - Document has diagnostics:`, doc.diagnostics.map((d: any) => d.message));
+      }
+    } else {
+      console.log(`Debug - No document found for URI: ${uri}`);
+    }
+    
+    // console.log = () => {}; // Suppress again
     
     return completions || [];
     

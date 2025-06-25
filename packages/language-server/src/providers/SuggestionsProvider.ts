@@ -40,12 +40,12 @@ export class SuggestionsProvider extends Provider {
     );
   }
 
-  private async onCompletion(params: CompletionParams): Promise<CompletionItem[] | null> {
-    if (params.textDocument.uri.endsWith('.xxp'))
+  public async onCompletion(params: CompletionParams): Promise<CompletionItem[] | null> {
+    if (params.textDocument.uri.endsWith('.xxp')) {
       return this.XxpSuggestionsProvider.onCompletion(params);
-    else if (params.textDocument.uri.endsWith('.espace'))
+    } else if (params.textDocument.uri.endsWith('.espace')) {
       return this.EspaceSuggestionsProvider.onCompletion(params);
-    else {
+    } else {
       this.logger.warn(`Unsupported document type for completion: ${params.textDocument.uri}`);
       return null;
     }

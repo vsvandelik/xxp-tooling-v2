@@ -1,9 +1,0 @@
-=== experiment.esp ===
-experiment EnumMultipleExperiment {
-    space EnumSpace of TestWorkflow {
-        param algorithm = enum("svm", "random_forest", <-CURSOR->
-    }
-}
-
-=== SUGGESTIONS ===
-- "

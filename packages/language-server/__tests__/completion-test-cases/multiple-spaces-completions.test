@@ -10,7 +10,7 @@ workflow WorkflowB {
     define task taskB;
 }
 
-=== experiment.esp ===
+=== experiment.espace ===
 experiment MultiSpaceExperiment {
     space SpaceA of WorkflowA {
         strategy strategyA;

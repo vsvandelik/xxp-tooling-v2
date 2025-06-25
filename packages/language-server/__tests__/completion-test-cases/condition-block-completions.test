@@ -1,4 +1,4 @@
-=== experiment.esp ===
+=== experiment.espace ===
 experiment ConditionExperiment {
     space CheckSpace of CheckWorkflow {
     }
@@ -15,3 +15,4 @@ experiment ConditionExperiment {
 
 === SUGGESTIONS ===
 - condition
+- }

@@ -4,7 +4,7 @@ workflow DataProcessingWorkflow {
     define task processTask;
 }
 
-=== experiment.esp ===
+=== experiment.espace ===
 experiment ProcessingExperiment {
     space ProcessingSpace of <-CURSOR->
 }

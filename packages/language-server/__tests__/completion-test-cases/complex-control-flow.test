@@ -13,7 +13,7 @@ workflow FinalizeWorkflow {
     define task finalizeTask;
 }
 
-=== experiment.esp ===
+=== experiment.espace ===
 experiment ComplexExperiment {
     space InitSpace of InitWorkflow {
     }

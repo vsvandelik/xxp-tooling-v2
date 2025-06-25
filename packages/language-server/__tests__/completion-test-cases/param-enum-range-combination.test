@@ -1,4 +1,4 @@
-=== experiment.esp ===
+=== experiment.espace ===
 experiment ParamCombinationExperiment {
     space CombinationSpace of TestWorkflow {
         param learningRate = range(0.001, 0.1, 0.001);

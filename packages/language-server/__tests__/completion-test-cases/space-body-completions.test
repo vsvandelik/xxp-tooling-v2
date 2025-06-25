@@ -4,7 +4,7 @@ workflow AnalysisWorkflow {
     define task analyzer;
 }
 
-=== experiment.esp ===
+=== experiment.espace ===
 experiment AnalysisExperiment {
     space AnalysisSpace of AnalysisWorkflow {
         <-CURSOR->

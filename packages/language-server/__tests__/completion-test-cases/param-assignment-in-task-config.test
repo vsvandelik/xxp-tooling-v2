@@ -3,7 +3,7 @@ workflow TaskWorkflow {
     define task configurableTask;
 }
 
-=== experiment.esp ===
+=== experiment.espace ===
 experiment TaskExperiment {
     space TaskSpace of TaskWorkflow {
         configure task configurableTask {

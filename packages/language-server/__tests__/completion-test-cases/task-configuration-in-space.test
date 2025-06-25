@@ -4,7 +4,7 @@ workflow ConfigWorkflow {
     define task configTask;
 }
 
-=== experiment.esp ===
+=== experiment.espace ===
 experiment ConfigExperiment {
     space ConfigSpace of ConfigWorkflow {
         configure task <-CURSOR->

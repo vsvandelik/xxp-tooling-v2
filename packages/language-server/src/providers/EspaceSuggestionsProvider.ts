@@ -54,11 +54,18 @@ export class EspaceSuggestionsProvider extends Provider {
 
     const symbols: CompletionItem[] = [];
 
+    // Use folder symbol table for cross-document symbol resolution
+    const folderSymbolTable = this.documentManager?.getDocumentSymbolTableForFile(params.textDocument.uri);
+    if (!folderSymbolTable) {
+      this.logger.warn(`No folder symbol table found for ${params.textDocument.uri}`);
+      return null;
+    }
+
     symbols.push(
       ...(await this.processRules(
         candidates.rules,
         tokenPosition,
-        document.symbolTable!,
+        folderSymbolTable,
         document.uri
       ))
     );
@@ -87,6 +94,7 @@ export class EspaceSuggestionsProvider extends Provider {
   ): Promise<CompletionItem[]> {
     const proposedSymbols: CompletionItem[] = [];
 
+
     if (rules.has(ESPACEParser.RULE_workflowNameRead)) {
       // For workflows, we need to suggest available workflow files
       await this.suggestWorkflowFiles(proposedSymbols, documentUri);
@@ -107,6 +115,7 @@ export class EspaceSuggestionsProvider extends Provider {
       );
     }
 
+
     return proposedSymbols;
   }
 
@@ -121,7 +130,17 @@ export class EspaceSuggestionsProvider extends Provider {
         });
       } else if (k !== ESPACEParser.IDENTIFIER) {
         const symbolicName = vocabulary.getSymbolicName(k);
-        if (symbolicName) {
+        if (k === ESPACEParser.BOOLEAN) {
+          // For BOOLEAN token, suggest the literal values instead of the keyword
+          proposedSymbols.push({
+            label: 'true',
+            kind: CompletionItemKind.Value,
+          });
+          proposedSymbols.push({
+            label: 'false',
+            kind: CompletionItemKind.Value,
+          });
+        } else if (symbolicName) {
           proposedSymbols.push({
             label: symbolicName.toLowerCase(),
             kind: CompletionItemKind.Keyword,
@@ -132,6 +151,7 @@ export class EspaceSuggestionsProvider extends Provider {
 
     return proposedSymbols;
   }
+
 
   private async suggestAndStoreSymbols<T extends BaseSymbol>(
     position: TokenPosition,
