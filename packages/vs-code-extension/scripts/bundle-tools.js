@@ -28,14 +28,34 @@ const packagesDir = path.join(extensionRoot, '../../packages');
 
 const tools = [
   {
+    name: 'core',
+    entryPoint: 'index.js',
+    packagePath: path.join(packagesDir, 'core'),
+  },
+  {
     name: 'artifact-generator',
     entryPoint: 'cli.js',
     packagePath: path.join(packagesDir, 'artifact-generator'),
   },
   {
+    name: 'experiment-runner',
+    entryPoint: 'index.js',
+    packagePath: path.join(packagesDir, 'experiment-runner'),
+  },
+  {
     name: 'experiment-runner-server',
     entryPoint: 'server.js',
     packagePath: path.join(packagesDir, 'experiment-runner-server'),
+  },
+  {
+    name: 'language-server',
+    entryPoint: 'server.js',
+    packagePath: path.join(packagesDir, 'language-server'),
+  },
+  {
+    name: 'workflow-repository',
+    entryPoint: 'index.js',
+    packagePath: path.join(packagesDir, 'workflow-repository'),
   },
 ];
 
@@ -60,6 +80,12 @@ async function bundleTools() {
   }
   fs.mkdirSync(bundledToolsDir, { recursive: true });
 
+  // Create unified package.json for all dependencies
+  await createUnifiedPackageJson();
+  
+  // Install dependencies
+  await installDependencies();
+
   for (const tool of tools) {
     console.log(`Bundling ${tool.name}...`);
     
@@ -76,11 +102,45 @@ async function bundleTools() {
       fs.copyFileSync(packageJsonPath, path.join(toolBundleDir, 'package.json'));
     }
 
+    // Copy node_modules if they exist
+    const nodeModulesPath = path.join(tool.packagePath, 'node_modules');
+    if (fs.existsSync(nodeModulesPath)) {
+      const nodeModulesDestPath = path.join(toolBundleDir, 'node_modules');
+      copyRecursively(nodeModulesPath, nodeModulesDestPath);
+      console.log(`  ✓ node_modules bundled for ${tool.name}`);
+    }
+
     console.log(`✓ ${tool.name} bundled successfully`);
   }
 
   console.log('All tools bundled successfully!');
   console.log(`Bundle location: ${bundledToolsDir}`);
+}
+
+async function installDependencies() {
+  console.log('Installing dependencies for bundled tools...');
+  
+  const { spawn } = await import('child_process');
+  
+  return new Promise((resolve, reject) => {
+    const npmInstall = spawn('npm', ['install', '--production'], {
+      cwd: bundledToolsDir,
+      stdio: 'inherit'
+    });
+    
+    npmInstall.on('close', (code) => {
+      if (code === 0) {
+        console.log('✓ Dependencies installed successfully');
+        resolve();
+      } else {
+        reject(new Error(`npm install failed with code ${code}`));
+      }
+    });
+    
+    npmInstall.on('error', (error) => {
+      reject(error);
+    });
+  });
 }
 
 function copyRecursively(src, dest) {
@@ -98,6 +158,44 @@ function copyRecursively(src, dest) {
   } else {
     fs.copyFileSync(src, dest);
   }
+}
+
+async function createUnifiedPackageJson() {
+  console.log('Creating unified package.json for dependencies...');
+  
+  const allDependencies = {};
+  
+  // Collect all dependencies from all tools
+  for (const tool of tools) {
+    const packageJsonPath = path.join(tool.packagePath, 'package.json');
+    if (fs.existsSync(packageJsonPath)) {
+      const packageData = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
+      if (packageData.dependencies) {
+        Object.assign(allDependencies, packageData.dependencies);
+      }
+    }
+  }
+  
+  // Filter out internal dependencies (they're bundled separately)
+  const externalDependencies = {};
+  for (const [name, version] of Object.entries(allDependencies)) {
+    if (!name.startsWith('@extremexp/')) {
+      externalDependencies[name] = version;
+    }
+  }
+  
+  const unifiedPackageJson = {
+    name: 'bundled-tools',
+    version: '1.0.0',
+    private: true,
+    type: 'module',
+    dependencies: externalDependencies
+  };
+  
+  const packageJsonPath = path.join(bundledToolsDir, 'package.json');
+  fs.writeFileSync(packageJsonPath, JSON.stringify(unifiedPackageJson, null, 2));
+  
+  console.log(`✓ Created unified package.json with ${Object.keys(externalDependencies).length} dependencies`);
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {

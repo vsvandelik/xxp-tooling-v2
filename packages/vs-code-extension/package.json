@@ -13,11 +13,6 @@
             "default": "./dist/extension.js"
         }
     },
-    "files": [
-        "dist/**/*",
-        "src/**/*",
-        "bundled-tools/**/*"
-    ],
     "scripts": {
         "build": "tsc --build",
         "build:watch": "tsc --build --watch",
