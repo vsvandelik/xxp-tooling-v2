@@ -4,7 +4,17 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
 
-const DEBUGGING = false; // Set to true to enable debugging output
+const jestConsole = console;
+
+beforeEach(() => {
+  global.console = require('console');
+});
+
+afterEach(() => {
+  global.console = jestConsole;
+});
+
+const DEBUGGING = true; // Set to true to enable debugging output
 console.log = DEBUGGING ? console.log.bind(console) : () => {}; // Conditional logging
 
 interface Position {
@@ -61,13 +71,25 @@ class SimpleLSPClient {
 
       // Handle responses with proper buffering
       this.process.stdout.on('data', (data) => {
-        this.buffer += data.toString();
+        const output = data.toString();
+        // Check for our debug messages before processing LSP messages
+        if (output.includes('[REFS]')) {
+          console.log('🔍 REFS STDOUT:', output.trim());
+        }
+        this.buffer += output;
         this.processMessageBuffer();
       });
 
       this.process.stderr?.on('data', (data) => {
         if (!this.isShuttingDown && !data.toString().includes('Debugger')) {
-          console.log('Language server stderr:', data.toString());
+          const output = data.toString();
+          if (output.includes('[REFS]')) {
+            console.log('🔍 REFS DEBUG:', output.trim());
+          } else if (output.includes('[DEBUG]')) {
+            console.log('⚠️ DEBUG:', output.trim());
+          } else {
+            console.log('Language server stderr:', output);
+          }
         }
       });
 
