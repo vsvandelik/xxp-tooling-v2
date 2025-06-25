@@ -10,6 +10,7 @@ import { TokenPosition } from '../core/models/TokenPosition.js';
 import { DocumentSymbolTable } from '../language/symbolTable/DocumentSymbolTable.js';
 import { CommonTokenStream, Vocabulary } from 'antlr4ng';
 import { XXPParser } from '@extremexp/core';
+import { SymbolResolver } from '../utils/SymbolResolver.js';
 
 export class XxpSuggestionsProvider extends Provider {
   private logger = Logger.getLogger();
@@ -278,7 +279,13 @@ export class XxpSuggestionsProvider extends Provider {
     symbolTable: DocumentSymbolTable,
     documentUri: string
   ): Promise<void> {
-    const validWorkflows = await symbolTable.getValidSymbolsAtPosition(position.parseTree, WorkflowSymbol);
+    // Use generic symbol resolver utility
+    const validWorkflows = await SymbolResolver.getValidSymbolsOfType(
+      { symbolTable, uri: documentUri }, 
+      position.parseTree, 
+      WorkflowSymbol,
+      this.documentManager
+    );
     
     // Filter out the current workflow (can't inherit from self)
     const currentWorkflowName = this.getWorkflowNameFromDocument(position);
@@ -302,7 +309,13 @@ export class XxpSuggestionsProvider extends Provider {
     symbolTable: DocumentSymbolTable,
     kind: CompletionItemKind
   ): Promise<void> {
-    const validSymbols = await symbolTable.getValidSymbolsAtPosition(position.parseTree, type);
+    // Use generic symbol resolver utility
+    const validSymbols = await SymbolResolver.getValidSymbolsOfType(
+      { symbolTable, uri: '' }, 
+      position.parseTree, 
+      type,
+      this.documentManager
+    );
     
     // For WorkflowSymbol, filter out the current workflow (can't inherit from self)
     const filteredSymbols = type.name === 'WorkflowSymbol' 

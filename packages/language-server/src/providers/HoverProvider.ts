@@ -7,6 +7,7 @@ import { WorkflowSymbol } from '../core/models/symbols/WorkflowSymbol.js';
 import { BaseSymbol } from 'antlr4-c3';
 import { ExperimentSymbol } from '../core/models/symbols/ExperimentSymbol.js';
 import { SpaceSymbol } from '../core/models/symbols/SpaceSymbol.js';
+import { SymbolResolver } from '../utils/SymbolResolver.js';
 
 export class HoverProvider extends Provider {
   private logger = Logger.getLogger();
@@ -24,31 +25,14 @@ export class HoverProvider extends Provider {
 
     if (document.symbolTable === undefined) return;
 
-    // Try to resolve in different contexts
-    let symbol: BaseSymbol | undefined;
-
-    // First try workflow symbol table
-    if (document.workflowSymbolTable) {
-      symbol = await document.workflowSymbolTable.resolve(tokenPosition.text, true);
-    }
-
-    // If not found, try experiment symbol table for ESPACE files
-    if (!symbol) {
-      const experimentSymbol = document.symbolTable.children.find(
-        c => c instanceof ExperimentSymbol
-      ) as ExperimentSymbol;
-      if (experimentSymbol) {
-        symbol = await experimentSymbol.resolve(tokenPosition.text, true);
-      }
-    }
-
-    // If still not found, try folder symbol table for workflows
-    if (!symbol) {
-      const folderSymbolTable = this.documentManager?.getDocumentSymbolTableForFile(document.uri);
-      if (folderSymbolTable) {
-        symbol = await folderSymbolTable.resolve(tokenPosition.text, false);
-      }
-    }
+    // Use generic symbol resolver
+    const symbol = await SymbolResolver.resolveSymbol({
+      text: tokenPosition.text,
+      contextName: tokenPosition.parseTree?.constructor?.name,
+      document,
+      documentManager: this.documentManager,
+      localOnly: true  // For hover, prefer local resolution first
+    });
 
     if (symbol instanceof TaskSymbol) {
       return { contents: this.getTaskHoverInformation(symbol) };

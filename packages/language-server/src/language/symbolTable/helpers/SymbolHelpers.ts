@@ -21,11 +21,14 @@ export function addSymbolOfTypeWithContext<T extends BaseSymbol>(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   ...args: any[]
 ): T | undefined {
+  console.error(`[SYMBOL] Adding symbol: name="${name}", type="${type.name}", context="${ctx.constructor.name}", scope="${scope.constructor.name}"`);
   try {
     const symbol = builder.symbolTable.addNewSymbolOfType(type, scope, name, ...args);
     symbol.context = ctx;
+    console.error(`[SYMBOL] Successfully added symbol: name="${name}", type="${type.name}"`);
     return symbol;
   } catch (error) {
+    console.error(`[SYMBOL] Failed to add symbol: name="${name}", error="${error}"`);
     if (error instanceof DuplicateSymbolError) {
       addDiagnostic(builder, ctx, `Duplicate name '${name}'`);
     }

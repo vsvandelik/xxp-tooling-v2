@@ -17,13 +17,14 @@ export class EspaceParamVisitor {
     const paramValue = ctx.paramValue();
 
     if (!identifier || !paramValue) {
+      // Missing identifier or paramValue
       return this.builder.visitChildren(ctx) as DocumentSymbolTable;
     }
 
     const paramName = identifier.getText();
     const value = this.extractParamValue(paramValue);
 
-    addSymbolOfTypeWithContext(
+    const paramSymbol = addSymbolOfTypeWithContext(
       this.builder,
       ParamSymbol,
       paramName,

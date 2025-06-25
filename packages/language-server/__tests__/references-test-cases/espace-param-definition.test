@@ -1,3 +1,12 @@
+=== simpleWorkflow.xxp ===
+workflow SimpleWorkflow {
+    define task task123;
+
+    configure task task123 {
+        param learningRate;
+    }
+}
+
 === experiment.espace ===
 experiment MyExperiment {
     space s1 of SimpleWorkflow {
@@ -11,7 +20,8 @@ experiment MyExperiment {
 }
 
 === DEFINITION ===
-experiment.espace:4:15-27
+simpleWorkflow.xxp:5:15-27
 
 === REFERENCES ===
+simpleWorkflow.xxp:5:15-27
 experiment.espace:4:15-27

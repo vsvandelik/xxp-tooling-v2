@@ -1,4 +1,4 @@
-=== DataProcessing.xxp ===
+=== dataProcessing.xxp ===
 workflow DataProcessing {
     define data inputData = "data.csv";
     define task preprocess;
@@ -13,7 +13,7 @@ workflow DataProcessing {
     START -> preprocess -> analyze -> END;
 }
 
-=== MLExperiment.espace ===
+=== mLExperiment.espace ===
 experiment MLExperiment {
     space preprocessing of ###DataProcessing### {
         strategy exhaustive;
@@ -29,8 +29,8 @@ experiment MLExperiment {
 }
 
 === DEFINITION ===
-DataProcessing.xxp:1:10-24
+dataProcessing.xxp:1:10-24
 
 === REFERENCES ===
-DataProcessing.xxp:1:10-24
-MLExperiment.espace:18:18-32
+dataProcessing.xxp:1:10-24
+mLExperiment.espace:2:18-32

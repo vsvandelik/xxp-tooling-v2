@@ -95,10 +95,12 @@ export class EspaceSymbolTableBuilder
 
   // Parameter methods
   visitParamDefinition(ctx: EspaceParamDefinitionContext): DocumentSymbolTable {
+    console.error(`[BUILDER] EspaceSymbolTableBuilder.visitParamDefinition: ${ctx.getText()}`);
     return this.paramVisitor.visitDefinition(ctx);
   }
 
   visitParamAssignment(ctx: EspaceParamAssignmentContext): DocumentSymbolTable {
+    console.error(`[BUILDER] EspaceSymbolTableBuilder.visitParamAssignment: ${ctx.getText()}`);
     return this.taskConfigurationVisitor.visitParamAssignment(ctx);
   }
 

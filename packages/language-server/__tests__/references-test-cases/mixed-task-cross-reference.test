@@ -1,4 +1,4 @@
-=== MLWorkflow.xxp ===
+=== mLWorkflow.xxp ===
 workflow MLWorkflow {
     define task train;
     define task evaluate;
@@ -9,7 +9,7 @@ workflow MLWorkflow {
     START -> train -> evaluate -> END;
 }
 
-=== MLExperiment.espace ===
+=== mLExperiment.espace ===
 experiment MLExperiment {
     space training of MLWorkflow {
         strategy randomSearch;
@@ -25,10 +25,10 @@ experiment MLExperiment {
 }
 
 === DEFINITION ===
-MLWorkflow.xxp:2:17-22
+mLWorkflow.xxp:2:17-22
 
 === REFERENCES ===
-MLWorkflow.xxp:2:17-22
-MLWorkflow.xxp:5:20-25
-MLWorkflow.xxp:8:14-19
-MLExperiment.espace:16:26-31
+mLWorkflow.xxp:2:17-22
+mLWorkflow.xxp:5:20-25
+mLWorkflow.xxp:8:14-19
+mLExperiment.espace:5:24-29

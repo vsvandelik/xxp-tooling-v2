@@ -8,6 +8,29 @@ export class DocumentSymbolTable extends SymbolTable {
     super(name, { allowDuplicateSymbols: false });
   }
 
+  override resolve(name: string, localOnly?: boolean): Promise<BaseSymbol | undefined> {
+    console.error(`[SYMBOL] DocumentSymbolTable.resolve: name="${name}", localOnly=${localOnly}`);
+    return super.resolve(name, localOnly).then(symbol => {
+      if (symbol) {
+        console.error(`[SYMBOL] DocumentSymbolTable.resolve: Found: name="${name}", type="${symbol.constructor.name}"`);
+      } else {
+        console.error(`[SYMBOL] DocumentSymbolTable.resolve: Not found: name="${name}"`);
+      }
+      return symbol;
+    });
+  }
+
+  override resolveSync(name: string, localOnly?: boolean): BaseSymbol | undefined {
+    console.error(`[SYMBOL] DocumentSymbolTable.resolveSync: name="${name}", localOnly=${localOnly}`);
+    const symbol = super.resolveSync(name, localOnly);
+    if (symbol) {
+      console.error(`[SYMBOL] DocumentSymbolTable.resolveSync: Found: name="${name}", type="${symbol.constructor.name}"`);
+    } else {
+      console.error(`[SYMBOL] DocumentSymbolTable.resolveSync: Not found: name="${name}"`);
+    }
+    return symbol;
+  }
+
   public async getValidSymbolsAtPosition<T extends BaseSymbol>(
     parseTree: ParseTree,
     type: new (...args: any[]) => T

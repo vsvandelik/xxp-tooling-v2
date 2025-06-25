@@ -1,4 +1,4 @@
-=== BaseWorkflow.xxp ===
+=== baseWorkflow.xxp ===
 workflow BaseWorkflow {
     define data baseData = "base.csv";
     define task baseTask;
@@ -10,7 +10,7 @@ workflow BaseWorkflow {
     START -> baseTask -> END;
 }
 
-=== ExtendedWorkflow.xxp ===
+=== extendedWorkflow.xxp ===
 workflow ExtendedWorkflow from BaseWorkflow {
     define data extendedData = "extended.csv";
     define task ###extendedTask###;
@@ -23,7 +23,7 @@ workflow ExtendedWorkflow from BaseWorkflow {
     START -> baseTask -> extendedTask -> END;
 }
 
-=== MLExperiment.espace ===
+=== mLExperiment.espace ===
 experiment MLExperiment {
     define data experimentData = "experiment.csv";
     
@@ -53,9 +53,10 @@ experiment MLExperiment {
 }
 
 === DEFINITION ===
-ExtendedWorkflow.xxp:3:17-30
+extendedWorkflow.xxp:3:17-29
 
 === REFERENCES ===
-ExtendedWorkflow.xxp:3:17-30
-ExtendedWorkflow.xxp:5:20-33
-MLExperiment.espace:10:26-39
+extendedWorkflow.xxp:3:17-29
+extendedWorkflow.xxp:5:20-32
+extendedWorkflow.xxp:10:26-38
+mLExperiment.espace:15:24-36

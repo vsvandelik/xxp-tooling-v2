@@ -35,9 +35,9 @@ experiment MultiSpaceExperiment {
 }
 
 === DEFINITION ===
-experiment.espace:19:11-17
+experiment.espace:10:11-17
 
 === REFERENCES ===
-experiment.espace:19:11-17
-experiment.espace:28:29-35
-experiment.espace:32:9-15
+experiment.espace:10:11-17
+experiment.espace:19:29-35
+experiment.espace:23:9-15

@@ -1,7 +1,8 @@
 import { TaskConfigurationScopeSymbol } from '../../../core/models/symbols/TaskConfigurationScopeSymbol.js';
 import { TaskSymbol } from '../../../core/models/symbols/TaskSymbol.js';
+import { ParamSymbol } from '../../../core/models/symbols/ParamSymbol.js';
 import { DocumentSymbolTable } from '../DocumentSymbolTable.js';
-import { addSymbolOfTypeWithInheritanceCheck, visitScopeSymbol } from '../helpers/SymbolHelpers.js';
+import { addSymbolOfTypeWithInheritanceCheck, addSymbolOfTypeWithContext, visitScopeSymbol } from '../helpers/SymbolHelpers.js';
 import { addDiagnostic } from '../helpers/Diagnostics.js';
 import { XxpSymbolTableBuilder } from '../builders/XxpSymbolTableBuilder.js';
 import { DiagnosticSeverity } from 'vscode-languageserver';
@@ -108,11 +109,22 @@ export class TaskVisitor {
     const paramName = identifier.getText();
     const hasValue = ctx.expression() !== undefined;
 
+    // Create ParamSymbol and add it to the symbol table
+    const paramSymbol = addSymbolOfTypeWithContext(
+      this.builder,
+      ParamSymbol,
+      paramName,
+      ctx,
+      this.builder.currentScope,  // Add to current scope (TaskConfigurationScopeSymbol)
+      this.builder.document
+    );
+
     /*
 		TODO:
 		- Warning when overriding an existing implementation (defined here or in parent workflow)
 		*/
 
+    // Also add to TaskSymbol for backward compatibility
     taskSymbol.params.push(new Param(paramName, hasValue));
     return this.builder.visitChildren(ctx) as DocumentSymbolTable;
   }

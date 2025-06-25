@@ -1,4 +1,4 @@
-=== SimpleWorkflow.xxp ===
+=== simpleWorkflow.xxp ===
 workflow SimpleWorkflow {
     define task myTask;
     define task anotherTask;
@@ -24,10 +24,10 @@ experiment MyExperiment {
 }
 
 === DEFINITION ===
-SimpleWorkflow.xxp:2:17-23
+simpleWorkflow.xxp:2:17-23
 
 === REFERENCES ===
-SimpleWorkflow.xxp:2:17-23
-SimpleWorkflow.xxp:5:20-26
-SimpleWorkflow.xxp:7:14-20
-experiment.espace:15:26-32
+simpleWorkflow.xxp:2:17-23
+simpleWorkflow.xxp:5:20-26
+simpleWorkflow.xxp:7:14-20
+experiment.espace:5:24-30
