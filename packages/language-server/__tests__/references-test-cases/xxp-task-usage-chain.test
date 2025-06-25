@@ -9,9 +9,9 @@ workflow SimpleWorkflow {
 }
 
 === DEFINITION ===
-2:17-23
+workflow.xxp:2:17-23
 
 === REFERENCES ===
-2:17-23
-5:20-26
-7:14-20
+workflow.xxp:2:17-23
+workflow.xxp:5:20-26
+workflow.xxp:7:14-20

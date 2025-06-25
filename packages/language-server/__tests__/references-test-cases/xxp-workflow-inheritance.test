@@ -1,0 +1,24 @@
+=== BaseWorkflow.xxp ===
+workflow BaseWorkflow {
+    define task baseTask;
+    
+    configure task baseTask {}
+
+    START -> baseTask -> END;
+}
+
+=== DerivedWorkflow.xxp ===
+workflow DerivedWorkflow from ###BaseWorkflow### {
+    define task derivedTask;
+    
+    configure task derivedTask {}
+
+    START -> baseTask -> derivedTask -> END;
+}
+
+=== DEFINITION ===
+BaseWorkflow.xxp:1:10-22
+
+=== REFERENCES ===
+BaseWorkflow.xxp:1:10-22
+DerivedWorkflow.xxp:10:32-44

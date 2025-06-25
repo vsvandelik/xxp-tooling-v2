@@ -1,0 +1,22 @@
+=== workflow.xxp ===
+workflow ComplexWorkflow {
+    define task taskA;
+    define task taskB;
+    define task taskC;
+    
+    configure task taskA {}
+    configure task taskB {}
+    configure task taskC {}
+
+    START -> taskA -> taskB -> taskC -> END;
+    START -> ###taskA### -> taskC -> END;
+}
+
+=== DEFINITION ===
+workflow.xxp:2:17-22
+
+=== REFERENCES ===
+workflow.xxp:2:17-22
+workflow.xxp:6:20-25
+workflow.xxp:10:14-19
+workflow.xxp:11:14-19

@@ -1,0 +1,10 @@
+=== workflow.xxp ===
+workflow SimpleWorkflow {
+    configure task ###nonExistentTask### {}
+
+    START -> END;
+}
+
+=== DEFINITION ===
+
+=== REFERENCES ===

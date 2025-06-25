@@ -1,0 +1,15 @@
+=== workflow.xxp ===
+workflow SimpleWorkflow {
+    define task ###unusedTask###;
+    define task usedTask;
+    
+    configure task usedTask {}
+
+    START -> usedTask -> END;
+}
+
+=== DEFINITION ===
+workflow.xxp:2:17-27
+
+=== REFERENCES ===
+workflow.xxp:2:17-27
