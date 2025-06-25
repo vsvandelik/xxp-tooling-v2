@@ -1,1 +1,0 @@
-{"version":3,"file":"FileResolver.d.ts","sourceRoot":"","sources":["../../src/resolvers/FileResolver.ts"],"names":[],"mappings":"AAIA,qBAAa,YAAY;IACvB,OAAO,CAAC,iBAAiB,CAAS;gBAEtB,iBAAiB,EAAE,MAAM;IAI/B,iBAAiB,CAAC,YAAY,EAAE,MAAM,GAAG,OAAO,CAAC,MAAM,EAAE,CAAC;IA8BhE,eAAe,CAAC,QAAQ,EAAE,MAAM,GAAG,MAAM;IAOzC,yBAAyB,CAAC,kBAAkB,EAAE,MAAM,GAAG,MAAM;CAM9D"}

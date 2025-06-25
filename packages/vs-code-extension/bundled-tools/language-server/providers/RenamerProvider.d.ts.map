@@ -1,1 +1,0 @@
-{"version":3,"file":"RenamerProvider.d.ts","sourceRoot":"","sources":["../../src/providers/RenamerProvider.ts"],"names":[],"mappings":"AAAA,OAAO,EAAE,QAAQ,EAAE,MAAM,eAAe,CAAC;AA6BzC,qBAAa,eAAgB,SAAQ,QAAQ;IAC3C,OAAO,CAAC,MAAM,CAAsB;IAEpC,WAAW,IAAI,IAAI;YAIL,eAAe;YA0Cf,aAAa;YAgDb,yBAAyB;IAiEvC,OAAO,CAAC,iBAAiB;CAQ1B"}

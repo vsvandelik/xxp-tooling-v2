@@ -1,1 +1,0 @@
-{"version":3,"file":"TokenPosition.d.ts","sourceRoot":"","sources":["../../../src/core/models/TokenPosition.ts"],"names":[],"mappings":"AAAA,OAAO,EAAE,SAAS,EAAE,YAAY,EAAE,MAAM,UAAU,CAAC;AAEnD,MAAM,MAAM,aAAa,GAAG;IAC1B,KAAK,EAAE,MAAM,CAAC;IACd,SAAS,EAAE,SAAS,CAAC;IACrB,YAAY,EAAE,YAAY,GAAG,SAAS,CAAC;IACvC,IAAI,EAAE,MAAM,CAAC;CACd,CAAC"}

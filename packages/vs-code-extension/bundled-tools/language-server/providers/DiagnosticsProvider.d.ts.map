@@ -1,1 +1,0 @@
-{"version":3,"file":"DiagnosticsProvider.d.ts","sourceRoot":"","sources":["../../src/providers/DiagnosticsProvider.ts"],"names":[],"mappings":"AAKA,OAAO,EAAE,QAAQ,EAAE,MAAM,eAAe,CAAC;AAGzC,qBAAa,mBAAoB,SAAQ,QAAQ;IAC/C,OAAO,CAAC,MAAM,CAAsB;IAEpC,WAAW,IAAI,IAAI;IAInB,OAAO,CAAC,aAAa;CA2BtB"}

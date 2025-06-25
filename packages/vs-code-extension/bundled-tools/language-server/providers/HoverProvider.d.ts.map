@@ -1,1 +1,0 @@
-{"version":3,"file":"HoverProvider.d.ts","sourceRoot":"","sources":["../../src/providers/HoverProvider.ts"],"names":[],"mappings":"AAAA,OAAO,EAAE,QAAQ,EAAE,MAAM,eAAe,CAAC;AAUzC,qBAAa,aAAc,SAAQ,QAAQ;IACzC,OAAO,CAAC,MAAM,CAAsB;IAEpC,WAAW,IAAI,IAAI;YAIL,OAAO;IAyDrB,OAAO,CAAC,2BAA2B;IAenC,OAAO,CAAC,wBAAwB;IAiBhC,OAAO,CAAC,uBAAuB;IA4B/B,OAAO,CAAC,uBAAuB;CAgBhC"}

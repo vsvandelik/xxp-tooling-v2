@@ -1,1 +1,0 @@
-{"version":3,"file":"ScopeSymbolWithSymbolReference.d.ts","sourceRoot":"","sources":["../../../../src/core/models/symbols/ScopeSymbolWithSymbolReference.ts"],"names":[],"mappings":"AAAA,OAAO,EAAE,UAAU,EAAE,YAAY,EAAE,MAAM,WAAW,CAAC;AAErD,qBAAa,8BAA+B,SAAQ,YAAY;aAG5C,eAAe,CAAC,EAAE,UAAU;gBAD5C,IAAI,CAAC,EAAE,MAAM,EACG,eAAe,CAAC,EAAE,UAAU,YAAA;CAI/C"}
