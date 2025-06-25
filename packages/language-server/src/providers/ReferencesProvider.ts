@@ -63,8 +63,13 @@ export class ReferencesProvider extends Provider {
   }
 
   private async resolveSymbol(document: any, tokenPosition: any): Promise<BaseSymbol | null> {
+
+    // Use context name-based resolution instead of instanceof checks
+    // This is more robust and handles context type variations
+    const contextName = tokenPosition.parseTree?.constructor?.name;
+    
     // Handle workflow header contexts (definitions)
-    if (tokenPosition.parseTree instanceof XxpWorkflowHeaderContext) {
+    if (contextName === 'WorkflowHeaderContext') {
       // Try multiple symbol tables for workflow definitions
       if (document.symbolTable) {
         const result = await document.symbolTable.resolve(tokenPosition.text, false);
@@ -83,7 +88,7 @@ export class ReferencesProvider extends Provider {
     }
 
     // Handle task definition contexts
-    if (tokenPosition.parseTree instanceof XxpTaskDefinitionContext) {
+    if (contextName === 'TaskDefinitionContext') {
       // For task definitions, look in the workflow symbol table
       if (document.workflowSymbolTable) {
         return (await document.workflowSymbolTable.resolve(tokenPosition.text, false)) || null;
@@ -91,7 +96,7 @@ export class ReferencesProvider extends Provider {
     }
 
     // Handle data definition contexts
-    if (tokenPosition.parseTree instanceof XxpDataDefinitionContext) {
+    if (contextName === 'DataDefinitionContext') {
       // For data definitions, look in the workflow symbol table
       if (document.workflowSymbolTable) {
         return (await document.workflowSymbolTable.resolve(tokenPosition.text, false)) || null;
@@ -99,7 +104,7 @@ export class ReferencesProvider extends Provider {
     }
 
     // Handle parameter assignment contexts
-    if (tokenPosition.parseTree instanceof XxpParamAssignmentContext) {
+    if (contextName === 'ParamAssignmentContext') {
       // For param assignments, look in the workflow symbol table
       if (document.workflowSymbolTable) {
         return (await document.workflowSymbolTable.resolve(tokenPosition.text, false)) || null;
@@ -107,7 +112,7 @@ export class ReferencesProvider extends Provider {
     }
 
     // Handle experiment header contexts (ESPACE definitions)
-    if (tokenPosition.parseTree instanceof EspaceExperimentHeaderContext) {
+    if (contextName === 'ExperimentHeaderContext') {
       // For experiment definitions, look in the document's symbol table
       if (document.symbolTable) {
         return (await document.symbolTable.resolve(tokenPosition.text, false)) || null;
@@ -115,7 +120,7 @@ export class ReferencesProvider extends Provider {
     }
 
     // Handle space header contexts (ESPACE space definitions)
-    if (tokenPosition.parseTree instanceof EspaceSpaceHeaderContext) {
+    if (contextName === 'SpaceHeaderContext') {
       const experimentSymbol = document.symbolTable?.children.find(
         (c: BaseSymbol) => c instanceof ExperimentSymbol
       ) as ExperimentSymbol;
@@ -125,7 +130,7 @@ export class ReferencesProvider extends Provider {
     }
 
     // Handle parameter definition contexts (ESPACE)
-    if (tokenPosition.parseTree instanceof EspaceParamDefinitionContext) {
+    if (contextName === 'ParamDefinitionContext') {
       const experimentSymbol = document.symbolTable?.children.find(
         (c: BaseSymbol) => c instanceof ExperimentSymbol
       ) as ExperimentSymbol;
@@ -135,17 +140,14 @@ export class ReferencesProvider extends Provider {
     }
 
     // Handle workflow references (usage, not definition)
-    if (
-      tokenPosition.parseTree instanceof XxpWorkflowNameReadContext ||
-      tokenPosition.parseTree instanceof EspaceWorkflowNameReadContext
-    ) {
+    if (contextName === 'WorkflowNameReadContext') {
       // For workflow references, look in the folder symbol table
       const folderSymbolTable = this.documentManager?.getDocumentSymbolTableForFile(document.uri);
       return (await folderSymbolTable?.resolve(tokenPosition.text, false)) || null;
     }
 
     // Handle space references in ESPACE files
-    if (tokenPosition.parseTree instanceof EspaceSpaceNameReadContext) {
+    if (contextName === 'SpaceNameReadContext') {
       const experimentSymbol = document.symbolTable?.children.find(
         (c: BaseSymbol) => c instanceof ExperimentSymbol
       ) as ExperimentSymbol;
@@ -155,7 +157,7 @@ export class ReferencesProvider extends Provider {
     }
 
     // Handle task references in ESPACE files
-    if (tokenPosition.parseTree instanceof EspaceTaskNameReadContext) {
+    if (contextName === 'TaskNameReadContext') {
       // First try local resolution
       const experimentSymbol = document.symbolTable?.children.find(
         (c: BaseSymbol) => c instanceof ExperimentSymbol
@@ -176,6 +178,7 @@ export class ReferencesProvider extends Provider {
     }
 
     // Default resolution for other symbols - try all symbol tables
+
     // First try workflow symbol table
     if (document.workflowSymbolTable) {
       const result = await document.workflowSymbolTable.resolve(tokenPosition.text, false);
