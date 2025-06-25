@@ -1,16 +1,20 @@
 {
     "name": "@extremexp/core",
     "version": "1.0.0",
-    "description": "Core utilities and shared functionality for extremexp",
+    "description": "Core language parsing and shared utilities for ExtremeXP",
+    "type": "module",
     "main": "./dist/index.js",
     "types": "./dist/index.d.ts",
-    "type": "module",
     "exports": {
         ".": {
             "types": "./dist/index.d.ts",
             "default": "./dist/index.js"
         }
     },
+    "files": [
+        "dist/**/*",
+        "src/**/*"
+    ],
     "scripts": {
         "build": "tsc --build",
         "build:watch": "tsc --build --watch",
@@ -20,23 +24,24 @@
         "test:coverage": "jest --coverage",
         "antlr": "antlr4ng -Dlanguage=TypeScript -visitor -listener -o src/language/generated/ -Xexact-output-dir src/language/grammar/*.g4"
     },
-    "files": [
-        "dist/**/*",
-        "src/**/*"
-    ],
     "keywords": [
         "extremexp",
         "core",
-        "utilities"
+        "utilities",
+        "antlr",
+        "parser"
     ],
-    "author": "",
+    "author": "ExtremeXP Team",
     "license": "MIT",
+    "engines": {
+        "node": ">=18.0.0",
+        "npm": ">=9.0.0"
+    },
     "dependencies": {
-         "antlr4-c3": "^3.4.1"
+        "antlr4ng": "^3.0.13",
+        "antlr4-c3": "^3.4.1"
     },
     "devDependencies": {
-        "typescript": "^5.4.5",
-		"antlr4ng": "^3.0.13",
-		"antlr4ng-cli": "^2.0.0"
+        "antlr4ng-cli": "^2.0.0"
     }
 }
