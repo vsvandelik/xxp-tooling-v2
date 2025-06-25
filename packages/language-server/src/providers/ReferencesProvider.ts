@@ -17,6 +17,7 @@ import {
   EspaceParamDefinitionContext,
   EspaceExperimentHeaderContext,
   EspaceSpaceHeaderContext,
+  ESPACEParser,
 } from '@extremexp/core';
 import { BaseSymbol } from 'antlr4-c3';
 import { TerminalNode } from 'antlr4ng';
@@ -61,19 +62,54 @@ export class ReferencesProvider extends Provider {
   }
 
   private async resolveSymbol(document: any, tokenPosition: any): Promise<BaseSymbol | null> {
+    // Also check if it's an instance of the raw context types
+    const isExperimentHeader = tokenPosition.parseTree instanceof EspaceExperimentHeaderContext ||
+                               tokenPosition.parseTree?.constructor?.name === 'ExperimentHeaderContext';
+    const isParamDefinition = tokenPosition.parseTree instanceof EspaceParamDefinitionContext ||
+                              tokenPosition.parseTree?.constructor?.name === 'ParamDefinitionContext';
+    const isWorkflowHeader = tokenPosition.parseTree instanceof XxpWorkflowHeaderContext ||
+                             tokenPosition.parseTree?.constructor?.name === 'WorkflowHeaderContext';
+
+    // Handle experiment definitions in ESPACE files
+    if (isExperimentHeader) {
+      // Look for experiment symbols in the current document's symbol table
+      if (document.symbolTable) {
+        // Try direct resolution first
+        const result = (await document.symbolTable.resolve(tokenPosition.text, false)) || null;
+        if (result) return result;
+        
+        // If direct resolution fails, try finding the experiment symbol manually
+        const children = document.symbolTable.children || [];
+        for (const child of children) {
+          if (child.name === tokenPosition.text && child instanceof ExperimentSymbol) {
+            return child;
+          }
+        }
+      }
+    }
+
     // Handle workflow definitions in XXP files
-    if (tokenPosition.parseTree instanceof XxpWorkflowHeaderContext) {
+    if (isWorkflowHeader) {
       // Look for workflow symbols in the current document's symbol table
       if (document.workflowSymbolTable) {
         const result = (await document.workflowSymbolTable.resolve(tokenPosition.text, false)) || null;
-        return result;
+        if (result) return result;
+        
+        // If direct resolution fails, try finding the workflow symbol manually
+        const children = document.workflowSymbolTable.children || [];
+        for (const child of children) {
+          if (child.name === tokenPosition.text && child instanceof WorkflowSymbol) {
+            return child;
+          }
+        }
       }
     }
 
     // Handle workflow references
     if (
       tokenPosition.parseTree instanceof XxpWorkflowNameReadContext ||
-      tokenPosition.parseTree instanceof EspaceWorkflowNameReadContext
+      tokenPosition.parseTree instanceof EspaceWorkflowNameReadContext ||
+      tokenPosition.parseTree?.constructor?.name === 'WorkflowNameReadContext'
     ) {
       // For workflows, we need to look in the folder symbol table
       const folderSymbolTable = this.documentManager?.getDocumentSymbolTableForFile(document.uri);
@@ -82,7 +118,8 @@ export class ReferencesProvider extends Provider {
     }
 
     // Handle space references in ESPACE files
-    if (tokenPosition.parseTree instanceof EspaceSpaceNameReadContext) {
+    if (tokenPosition.parseTree instanceof EspaceSpaceNameReadContext ||
+        tokenPosition.parseTree?.constructor?.name === 'SpaceNameReadContext') {
       const experimentSymbol = document.symbolTable?.children.find(
         (c: BaseSymbol) => c instanceof ExperimentSymbol
       ) as ExperimentSymbol;
@@ -93,7 +130,8 @@ export class ReferencesProvider extends Provider {
     }
 
     // Handle task references in ESPACE files
-    if (tokenPosition.parseTree instanceof EspaceTaskNameReadContext) {
+    if (tokenPosition.parseTree instanceof EspaceTaskNameReadContext ||
+        tokenPosition.parseTree?.constructor?.name === 'TaskNameReadContext') {
       // First try local resolution
       const experimentSymbol = document.symbolTable?.children.find(
         (c: BaseSymbol) => c instanceof ExperimentSymbol
@@ -114,7 +152,8 @@ export class ReferencesProvider extends Provider {
     }
 
     // Handle space definitions in ESPACE files
-    if (tokenPosition.parseTree instanceof EspaceSpaceHeaderContext) {
+    if (tokenPosition.parseTree instanceof EspaceSpaceHeaderContext ||
+        tokenPosition.parseTree?.constructor?.name === 'SpaceHeaderContext') {
       // Look for space symbols in the experiment's symbol table
       const experimentSymbol = document.symbolTable?.children.find(
         (c: BaseSymbol) => c instanceof ExperimentSymbol
@@ -125,17 +164,9 @@ export class ReferencesProvider extends Provider {
       }
     }
 
-    // Handle experiment definitions in ESPACE files
-    if (tokenPosition.parseTree instanceof EspaceExperimentHeaderContext) {
-      // Look for experiment symbols in the current document's symbol table
-      if (document.symbolTable) {
-        const result = (await document.symbolTable.resolve(tokenPosition.text, false)) || null;
-        return result;
-      }
-    }
-
     // Handle data definitions in ESPACE files
-    if (tokenPosition.parseTree instanceof EspaceDataDefinitionContext) {
+    if (tokenPosition.parseTree instanceof EspaceDataDefinitionContext ||
+        tokenPosition.parseTree?.constructor?.name === 'DataDefinitionContext') {
       // Look for data symbols in the current document's symbol table
       const experimentSymbol = document.symbolTable?.children.find(
         (c: BaseSymbol) => c instanceof ExperimentSymbol
@@ -147,12 +178,29 @@ export class ReferencesProvider extends Provider {
     }
 
     // Handle param definitions in ESPACE files
-    if (tokenPosition.parseTree instanceof EspaceParamDefinitionContext) {
+    if (isParamDefinition) {
       // For param definitions, resolve directly from the document's symbol table
       // which will search through all scopes including space scopes
       if (document.symbolTable) {
         const result = (await document.symbolTable.resolve(tokenPosition.text, true)) || null;
-        return result;
+        if (result) return result;
+        
+        // If direct resolution fails, search manually through all children and nested scopes
+        const searchInScope = async (scope: any): Promise<BaseSymbol | null> => {
+          if (!scope || !scope.children) return null;
+          
+          for (const child of scope.children) {
+            if (child.name === tokenPosition.text && child.constructor.name.includes('Param')) {
+              return child;
+            }
+            // Recursively search in nested scopes
+            const nestedResult = await searchInScope(child);
+            if (nestedResult) return nestedResult;
+          }
+          return null;
+        };
+        
+        return await searchInScope(document.symbolTable);
       }
     }
 
