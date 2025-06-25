@@ -5,6 +5,12 @@
     "type": "module",
     "main": "./dist/server.js",
     "types": "./dist/server.d.ts",
+    "exports": {
+        ".": {
+            "types": "./dist/server.d.ts",
+            "default": "./dist/server.js"
+        }
+    },
     "files": [
         "dist/**/*",
         "src/**/*"
@@ -24,7 +30,7 @@
         "xxp",
         "espace"
     ],
-    "author": "ExtremeXP Team",
+    "author": "Vojtech Svandelik",
     "license": "MIT",
     "engines": {
         "node": ">=18.0.0",

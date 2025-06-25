@@ -32,7 +32,7 @@
         "runner",
         "execution"
     ],
-    "author": "ExtremeXP Team",
+    "author": "Vojtech Svandelik",
     "license": "MIT",
     "engines": {
         "node": ">=18.0.0",

@@ -8,6 +8,12 @@
     "bin": {
         "workflow-repository-server": "./dist/server.js"
     },
+    "exports": {
+        ".": {
+            "types": "./dist/server.d.ts",
+            "default": "./dist/server.js"
+        }
+    },
     "files": [
         "dist/**/*",
         "src/**/*"
@@ -29,7 +35,7 @@
         "server",
         "http"
     ],
-    "author": "ExtremeXP Team",
+    "author": "Vojtech Svandelik",
     "license": "MIT",
     "engines": {
         "node": ">=18.0.0",

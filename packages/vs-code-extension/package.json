@@ -42,7 +42,7 @@
         "lsp",
         "language-server"
     ],
-    "author": "ExtremeXP Team",
+    "author": "Vojtech Svandelik",
     "license": "MIT",
     "repository": {
         "type": "git",
