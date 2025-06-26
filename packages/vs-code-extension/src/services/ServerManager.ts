@@ -2,7 +2,7 @@ import * as vscode from 'vscode';
 import { ChildProcess } from 'child_process';
 import * as path from 'path';
 import * as net from 'net';
-import { ToolExecutor } from './ToolExecutor';
+import { ToolExecutor } from './ToolExecutor.js';
 
 export type ServerStatus = 'running' | 'stopped' | 'starting' | 'error';
 

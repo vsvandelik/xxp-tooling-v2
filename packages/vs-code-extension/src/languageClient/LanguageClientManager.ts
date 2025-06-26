@@ -7,8 +7,8 @@ import {
   ServerOptions,
   TransportKind,
   Trace,
-} from 'vscode-languageclient/node';
-import { ToolResolver } from '../services/ToolResolver';
+} from 'vscode-languageclient/node.js';
+import { ToolResolver } from '../services/ToolResolver.js';
 
 export class LanguageClientManager {
   private client: LanguageClient | undefined;
