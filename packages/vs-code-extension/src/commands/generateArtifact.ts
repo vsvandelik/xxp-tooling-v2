@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
-import { ToolExecutor } from '../services/ToolExecutor';
+import { ToolExecutor } from '../services/ToolExecutor.js';
 
 interface ValidationResult {
   errors: string[];
