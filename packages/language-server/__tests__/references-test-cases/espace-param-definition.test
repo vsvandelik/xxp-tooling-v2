@@ -7,7 +7,7 @@ workflow SimpleWorkflow {
     }
 }
 
-=== experiment.espace ===
+=== myExperiment.espace ===
 experiment MyExperiment {
     space s1 of SimpleWorkflow {
         strategy randomSearch;
@@ -24,4 +24,4 @@ simpleWorkflow.xxp:5:15-27
 
 === REFERENCES ===
 simpleWorkflow.xxp:5:15-27
-experiment.espace:4:15-27
+myExperiment.espace:4:15-27

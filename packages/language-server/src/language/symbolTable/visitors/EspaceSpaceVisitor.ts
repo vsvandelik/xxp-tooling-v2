@@ -45,27 +45,38 @@ export class EspaceSpaceVisitor {
     const spaceName = identifier.getText();
     const workflowName = workflowNameRead.getText();
 
+    console.error(`[SPACE] SPACE-HEADER-START: space="${spaceName}", workflow="${workflowName}"`);
+
     // Get the referenced workflow
     const workflowDocument = this.getWorkflowDocument(workflowName);
     let workflowSymbol: WorkflowSymbol | undefined;
 
+    console.error(`[SPACE] SPACE-DOC-FOUND: ${!!workflowDocument}`);
+
     if (!workflowDocument) {
+      console.error(`[SPACE] SPACE-DOC-NOT-FOUND: "${workflowName}"`);
       addDiagnostic(this.builder, workflowNameRead, `Workflow '${workflowName}' not found`);
     } else {
+      console.error(`[SPACE] SPACE-RESOLVE-WF: "${workflowName}"`);
       workflowSymbol = workflowDocument.symbolTable?.resolveSync(workflowName) as WorkflowSymbol;
 
+      console.error(`[SPACE] SPACE-WF-RESOLVED: ${!!workflowSymbol}`);
+
       if (!workflowSymbol) {
+        console.error(`[SPACE] SPACE-WF-NOT-IN-DOC: "${workflowName}"`);
         addDiagnostic(
           this.builder,
           workflowNameRead,
           `Workflow '${workflowName}' is not defined in the referenced file`
         );
       } else {
+        console.error(`[SPACE] SPACE-WF-SUCCESS: "${workflowSymbol.name}"`);
         Document.addDocumentDependency(this.builder.document, workflowDocument);
       }
     }
 
     // Create the space symbol
+    console.error(`[SPACE] SPACE-CREATE: "${spaceName}" with-ref=${!!workflowSymbol}`);
     const spaceSymbol = addSymbolOfTypeWithContext(
       this.builder,
       SpaceSymbol,
@@ -77,8 +88,11 @@ export class EspaceSpaceVisitor {
     );
 
     if (!spaceSymbol) {
+      console.error(`[SPACE] SPACE-CREATE-FAILED: "${spaceName}"`);
       return this.builder.defaultResult();
     }
+
+    console.error(`[SPACE] SPACE-CREATED: "${spaceSymbol.name}" ref="${spaceSymbol.workflowReference?.name}"`);
 
     // Visit the workflow name read to add reference
     this.builder.visit(workflowNameRead);

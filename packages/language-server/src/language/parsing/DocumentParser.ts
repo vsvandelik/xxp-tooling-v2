@@ -125,14 +125,17 @@ export class DocumentParser {
     parsedDocument: Document,
     forcedFsParsing: boolean
   ): void {
+    console.error(`[PARSER] PARSING-ESPACE-DOC: ${textDocument.uri}`);
     this.parseDocumentHelper(
       textDocument,
       parsedDocument,
       input => new ESPACELexer(input),
       tokenStream => new ESPACEParser(tokenStream),
       parser => (parser as ESPACEParser).program(),
-      (documentsManager, document, symbolTable) =>
-        new EspaceSymbolTableBuilder(documentsManager, document, symbolTable),
+      (documentsManager, document, symbolTable) => {
+        console.error(`[PARSER] CREATING-ESPACE-BUILDER: ${document.uri}`);
+        return new EspaceSymbolTableBuilder(documentsManager, document, symbolTable);
+      },
       'Extra content found after the end of the experiment space declaration.',
       forcedFsParsing
     );

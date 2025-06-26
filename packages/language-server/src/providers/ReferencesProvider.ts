@@ -76,9 +76,6 @@ export class ReferencesProvider extends Provider {
     const contextName = tokenPosition.parseTree?.constructor?.name;
     const text = tokenPosition.text;
 
-    console.error(`[REFS] resolveSymbol DEBUG: text="${text}", contextName="${contextName}"`);
-
-
     // Special handling for ESPACE contexts
     if (contextName === 'TaskNameReadContext') {
       const result = await SymbolResolver.resolveEspaceTask(text, document, this.documentManager);
@@ -89,7 +86,6 @@ export class ReferencesProvider extends Provider {
 
     // Special handling for ESPACE parameter contexts
     if (contextName === 'ParamDefinitionContext' || contextName === 'ParamAssignmentContext') {
-      console.error(`[REFS] resolveSymbol: Using ESPACE parameter resolution for "${text}"`);
       const result = await SymbolResolver.resolveEspaceParameter(text, document, this.documentManager);
       if (result) {
         return result;

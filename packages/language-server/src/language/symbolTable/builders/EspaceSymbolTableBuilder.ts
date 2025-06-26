@@ -53,6 +53,7 @@ export class EspaceSymbolTableBuilder
     public readonly symbolTable: DocumentSymbolTable
   ) {
     super();
+    console.error(`[BUILDER] ESPACE-BUILDER-CREATED: ${document.uri}`);
     this.currentScope = this.symbolTable;
     this.experimentVisitor = new EspaceExperimentVisitor(this);
     this.spaceVisitor = new EspaceSpaceVisitor(this);
@@ -78,10 +79,12 @@ export class EspaceSymbolTableBuilder
 
   // Space methods
   visitSpaceDeclaration(ctx: EspaceSpaceDeclarationContext): DocumentSymbolTable {
+    console.error(`[BUILDER] BUILDER-SPACE-DECL: ${ctx.getText()}`);
     return this.spaceVisitor.visitDeclaration(ctx);
   }
 
   visitSpaceHeader(ctx: EspaceSpaceHeaderContext): DocumentSymbolTable {
+    console.error(`[BUILDER] BUILDER-SPACE-HEADER: ${ctx.getText()}`);
     return this.spaceVisitor.visitHeader(ctx);
   }
 
