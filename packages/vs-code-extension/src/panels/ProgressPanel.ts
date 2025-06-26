@@ -699,7 +699,7 @@ export class ProgressPanel {
                 case 'setExperimentId':
                     currentExperimentId = message.experimentId;
                     document.getElementById('experimentName').textContent = 'Experiment: ' + message.experimentId;
-                    // Don't assume status - wait for actual progress updates to determine button states
+                    updateButtonStates('running'); // Assume running when experiment starts
                     addLog('Experiment started: ' + message.experimentId);
                     break;
                     
