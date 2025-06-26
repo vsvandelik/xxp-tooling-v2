@@ -36,16 +36,17 @@ describe('ProgressPanel Logic', () => {
       const experimentStates = ['idle', 'running', 'failed', 'completed'];
       
       const getButtonStates = (status: string) => {
+        const statusLower = status.toLowerCase();
         return {
           terminateEnabled: status === 'running',
-          resumeEnabled: status === 'failed'
+          resumeEnabled: statusLower === 'failed' || statusLower === 'idle' || statusLower === 'terminated' || statusLower === 'completed'
         };
       };
       
       // Test the logic for different states
       expect(getButtonStates('idle')).toEqual({
         terminateEnabled: false,
-        resumeEnabled: false
+        resumeEnabled: true
       });
       
       expect(getButtonStates('running')).toEqual({
@@ -60,7 +61,12 @@ describe('ProgressPanel Logic', () => {
       
       expect(getButtonStates('completed')).toEqual({
         terminateEnabled: false,
-        resumeEnabled: false
+        resumeEnabled: true
+      });
+      
+      expect(getButtonStates('terminated')).toEqual({
+        terminateEnabled: false,
+        resumeEnabled: true
       });
     });
   });

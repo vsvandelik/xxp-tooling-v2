@@ -180,11 +180,21 @@ export class ProgressPanel {
         },
       });
 
+      // Unregister old experiment ID handler if it exists
+      if (this.experimentId) {
+        this.experimentService.unregisterUserInputHandler(this.experimentId);
+      }
+
       // Update the experiment ID and notify the webview
       this.experimentId = newExperimentId;
       this.panel.webview.postMessage({
         type: 'setExperimentId',
         experimentId: newExperimentId,
+      });
+
+      // Register user input handler for the new experiment ID
+      this.experimentService.registerUserInputHandler(newExperimentId, request => {
+        this.handleUserInputRequest(request);
       });
 
       vscode.window.showInformationMessage('Experiment resumed successfully');
@@ -689,7 +699,7 @@ export class ProgressPanel {
                 case 'setExperimentId':
                     currentExperimentId = message.experimentId;
                     document.getElementById('experimentName').textContent = 'Experiment: ' + message.experimentId;
-                    updateButtonStates('running'); // Assume running when experiment starts
+                    // Don't assume status - wait for actual progress updates to determine button states
                     addLog('Experiment started: ' + message.experimentId);
                     break;
                     
