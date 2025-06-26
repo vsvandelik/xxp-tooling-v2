@@ -184,8 +184,8 @@ export class ExperimentService {
       // Load artifact to get experiment info
       const artifact = await this.loadArtifact(artifactPath);
 
-      // Get initial status
-      const status = await this.executor.getStatus(artifact.experiment, artifact.version);
+      // Get initial status for progress tracking, but always start with 'running' status
+      const existingStatus = await this.executor.getStatus(artifact.experiment, artifact.version);
 
       // Create active experiment record
       const activeExperiment: ActiveExperiment = {
@@ -193,7 +193,10 @@ export class ExperimentService {
         experimentName: artifact.experiment,
         experimentVersion: artifact.version,
         artifactPath,
-        status: status || {
+        status: existingStatus ? {
+          ...existingStatus,
+          status: 'running', // Always start with running status for new/resumed experiments
+        } : {
           runId: experimentId,
           experimentName: artifact.experiment,
           experimentVersion: artifact.version,
