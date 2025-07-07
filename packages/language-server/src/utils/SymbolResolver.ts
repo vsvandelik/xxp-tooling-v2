@@ -4,6 +4,7 @@ import { WorkflowSymbol } from '../core/models/symbols/WorkflowSymbol.js';
 import { SpaceSymbol } from '../core/models/symbols/SpaceSymbol.js';
 import { DocumentManager } from '../core/managers/DocumentsManager.js';
 import { DocumentSymbolTable } from '../language/symbolTable/DocumentSymbolTable.js';
+import { Document } from '../core/documents/Document.js';
 
 export interface SymbolResolutionContext {
   text: string;
@@ -46,20 +47,20 @@ export class SymbolResolver {
    * Get valid symbols of a specific type at a position - used by completion providers
    */
   static async getValidSymbolsOfType<T extends BaseSymbol>(
-    document: any,
+    document: Document,
     parseTree: any,
     type: new (...args: any[]) => T,
     documentManager?: DocumentManager
   ): Promise<string[]> {
     // Use the document's existing method if available, otherwise fall back to folder symbol table
     if (document.symbolTable?.getValidSymbolsAtPosition) {
-      return document.symbolTable.getValidSymbolsAtPosition(parseTree, type);
+      return document.symbolTable.getValidSymbolsAtPosition(parseTree, document.uri, type);
     }
     
     // Fallback to folder symbol table
     const folderTable = documentManager?.getDocumentSymbolTableForFile(document.uri);
     if (folderTable?.getValidSymbolsAtPosition) {
-      return folderTable.getValidSymbolsAtPosition(parseTree, type);
+      return folderTable.getValidSymbolsAtPosition(parseTree, document.uri, type);
     }
     
     return [];

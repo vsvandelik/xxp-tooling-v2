@@ -1,5 +1,5 @@
 === workflow.xxp ===
-workflow NewWorkflow {<-CURSOR->
+workflow NewWorkflow { <-CURSOR->
 }
 
 === SUGGESTIONS ===

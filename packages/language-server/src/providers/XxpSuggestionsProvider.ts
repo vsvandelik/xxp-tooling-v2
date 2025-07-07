@@ -58,23 +58,18 @@ export class XxpSuggestionsProvider extends Provider {
       candidates.tokens,
       tokenPosition,
       document.tokenStream!,
-      folderSymbolTable
-    );
-    await this.fixRulesSuggestionForChains(
-      candidates.rules,
-      tokenPosition,
-      document.tokenStream!,
-      folderSymbolTable
+      folderSymbolTable,
+      document.uri
     );
     // Special handling for workflow inheritance: check if we're after "from" keyword in workflow header
-    const inheritanceCompletions = await this.getWorkflowInheritanceCompletions(tokenPosition, document.tokenStream!, folderSymbolTable);
+    const inheritanceCompletions = await this.getWorkflowInheritanceCompletions(tokenPosition, document.tokenStream!, folderSymbolTable, document.uri);
     if (inheritanceCompletions.length > 0) {
       // If we found inheritance completions, return only those (don't mix with other suggestions)
       return inheritanceCompletions;
     }
 
     symbols.push(
-      ...(await this.processRules(candidates.rules, tokenPosition, folderSymbolTable, document.uri))
+      ...(await this.processRules(candidates.rules, tokenPosition, folderSymbolTable, document))
     );
     symbols.push(...this.processTokens(candidates.tokens, document.parser!.vocabulary, tokenPosition, document.tokenStream));
 
@@ -97,7 +92,7 @@ export class XxpSuggestionsProvider extends Provider {
     rules: Map<number, ICandidateRule>,
     position: TokenPosition,
     symbolTable: DocumentSymbolTable,
-    documentUri: string
+    document: Document
   ): Promise<CompletionItem[]> {
     const proposedSymbols: CompletionItem[] = [];
 
@@ -106,7 +101,7 @@ export class XxpSuggestionsProvider extends Provider {
         position,
         proposedSymbols,
         symbolTable,
-        documentUri
+        document
       );
     }
     if (rules.has(XXPParser.RULE_dataNameRead)) {
@@ -115,7 +110,8 @@ export class XxpSuggestionsProvider extends Provider {
         DataSymbol,
         proposedSymbols,
         symbolTable,
-        CompletionItemKind.Variable
+        CompletionItemKind.Variable,
+        document
       );
     }
     if (rules.has(XXPParser.RULE_taskNameRead)) {
@@ -124,7 +120,8 @@ export class XxpSuggestionsProvider extends Provider {
         TaskSymbol,
         proposedSymbols,
         symbolTable,
-        CompletionItemKind.Variable
+        CompletionItemKind.Variable,
+        document
       );
     }
 
@@ -145,7 +142,8 @@ export class XxpSuggestionsProvider extends Provider {
     tokens: Map<number, TokenList>,
     position: TokenPosition,
     tokenStream: CommonTokenStream,
-    symbolTable: DocumentSymbolTable
+    symbolTable: DocumentSymbolTable,
+    documentUri: string
   ): Promise<void> {
     if (!tokens.has(XXPParser.ARROW)) {
       return;
@@ -155,38 +153,11 @@ export class XxpSuggestionsProvider extends Provider {
 
     const proposedDataIdentifiers = await symbolTable.getValidSymbolsAtPosition(
       position.parseTree,
+      documentUri,
       DataSymbol
     );
     if (leftIdentifier.text && proposedDataIdentifiers.includes(leftIdentifier.text)) {
       tokens.delete(XXPParser.ARROW);
-    }
-  }
-
-  private async fixRulesSuggestionForChains(
-    rules: Map<number, ICandidateRule>,
-    position: TokenPosition,
-    tokenStream: CommonTokenStream,
-    symbolTable: DocumentSymbolTable
-  ): Promise<void> {
-    if (!rules.has(XXPParser.RULE_dataNameRead) || !rules.has(XXPParser.RULE_taskNameRead)) {
-      return;
-    }
-    const leftIdentifier = tokenStream.get(position.index - 3); // -3 because of the arrow token and space token
-
-    const proposedDataIdentifiers = await symbolTable.getValidSymbolsAtPosition(
-      position.parseTree,
-      DataSymbol
-    );
-    if (leftIdentifier.text && proposedDataIdentifiers.includes(leftIdentifier.text)) {
-      rules.delete(XXPParser.RULE_dataNameRead);
-    }
-
-    const proposedTaskIdentifiers = await symbolTable.getValidSymbolsAtPosition(
-      position.parseTree,
-      TaskSymbol
-    );
-    if (leftIdentifier.text && proposedTaskIdentifiers.includes(leftIdentifier.text)) {
-      rules.delete(XXPParser.RULE_taskNameRead);
     }
   }
 
@@ -277,11 +248,11 @@ export class XxpSuggestionsProvider extends Provider {
     position: TokenPosition,
     proposedSymbols: CompletionItem[],
     symbolTable: DocumentSymbolTable,
-    documentUri: string
+    document: Document
   ): Promise<void> {
     // Use generic symbol resolver utility
     const validWorkflows = await SymbolResolver.getValidSymbolsOfType(
-      { symbolTable, uri: documentUri }, 
+      document, 
       position.parseTree, 
       WorkflowSymbol,
       this.documentManager
@@ -307,11 +278,12 @@ export class XxpSuggestionsProvider extends Provider {
     type: new (...args: any[]) => T,
     proposedSymbols: CompletionItem[],
     symbolTable: DocumentSymbolTable,
-    kind: CompletionItemKind
+    kind: CompletionItemKind,
+    document: Document
   ): Promise<void> {
     // Use generic symbol resolver utility
     const validSymbols = await SymbolResolver.getValidSymbolsOfType(
-      { symbolTable, uri: '' }, 
+      document, 
       position.parseTree, 
       type,
       this.documentManager
@@ -380,7 +352,8 @@ export class XxpSuggestionsProvider extends Provider {
   private async getWorkflowInheritanceCompletions(
     position: TokenPosition,
     tokenStream: CommonTokenStream,
-    symbolTable: DocumentSymbolTable
+    symbolTable: DocumentSymbolTable,
+    documentUri: string
   ): Promise<CompletionItem[]> {
     // Check if we're in a position for workflow inheritance (after "from" keyword)
     if (!this.isAfterFromKeywordInWorkflowHeader(position, tokenStream)) {
@@ -388,7 +361,7 @@ export class XxpSuggestionsProvider extends Provider {
     }
 
     // Get all available workflows from symbol table
-    const allWorkflows = await symbolTable.getValidSymbolsAtPosition(position.parseTree, WorkflowSymbol);
+    const allWorkflows = await symbolTable.getValidSymbolsAtPosition(position.parseTree, documentUri, WorkflowSymbol);
     
     // Filter out current workflow - get workflow name from document text
     const currentWorkflowName = this.getWorkflowNameFromDocument(position);

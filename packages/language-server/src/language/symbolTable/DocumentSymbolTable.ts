@@ -33,6 +33,7 @@ export class DocumentSymbolTable extends SymbolTable {
 
   public async getValidSymbolsAtPosition<T extends BaseSymbol>(
     parseTree: ParseTree,
+    documentUri: string,
     type: new (...args: any[]) => T
   ): Promise<string[]> {
     const currentContext = parseTree;
@@ -53,10 +54,28 @@ export class DocumentSymbolTable extends SymbolTable {
       return spaceNames;
     }
 
-    // Generic approach: always try to get symbols from all workflows first
-    // This ensures inheritance works for any symbol type (TaskSymbol, DataSymbol, etc.)
-    const workflows = await this.getSymbolsOfType(WorkflowSymbol as any);
-    
+    if (type.name === 'WorkflowSymbol') {
+      const workflows = await this.getSymbolsOfType(WorkflowSymbol as any);
+      if (workflows.length > 0) {
+        return workflows.map(w => w.name);
+      }
+    }
+
+    if (!currentContext) return [];
+    let currentWorkflowSymbol = DocumentSymbolTable.symbolWithContextRecursive(this, currentContext, documentUri);
+    while (currentWorkflowSymbol && !(currentWorkflowSymbol instanceof SymbolTable)) {
+      currentWorkflowSymbol = currentWorkflowSymbol.parent;
+    }
+
+    const workflows = [currentWorkflowSymbol]
+    if (currentWorkflowSymbol instanceof WorkflowSymbol) {
+      let workflowSymbol = currentWorkflowSymbol as WorkflowSymbol;
+      while (workflowSymbol.parentWorkflowSymbol && workflowSymbol.parentWorkflowSymbol instanceof WorkflowSymbol) {
+        workflows.push(workflowSymbol.parentWorkflowSymbol as WorkflowSymbol);
+        workflowSymbol = workflowSymbol.parentWorkflowSymbol as WorkflowSymbol;
+      }
+    }
+
     if (workflows.length > 0) {
       const allSymbols: T[] = [];
       const symbolNames = new Set<string>(); // Use Set to avoid duplicates
@@ -77,16 +96,11 @@ export class DocumentSymbolTable extends SymbolTable {
       if (allSymbols.length > 0) {
         return allSymbols.map(s => s.name);
       }
-      
-      // If we're looking for WorkflowSymbol specifically and found workflows, return their names
-      if (type.name === 'WorkflowSymbol') {
-        return workflows.map(w => w.name);
-      }
     }
 
     // Fall back to original scope-based logic if no workflows exist or no symbols found
     if (!currentContext) return [];
-    let scope = DocumentSymbolTable.symbolWithContextRecursive(this, currentContext);
+    let scope = DocumentSymbolTable.symbolWithContextRecursive(this, currentContext, documentUri);
     while (scope && !(scope instanceof ScopedSymbol)) {
       scope = scope.parent;
     }
@@ -100,18 +114,41 @@ export class DocumentSymbolTable extends SymbolTable {
     return symbols.map(s => s.name);
   }
 
+  public async getCurrentScopeSymbolByType<T extends BaseSymbol>(
+    parseTree: ParseTree,
+    documentUri: string,
+    type: new (...args: any[]) => T
+  ): Promise<T | null> {
+    const currentContext = parseTree;
+    if (!currentContext) return null;
+
+    let scope = DocumentSymbolTable.symbolWithContextRecursive(this, currentContext, documentUri);
+
+    while (scope) {
+      if (scope instanceof type) {
+        return scope;
+      }
+      
+      scope = scope.parent;
+    }
+
+    return null;
+  }
+
   private static symbolWithContextRecursive(
     root: ScopedSymbol,
-    context: ParseTree
+    context: ParseTree,
+    documentUri: string
   ): BaseSymbol | undefined {
     for (const child of root.children) {
       if (!child.context) continue;
+      if ((child instanceof WorkflowSymbol && (child as WorkflowSymbol).document.uri !== documentUri) || (child instanceof ExperimentSymbol && (child as ExperimentSymbol).document.uri !== documentUri)) continue;
 
       if (child.context.getSourceInterval().properlyContains(context.getSourceInterval())) {
         let foundSymbol: BaseSymbol | undefined;
 
         if (child instanceof ScopedSymbol) {
-          foundSymbol = this.symbolWithContextRecursive(child, context);
+          foundSymbol = this.symbolWithContextRecursive(child, context, documentUri);
         } else if (child.context === context) {
           foundSymbol = child;
         }

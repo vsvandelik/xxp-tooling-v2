@@ -34,5 +34,5 @@ experiment ComplexExperiment {
 - InitSpace
 - ProcessSpace
 - FinalizeSpace
-- end
-- start
+- END
+- START

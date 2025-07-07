@@ -18,8 +18,8 @@ experiment ControlExperiment {
 }
 
 === SUGGESTIONS ===
-- start
-- end
+- END
+- START
 - SpaceA
 - SpaceB
 - }

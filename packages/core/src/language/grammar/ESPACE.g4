@@ -21,7 +21,7 @@ spaceContent:
     | taskConfiguration
     | dataDefinition;
 
-strategyStatement: STRATEGY IDENTIFIER SEMICOLON;
+strategyStatement: STRATEGY ( RANDOM | GRIDSEARCH ) SEMICOLON;
 paramDefinition: PARAM IDENTIFIER EQUALS paramValue SEMICOLON;
 
 paramValue:
@@ -91,6 +91,8 @@ DEFINE: 'define';
 DATA: 'data';
 START: 'start';
 END: 'end';
+RANDOM: 'random';
+GRIDSEARCH: 'gridsearch';
 
 // Fragments
 fragment LETTER: [a-zA-Z_];

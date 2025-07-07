@@ -1,10 +1,10 @@
-=== workflow.xxp ===
+=== configWorkflow.xxp ===
 workflow ConfigWorkflow {
     define data configData;
     define task configTask;
 }
 
-=== experiment.espace ===
+=== configExperiment.espace ===
 experiment ConfigExperiment {
     space ConfigSpace of ConfigWorkflow {
         configure task <-CURSOR->

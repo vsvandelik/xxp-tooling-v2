@@ -7,4 +7,4 @@ experiment StrategyExperiment {
 
 === SUGGESTIONS ===
 - gridsearch
-- randomsearch
+- random
