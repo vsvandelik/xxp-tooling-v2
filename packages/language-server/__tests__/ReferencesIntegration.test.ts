@@ -50,10 +50,37 @@ describe('Language Server Definition and References Tests (LSP)', () => {
   // Dynamic test cases from files
   const testCasesDir = path.join(__dirname, 'references-test-cases');
   let testCaseFiles: string[] = [];
+  
   if (fs.existsSync(testCasesDir)) {
-    testCaseFiles = fs.readdirSync(testCasesDir)
-      .filter(file => file.endsWith('.test'))
-      .map(file => path.join(testCasesDir, file));
+    const specificTestCase = process.env['TEST_CASE'];
+    
+    if (specificTestCase) {
+      // Run only the specified test case
+      const specificTestFile = path.join(testCasesDir, `${specificTestCase}.test`);
+      if (fs.existsSync(specificTestFile)) {
+        testCaseFiles = [specificTestFile];
+        console.log(`Running single test case: ${specificTestCase}`);
+      } else {
+        console.error(`Test case file not found: ${specificTestFile}`);
+        // Create a test that will fail to indicate the missing file
+        testCaseFiles = [];
+      }
+    } else {
+      // Run all test cases (existing behavior)
+      testCaseFiles = fs.readdirSync(testCasesDir)
+        .filter(file => file.endsWith('.test'))
+        .map(file => path.join(testCasesDir, file));
+      console.log(`Running all test cases: ${testCaseFiles.length} found`);
+    }
+  }
+
+  // Handle case where specific test case was requested but not found
+  if (process.env['TEST_CASE'] && testCaseFiles.length === 0) {
+    it(`should find the specified test case file: ${process.env['TEST_CASE']}.test`, () => {
+      const expectedFile = path.join(testCasesDir, `${process.env['TEST_CASE']}.test`);
+      expect(fs.existsSync(expectedFile)).toBe(true);
+    });
+    return; // Exit early since we can't run the missing test
   }
 
   if (testCaseFiles.length === 0) {
@@ -70,7 +97,6 @@ describe('Language Server Definition and References Tests (LSP)', () => {
   // Parse each test case file and create dynamic tests
   testCaseFiles.forEach(testCaseFile => {
     const testCase = parseTestCaseFile(testCaseFile);
-
     it(`should provide definition and references for ${testCase.name}`, async () => {
       // Create a unique subdirectory for this test
       const testTempDir = fs.mkdtempSync(path.join(baseTempDir, `${testCase.name}-`));
@@ -155,7 +181,9 @@ describe('Language Server Definition and References Tests (LSP)', () => {
             });
             throw new Error(`Definition test failed - no matching definition found. Expected: ${locationWithFileToString(testCase.expectedDefinition)} (URI: ${normalizeUri(expectedFileUri)})`);
           } 
-        }        // Validate references
+        }
+
+        // Validate references
         if (testCase.expectedReferences.length === 0) {
           expect(referencesResult).toBeNull();
         } else {
@@ -217,7 +245,6 @@ describe('Language Server Definition and References Tests (LSP)', () => {
         } catch (error) {
           console.warn('Error closing documents:', error);
         }
-
         // Clean up test directory and files
         try {
           if (fs.existsSync(testTempDir)) {
