@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { spawn } from 'child_process';
 import * as path from 'path';
+
 import {
   ExperimentExecutor,
   ProgressCallback,
@@ -8,8 +9,10 @@ import {
   RunResult,
   RunStatus,
   Expression,
+  Space,
+  Task,
 } from '@extremexp/experiment-runner';
-import { Space, Task } from '@extremexp/experiment-runner';
+
 import {
   ActiveExperiment,
   ExperimentProgress,
@@ -193,25 +196,27 @@ export class ExperimentService {
         experimentName: artifact.experiment,
         experimentVersion: artifact.version,
         artifactPath,
-        status: existingStatus ? {
-          ...existingStatus,
-          status: 'running', // Always start with running status for new/resumed experiments
-        } : {
-          runId: experimentId,
-          experimentName: artifact.experiment,
-          experimentVersion: artifact.version,
-          status: 'running',
-          progress: {
-            completedSpaces: 0,
-            totalSpaces: artifact.spaces.length,
-            completedParameterSets: 0,
-            totalParameterSets: artifact.spaces.reduce(
-              (sum: number, space: { parameters: string | Expression[] }) =>
-                sum + space.parameters.length,
-              0
-            ),
-          },
-        },
+        status: existingStatus
+          ? {
+              ...existingStatus,
+              status: 'running', // Always start with running status for new/resumed experiments
+            }
+          : {
+              runId: experimentId,
+              experimentName: artifact.experiment,
+              experimentVersion: artifact.version,
+              status: 'running',
+              progress: {
+                completedSpaces: 0,
+                totalSpaces: artifact.spaces.length,
+                completedParameterSets: 0,
+                totalParameterSets: artifact.spaces.reduce(
+                  (sum: number, space: { parameters: string | Expression[] }) =>
+                    sum + space.parameters.length,
+                  0
+                ),
+              },
+            },
         startTime: Date.now(),
       };
 

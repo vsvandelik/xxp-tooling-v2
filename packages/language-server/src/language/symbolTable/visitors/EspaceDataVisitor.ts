@@ -1,8 +1,9 @@
+import { EspaceDataDefinitionContext } from '@extremexp/core';
+
 import { DataSymbol } from '../../../core/models/symbols/DataSymbol.js';
+import { EspaceSymbolTableBuilder } from '../builders/EspaceSymbolTableBuilder.js';
 import { DocumentSymbolTable } from '../DocumentSymbolTable.js';
 import { addSymbolOfTypeWithContext } from '../helpers/SymbolHelpers.js';
-import { EspaceSymbolTableBuilder } from '../builders/EspaceSymbolTableBuilder.js';
-import { EspaceDataDefinitionContext } from '@extremexp/core';
 
 export class EspaceDataVisitor {
   constructor(private readonly builder: EspaceSymbolTableBuilder) {}

@@ -1,25 +1,11 @@
-import { Provider } from './Provider.js';
-import { Logger } from '../utils/Logger.js';
-import {
-  CompletionParams,
-  CompletionItem,
-  CompletionItemKind,
-  Connection,
-} from 'vscode-languageserver';
-import { BaseSymbol, CodeCompletionCore, ICandidateRule, TokenList } from 'antlr4-c3';
-import { Document } from '../core/documents/Document.js';
-import { DataSymbol } from '../core/models/symbols/DataSymbol.js';
-import { TaskSymbol } from '../core/models/symbols/TaskSymbol.js';
-import { SpaceSymbol } from '../core/models/symbols/SpaceSymbol.js';
-import { ParamSymbol } from '../core/models/symbols/ParamSymbol.js';
-import { WorkflowSymbol } from '../core/models/symbols/WorkflowSymbol.js';
-import { TokenPosition } from '../core/models/TokenPosition.js';
-import { DocumentSymbolTable } from '../language/symbolTable/DocumentSymbolTable.js';
-import { CommonTokenStream, Vocabulary } from 'antlr4ng';
-import { ESPACEParser } from '@extremexp/core';
-import { XxpSuggestionsProvider } from './XxpSuggestionsProvider.js';
-import { EspaceSuggestionsProvider } from './EspaceSuggestionsProvider.js';
+import { CompletionParams, CompletionItem, Connection } from 'vscode-languageserver';
+
 import { DocumentManager } from '../core/managers/DocumentsManager.js';
+import { Logger } from '../utils/Logger.js';
+
+import { EspaceSuggestionsProvider } from './EspaceSuggestionsProvider.js';
+import { Provider } from './Provider.js';
+import { XxpSuggestionsProvider } from './XxpSuggestionsProvider.js';
 
 export class SuggestionsProvider extends Provider {
   private logger = Logger.getLogger();

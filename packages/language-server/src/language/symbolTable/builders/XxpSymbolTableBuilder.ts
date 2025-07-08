@@ -1,16 +1,5 @@
-import { AbstractParseTreeVisitor } from 'antlr4ng';
-import { DocumentManager } from '../../../core/managers/DocumentsManager.js';
-import { Logger } from '../../../utils/Logger.js';
-import { DocumentSymbolTable } from '../DocumentSymbolTable.js';
-import { WorkflowVisitor } from '../visitors/WorkflowVisitor.js';
-import { DataVisitor } from '../visitors/DataVisitor.js';
-import { VariableReadVisitor } from '../visitors/VariableReadVisitor.js';
-import { TaskVisitor } from '../visitors/TaskVisitor.js';
-import { ScopedSymbol } from 'antlr4-c3';
-import { FileVisitor } from '../visitors/FileVisitor.js';
-import { Document } from '../../../core/documents/Document.js';
-import { XXPVisitor } from '@extremexp/core';
 import {
+  XXPVisitor,
   XxpDataDefinitionContext,
   XxpTaskConfigurationContext,
   XxpParamAssignmentContext,
@@ -25,6 +14,18 @@ import {
   XxpDataNameReadContext,
   XxpFileNameStringContext,
 } from '@extremexp/core';
+import { ScopedSymbol } from 'antlr4-c3';
+import { AbstractParseTreeVisitor } from 'antlr4ng';
+
+import { Document } from '../../../core/documents/Document.js';
+import { DocumentManager } from '../../../core/managers/DocumentsManager.js';
+import { Logger } from '../../../utils/Logger.js';
+import { DocumentSymbolTable } from '../DocumentSymbolTable.js';
+import { DataVisitor } from '../visitors/DataVisitor.js';
+import { FileVisitor } from '../visitors/FileVisitor.js';
+import { TaskVisitor } from '../visitors/TaskVisitor.js';
+import { VariableReadVisitor } from '../visitors/VariableReadVisitor.js';
+import { WorkflowVisitor } from '../visitors/WorkflowVisitor.js';
 
 export class XxpSymbolTableBuilder
   extends AbstractParseTreeVisitor<DocumentSymbolTable>

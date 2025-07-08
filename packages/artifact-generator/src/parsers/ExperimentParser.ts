@@ -1,7 +1,9 @@
-import { ExperimentModel } from '../models/ExperimentModel.js';
-import { ESPACEParser, ESPACELexer } from '@extremexp/core';
 import * as fs from 'fs';
+
+import { ESPACEParser, ESPACELexer } from '@extremexp/core';
 import * as antlr from 'antlr4ng';
+
+import { ExperimentModel } from '../models/ExperimentModel.js';
 import { ExperimentModelVisitor } from '../visitors/ExperimentModelVisitor.js';
 import { ParsingErrorListener } from '../visitors/ParsingErrorListener.js';
 

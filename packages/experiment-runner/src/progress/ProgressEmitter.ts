@@ -1,6 +1,7 @@
 import EventEmitter from 'events';
-import { ProgressCallback } from '../types/progress.types.js';
+
 import { Expression } from '../types/artifact.types.js';
+import { ProgressCallback } from '../types/progress.types.js';
 
 export class ProgressEmitter extends EventEmitter {
   constructor(private callback?: ProgressCallback) {

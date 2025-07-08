@@ -1,4 +1,5 @@
 import { Document } from '../../documents/Document.js';
+
 import { TerminalSymbolWithReferences } from './TerminalSymbolWithReferences.js';
 
 export type ParamValueType = 'enum' | 'range' | 'expression';

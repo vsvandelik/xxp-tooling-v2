@@ -1,10 +1,12 @@
-import { Provider } from './Provider.js';
-import { Logger } from '../utils/Logger.js';
 import { Hover, HoverParams, MarkupContent } from 'vscode-languageserver';
+
 import { DataSymbol } from '../core/models/symbols/DataSymbol.js';
+import { SpaceSymbol } from '../core/models/symbols/SpaceSymbol.js';
 import { TaskSymbol } from '../core/models/symbols/TaskSymbol.js';
 import { WorkflowSymbol } from '../core/models/symbols/WorkflowSymbol.js';
-import { SpaceSymbol } from '../core/models/symbols/SpaceSymbol.js';
+import { Logger } from '../utils/Logger.js';
+
+import { Provider } from './Provider.js';
 
 export class HoverProvider extends Provider {
   private logger = Logger.getLogger();
@@ -23,7 +25,11 @@ export class HoverProvider extends Provider {
     if (document.symbolTable === undefined) return;
 
     // Use generic symbol resolver
-    const symbol = document.symbolTable!.resolveSymbol(document, tokenPosition.parseTree, tokenPosition.text);
+    const symbol = document.symbolTable!.resolveSymbol(
+      document,
+      tokenPosition.parseTree,
+      tokenPosition.text
+    );
 
     if (symbol instanceof TaskSymbol) {
       return { contents: this.getTaskHoverInformation(symbol) };

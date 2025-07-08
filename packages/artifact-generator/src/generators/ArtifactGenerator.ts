@@ -1,15 +1,17 @@
+import * as fs from 'fs';
+import path from 'path';
+
 import { ArtifactModel } from '../models/ArtifactModel.js';
 import { ExperimentModel } from '../models/ExperimentModel.js';
 import { WorkflowModel } from '../models/WorkflowModel.js';
 import { DataFlowResolver } from '../parsers/DataFlowResolver.js';
-import { DataResolver } from '../resolvers/DataResolver.js';
 import { ExperimentParser } from '../parsers/ExperimentParser.js';
+import { WorkflowParser } from '../parsers/WorkflowParser.js';
+import { DataResolver } from '../resolvers/DataResolver.js';
 import { FileResolver } from '../resolvers/FileResolver.js';
 import { ParameterResolver } from '../resolvers/ParameterResolver.js';
 import { TaskResolver, ResolvedTask } from '../resolvers/TaskResolver.js';
-import { WorkflowParser } from '../parsers/WorkflowParser.js';
-import path from 'path';
-import * as fs from 'fs';
+
 import { ControlFlowGenerator } from './ControlFlowGenerator.js';
 import { SpaceGenerator } from './SpaceGenerator.js';
 import { TaskGenerator } from './TaskGenerator.js';

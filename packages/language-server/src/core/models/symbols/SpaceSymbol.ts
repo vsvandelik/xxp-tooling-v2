@@ -1,6 +1,7 @@
 import { Document } from '../../documents/Document.js';
-import { WorkflowSymbol } from './WorkflowSymbol.js';
+
 import { TerminalSymbolWithReferences } from './TerminalSymbolWithReferences.js';
+import { WorkflowSymbol } from './WorkflowSymbol.js';
 
 export class SpaceSymbol extends TerminalSymbolWithReferences {
   constructor(

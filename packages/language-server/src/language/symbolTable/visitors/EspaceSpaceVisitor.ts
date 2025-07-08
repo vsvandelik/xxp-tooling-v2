@@ -1,18 +1,19 @@
-import { SpaceSymbol } from '../../../core/models/symbols/SpaceSymbol.js';
-import { SpaceScopeSymbol } from '../../../core/models/symbols/SpaceScopeSymbol.js';
-import { DocumentSymbolTable } from '../DocumentSymbolTable.js';
-import { addSymbolOfTypeWithContext, visitScopeSymbol } from '../helpers/SymbolHelpers.js';
-import { addDiagnostic } from '../helpers/Diagnostics.js';
-import { EspaceSymbolTableBuilder } from '../builders/EspaceSymbolTableBuilder.js';
-import { WorkflowSymbol } from '../../../core/models/symbols/WorkflowSymbol.js';
-import { FileUtils } from '../../../utils/FileUtils.js';
-import { Document } from '../../../core/documents/Document.js';
 import {
   EspaceSpaceDeclarationContext,
   EspaceSpaceHeaderContext,
   EspaceSpaceBodyContext,
   EspaceStrategyStatementContext,
 } from '@extremexp/core';
+
+import { Document } from '../../../core/documents/Document.js';
+import { SpaceScopeSymbol } from '../../../core/models/symbols/SpaceScopeSymbol.js';
+import { SpaceSymbol } from '../../../core/models/symbols/SpaceSymbol.js';
+import { WorkflowSymbol } from '../../../core/models/symbols/WorkflowSymbol.js';
+import { FileUtils } from '../../../utils/FileUtils.js';
+import { EspaceSymbolTableBuilder } from '../builders/EspaceSymbolTableBuilder.js';
+import { DocumentSymbolTable } from '../DocumentSymbolTable.js';
+import { addDiagnostic } from '../helpers/Diagnostics.js';
+import { addSymbolOfTypeWithContext, visitScopeSymbol } from '../helpers/SymbolHelpers.js';
 
 export class EspaceSpaceVisitor {
   constructor(private readonly builder: EspaceSymbolTableBuilder) {}

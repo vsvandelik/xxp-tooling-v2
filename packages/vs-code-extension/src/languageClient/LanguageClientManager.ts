@@ -1,6 +1,7 @@
 // packages/vs-code-extension/src/languageClient/LanguageClientManager.ts
-import * as vscode from 'vscode';
 import * as path from 'path';
+
+import * as vscode from 'vscode';
 import {
   LanguageClient,
   LanguageClientOptions,
@@ -8,6 +9,7 @@ import {
   TransportKind,
   Trace,
 } from 'vscode-languageclient/node.js';
+
 import { ToolResolver } from '../services/ToolResolver.js';
 
 export class LanguageClientManager {

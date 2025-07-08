@@ -1,7 +1,3 @@
-import { ParamSymbol, ParamValue } from '../../../core/models/symbols/ParamSymbol.js';
-import { DocumentSymbolTable } from '../DocumentSymbolTable.js';
-import { addSymbolOfTypeWithContext } from '../helpers/SymbolHelpers.js';
-import { EspaceSymbolTableBuilder } from '../builders/EspaceSymbolTableBuilder.js';
 import {
   EspaceParamDefinitionContext,
   EspaceEnumFunctionContext,
@@ -9,9 +5,14 @@ import {
   EspaceExpressionContext,
   XxpParamAssignmentContext,
 } from '@extremexp/core';
+import { IScopedSymbol } from 'antlr4-c3';
+
+import { ParamSymbol, ParamValue } from '../../../core/models/symbols/ParamSymbol.js';
 import { SpaceScopeSymbol } from '../../../core/models/symbols/SpaceScopeSymbol.js';
-import { IScopedSymbol, ScopedSymbol } from 'antlr4-c3';
 import { SpaceSymbol } from '../../../core/models/symbols/SpaceSymbol.js';
+import { EspaceSymbolTableBuilder } from '../builders/EspaceSymbolTableBuilder.js';
+import { DocumentSymbolTable } from '../DocumentSymbolTable.js';
+import { addSymbolOfTypeWithContext } from '../helpers/SymbolHelpers.js';
 
 export class EspaceParamVisitor {
   constructor(private readonly builder: EspaceSymbolTableBuilder) {}
@@ -38,21 +39,28 @@ export class EspaceParamVisitor {
       value
     );
 
-    if(paramSymbol) {
+    if (paramSymbol) {
       this.addReferencesToParamsInWorkflowsDefinitions(paramName, paramSymbol);
     }
 
     return this.builder.visitChildren(ctx) as DocumentSymbolTable;
   }
 
-  private addReferencesToParamsInWorkflowsDefinitions(paramName: string, paramSymbol: ParamSymbol): void {
+  private addReferencesToParamsInWorkflowsDefinitions(
+    paramName: string,
+    paramSymbol: ParamSymbol
+  ): void {
     let spaceScopeSymbol: IScopedSymbol | undefined = this.builder.currentScope;
     while (spaceScopeSymbol && !(spaceScopeSymbol instanceof SpaceScopeSymbol)) {
       spaceScopeSymbol = spaceScopeSymbol.parent;
     }
 
     const spaceSymbol = spaceScopeSymbol?.previousSibling;
-    if (!spaceSymbol || !(spaceSymbol instanceof SpaceSymbol) || (spaceSymbol as SpaceSymbol).workflowReference === undefined) {
+    if (
+      !spaceSymbol ||
+      !(spaceSymbol instanceof SpaceSymbol) ||
+      (spaceSymbol as SpaceSymbol).workflowReference === undefined
+    ) {
       return;
     }
 
@@ -61,7 +69,10 @@ export class EspaceParamVisitor {
       if (!(param instanceof ParamSymbol) || !(param.context as XxpParamAssignmentContext)) {
         return;
       }
-      paramSymbol.addReference((param.context as XxpParamAssignmentContext).IDENTIFIER(), param.document);
+      paramSymbol.addReference(
+        (param.context as XxpParamAssignmentContext).IDENTIFIER(),
+        param.document
+      );
     });
   }
 

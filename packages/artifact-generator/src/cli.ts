@@ -1,8 +1,10 @@
 #!/usr/bin/env node
 
-import { Command } from 'commander';
 import * as fs from 'fs';
 import * as path from 'path';
+
+import { Command } from 'commander';
+
 import { ArtifactGenerator } from './generators/ArtifactGenerator.js';
 
 const program = new Command();

@@ -1,5 +1,3 @@
-import { Request, Response } from 'express';
-import multer from 'multer';
 import {
   ApiResponse,
   UploadWorkflowRequest,
@@ -11,9 +9,12 @@ import {
   AuthorsResponse,
   WorkflowSearchOptions,
 } from '@extremexp/workflow-repository';
-import { WorkflowStorageService } from '../services/WorkflowStorageService.js';
-import { UserService } from '../services/UserService.js';
+import { Request, Response } from 'express';
+import multer from 'multer';
 import { v4 as uuidv4 } from 'uuid';
+
+import { UserService } from '../services/UserService.js';
+import { WorkflowStorageService } from '../services/WorkflowStorageService.js';
 
 export class WorkflowController {
   private upload = multer({ storage: multer.memoryStorage() });

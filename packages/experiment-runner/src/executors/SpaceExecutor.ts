@@ -1,7 +1,9 @@
 import { createHash } from 'crypto';
+
 import { DatabaseRepository } from '../database/DatabaseRepository.js';
 import { ProgressEmitter } from '../progress/ProgressEmitter.js';
 import { Expression, Space, Task } from '../types/artifact.types.js';
+
 import { TaskExecutor } from './TaskExecutor.js';
 
 export class SpaceExecutor {

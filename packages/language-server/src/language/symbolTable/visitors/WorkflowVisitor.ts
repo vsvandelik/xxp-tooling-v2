@@ -1,16 +1,17 @@
-import { WorkflowSymbol } from '../../../core/models/symbols/WorkflowSymbol.js';
-import { FileUtils } from '../../../utils/FileUtils.js';
-import { DocumentSymbolTable } from '../DocumentSymbolTable.js';
-import { addDiagnostic, addDiagnosticForTerminalNode } from '../helpers/Diagnostics.js';
-import { addSymbolOfTypeWithContext } from '../helpers/SymbolHelpers.js';
-import { XxpSymbolTableBuilder } from '../builders/XxpSymbolTableBuilder.js';
-import { Document } from '../../../core/documents/Document.js';
-import { TerminalNode } from 'antlr4ng';
 import {
   XxpWorkflowHeaderContext,
   XxpWorkflowBodyContext,
   XxpWorkflowNameReadContext,
 } from '@extremexp/core';
+import { TerminalNode } from 'antlr4ng';
+
+import { Document } from '../../../core/documents/Document.js';
+import { WorkflowSymbol } from '../../../core/models/symbols/WorkflowSymbol.js';
+import { FileUtils } from '../../../utils/FileUtils.js';
+import { XxpSymbolTableBuilder } from '../builders/XxpSymbolTableBuilder.js';
+import { DocumentSymbolTable } from '../DocumentSymbolTable.js';
+import { addDiagnostic, addDiagnosticForTerminalNode } from '../helpers/Diagnostics.js';
+import { addSymbolOfTypeWithContext } from '../helpers/SymbolHelpers.js';
 
 export class WorkflowVisitor {
   constructor(private readonly builder: XxpSymbolTableBuilder) {}

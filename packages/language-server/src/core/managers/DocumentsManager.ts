@@ -1,13 +1,14 @@
+import { BaseSymbol } from 'antlr4-c3';
 import { TextDocument } from 'vscode-languageserver-textdocument';
-import { Logger } from '../../utils/Logger.js';
-import { FileUtils } from '../../utils/FileUtils.js';
+
 import { DocumentParser } from '../../language/parsing/DocumentParser.js';
 import { DocumentSymbolTable } from '../../language/symbolTable/DocumentSymbolTable.js';
-import { XxpDocument } from '../documents/XxpDocument.js';
-import { EspaceDocument } from '../documents/EspaceDocument.js';
-import { DocumentType } from '../models/DocumentType.js';
+import { FileUtils } from '../../utils/FileUtils.js';
+import { Logger } from '../../utils/Logger.js';
 import { Document } from '../documents/Document.js';
-import { BaseSymbol } from 'antlr4-c3';
+import { EspaceDocument } from '../documents/EspaceDocument.js';
+import { XxpDocument } from '../documents/XxpDocument.js';
+import { DocumentType } from '../models/DocumentType.js';
 
 export class DocumentManager {
   private readonly parsedDocuments = new Map<string, Document>();
@@ -31,17 +32,17 @@ export class DocumentManager {
 
   public onDocumentClosed(document: TextDocument): void {
     this.logger.info(`Document closed: ${document.uri}`);
-    
+
     // Get the document before removing it from cache
     const cachedDocument = this.parsedDocuments.get(document.uri);
-    
+
     // Remove from document cache
     this.parsedDocuments.delete(document.uri);
-    
+
     // Clean up document dependencies if document was cached
     if (cachedDocument) {
       this.cleanupDocumentDependencies(cachedDocument);
-      
+
       // Clean up symbols from folder symbol table
       this.cleanupDocumentSymbols(document.uri, cachedDocument);
     }
@@ -98,7 +99,7 @@ export class DocumentManager {
     for (const dependsOnDoc of document.documentsThisDependsOn) {
       dependsOnDoc.documentsDependingOnThis.delete(document);
     }
-    
+
     // Clear the dependency sets
     document.documentsDependingOnThis.clear();
     document.documentsThisDependsOn.clear();
@@ -107,17 +108,17 @@ export class DocumentManager {
   private cleanupDocumentSymbols(uri: string, document: Document): void {
     const folderPath = FileUtils.getFolderPath(uri);
     const folderSymbolTable = this.symbolTablesBasedOnFolders.get(folderPath);
-    
+
     if (!folderSymbolTable) {
       return;
     }
-    
+
     // Remove symbols that belong to the document being closed
     this.removeDocumentSymbolsFromTable(folderSymbolTable, document);
-    
+
     // Check if there are any other documents still open in this folder
     const documentsInFolder = this.getDocumentsInFolder(folderPath);
-    
+
     if (documentsInFolder.length === 0) {
       // No more documents in this folder, clear the entire symbol table for safety
       this.logger.info(`Clearing symbol table for folder: ${folderPath}`);
@@ -125,21 +126,26 @@ export class DocumentManager {
     }
   }
 
-  private removeDocumentSymbolsFromTable(symbolTable: DocumentSymbolTable, document: Document): void {
+  private removeDocumentSymbolsFromTable(
+    symbolTable: DocumentSymbolTable,
+    document: Document
+  ): void {
     // Get all symbols in the table
     const allSymbols = symbolTable.getAllSymbolsSync(BaseSymbol);
     const symbolsToRemove: BaseSymbol[] = [];
-    
+
     // Find symbols that belong to the document being closed
     for (const symbol of allSymbols) {
       if (this.symbolBelongsToDocument(symbol, document)) {
         symbolsToRemove.push(symbol);
       }
     }
-    
+
     // Remove the symbols
     for (const symbol of symbolsToRemove) {
-      this.logger.info(`Removing symbol '${symbol.name}' from folder symbol table (belonged to ${document.uri})`);
+      this.logger.info(
+        `Removing symbol '${symbol.name}' from folder symbol table (belonged to ${document.uri})`
+      );
       symbolTable.removeSymbol(symbol);
     }
   }
@@ -150,7 +156,7 @@ export class DocumentManager {
       const symbolDocument = (symbol as any).document as Document;
       return symbolDocument.uri === document.uri;
     }
-    
+
     return false;
   }
 

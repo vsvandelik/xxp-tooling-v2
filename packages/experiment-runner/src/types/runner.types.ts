@@ -1,6 +1,7 @@
-import { RunResult, RunStatus } from './run.types.js';
-import { ProgressCallback } from './progress.types.js';
 import { UserInputProvider } from '../userInput/UserInputProvider.js';
+
+import { ProgressCallback } from './progress.types.js';
+import { RunResult, RunStatus } from './run.types.js';
 
 export interface ExperimentRunnerOptions {
   progressCallback?: ProgressCallback;

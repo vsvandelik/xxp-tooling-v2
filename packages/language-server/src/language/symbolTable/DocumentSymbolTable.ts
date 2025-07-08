@@ -1,11 +1,12 @@
+import { EspaceWorkflowNameReadContext, XxpWorkflowNameReadContext } from '@extremexp/core';
 import { BaseSymbol, IScopedSymbol, ScopedSymbol, SymbolTable } from 'antlr4-c3';
 import { ParseTree } from 'antlr4ng';
-import { WorkflowSymbol } from '../../core/models/symbols/WorkflowSymbol.js';
-import { ExperimentSymbol } from '../../core/models/symbols/ExperimentSymbol.js';
+
 import { Document } from '../../core/documents/Document.js';
-import { EspaceWorkflowNameReadContext, XxpWorkflowNameReadContext } from '@extremexp/core';
+import { ExperimentSymbol } from '../../core/models/symbols/ExperimentSymbol.js';
 import { SpaceScopeSymbol } from '../../core/models/symbols/SpaceScopeSymbol.js';
 import { SpaceSymbol } from '../../core/models/symbols/SpaceSymbol.js';
+import { WorkflowSymbol } from '../../core/models/symbols/WorkflowSymbol.js';
 
 export class DocumentSymbolTable extends SymbolTable {
   constructor(name: string) {
@@ -51,15 +52,22 @@ export class DocumentSymbolTable extends SymbolTable {
     }
 
     if (!currentContext) return [];
-    let currentWorkflowSymbol = DocumentSymbolTable.symbolWithContextRecursive(this, currentContext, documentUri);
+    let currentWorkflowSymbol = DocumentSymbolTable.symbolWithContextRecursive(
+      this,
+      currentContext,
+      documentUri
+    );
     while (currentWorkflowSymbol && !(currentWorkflowSymbol instanceof SymbolTable)) {
       currentWorkflowSymbol = currentWorkflowSymbol.parent;
     }
 
-    const workflows = [currentWorkflowSymbol]
+    const workflows = [currentWorkflowSymbol];
     if (currentWorkflowSymbol instanceof WorkflowSymbol) {
       let workflowSymbol = currentWorkflowSymbol as WorkflowSymbol;
-      while (workflowSymbol.parentWorkflowSymbol && workflowSymbol.parentWorkflowSymbol instanceof WorkflowSymbol) {
+      while (
+        workflowSymbol.parentWorkflowSymbol &&
+        workflowSymbol.parentWorkflowSymbol instanceof WorkflowSymbol
+      ) {
         workflows.push(workflowSymbol.parentWorkflowSymbol as WorkflowSymbol);
         workflowSymbol = workflowSymbol.parentWorkflowSymbol as WorkflowSymbol;
       }
@@ -124,18 +132,29 @@ export class DocumentSymbolTable extends SymbolTable {
     return null;
   }
 
-  public resolveSymbol(document: Document, parseTree: ParseTree, symbolName: string): BaseSymbol | undefined {
+  public resolveSymbol(
+    document: Document,
+    parseTree: ParseTree,
+    symbolName: string
+  ): BaseSymbol | undefined {
     if (!parseTree) return undefined;
 
     const currentContext = parseTree;
     if (!currentContext) return undefined;
 
     // Workflow name resolution
-    if (parseTree instanceof XxpWorkflowNameReadContext || parseTree instanceof EspaceWorkflowNameReadContext) {
+    if (
+      parseTree instanceof XxpWorkflowNameReadContext ||
+      parseTree instanceof EspaceWorkflowNameReadContext
+    ) {
       return document.symbolTable!.resolveSync(symbolName, false);
     }
 
-    let scopeSymbol = DocumentSymbolTable.symbolWithContextRecursive(this, currentContext, document.uri);
+    let scopeSymbol = DocumentSymbolTable.symbolWithContextRecursive(
+      this,
+      currentContext,
+      document.uri
+    );
     while (scopeSymbol && !(scopeSymbol instanceof ScopedSymbol)) {
       scopeSymbol = scopeSymbol.parent;
     }
@@ -149,11 +168,23 @@ export class DocumentSymbolTable extends SymbolTable {
 
     // Space workflow symbols resolution
     let spaceScopeSymbol: IScopedSymbol | undefined = scopeSymbol;
-    while (!(spaceScopeSymbol instanceof SpaceScopeSymbol) && spaceScopeSymbol && spaceScopeSymbol.parent) {
+    while (
+      !(spaceScopeSymbol instanceof SpaceScopeSymbol) &&
+      spaceScopeSymbol &&
+      spaceScopeSymbol.parent
+    ) {
       spaceScopeSymbol = spaceScopeSymbol.parent;
     }
-    if (spaceScopeSymbol instanceof SpaceScopeSymbol && spaceScopeSymbol.symbolReference && spaceScopeSymbol.symbolReference instanceof SpaceSymbol && spaceScopeSymbol.symbolReference.workflowReference) {
-      const foundSymbol = spaceScopeSymbol.symbolReference.workflowReference.resolveSync(symbolName, false);
+    if (
+      spaceScopeSymbol instanceof SpaceScopeSymbol &&
+      spaceScopeSymbol.symbolReference &&
+      spaceScopeSymbol.symbolReference instanceof SpaceSymbol &&
+      spaceScopeSymbol.symbolReference.workflowReference
+    ) {
+      const foundSymbol = spaceScopeSymbol.symbolReference.workflowReference.resolveSync(
+        symbolName,
+        false
+      );
       if (foundSymbol) {
         return foundSymbol;
       }
@@ -162,10 +193,19 @@ export class DocumentSymbolTable extends SymbolTable {
 
     // References workflows + spaces
     let workflowScopeSymbol: IScopedSymbol | undefined = scopeSymbol;
-    while (!(workflowScopeSymbol instanceof WorkflowSymbol) && workflowScopeSymbol && workflowScopeSymbol.parent) {
+    while (
+      !(workflowScopeSymbol instanceof WorkflowSymbol) &&
+      workflowScopeSymbol &&
+      workflowScopeSymbol.parent
+    ) {
       workflowScopeSymbol = workflowScopeSymbol.parent;
     }
-    while (workflowScopeSymbol && workflowScopeSymbol instanceof WorkflowSymbol && workflowScopeSymbol.parentWorkflowSymbol && workflowScopeSymbol.parentWorkflowSymbol instanceof WorkflowSymbol) {
+    while (
+      workflowScopeSymbol &&
+      workflowScopeSymbol instanceof WorkflowSymbol &&
+      workflowScopeSymbol.parentWorkflowSymbol &&
+      workflowScopeSymbol.parentWorkflowSymbol instanceof WorkflowSymbol
+    ) {
       workflowsToSearchIn.push(workflowScopeSymbol.parentWorkflowSymbol);
     }
 
@@ -186,7 +226,13 @@ export class DocumentSymbolTable extends SymbolTable {
   ): BaseSymbol | undefined {
     for (const child of root.children) {
       if (!child.context) continue;
-      if ((child instanceof WorkflowSymbol && (child as WorkflowSymbol).document.uri !== documentUri) || (child instanceof ExperimentSymbol && (child as ExperimentSymbol).document.uri !== documentUri)) continue;
+      if (
+        (child instanceof WorkflowSymbol &&
+          (child as WorkflowSymbol).document.uri !== documentUri) ||
+        (child instanceof ExperimentSymbol &&
+          (child as ExperimentSymbol).document.uri !== documentUri)
+      )
+        continue;
 
       if (child.context.getSourceInterval().properlyContains(context.getSourceInterval())) {
         let foundSymbol: BaseSymbol | undefined;

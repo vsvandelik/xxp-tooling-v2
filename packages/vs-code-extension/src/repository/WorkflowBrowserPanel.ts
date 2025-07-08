@@ -1,5 +1,6 @@
-import * as vscode from 'vscode';
 import { WorkflowRepositoryManager, WorkflowSearchOptions } from '@extremexp/workflow-repository';
+import * as vscode from 'vscode';
+
 import { RepositoryConfigManager } from './RepositoryConfigManager.js';
 
 export class WorkflowBrowserPanel {

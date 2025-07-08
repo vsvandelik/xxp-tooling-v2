@@ -1,5 +1,7 @@
 import { createHash } from 'crypto';
 import fs from 'fs';
+import path, { resolve } from 'path';
+
 import { DatabaseRepository } from '../database/DatabaseRepository.js';
 import { SqliteRepository } from '../database/SqliteRepository.js';
 import { ControlFlowManager } from '../managers/ControlFlowManager.js';
@@ -9,9 +11,9 @@ import { Artifact, Task } from '../types/artifact.types.js';
 import { RunResult, RunStatus } from '../types/run.types.js';
 import { ExperimentRunner, ExperimentRunnerOptions } from '../types/runner.types.js';
 import { ConsoleInputProvider } from '../userInput/ConsoleInputProvider.js';
+
 import { SpaceExecutor } from './SpaceExecutor.js';
 import { TaskExecutor } from './TaskExecutor.js';
-import path, { resolve } from 'path';
 
 export class ExperimentExecutor implements ExperimentRunner {
   private repository: DatabaseRepository;

@@ -1,5 +1,7 @@
-import * as vscode from 'vscode';
 import { spawn, ChildProcess } from 'child_process';
+
+import * as vscode from 'vscode';
+
 import { ToolResolver } from './ToolResolver.js';
 
 export interface ToolExecutionOptions {

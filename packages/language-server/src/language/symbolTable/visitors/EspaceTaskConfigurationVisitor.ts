@@ -1,17 +1,13 @@
-import { TaskConfigurationScopeSymbol } from '../../../core/models/symbols/TaskConfigurationScopeSymbol.js';
-import { TaskSymbol } from '../../../core/models/symbols/TaskSymbol.js';
-import { DocumentSymbolTable } from '../DocumentSymbolTable.js';
-import { visitScopeSymbol } from '../helpers/SymbolHelpers.js';
-import { addDiagnostic } from '../helpers/Diagnostics.js';
-import { EspaceSymbolTableBuilder } from '../builders/EspaceSymbolTableBuilder.js';
+import { EspaceTaskConfigurationContext, EspaceParamAssignmentContext } from '@extremexp/core';
+
 import { SpaceScopeSymbol } from '../../../core/models/symbols/SpaceScopeSymbol.js';
 import { SpaceSymbol } from '../../../core/models/symbols/SpaceSymbol.js';
-import { Param } from '../../../core/models/Param.js';
-import {
-  EspaceTaskConfigurationContext,
-  EspaceTaskConfigurationBodyContext,
-  EspaceParamAssignmentContext,
-} from '@extremexp/core';
+import { TaskConfigurationScopeSymbol } from '../../../core/models/symbols/TaskConfigurationScopeSymbol.js';
+import { TaskSymbol } from '../../../core/models/symbols/TaskSymbol.js';
+import { EspaceSymbolTableBuilder } from '../builders/EspaceSymbolTableBuilder.js';
+import { DocumentSymbolTable } from '../DocumentSymbolTable.js';
+import { addDiagnostic } from '../helpers/Diagnostics.js';
+import { visitScopeSymbol } from '../helpers/SymbolHelpers.js';
 
 export class EspaceTaskConfigurationVisitor {
   constructor(private readonly builder: EspaceSymbolTableBuilder) {}

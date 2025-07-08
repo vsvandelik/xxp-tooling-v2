@@ -1,10 +1,13 @@
-import { promisify } from 'util';
-import { DocumentType } from '../core/models/DocumentType.js';
-import * as path from 'path';
 import * as fs from 'fs';
+import * as path from 'path';
+import { promisify } from 'util';
+
 import { TextDocument } from 'vscode-languageserver-textdocument';
-import { Logger } from './Logger.js';
+
+import { DocumentType } from '../core/models/DocumentType.js';
 import { FileInfo } from '../core/models/FileInfo.js';
+
+import { Logger } from './Logger.js';
 import { StringUtils } from './StringUtils.js';
 
 const readFileAsync = promisify(fs.readFile);

@@ -1,9 +1,9 @@
 import { Connection, Position, TextDocumentIdentifier } from 'vscode-languageserver';
-import { DocumentManager } from '../core/managers/DocumentsManager.js';
+
 import { Document } from '../core/documents/Document.js';
-import { PositionUtils } from '../utils/PositionUtils.js';
-import { TextDocument } from 'vscode-languageserver-textdocument';
+import { DocumentManager } from '../core/managers/DocumentsManager.js';
 import { TokenPosition } from '../core/models/TokenPosition.js';
+import { PositionUtils } from '../utils/PositionUtils.js';
 
 export abstract class Provider {
   protected documentManager?: DocumentManager;

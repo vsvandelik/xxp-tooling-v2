@@ -1,17 +1,17 @@
-import { BaseSymbol } from 'antlr4-c3';
-import { DataSymbol } from '../../../core/models/symbols/DataSymbol.js';
-import { TaskSymbol } from '../../../core/models/symbols/TaskSymbol.js';
-import { SpaceSymbol } from '../../../core/models/symbols/SpaceSymbol.js';
-import { WorkflowSymbol } from '../../../core/models/symbols/WorkflowSymbol.js';
-import { TerminalSymbolWithReferences } from '../../../core/models/symbols/TerminalSymbolWithReferences.js';
-import { DocumentSymbolTable } from '../DocumentSymbolTable.js';
-import { addDiagnosticAndContinue } from '../helpers/Diagnostics.js';
-import { EspaceSymbolTableBuilder } from '../builders/EspaceSymbolTableBuilder.js';
 import {
   EspaceWorkflowNameReadContext,
   EspaceTaskNameReadContext,
   EspaceSpaceNameReadContext,
 } from '@extremexp/core';
+import { BaseSymbol } from 'antlr4-c3';
+
+import { SpaceSymbol } from '../../../core/models/symbols/SpaceSymbol.js';
+import { TaskSymbol } from '../../../core/models/symbols/TaskSymbol.js';
+import { TerminalSymbolWithReferences } from '../../../core/models/symbols/TerminalSymbolWithReferences.js';
+import { WorkflowSymbol } from '../../../core/models/symbols/WorkflowSymbol.js';
+import { EspaceSymbolTableBuilder } from '../builders/EspaceSymbolTableBuilder.js';
+import { DocumentSymbolTable } from '../DocumentSymbolTable.js';
+import { addDiagnosticAndContinue } from '../helpers/Diagnostics.js';
 
 export class EspaceVariableReadVisitor {
   constructor(private readonly builder: EspaceSymbolTableBuilder) {}

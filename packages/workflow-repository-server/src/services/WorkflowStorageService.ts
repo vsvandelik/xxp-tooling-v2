@@ -1,5 +1,6 @@
 import * as fs from 'fs/promises';
 import * as path from 'path';
+
 import { WorkflowContent, LocalWorkflowRepository } from '@extremexp/workflow-repository';
 
 export class WorkflowStorageService {
@@ -126,7 +127,7 @@ export class WorkflowStorageService {
       const zip = await JSZip.default.loadAsync(zipBuffer);
 
       // First, try to find workflow.json
-      let manifestFile = zip.file('workflow.json');
+      const manifestFile = zip.file('workflow.json');
       let metadata: any;
 
       if (!manifestFile) {

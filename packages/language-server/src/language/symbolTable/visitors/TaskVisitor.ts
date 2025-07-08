@@ -1,12 +1,3 @@
-import { TaskConfigurationScopeSymbol } from '../../../core/models/symbols/TaskConfigurationScopeSymbol.js';
-import { TaskSymbol } from '../../../core/models/symbols/TaskSymbol.js';
-import { ParamSymbol } from '../../../core/models/symbols/ParamSymbol.js';
-import { DocumentSymbolTable } from '../DocumentSymbolTable.js';
-import { addSymbolOfTypeWithInheritanceCheck, addSymbolOfTypeWithContext, visitScopeSymbol } from '../helpers/SymbolHelpers.js';
-import { addDiagnostic } from '../helpers/Diagnostics.js';
-import { XxpSymbolTableBuilder } from '../builders/XxpSymbolTableBuilder.js';
-import { DiagnosticSeverity } from 'vscode-languageserver';
-import { Param } from '../../../core/models/Param.js';
 import {
   XxpTaskConfigurationContext,
   XxpParamAssignmentContext,
@@ -15,6 +6,20 @@ import {
   XxpInputStatementContext,
   XxpOutputStatementContext,
 } from '@extremexp/core';
+import { DiagnosticSeverity } from 'vscode-languageserver';
+
+import { Param } from '../../../core/models/Param.js';
+import { ParamSymbol } from '../../../core/models/symbols/ParamSymbol.js';
+import { TaskConfigurationScopeSymbol } from '../../../core/models/symbols/TaskConfigurationScopeSymbol.js';
+import { TaskSymbol } from '../../../core/models/symbols/TaskSymbol.js';
+import { XxpSymbolTableBuilder } from '../builders/XxpSymbolTableBuilder.js';
+import { DocumentSymbolTable } from '../DocumentSymbolTable.js';
+import { addDiagnostic } from '../helpers/Diagnostics.js';
+import {
+  addSymbolOfTypeWithInheritanceCheck,
+  addSymbolOfTypeWithContext,
+  visitScopeSymbol,
+} from '../helpers/SymbolHelpers.js';
 
 export class TaskVisitor {
   constructor(private readonly builder: XxpSymbolTableBuilder) {}
@@ -115,7 +120,7 @@ export class TaskVisitor {
       ParamSymbol,
       paramName,
       ctx,
-      this.builder.currentScope,  // Add to current scope (TaskConfigurationScopeSymbol)
+      this.builder.currentScope, // Add to current scope (TaskConfigurationScopeSymbol)
       this.builder.document
     );
 

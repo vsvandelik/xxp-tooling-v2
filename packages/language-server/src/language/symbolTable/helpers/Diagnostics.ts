@@ -1,8 +1,9 @@
 import { ParserRuleContext, TerminalNode } from 'antlr4ng';
 import { DiagnosticSeverity } from 'vscode-languageserver';
+
 import { Logger } from '../../../utils/Logger.js';
-import { XxpSymbolTableBuilder } from '../builders/XxpSymbolTableBuilder.js';
 import { EspaceSymbolTableBuilder } from '../builders/EspaceSymbolTableBuilder.js';
+import { XxpSymbolTableBuilder } from '../builders/XxpSymbolTableBuilder.js';
 
 type BuilderType = XxpSymbolTableBuilder | EspaceSymbolTableBuilder;
 

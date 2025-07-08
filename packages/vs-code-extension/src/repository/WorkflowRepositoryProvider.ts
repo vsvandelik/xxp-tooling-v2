@@ -1,4 +1,3 @@
-import * as vscode from 'vscode';
 import {
   WorkflowRepositoryManager,
   WorkflowTreeNode,
@@ -6,6 +5,8 @@ import {
   RepositoryConfig,
   WorkflowAttachment,
 } from '@extremexp/workflow-repository';
+import * as vscode from 'vscode';
+
 import { RepositoryConfigManager } from './RepositoryConfigManager.js';
 
 export class WorkflowRepositoryProvider implements vscode.TreeDataProvider<WorkflowTreeItem> {

@@ -1,5 +1,6 @@
 import { BaseErrorListener, RecognitionException, Recognizer, Token } from 'antlr4ng';
 import { Diagnostic, DiagnosticSeverity } from 'vscode-languageserver';
+
 import { Logger } from '../../utils/Logger.js';
 
 export class DiagnosticReportingErrorListener extends BaseErrorListener {

@@ -1,5 +1,6 @@
-import { ExperimentModel, SpaceModel, DataDefinition } from '../models/ExperimentModel.js';
+import { ExperimentModel, SpaceModel } from '../models/ExperimentModel.js';
 import { WorkflowModel } from '../models/WorkflowModel.js';
+
 import { ResolvedTask } from './TaskResolver.js';
 
 export interface ResolvedData {

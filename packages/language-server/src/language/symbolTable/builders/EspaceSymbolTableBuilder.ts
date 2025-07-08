@@ -1,16 +1,3 @@
-import { AbstractParseTreeVisitor } from 'antlr4ng';
-import { ScopedSymbol } from 'antlr4-c3';
-import { DocumentManager } from '../../../core/managers/DocumentsManager.js';
-import { DocumentSymbolTable } from '../DocumentSymbolTable.js';
-import { Document } from '../../../core/documents/Document.js';
-import { Logger } from '../../../utils/Logger.js';
-import { EspaceExperimentVisitor } from '../visitors/EspaceExperimentVisitor.js';
-import { EspaceSpaceVisitor } from '../visitors/EspaceSpaceVisitor.js';
-import { EspaceParamVisitor } from '../visitors/EspaceParamVisitor.js';
-import { EspaceControlVisitor } from '../visitors/EspaceControlVisitor.js';
-import { EspaceDataVisitor } from '../visitors/EspaceDataVisitor.js';
-import { EspaceTaskConfigurationVisitor } from '../visitors/EspaceTaskConfigurationVisitor.js';
-import { EspaceVariableReadVisitor } from '../visitors/EspaceVariableReadVisitor.js';
 import {
   ESPACEVisitor,
   EspaceExperimentHeaderContext,
@@ -31,6 +18,20 @@ import {
   EspaceTaskNameReadContext,
   EspaceSpaceNameReadContext,
 } from '@extremexp/core';
+import { ScopedSymbol } from 'antlr4-c3';
+import { AbstractParseTreeVisitor } from 'antlr4ng';
+
+import { Document } from '../../../core/documents/Document.js';
+import { DocumentManager } from '../../../core/managers/DocumentsManager.js';
+import { Logger } from '../../../utils/Logger.js';
+import { DocumentSymbolTable } from '../DocumentSymbolTable.js';
+import { EspaceControlVisitor } from '../visitors/EspaceControlVisitor.js';
+import { EspaceDataVisitor } from '../visitors/EspaceDataVisitor.js';
+import { EspaceExperimentVisitor } from '../visitors/EspaceExperimentVisitor.js';
+import { EspaceParamVisitor } from '../visitors/EspaceParamVisitor.js';
+import { EspaceSpaceVisitor } from '../visitors/EspaceSpaceVisitor.js';
+import { EspaceTaskConfigurationVisitor } from '../visitors/EspaceTaskConfigurationVisitor.js';
+import { EspaceVariableReadVisitor } from '../visitors/EspaceVariableReadVisitor.js';
 
 export class EspaceSymbolTableBuilder
   extends AbstractParseTreeVisitor<DocumentSymbolTable>

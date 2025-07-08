@@ -1,13 +1,3 @@
-import { Provider } from './Provider.js';
-import { Logger } from '../utils/Logger.js';
-import { RenameParams, WorkspaceEdit, TextEdit } from 'vscode-languageserver';
-import { TerminalSymbolWithReferences } from '../core/models/symbols/TerminalSymbolWithReferences.js';
-import { WorkflowSymbol } from '../core/models/symbols/WorkflowSymbol.js';
-import { ExperimentSymbol } from '../core/models/symbols/ExperimentSymbol.js';
-import { SpaceSymbol } from '../core/models/symbols/SpaceSymbol.js';
-import { TerminalSymbolReference } from '../core/models/TerminalSymbolReference.js';
-import { RangeUtils } from '../utils/RangeUtils.js';
-import { BaseSymbol } from 'antlr4-c3';
 import {
   XxpDataDefinitionContext,
   XxpTaskDefinitionContext,
@@ -19,6 +9,18 @@ import {
   EspaceSpaceHeaderContext,
   EspaceExperimentHeaderContext,
 } from '@extremexp/core';
+import { BaseSymbol } from 'antlr4-c3';
+import { RenameParams, WorkspaceEdit, TextEdit } from 'vscode-languageserver';
+
+import { ExperimentSymbol } from '../core/models/symbols/ExperimentSymbol.js';
+import { SpaceSymbol } from '../core/models/symbols/SpaceSymbol.js';
+import { TerminalSymbolWithReferences } from '../core/models/symbols/TerminalSymbolWithReferences.js';
+import { WorkflowSymbol } from '../core/models/symbols/WorkflowSymbol.js';
+import { TerminalSymbolReference } from '../core/models/TerminalSymbolReference.js';
+import { Logger } from '../utils/Logger.js';
+import { RangeUtils } from '../utils/RangeUtils.js';
+
+import { Provider } from './Provider.js';
 
 type RuleWithIdentifiers =
   | XxpDataDefinitionContext

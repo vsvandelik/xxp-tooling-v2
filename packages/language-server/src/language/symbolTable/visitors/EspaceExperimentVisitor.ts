@@ -1,8 +1,9 @@
+import { EspaceExperimentHeaderContext, EspaceExperimentBodyContext } from '@extremexp/core';
+
 import { ExperimentSymbol } from '../../../core/models/symbols/ExperimentSymbol.js';
+import { EspaceSymbolTableBuilder } from '../builders/EspaceSymbolTableBuilder.js';
 import { DocumentSymbolTable } from '../DocumentSymbolTable.js';
 import { addSymbolOfTypeWithContext } from '../helpers/SymbolHelpers.js';
-import { EspaceSymbolTableBuilder } from '../builders/EspaceSymbolTableBuilder.js';
-import { EspaceExperimentHeaderContext, EspaceExperimentBodyContext } from '@extremexp/core';
 
 export class EspaceExperimentVisitor {
   constructor(private readonly builder: EspaceSymbolTableBuilder) {}

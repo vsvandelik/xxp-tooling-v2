@@ -1,12 +1,13 @@
 import { BaseSymbol } from 'antlr4-c3';
-import { ReadNameContext } from '../types.js';
+
 import { DataSymbol } from '../../../core/models/symbols/DataSymbol.js';
 import { TaskSymbol } from '../../../core/models/symbols/TaskSymbol.js';
 import { TerminalSymbolWithReferences } from '../../../core/models/symbols/TerminalSymbolWithReferences.js';
+import { WorkflowSymbol } from '../../../core/models/symbols/WorkflowSymbol.js';
+import { XxpSymbolTableBuilder } from '../builders/XxpSymbolTableBuilder.js';
 import { DocumentSymbolTable } from '../DocumentSymbolTable.js';
 import { addDiagnosticAndContinue } from '../helpers/Diagnostics.js';
-import { XxpSymbolTableBuilder } from '../builders/XxpSymbolTableBuilder.js';
-import { WorkflowSymbol } from '../../../core/models/symbols/WorkflowSymbol.js';
+import { ReadNameContext } from '../types.js';
 
 export class VariableReadVisitor {
   constructor(private readonly builder: XxpSymbolTableBuilder) {}

@@ -1,5 +1,3 @@
-import * as bcrypt from 'bcrypt';
-import jwt from 'jsonwebtoken';
 import {
   User,
   UserCredentials,
@@ -7,6 +5,8 @@ import {
   CreateUserRequest,
   UserRole,
 } from '@extremexp/workflow-repository';
+import * as bcrypt from 'bcrypt';
+import jwt from 'jsonwebtoken';
 
 interface UserData extends User {
   passwordHash: string;

@@ -1,5 +1,5 @@
-import * as vscode from 'vscode';
 import { RepositoryConfig } from '@extremexp/workflow-repository';
+import * as vscode from 'vscode';
 
 // Mutable version of RepositoryConfig for internal use
 interface MutableRepositoryConfig {

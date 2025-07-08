@@ -1,5 +1,6 @@
-import * as antlr from 'antlr4ng';
 import path from 'path';
+
+import * as antlr from 'antlr4ng';
 
 export class ParsingErrorListener extends antlr.BaseErrorListener {
   constructor(private fileName: string) {

@@ -1,12 +1,14 @@
 import { Connection } from 'vscode-languageserver';
-import { Provider } from '../../providers/Provider.js';
-import { DocumentManager } from './DocumentsManager.js';
+
 import { DiagnosticsProvider } from '../../providers/DiagnosticsProvider.js';
-import { Logger } from '../../utils/Logger.js';
 import { HoverProvider } from '../../providers/HoverProvider.js';
+import { Provider } from '../../providers/Provider.js';
 import { ReferencesProvider } from '../../providers/ReferencesProvider.js';
 import { RenamerProvider } from '../../providers/RenamerProvider.js';
 import { SuggestionsProvider } from '../../providers/SuggestionsProvider.js';
+import { Logger } from '../../utils/Logger.js';
+
+import { DocumentManager } from './DocumentsManager.js';
 
 export class ProvidersManager {
   private readonly logger = Logger.getLogger();

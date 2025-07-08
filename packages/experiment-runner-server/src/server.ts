@@ -1,13 +1,15 @@
-import express from 'express';
 import { createServer } from 'http';
-import { Server as SocketIOServer } from 'socket.io';
+import * as path from 'path';
+import { fileURLToPath } from 'url';
+
 import cors from 'cors';
+import express from 'express';
+import { Server as SocketIOServer } from 'socket.io';
+
+import { createExperimentRoutes } from './routes/experimentRoutes.js';
 import { ExperimentService } from './services/ExperimentService.js';
 import { WebSocketManager } from './services/WebSocketManager.js';
 import { ServerConfig } from './types/server.types.js';
-import { createExperimentRoutes } from './routes/experimentRoutes.js';
-import { fileURLToPath } from 'url';
-import * as path from 'path';
 
 export class ExperimentRunnerServer {
   private app: express.Application;

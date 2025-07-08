@@ -1,14 +1,16 @@
-import * as vscode from 'vscode';
 import * as path from 'path';
+
 import {
   WorkflowRepositoryManager,
   WorkflowContent,
   WorkflowSearchOptions,
   WorkflowMetadata,
 } from '@extremexp/workflow-repository';
+import * as vscode from 'vscode';
+
 import { RepositoryConfigManager } from './RepositoryConfigManager.js';
-import { WorkflowRepositoryProvider, WorkflowTreeItem } from './WorkflowRepositoryProvider.js';
 import { WorkflowBrowserPanel } from './WorkflowBrowserPanel.js';
+import { WorkflowRepositoryProvider, WorkflowTreeItem } from './WorkflowRepositoryProvider.js';
 
 interface WorkflowQuickPickItem extends vscode.QuickPickItem {
   workflowId: string;

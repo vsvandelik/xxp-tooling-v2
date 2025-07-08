@@ -1,19 +1,20 @@
 import * as vscode from 'vscode';
-import { ServerManager } from './services/ServerManager.js';
-import { ExperimentService } from './services/ExperimentService.js';
-import { ProgressPanelManager } from './panels/ProgressPanelManager.js';
+
 import { GenerateArtifactCommand } from './commands/generateArtifact.js';
 import { RunExperimentCommand } from './commands/runExperiment.js';
-import { ToolResolver } from './services/ToolResolver.js';
-import { ToolExecutor } from './services/ToolExecutor.js';
 
 // Language Client imports
 import { LanguageClientManager } from './languageClient/LanguageClientManager.js';
+import { ProgressPanelManager } from './panels/ProgressPanelManager.js';
 
 // Workflow repository imports
 import { RepositoryConfigManager } from './repository/RepositoryConfigManager.js';
-import { WorkflowRepositoryProvider } from './repository/WorkflowRepositoryProvider.js';
 import { WorkflowCommands } from './repository/WorkflowCommands.js';
+import { WorkflowRepositoryProvider } from './repository/WorkflowRepositoryProvider.js';
+import { ExperimentService } from './services/ExperimentService.js';
+import { ServerManager } from './services/ServerManager.js';
+import { ToolExecutor } from './services/ToolExecutor.js';
+import { ToolResolver } from './services/ToolResolver.js';
 
 // Global service instances
 let serverManager: ServerManager;

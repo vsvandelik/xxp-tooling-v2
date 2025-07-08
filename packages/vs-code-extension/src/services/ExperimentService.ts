@@ -1,6 +1,7 @@
-import * as vscode from 'vscode';
+import { RunResult } from '@extremexp/experiment-runner';
 import { io, Socket } from 'socket.io-client';
-import { ServerManager } from './ServerManager.js';
+import * as vscode from 'vscode';
+
 import {
   ExperimentProgress,
   StartExperimentResponse,
@@ -8,7 +9,8 @@ import {
   ValidationResult,
   TaskHistoryItem,
 } from '../types/experiment.types.js';
-import { RunResult } from '@extremexp/experiment-runner';
+
+import { ServerManager } from './ServerManager.js';
 
 export interface ExperimentCallbacks {
   onProgress?: (progress: ExperimentProgress) => void;

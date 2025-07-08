@@ -8,6 +8,8 @@ import {
   DataDefinitionContext,
   TaskConfigurationContext,
 } from '@extremexp/core/src/language/generated/XXPParser';
+
+import { ExpressionType } from '../models/ExperimentModel.js';
 import {
   ChainElement,
   DataModel,
@@ -17,7 +19,6 @@ import {
   TaskModel,
   WorkflowModel,
 } from '../models/WorkflowModel.js';
-import { ExpressionType } from '../models/ExperimentModel.js';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export class WorkflowModelVisitor extends XXPVisitor<any> {

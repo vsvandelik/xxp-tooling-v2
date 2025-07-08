@@ -1,7 +1,8 @@
+import { RunResult } from '@extremexp/experiment-runner';
 import * as vscode from 'vscode';
+
 import { ExperimentService } from '../services/ExperimentService.js';
 import { ExperimentProgress, UserInputRequest } from '../types/experiment.types.js';
-import { RunResult } from '@extremexp/experiment-runner';
 
 export class ProgressPanel {
   private panel: vscode.WebviewPanel;

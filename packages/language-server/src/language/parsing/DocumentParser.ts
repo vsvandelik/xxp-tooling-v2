@@ -1,4 +1,4 @@
-import { TextDocument } from 'vscode-languageserver-textdocument';
+import { ESPACELexer, ESPACEParser, XXPLexer, XXPParser } from '@extremexp/core';
 import {
   AbstractParseTreeVisitor,
   CharStream,
@@ -8,18 +8,20 @@ import {
   ParseTree,
   Token,
 } from 'antlr4ng';
-import { DocumentManager } from '../../core/managers/DocumentsManager.js';
 import { Diagnostic, DiagnosticSeverity } from 'vscode-languageserver';
-import { DiagnosticReportingErrorListener } from './DiagnosticReportingErrorListener.js';
-import { Logger } from '../../utils/Logger.js';
-import { DocumentSymbolTable } from '../symbolTable/DocumentSymbolTable.js';
-import { XxpSymbolTableBuilder } from '../symbolTable/builders/XxpSymbolTableBuilder.js';
-import { XxpDocument } from '../../core/documents/XxpDocument.js';
-import { EspaceDocument } from '../../core/documents/EspaceDocument.js';
+import { TextDocument } from 'vscode-languageserver-textdocument';
+
 import { Document } from '../../core/documents/Document.js';
+import { EspaceDocument } from '../../core/documents/EspaceDocument.js';
+import { XxpDocument } from '../../core/documents/XxpDocument.js';
+import { DocumentManager } from '../../core/managers/DocumentsManager.js';
 import { WorkflowSymbol } from '../../core/models/symbols/WorkflowSymbol.js';
-import { ESPACELexer, ESPACEParser, XXPLexer, XXPParser } from '@extremexp/core';
+import { Logger } from '../../utils/Logger.js';
 import { EspaceSymbolTableBuilder } from '../symbolTable/builders/EspaceSymbolTableBuilder.js';
+import { XxpSymbolTableBuilder } from '../symbolTable/builders/XxpSymbolTableBuilder.js';
+import { DocumentSymbolTable } from '../symbolTable/DocumentSymbolTable.js';
+
+import { DiagnosticReportingErrorListener } from './DiagnosticReportingErrorListener.js';
 
 export class DocumentParser {
   private logger = Logger.getLogger();

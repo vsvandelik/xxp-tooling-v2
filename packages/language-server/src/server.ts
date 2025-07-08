@@ -9,9 +9,9 @@ import {
 } from 'vscode-languageserver/node.js';
 import { TextDocument } from 'vscode-languageserver-textdocument';
 
-import { Logger } from './utils/Logger.js';
 import { DocumentManager } from './core/managers/DocumentsManager.js';
 import { ProvidersManager } from './core/managers/ProvidersManager.js';
+import { Logger } from './utils/Logger.js';
 
 // Create a connection for the server
 const connection: Connection = createConnection(ProposedFeatures.all);

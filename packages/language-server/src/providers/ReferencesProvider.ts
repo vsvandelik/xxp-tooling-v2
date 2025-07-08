@@ -1,14 +1,16 @@
-import { Provider } from './Provider.js';
-import { Logger } from '../utils/Logger.js';
-import { ReferenceParams, Location, Range, DefinitionParams } from 'vscode-languageserver';
-import { TerminalSymbolWithReferences } from '../core/models/symbols/TerminalSymbolWithReferences.js';
-import { RangeUtils } from '../utils/RangeUtils.js';
-import { WorkflowSymbol } from '../core/models/symbols/WorkflowSymbol.js';
-import { ExperimentSymbol } from '../core/models/symbols/ExperimentSymbol.js';
-import { TerminalSymbolReference } from '../core/models/TerminalSymbolReference.js';
-import { SpaceSymbol } from '../core/models/symbols/SpaceSymbol.js';
 import { BaseSymbol } from 'antlr4-c3';
 import { TerminalNode } from 'antlr4ng';
+import { ReferenceParams, Location, Range, DefinitionParams } from 'vscode-languageserver';
+
+import { ExperimentSymbol } from '../core/models/symbols/ExperimentSymbol.js';
+import { SpaceSymbol } from '../core/models/symbols/SpaceSymbol.js';
+import { TerminalSymbolWithReferences } from '../core/models/symbols/TerminalSymbolWithReferences.js';
+import { WorkflowSymbol } from '../core/models/symbols/WorkflowSymbol.js';
+import { TerminalSymbolReference } from '../core/models/TerminalSymbolReference.js';
+import { Logger } from '../utils/Logger.js';
+import { RangeUtils } from '../utils/RangeUtils.js';
+
+import { Provider } from './Provider.js';
 
 export class ReferencesProvider extends Provider {
   private logger = Logger.getLogger();
@@ -45,7 +47,11 @@ export class ReferencesProvider extends Provider {
     }
     const [document, tokenPosition] = result;
 
-    const symbol = document.symbolTable!.resolveSymbol(document, tokenPosition.parseTree, tokenPosition.text);
+    const symbol = document.symbolTable!.resolveSymbol(
+      document,
+      tokenPosition.parseTree,
+      tokenPosition.text
+    );
     if (!symbol) {
       return null;
     }
@@ -112,7 +118,7 @@ export class ReferencesProvider extends Provider {
       const column = ref.node.symbol.column;
       const text = ref.node.getText();
       const endColumn = column + text.length;
-      
+
       return {
         uri: ref.document.uri,
         range: Range.create(line, column, line, endColumn),
@@ -137,15 +143,18 @@ export class ReferencesProvider extends Provider {
     }
 
     // Find the identifier node using context-specific approach
-    const identifierNode: TerminalNode | null = this.getIdentifierFromContext(parseTree, symbol.name);
-    
+    const identifierNode: TerminalNode | null = this.getIdentifierFromContext(
+      parseTree,
+      symbol.name
+    );
+
     if (!identifierNode) {
       return undefined;
     }
 
     // Try RangeUtils first, fallback to manual range creation
     let definitionRange = RangeUtils.getRangeFromParseTree(identifierNode);
-    
+
     if (!definitionRange && identifierNode.symbol) {
       definitionRange = Range.create(
         identifierNode.symbol.line - 1,
@@ -154,7 +163,7 @@ export class ReferencesProvider extends Provider {
         identifierNode.symbol.column + identifierNode.getText().length
       );
     }
-    
+
     if (!definitionRange) {
       return undefined;
     }
@@ -168,14 +177,14 @@ export class ReferencesProvider extends Provider {
 
   private getIdentifierFromContext(parseTree: any, symbolName: string): TerminalNode | null {
     const contextName = parseTree.constructor.name;
-    
+
     // Context-specific identifier resolution based on grammar structure
     switch (contextName) {
       case 'WorkflowHeaderContext':
         // workflowHeader: WORKFLOW IDENTIFIER (FROM workflowNameRead)?
         // IDENTIFIER is at position 1
         return this.getIdentifierAtPosition(parseTree, 1, symbolName);
-        
+
       case 'WorkflowDeclarationContext':
         // WorkflowDeclarationContext contains WorkflowHeaderContext as first child
         if (parseTree.getChildCount() > 0) {
@@ -186,22 +195,22 @@ export class ReferencesProvider extends Provider {
           }
         }
         return this.getIdentifierGeneric(parseTree, symbolName);
-        
+
       case 'TaskDefinitionContext':
         // taskDefinition: DEFINE TASK IDENTIFIER SEMICOLON
         // IDENTIFIER is at position 2
         return this.getIdentifierAtPosition(parseTree, 2, symbolName);
-        
+
       case 'DataDefinitionContext':
         // dataDefinition: DEFINE DATA IDENTIFIER (EQUALS STRING)? SEMICOLON
         // IDENTIFIER is at position 2
         return this.getIdentifierAtPosition(parseTree, 2, symbolName);
-        
+
       case 'ExperimentHeaderContext':
         // experimentHeader: EXPERIMENT IDENTIFIER
         // IDENTIFIER is at position 1
         return this.getIdentifierAtPosition(parseTree, 1, symbolName);
-        
+
       case 'ExperimentDeclarationContext':
         // ExperimentDeclarationContext contains ExperimentHeaderContext as first child
         if (parseTree.getChildCount() > 0) {
@@ -212,41 +221,46 @@ export class ReferencesProvider extends Provider {
           }
         }
         return this.getIdentifierGeneric(parseTree, symbolName);
-        
+
       case 'SpaceHeaderContext':
         // spaceHeader: SPACE IDENTIFIER OF workflowNameRead
         // IDENTIFIER is at position 1
         return this.getIdentifierAtPosition(parseTree, 1, symbolName);
-        
+
       case 'ParamDefinitionContext':
         // paramDefinition: PARAM IDENTIFIER EQUALS paramValue SEMICOLON
         // IDENTIFIER is at position 1
         return this.getIdentifierAtPosition(parseTree, 1, symbolName);
-        
+
       case 'ParamAssignmentContext':
         // paramAssignment: PARAM IDENTIFIER (EQUALS expression)? SEMICOLON
         // IDENTIFIER is at position 1
         return this.getIdentifierAtPosition(parseTree, 1, symbolName);
-        
+
       default:
         // Fallback to generic search for unknown contexts
         return this.getIdentifierGeneric(parseTree, symbolName);
     }
   }
 
-  private getIdentifierAtPosition(parseTree: any, position: number, symbolName: string): TerminalNode | null {
+  private getIdentifierAtPosition(
+    parseTree: any,
+    position: number,
+    symbolName: string
+  ): TerminalNode | null {
     if (position >= parseTree.getChildCount()) {
       return null;
     }
-    
+
     const child = parseTree.getChild(position);
-    const isTerminalNode = child?.constructor?.name === 'TerminalNode' || child instanceof TerminalNode;
+    const isTerminalNode =
+      child?.constructor?.name === 'TerminalNode' || child instanceof TerminalNode;
     const textMatches = child?.getText() === symbolName;
-    
+
     if (isTerminalNode && textMatches) {
       return child as TerminalNode;
     }
-    
+
     return null;
   }
 
@@ -254,15 +268,16 @@ export class ReferencesProvider extends Provider {
     // Fallback generic search (original implementation)
     for (let i = 0; i < parseTree.getChildCount(); i++) {
       const child = parseTree.getChild(i);
-      
-      const isTerminalNode = child?.constructor?.name === 'TerminalNode' || child instanceof TerminalNode;
+
+      const isTerminalNode =
+        child?.constructor?.name === 'TerminalNode' || child instanceof TerminalNode;
       const textMatches = child?.getText() === symbolName;
-      
+
       if (isTerminalNode && textMatches) {
         return child as TerminalNode;
       }
     }
-    
+
     return null;
   }
 }

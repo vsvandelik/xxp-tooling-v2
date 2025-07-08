@@ -1,8 +1,9 @@
-import { addDiagnostic } from '../helpers/Diagnostics.js';
-import { DocumentSymbolTable } from '../DocumentSymbolTable.js';
-import { XxpSymbolTableBuilder } from '../builders/XxpSymbolTableBuilder.js';
-import { FileUtils } from '../../../utils/FileUtils.js';
 import { XxpFileNameStringContext } from '@extremexp/core';
+
+import { FileUtils } from '../../../utils/FileUtils.js';
+import { XxpSymbolTableBuilder } from '../builders/XxpSymbolTableBuilder.js';
+import { DocumentSymbolTable } from '../DocumentSymbolTable.js';
+import { addDiagnostic } from '../helpers/Diagnostics.js';
 
 export class FileVisitor {
   constructor(private readonly builder: XxpSymbolTableBuilder) {}

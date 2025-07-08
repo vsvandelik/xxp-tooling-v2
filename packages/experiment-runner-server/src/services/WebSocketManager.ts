@@ -1,7 +1,9 @@
-import { Server as SocketIOServer, Socket } from 'socket.io';
-import { ExperimentService } from './ExperimentService.js';
-import { ExperimentProgress, UserInputRequest, UserInputResponse } from '../types/server.types.js';
 import { RunResult } from '@extremexp/experiment-runner';
+import { Server as SocketIOServer, Socket } from 'socket.io';
+
+import { ExperimentProgress, UserInputRequest, UserInputResponse } from '../types/server.types.js';
+
+import { ExperimentService } from './ExperimentService.js';
 
 interface ClientConnection {
   socketId: string;

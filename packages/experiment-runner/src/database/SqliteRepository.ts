@@ -1,6 +1,6 @@
-import { DatabaseRepository } from './DatabaseRepository.js';
-import sqlite3 from 'sqlite3';
 import { open, Database as SqliteDatabase } from 'sqlite';
+import sqlite3 from 'sqlite3';
+
 import {
   RunRecord,
   SpaceExecutionRecord,
@@ -8,6 +8,8 @@ import {
   TaskExecutionRecord,
   DataMappingRecord,
 } from '../types/database.types.js';
+
+import { DatabaseRepository } from './DatabaseRepository.js';
 
 export class SqliteRepository implements DatabaseRepository {
   private db: SqliteDatabase | null = null;

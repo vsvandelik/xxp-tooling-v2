@@ -1,5 +1,6 @@
-import { Request, Response, NextFunction } from 'express';
 import { User } from '@extremexp/workflow-repository';
+import { Request, Response, NextFunction } from 'express';
+
 import { UserService } from '../services/UserService.js';
 
 declare global {

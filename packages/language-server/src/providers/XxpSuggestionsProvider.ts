@@ -1,16 +1,18 @@
-import { Provider } from './Provider.js';
-import { Logger } from '../utils/Logger.js';
-import { CompletionParams, CompletionItem, CompletionItemKind } from 'vscode-languageserver';
-import { WorkflowSymbol } from '../core/models/symbols/WorkflowSymbol.js';
+import { XXPParser } from '@extremexp/core';
 import { BaseSymbol, CodeCompletionCore, ICandidateRule, TokenList } from 'antlr4-c3';
+import { CommonTokenStream, ParseTree, Vocabulary } from 'antlr4ng';
+import { CompletionParams, CompletionItem, CompletionItemKind } from 'vscode-languageserver';
+
 import { Document } from '../core/documents/Document.js';
+import { DocumentManager } from '../core/managers/DocumentsManager.js';
 import { DataSymbol } from '../core/models/symbols/DataSymbol.js';
 import { TaskSymbol } from '../core/models/symbols/TaskSymbol.js';
+import { WorkflowSymbol } from '../core/models/symbols/WorkflowSymbol.js';
 import { TokenPosition } from '../core/models/TokenPosition.js';
 import { DocumentSymbolTable } from '../language/symbolTable/DocumentSymbolTable.js';
-import { CommonTokenStream, ParseTree, Vocabulary } from 'antlr4ng';
-import { XXPParser } from '@extremexp/core';
-import { DocumentManager } from '../core/managers/DocumentsManager.js';
+import { Logger } from '../utils/Logger.js';
+
+import { Provider } from './Provider.js';
 
 export class XxpSuggestionsProvider extends Provider {
   private logger = Logger.getLogger();
@@ -48,7 +50,9 @@ export class XxpSuggestionsProvider extends Provider {
     const symbols: CompletionItem[] = [];
 
     // Use folder symbol table for cross-document symbol resolution
-    const folderSymbolTable = this.documentManager?.getDocumentSymbolTableForFile(params.textDocument.uri);
+    const folderSymbolTable = this.documentManager?.getDocumentSymbolTableForFile(
+      params.textDocument.uri
+    );
     if (!folderSymbolTable) {
       this.logger.warn(`No folder symbol table found for ${params.textDocument.uri}`);
       return null;
@@ -62,7 +66,12 @@ export class XxpSuggestionsProvider extends Provider {
       document.uri
     );
     // Special handling for workflow inheritance: check if we're after "from" keyword in workflow header
-    const inheritanceCompletions = await this.getWorkflowInheritanceCompletions(tokenPosition, document.tokenStream!, folderSymbolTable, document.uri);
+    const inheritanceCompletions = await this.getWorkflowInheritanceCompletions(
+      tokenPosition,
+      document.tokenStream!,
+      folderSymbolTable,
+      document.uri
+    );
     if (inheritanceCompletions.length > 0) {
       // If we found inheritance completions, return only those (don't mix with other suggestions)
       return inheritanceCompletions;
@@ -71,7 +80,14 @@ export class XxpSuggestionsProvider extends Provider {
     symbols.push(
       ...(await this.processRules(candidates.rules, tokenPosition, folderSymbolTable, document))
     );
-    symbols.push(...this.processTokens(candidates.tokens, document.parser!.vocabulary, tokenPosition, document.tokenStream));
+    symbols.push(
+      ...this.processTokens(
+        candidates.tokens,
+        document.parser!.vocabulary,
+        tokenPosition,
+        document.tokenStream
+      )
+    );
 
     return symbols;
   }
@@ -97,12 +113,7 @@ export class XxpSuggestionsProvider extends Provider {
     const proposedSymbols: CompletionItem[] = [];
 
     if (rules.has(XXPParser.RULE_workflowNameRead)) {
-      await this.suggestWorkflowNames(
-        position,
-        proposedSymbols,
-        symbolTable,
-        document
-      );
+      await this.suggestWorkflowNames(position, proposedSymbols, symbolTable, document);
     }
     if (rules.has(XXPParser.RULE_dataNameRead)) {
       await this.suggestAndStoreSymbols(
@@ -161,7 +172,12 @@ export class XxpSuggestionsProvider extends Provider {
     }
   }
 
-  private processTokens(tokens: Map<number, TokenList>, vocabulary: Vocabulary, tokenPosition?: TokenPosition, tokenStream?: CommonTokenStream): CompletionItem[] {
+  private processTokens(
+    tokens: Map<number, TokenList>,
+    vocabulary: Vocabulary,
+    tokenPosition?: TokenPosition,
+    tokenStream?: CommonTokenStream
+  ): CompletionItem[] {
     const proposedSymbols: CompletionItem[] = [];
 
     tokens.forEach((_, k) => {
@@ -174,7 +190,12 @@ export class XxpSuggestionsProvider extends Provider {
         const symbolicName = vocabulary.getSymbolicName(k);
         if (symbolicName === 'START' || symbolicName === 'END') {
           // Don't suggest START if we're already after START in a chain
-          if (symbolicName === 'START' && tokenPosition && tokenStream && this.isAfterStartInChain(tokenPosition, tokenStream)) {
+          if (
+            symbolicName === 'START' &&
+            tokenPosition &&
+            tokenStream &&
+            this.isAfterStartInChain(tokenPosition, tokenStream)
+          ) {
             return;
           }
           proposedSymbols.push({
@@ -207,7 +228,7 @@ export class XxpSuggestionsProvider extends Provider {
     // Check if we're in a position like "START -> <cursor>"
     // Look back in the token stream to see if we have START followed by ->
     let index = position.index - 1;
-    
+
     // Skip whitespace
     while (index >= 0) {
       const token = tokenStream.get(index);
@@ -215,7 +236,7 @@ export class XxpSuggestionsProvider extends Provider {
         index--;
         continue;
       }
-      
+
       // Check if this is an arrow
       if (token.type === XXPParser.ARROW) {
         // Look further back for START
@@ -226,21 +247,21 @@ export class XxpSuggestionsProvider extends Provider {
             index--;
             continue;
           }
-          
+
           // Check if we found START
           if (prevToken.type === XXPParser.START) {
             return true;
           }
-          
+
           // If we found something else, stop looking
           break;
         }
       }
-      
+
       // If we found something other than arrow, stop looking
       break;
     }
-    
+
     return false;
   }
 
@@ -252,19 +273,19 @@ export class XxpSuggestionsProvider extends Provider {
   ): Promise<void> {
     // Use generic symbol resolver utility
     const validWorkflows = await XxpSuggestionsProvider.getValidSymbolsOfType(
-      document, 
-      position.parseTree, 
+      document,
+      position.parseTree,
       WorkflowSymbol,
       this.documentManager
     );
-    
+
     // Filter out the current workflow (can't inherit from self)
     const currentWorkflowName = this.getWorkflowNameFromDocument(position);
-    
-    const filteredWorkflows = currentWorkflowName 
+
+    const filteredWorkflows = currentWorkflowName
       ? validWorkflows.filter(name => name !== currentWorkflowName)
       : validWorkflows;
-    
+
     filteredWorkflows.forEach(workflowName => {
       proposedSymbols.push({
         label: workflowName,
@@ -283,17 +304,18 @@ export class XxpSuggestionsProvider extends Provider {
   ): Promise<void> {
     // Use generic symbol resolver utility
     const validSymbols = await XxpSuggestionsProvider.getValidSymbolsOfType(
-      document, 
-      position.parseTree, 
+      document,
+      position.parseTree,
       type,
       this.documentManager
     );
-    
+
     // For WorkflowSymbol, filter out the current workflow (can't inherit from self)
-    const filteredSymbols = type.name === 'WorkflowSymbol' 
-      ? this.filterOutCurrentWorkflow(validSymbols, position)
-      : validSymbols;
-    
+    const filteredSymbols =
+      type.name === 'WorkflowSymbol'
+        ? this.filterOutCurrentWorkflow(validSymbols, position)
+        : validSymbols;
+
     filteredSymbols.forEach(s => {
       proposedSymbols.push({
         label: s,
@@ -301,7 +323,7 @@ export class XxpSuggestionsProvider extends Provider {
       });
     });
   }
-  
+
   private filterOutCurrentWorkflow(workflowNames: string[], position: TokenPosition): string[] {
     // Try to find the current workflow name from the document text
     const currentWorkflowName = this.getWorkflowNameFromDocument(position);
@@ -310,7 +332,7 @@ export class XxpSuggestionsProvider extends Provider {
     }
     return workflowNames;
   }
-  
+
   private getWorkflowNameFromDocument(position: TokenPosition): string | null {
     // Try getting text from input stream using different approach
     const rootNode = this.getRootNode(position.parseTree);
@@ -318,7 +340,7 @@ export class XxpSuggestionsProvider extends Provider {
       try {
         // Try different ways to get the text
         let fullText: string | null = null;
-        
+
         if (rootNode.start.inputStream.getText) {
           fullText = rootNode.start.inputStream.getText(0, rootNode.start.inputStream.size - 1);
         } else if (rootNode.start.inputStream.toString) {
@@ -326,7 +348,7 @@ export class XxpSuggestionsProvider extends Provider {
         } else if (rootNode.getText) {
           fullText = rootNode.getText();
         }
-        
+
         if (fullText) {
           // Match "workflow DerivedWorkflow" pattern (with or without "from")
           const match = fullText.match(/workflow\s+(\w+)/);
@@ -361,26 +383,33 @@ export class XxpSuggestionsProvider extends Provider {
     }
 
     // Get all available workflows from symbol table
-    const allWorkflows = await symbolTable.getValidSymbolsAtPosition(position.parseTree, documentUri, WorkflowSymbol);
-    
+    const allWorkflows = await symbolTable.getValidSymbolsAtPosition(
+      position.parseTree,
+      documentUri,
+      WorkflowSymbol
+    );
+
     // Filter out current workflow - get workflow name from document text
     const currentWorkflowName = this.getWorkflowNameFromDocument(position);
-    
-    const availableWorkflows = currentWorkflowName 
+
+    const availableWorkflows = currentWorkflowName
       ? allWorkflows.filter(name => name !== currentWorkflowName)
       : allWorkflows;
-    
+
     return availableWorkflows.map(workflowName => ({
       label: workflowName,
       kind: CompletionItemKind.Class,
-      detail: 'Workflow'
+      detail: 'Workflow',
     }));
   }
 
-  private isAfterFromKeywordInWorkflowHeader(position: TokenPosition, tokenStream: CommonTokenStream): boolean {
+  private isAfterFromKeywordInWorkflowHeader(
+    position: TokenPosition,
+    tokenStream: CommonTokenStream
+  ): boolean {
     // Look back in the token stream to find "from" keyword
     let index = position.index - 1;
-    
+
     // Skip whitespace and look for FROM keyword
     while (index >= 0) {
       const token = tokenStream.get(index);
@@ -388,16 +417,16 @@ export class XxpSuggestionsProvider extends Provider {
         index--;
         continue;
       }
-      
+
       if (token.type === XXPParser.FROM) {
         // Found FROM, now check if we're in a workflow header by looking further back
         return this.isInWorkflowHeader(index, tokenStream);
       }
-      
+
       // If we hit any other token, we're not directly after FROM
       break;
     }
-    
+
     return false;
   }
 
@@ -405,48 +434,48 @@ export class XxpSuggestionsProvider extends Provider {
     // Look back from FROM token to find WORKFLOW keyword and IDENTIFIER
     let index = fromTokenIndex - 1;
     let foundIdentifier = false;
-    
+
     while (index >= 0) {
       const token = tokenStream.get(index);
       if (token.type === XXPParser.WS) {
         index--;
         continue;
       }
-      
+
       if (token.type === XXPParser.IDENTIFIER && !foundIdentifier) {
         foundIdentifier = true;
         index--;
         continue;
       }
-      
+
       if (token.type === XXPParser.WORKFLOW && foundIdentifier) {
         return true;
       }
-      
+
       // If we hit anything else, we're not in a workflow header
       break;
     }
-    
+
     return false;
   }
 
   private static async getValidSymbolsOfType<T extends BaseSymbol>(
-      document: Document,
-      parseTree: ParseTree,
-      type: new (...args: any[]) => T,
-      documentManager?: DocumentManager
-    ): Promise<string[]> {
-      // Use the document's existing method if available, otherwise fall back to folder symbol table
-      if (document.symbolTable?.getValidSymbolsAtPosition) {
-        return document.symbolTable.getValidSymbolsAtPosition(parseTree, document.uri, type);
-      }
-      
-      // Fallback to folder symbol table
-      const folderTable = documentManager?.getDocumentSymbolTableForFile(document.uri);
-      if (folderTable?.getValidSymbolsAtPosition) {
-        return folderTable.getValidSymbolsAtPosition(parseTree, document.uri, type);
-      }
-      
-      return [];
+    document: Document,
+    parseTree: ParseTree,
+    type: new (...args: any[]) => T,
+    documentManager?: DocumentManager
+  ): Promise<string[]> {
+    // Use the document's existing method if available, otherwise fall back to folder symbol table
+    if (document.symbolTable?.getValidSymbolsAtPosition) {
+      return document.symbolTable.getValidSymbolsAtPosition(parseTree, document.uri, type);
     }
+
+    // Fallback to folder symbol table
+    const folderTable = documentManager?.getDocumentSymbolTableForFile(document.uri);
+    if (folderTable?.getValidSymbolsAtPosition) {
+      return folderTable.getValidSymbolsAtPosition(parseTree, document.uri, type);
+    }
+
+    return [];
+  }
 }

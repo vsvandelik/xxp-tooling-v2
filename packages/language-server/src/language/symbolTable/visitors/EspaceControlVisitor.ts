@@ -1,13 +1,14 @@
-import { ControlBlockScopeSymbol } from '../../../core/models/symbols/ControlBlockScopeSymbol.js';
-import { DocumentSymbolTable } from '../DocumentSymbolTable.js';
-import { visitScopeSymbol } from '../helpers/SymbolHelpers.js';
-import { EspaceSymbolTableBuilder } from '../builders/EspaceSymbolTableBuilder.js';
 import {
   EspaceControlBlockContext,
   EspaceControlBodyContext,
   EspaceSimpleTransitionContext,
   EspaceConditionalTransitionContext,
 } from '@extremexp/core';
+
+import { ControlBlockScopeSymbol } from '../../../core/models/symbols/ControlBlockScopeSymbol.js';
+import { EspaceSymbolTableBuilder } from '../builders/EspaceSymbolTableBuilder.js';
+import { DocumentSymbolTable } from '../DocumentSymbolTable.js';
+import { visitScopeSymbol } from '../helpers/SymbolHelpers.js';
 
 export class EspaceControlVisitor {
   constructor(private readonly builder: EspaceSymbolTableBuilder) {}

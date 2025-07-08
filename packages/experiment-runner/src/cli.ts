@@ -1,11 +1,12 @@
-import { Command } from 'commander';
 import chalk from 'chalk';
+import { Command } from 'commander';
 import ora, { Ora } from 'ora';
 import prompts from 'prompts';
+
+import { ExperimentExecutor } from './executors/ExperimentExecutor.js';
+import { Expression } from './types/artifact.types.js';
 import { ProgressCallback } from './types/progress.types.js';
 import { UserInputProvider } from './userInput/UserInputProvider.js';
-import { Expression } from './types/artifact.types.js';
-import { ExperimentExecutor } from './executors/ExperimentExecutor.js';
 
 class CLIInputProvider implements UserInputProvider {
   async getInput(prompt: string): Promise<string> {

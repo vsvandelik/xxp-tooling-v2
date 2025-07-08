@@ -1,7 +1,6 @@
-import { WorkflowMetadata } from '../models/WorkflowMetadata.js';
-import { WorkflowItem } from '../models/WorkflowItem.js';
-import { WorkflowContent } from '../models/WorkflowItem.js';
 import { WorkflowSearchOptions } from '../models/RepositoryConfig.js';
+import { WorkflowItem, WorkflowContent } from '../models/WorkflowItem.js';
+import { WorkflowMetadata } from '../models/WorkflowMetadata.js';
 
 export interface IWorkflowRepository {
   list(path?: string, options?: WorkflowSearchOptions): Promise<readonly WorkflowMetadata[]>;

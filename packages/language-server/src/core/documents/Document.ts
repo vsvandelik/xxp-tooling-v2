@@ -1,11 +1,12 @@
+import { CodeCompletionCore } from 'antlr4-c3';
 import { CommonTokenStream, Lexer, Parser, ParseTree } from 'antlr4ng';
 import { Diagnostic } from 'vscode-languageserver';
 import { TextDocument } from 'vscode-languageserver-textdocument';
+
 import { DocumentParser } from '../../language/parsing/DocumentParser.js';
 import { DocumentSymbolTable } from '../../language/symbolTable/DocumentSymbolTable.js';
 import { Logger } from '../../utils/Logger.js';
 import { WorkflowSymbol } from '../models/symbols/WorkflowSymbol.js';
-import { CodeCompletionCore } from 'antlr4-c3';
 
 export abstract class Document {
   private logger = Logger.getLogger();

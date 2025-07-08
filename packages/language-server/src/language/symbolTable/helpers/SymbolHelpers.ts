@@ -1,12 +1,14 @@
 import { BaseSymbol, ScopedSymbol, DuplicateSymbolError } from 'antlr4-c3';
 import { ParserRuleContext } from 'antlr4ng';
-import { TerminalSymbolWithReferences } from '../../../core/models/symbols/TerminalSymbolWithReferences.js';
-import { addDiagnostic } from './Diagnostics.js';
-import { XxpSymbolTableBuilder } from '../builders/XxpSymbolTableBuilder.js';
+
 import { ScopeSymbolWithSymbolReference } from '../../../core/models/symbols/ScopeSymbolWithSymbolReference.js';
-import { ScopedParserRuleContext } from '../types.js';
+import { TerminalSymbolWithReferences } from '../../../core/models/symbols/TerminalSymbolWithReferences.js';
 import { WorkflowSymbol } from '../../../core/models/symbols/WorkflowSymbol.js';
 import { EspaceSymbolTableBuilder } from '../builders/EspaceSymbolTableBuilder.js';
+import { XxpSymbolTableBuilder } from '../builders/XxpSymbolTableBuilder.js';
+import { ScopedParserRuleContext } from '../types.js';
+
+import { addDiagnostic } from './Diagnostics.js';
 
 type BuilderType = XxpSymbolTableBuilder | EspaceSymbolTableBuilder;
 

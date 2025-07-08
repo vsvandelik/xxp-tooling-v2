@@ -1,7 +1,8 @@
 import { SymbolTable } from 'antlr4-c3';
+import { TerminalNode } from 'antlr4ng';
+
 import { Document } from '../../documents/Document.js';
 import { TerminalSymbolReference } from '../TerminalSymbolReference.js';
-import { TerminalNode } from 'antlr4ng';
 
 export class ExperimentSymbol extends SymbolTable {
   public references: TerminalSymbolReference[] = [];

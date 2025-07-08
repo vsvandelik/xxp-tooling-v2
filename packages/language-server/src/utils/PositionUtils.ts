@@ -1,7 +1,8 @@
 import { ParseTree, TokenStream, ParserRuleContext, TerminalNode, Token } from 'antlr4ng';
-import { TokenPosition } from '../core/models/TokenPosition.js';
-import { CaretPosition } from '../core/models/CaretPosition.js';
 import { Position } from 'vscode-languageserver-textdocument';
+
+import { CaretPosition } from '../core/models/CaretPosition.js';
+import { TokenPosition } from '../core/models/TokenPosition.js';
 
 export abstract class PositionUtils {
   public static getCurrentPosition(

@@ -1,9 +1,11 @@
 import * as fs from 'fs';
-import * as antlr from 'antlr4ng';
+
 import { XXPLexer, XXPParser } from '@extremexp/core';
+import * as antlr from 'antlr4ng';
+
 import { WorkflowModel } from '../models/WorkflowModel.js';
-import { WorkflowModelVisitor } from '../visitors/WorkflowModelVisitor.js';
 import { ParsingErrorListener } from '../visitors/ParsingErrorListener.js';
+import { WorkflowModelVisitor } from '../visitors/WorkflowModelVisitor.js';
 
 export class WorkflowParser {
   async parse(filePath: string): Promise<WorkflowModel> {

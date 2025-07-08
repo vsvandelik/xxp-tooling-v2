@@ -3,8 +3,10 @@ import {
   DocumentDiagnosticReportKind,
   FullDocumentDiagnosticReport,
 } from 'vscode-languageserver';
-import { Provider } from './Provider.js';
+
 import { Logger } from '../utils/Logger.js';
+
+import { Provider } from './Provider.js';
 
 export class DiagnosticsProvider extends Provider {
   private logger = Logger.getLogger();
