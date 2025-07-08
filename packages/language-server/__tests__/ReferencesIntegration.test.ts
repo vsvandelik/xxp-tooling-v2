@@ -2,20 +2,7 @@ import { describe, it, expect, beforeAll, afterAll } from '@jest/globals';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
-import { SimpleLSPClient, Location, Position, Range } from './SimpleLSPClient';
-
-const jestConsole = console;
-
-beforeEach(() => {
-  global.console = require('console');
-});
-
-afterEach(() => {
-  global.console = jestConsole;
-});
-
-const DEBUGGING = true; // Set to true to enable debugging output
-console.log = DEBUGGING ? console.log.bind(console) : () => {}; // Conditional logging
+import { SimpleLSPClient, Location, Range } from './SimpleLSPClient';
 
 interface TestCase {
   name: string;
@@ -91,9 +78,6 @@ describe('Language Server Definition and References Tests (LSP)', () => {
       const openedDocuments: string[] = [];
 
       try {
-        console.log(`\n=== Running definition/references test: ${testCase.name} ===`);
-        console.log(`Test temp directory: ${testTempDir}`);
-
         // Create temporary files for this test case
         for (const [fileName, content] of testCase.files) {
           const filePath = path.join(testTempDir, fileName);
@@ -105,7 +89,6 @@ describe('Language Server Definition and References Tests (LSP)', () => {
           
           fs.writeFileSync(filePath, content, 'utf8');
           createdFiles.set(fileName, filePath);
-          console.log(`Created file: ${fileName} at ${filePath}`);
         }
 
         // Small delay to ensure filesystem operations complete
@@ -115,10 +98,7 @@ describe('Language Server Definition and References Tests (LSP)', () => {
         for (const [fileName, filePath] of createdFiles) {
           const content = testCase.files.get(fileName)!;
           const uri = `file:///${filePath.replace(/\\/g, '/')}`;
-          
-          console.log(`Opening document: ${fileName} -> ${uri}`);
-          console.log(`Document content (first 200 chars):\n${content.substring(0, 200)}${content.length > 200 ? '...' : ''}`);
-          
+        
           await client.openDocument(uri, content);
           openedDocuments.push(uri);
           
@@ -127,7 +107,6 @@ describe('Language Server Definition and References Tests (LSP)', () => {
         }
 
         // Additional delay for server processing and inheritance resolution
-        console.log('Waiting for document processing...');
         await new Promise(resolve => setTimeout(resolve, 500));
 
         // Find the main file to test on
@@ -139,55 +118,21 @@ describe('Language Server Definition and References Tests (LSP)', () => {
         const mainFilePath = createdFiles.get(mainFileName)!;
         const mainFileUri = `file:///${mainFilePath.replace(/\\/g, '/')}`;
 
-        console.log(`Testing on: ${mainFileName} at position ${JSON.stringify(testCase.requestPosition)}`);
-        
-        // Debug: Show the actual content around the request position
-        const fileContent = testCase.files.get(mainFileName)!;
-        const lines = fileContent.split('\n');
-        const requestLine = lines[testCase.requestPosition.line];
-        if (requestLine) {
-          const start = Math.max(0, testCase.requestPosition.character - 5);
-          const end = Math.min(requestLine.length, testCase.requestPosition.character + 10);
-          console.log(`Context around request position: "${requestLine.substring(start, end)}"`);
-          console.log(`Line ${testCase.requestPosition.line}: "${requestLine}"`);
-          console.log(`Character ${testCase.requestPosition.character}: "${requestLine[testCase.requestPosition.character] || 'EOF'}"`);
-        }
-
-        // Debug: Show all lines with character positions for reference
-        console.log(`File content with line numbers and character positions:`);
-        lines.forEach((line, index) => {
-          console.log(`  ${index}: "${line}"`);
-          if (index < 3) { // Show character ruler for first few lines
-            const ruler = Array.from({length: line.length}, (_, i) => (i % 10).toString()).join('');
-            console.log(`     ${ruler}`);
-          }
-        });
-
         // Request definition
         const definitionResult = await client.requestDefinition(mainFileUri, testCase.requestPosition);
-        console.log(`Definition result:`, JSON.stringify(definitionResult, null, 2));
 
         // Request references
         const referencesResult = await client.requestReferences(mainFileUri, testCase.requestPosition);
-        console.log(`References result:`, JSON.stringify(referencesResult, null, 2));        
         
         // Validate definition
         if (testCase.expectedDefinition === null) {
           expect(definitionResult).toBeNull();
-          console.log(`✅ Definition test passed (no definition expected)`);
         } else {
           expect(definitionResult).not.toBeNull();
-          
-          console.log(`Expected definition: ${locationWithFileToString(testCase.expectedDefinition)}`);
           
           // Handle both single location and array of locations
           const definitions = Array.isArray(definitionResult) ? definitionResult : [definitionResult as Location];
           expect(definitions.length).toBeGreaterThan(0);
-          
-          console.log(`Actual definition ranges:`);
-          definitions.forEach((def, i) => {
-            console.log(`  [${i}] ${rangeToString(def.range)} in ${normalizeUri(def.uri)}`);
-          });
           
           // Find the expected file URI
           const expectedFileUri = getFileUriFromCreatedFiles(testCase.expectedDefinition.fileName, createdFiles);
@@ -209,29 +154,15 @@ describe('Language Server Definition and References Tests (LSP)', () => {
               console.error(`  [${i}] ${rangeToString(def.range)} in ${normalizeUri(def.uri)}`);
             });
             throw new Error(`Definition test failed - no matching definition found. Expected: ${locationWithFileToString(testCase.expectedDefinition)} (URI: ${normalizeUri(expectedFileUri)})`);
-          } else {
-            console.log(`✅ Definition test passed at ${locationWithFileToString(testCase.expectedDefinition)}`);
-          }
+          } 
         }        // Validate references
         if (testCase.expectedReferences.length === 0) {
           expect(referencesResult).toBeNull();
-          console.log(`✅ References test passed (no references expected)`);
         } else {
           expect(referencesResult).not.toBeNull();
           expect(Array.isArray(referencesResult)).toBe(true);
           
           const references = referencesResult as Location[];
-          console.log(`Expected ${testCase.expectedReferences.length} references, got ${references.length}`);
-          
-          console.log(`Expected references:`);
-          testCase.expectedReferences.forEach((location, i) => {
-            console.log(`  [${i}] ${locationWithFileToString(location)}`);
-          });
-          
-          console.log(`Actual reference ranges:`);
-          references.forEach((ref, i) => {
-            console.log(`  [${i}] ${rangeToString(ref.range)} in ${normalizeUri(ref.uri)}`);
-          });
           
           // Group expected references by file
           const expectedByFile = new Map<string, LocationWithFile[]>();
@@ -259,7 +190,6 @@ describe('Language Server Definition and References Tests (LSP)', () => {
             for (const expectedRef of expectedRefs) {
               const matchingRef = fileReferences.find(ref => rangesEqual(ref.range, expectedRef.range));
               if (matchingRef) {
-                console.log(`✅ Found expected reference at ${locationWithFileToString(expectedRef)}`);
                 foundReferences++;
               } else {
                 console.error(`❌ Missing expected reference at ${locationWithFileToString(expectedRef)}`);
@@ -273,11 +203,8 @@ describe('Language Server Definition and References Tests (LSP)', () => {
             throw new Error(`References test failed - missing expected references at: ${missingRefsStr}`);
           } else if (foundReferences !== testCase.expectedReferences.length) {
             throw new Error(`References test failed - expected ${testCase.expectedReferences.length} references, found ${foundReferences}`);
-          } else {
-            console.log(`✅ References test passed`);
           }
-        }        console.log(`📊 Test ${testCase.name} completed (debug mode)`);
-
+        }
       } catch (error) {
         console.error(`📊 Test ${testCase.name} failed: ${error}`);
         throw error; // Re-throw to fail the test
@@ -295,7 +222,6 @@ describe('Language Server Definition and References Tests (LSP)', () => {
         try {
           if (fs.existsSync(testTempDir)) {
             fs.rmSync(testTempDir, { recursive: true, force: true });
-            console.log(`Cleaned up test directory: ${testTempDir}`);
           }
         } catch (error) {
           console.warn('Error cleaning up test directory:', error);
@@ -381,23 +307,6 @@ function parseLocationWithFileFromContent(content: string): LocationWithFile | n
   };
 }
 
-function parseRangeFromContent(content: string): Range | null {
-  const line = content.trim();
-  if (!line) return null;
-  
-  const match = line.match(/^(\d+):(\d+)-(\d+)$/);
-  if (!match) {
-    throw new Error(`Invalid range format: ${line}. Expected format: line:start-end`);
-  }
-  
-  const [, lineNum, startChar, endChar] = match;
-  // Convert from 1-indexed (test format) to 0-indexed (LSP format)
-  return {
-    start: { line: parseInt(lineNum!) - 1, character: parseInt(startChar!) - 1 },
-    end: { line: parseInt(lineNum!) - 1, character: parseInt(endChar!) - 1 }
-  };
-}
-
 function parseLocationsWithFileFromContent(content: string): LocationWithFile[] {
   const lines = content.split('\n').map(line => line.trim()).filter(line => line);
   const locations: LocationWithFile[] = [];
@@ -410,20 +319,6 @@ function parseLocationsWithFileFromContent(content: string): LocationWithFile[] 
   }
   
   return locations;
-}
-
-function parseRangesFromContent(content: string): Range[] {
-  const lines = content.split('\n').map(line => line.trim()).filter(line => line);
-  const ranges: Range[] = [];
-  
-  for (const line of lines) {
-    const range = parseRangeFromContent(line);
-    if (range) {
-      ranges.push(range);
-    }
-  }
-  
-  return ranges;
 }
 
 function processFileWithMarker(content: string): TestFile {
@@ -455,13 +350,6 @@ function processFileWithMarker(content: string): TestFile {
   
   // Position in the middle of the marked content
   const character = baseCharacter + Math.floor(markedContent.length / 2);
-
-  if (DEBUGGING) {
-    console.log(`Debug - Marker processing:`);
-    console.log(`  Marked content: "${markedContent}"`);
-    console.log(`  Base character: ${baseCharacter}`);
-    console.log(`  Final position: line ${line}, character ${character}`);
-  }
 
   return {
     content: cleanContent,

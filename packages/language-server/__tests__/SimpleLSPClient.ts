@@ -162,13 +162,11 @@ export class SimpleLSPClient {
   }
 
   async requestDefinition(uri: string, position: Position): Promise<Location | Location[] | null> {
-    console.log(`Requesting definition for ${uri} at ${JSON.stringify(position)}`);
     try {
       const response = await this.sendRequest('textDocument/definition', {
         textDocument: { uri },
         position
       });
-      console.log('Definition response:', response);
       return response as Location | Location[] | null;
     } catch (error) {
       console.error('Definition request failed:', error);
@@ -177,7 +175,6 @@ export class SimpleLSPClient {
   }
 
   async requestReferences(uri: string, position: Position): Promise<Location[] | null> {
-    console.log(`Requesting references for ${uri} at ${JSON.stringify(position)}`);
     try {
       const response = await this.sendRequest('textDocument/references', {
         textDocument: { uri },
@@ -186,7 +183,6 @@ export class SimpleLSPClient {
           includeDeclaration: true
         }
       });
-      console.log('References response:', response);
       return response as Location[] | null;
     } catch (error) {
       console.error('References request failed:', error);
