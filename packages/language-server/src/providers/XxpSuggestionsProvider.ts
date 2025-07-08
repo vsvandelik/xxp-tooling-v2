@@ -8,9 +8,9 @@ import { DataSymbol } from '../core/models/symbols/DataSymbol.js';
 import { TaskSymbol } from '../core/models/symbols/TaskSymbol.js';
 import { TokenPosition } from '../core/models/TokenPosition.js';
 import { DocumentSymbolTable } from '../language/symbolTable/DocumentSymbolTable.js';
-import { CommonTokenStream, Vocabulary } from 'antlr4ng';
+import { CommonTokenStream, ParseTree, Vocabulary } from 'antlr4ng';
 import { XXPParser } from '@extremexp/core';
-import { SymbolResolver } from '../utils/SymbolResolver.js';
+import { DocumentManager } from '../core/managers/DocumentsManager.js';
 
 export class XxpSuggestionsProvider extends Provider {
   private logger = Logger.getLogger();
@@ -251,7 +251,7 @@ export class XxpSuggestionsProvider extends Provider {
     document: Document
   ): Promise<void> {
     // Use generic symbol resolver utility
-    const validWorkflows = await SymbolResolver.getValidSymbolsOfType(
+    const validWorkflows = await XxpSuggestionsProvider.getValidSymbolsOfType(
       document, 
       position.parseTree, 
       WorkflowSymbol,
@@ -282,7 +282,7 @@ export class XxpSuggestionsProvider extends Provider {
     document: Document
   ): Promise<void> {
     // Use generic symbol resolver utility
-    const validSymbols = await SymbolResolver.getValidSymbolsOfType(
+    const validSymbols = await XxpSuggestionsProvider.getValidSymbolsOfType(
       document, 
       position.parseTree, 
       type,
@@ -429,4 +429,24 @@ export class XxpSuggestionsProvider extends Provider {
     
     return false;
   }
+
+  private static async getValidSymbolsOfType<T extends BaseSymbol>(
+      document: Document,
+      parseTree: ParseTree,
+      type: new (...args: any[]) => T,
+      documentManager?: DocumentManager
+    ): Promise<string[]> {
+      // Use the document's existing method if available, otherwise fall back to folder symbol table
+      if (document.symbolTable?.getValidSymbolsAtPosition) {
+        return document.symbolTable.getValidSymbolsAtPosition(parseTree, document.uri, type);
+      }
+      
+      // Fallback to folder symbol table
+      const folderTable = documentManager?.getDocumentSymbolTableForFile(document.uri);
+      if (folderTable?.getValidSymbolsAtPosition) {
+        return folderTable.getValidSymbolsAtPosition(parseTree, document.uri, type);
+      }
+      
+      return [];
+    }
 }

@@ -4,10 +4,7 @@ import { Hover, HoverParams, MarkupContent } from 'vscode-languageserver';
 import { DataSymbol } from '../core/models/symbols/DataSymbol.js';
 import { TaskSymbol } from '../core/models/symbols/TaskSymbol.js';
 import { WorkflowSymbol } from '../core/models/symbols/WorkflowSymbol.js';
-import { BaseSymbol } from 'antlr4-c3';
-import { ExperimentSymbol } from '../core/models/symbols/ExperimentSymbol.js';
 import { SpaceSymbol } from '../core/models/symbols/SpaceSymbol.js';
-import { SymbolResolver } from '../utils/SymbolResolver.js';
 
 export class HoverProvider extends Provider {
   private logger = Logger.getLogger();
@@ -26,13 +23,7 @@ export class HoverProvider extends Provider {
     if (document.symbolTable === undefined) return;
 
     // Use generic symbol resolver
-    const symbol = await SymbolResolver.resolveSymbol({
-      text: tokenPosition.text,
-      contextName: tokenPosition.parseTree?.constructor?.name,
-      document,
-      documentManager: this.documentManager,
-      localOnly: true  // For hover, prefer local resolution first
-    });
+    const symbol = document.symbolTable!.resolveSymbol(document, tokenPosition.parseTree, tokenPosition.text);
 
     if (symbol instanceof TaskSymbol) {
       return { contents: this.getTaskHoverInformation(symbol) };

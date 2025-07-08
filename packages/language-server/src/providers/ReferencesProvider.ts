@@ -7,26 +7,8 @@ import { WorkflowSymbol } from '../core/models/symbols/WorkflowSymbol.js';
 import { ExperimentSymbol } from '../core/models/symbols/ExperimentSymbol.js';
 import { TerminalSymbolReference } from '../core/models/TerminalSymbolReference.js';
 import { SpaceSymbol } from '../core/models/symbols/SpaceSymbol.js';
-import { SymbolResolver } from '../utils/SymbolResolver.js';
-import {
-  XxpWorkflowNameReadContext,
-  XxpWorkflowHeaderContext,
-  XxpTaskDefinitionContext,
-  XxpDataDefinitionContext,
-  XxpParamAssignmentContext,
-  EspaceWorkflowNameReadContext,
-  EspaceTaskNameReadContext,
-  EspaceSpaceNameReadContext,
-  EspaceExperimentHeaderContext,
-  EspaceSpaceHeaderContext,
-  EspaceParamDefinitionContext,
-} from '@extremexp/core';
 import { BaseSymbol } from 'antlr4-c3';
 import { TerminalNode } from 'antlr4ng';
-import { TokenPosition } from '../core/models/TokenPosition.js';
-import { Document } from '../core/documents/Document.js';
-import { DocumentSymbol } from 'vscode';
-import { DocumentSymbolTable } from '../language/symbolTable/DocumentSymbolTable.js';
 
 export class ReferencesProvider extends Provider {
   private logger = Logger.getLogger();
@@ -63,7 +45,7 @@ export class ReferencesProvider extends Provider {
     }
     const [document, tokenPosition] = result;
 
-    const symbol = await this.resolveSymbol(document, tokenPosition);
+    const symbol = document.symbolTable!.resolveSymbol(document, tokenPosition.parseTree, tokenPosition.text);
     if (!symbol) {
       return null;
     }
@@ -74,10 +56,6 @@ export class ReferencesProvider extends Provider {
 
     const location = this.getLocationFromDeclaration(symbol);
     return location;
-  }
-
-  private resolveSymbol(document: Document, tokenPosition: TokenPosition): BaseSymbol | undefined {
-    return document.symbolTable!.resolveSymbol(document, tokenPosition.parseTree, tokenPosition.text);
   }
 
   private async getAllReferences(symbol: BaseSymbol): Promise<Location[]> {
