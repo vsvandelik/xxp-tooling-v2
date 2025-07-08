@@ -7,12 +7,6 @@ import { WorkflowSymbol } from '../core/models/symbols/WorkflowSymbol.js';
 import { ExperimentSymbol } from '../core/models/symbols/ExperimentSymbol.js';
 import { TerminalSymbolReference } from '../core/models/TerminalSymbolReference.js';
 import { SpaceSymbol } from '../core/models/symbols/SpaceSymbol.js';
-import {
-  XxpWorkflowNameReadContext,
-  EspaceWorkflowNameReadContext,
-  EspaceTaskNameReadContext,
-  EspaceSpaceNameReadContext,
-} from '@extremexp/core';
 import { BaseSymbol } from 'antlr4-c3';
 import { TerminalNode } from 'antlr4ng';
 
@@ -46,65 +40,22 @@ export class ReferencesProvider extends Provider {
 
   public async onDefinition(params: DefinitionParams): Promise<Location | null | undefined> {
     const result = super.getDocumentAndPosition(params.textDocument, params.position);
-    if (!result) return Promise.resolve(null);
+    if (!result) {
+      return Promise.resolve(null);
+    }
     const [document, tokenPosition] = result;
 
-    const symbol = await this.resolveSymbol(document, tokenPosition);
-    if (!symbol || !this.hasDeclaration(symbol)) return null;
-
-    return this.getLocationFromDeclaration(symbol);
-  }
-
-  private async resolveSymbol(document: any, tokenPosition: any): Promise<BaseSymbol | null> {
-    // Handle workflow references
-    if (
-      tokenPosition.parseTree instanceof XxpWorkflowNameReadContext ||
-      tokenPosition.parseTree instanceof EspaceWorkflowNameReadContext
-    ) {
-      // For workflows, we need to look in the folder symbol table
-      const folderSymbolTable = this.documentManager?.getDocumentSymbolTableForFile(document.uri);
-      const result = (await folderSymbolTable?.resolve(tokenPosition.text, false)) || null;
-      return result;
+    const symbol = document.symbolTable!.resolveSymbol(document, tokenPosition.parseTree, tokenPosition.text);
+    if (!symbol) {
+      return null;
     }
 
-    // Handle space references in ESPACE files
-    if (tokenPosition.parseTree instanceof EspaceSpaceNameReadContext) {
-      const experimentSymbol = document.symbolTable?.children.find(
-        (c: BaseSymbol) => c instanceof ExperimentSymbol
-      ) as ExperimentSymbol;
-      if (experimentSymbol) {
-        const result = (await experimentSymbol.resolve(tokenPosition.text, false)) || null;
-        return result;
-      }
+    if (!this.hasDeclaration(symbol)) {
+      return null;
     }
 
-    // Handle task references in ESPACE files
-    if (tokenPosition.parseTree instanceof EspaceTaskNameReadContext) {
-      // First try local resolution
-      const experimentSymbol = document.symbolTable?.children.find(
-        (c: BaseSymbol) => c instanceof ExperimentSymbol
-      ) as ExperimentSymbol;
-      if (experimentSymbol) {
-        const localSymbol = await experimentSymbol.resolve(tokenPosition.text, true);
-        if (localSymbol) return localSymbol;
-
-        // If not found locally, search in referenced workflows
-        const spaces = await experimentSymbol.getSymbolsOfType(SpaceSymbol);
-        for (const space of spaces) {
-          if (space.workflowReference) {
-            const workflowSymbol = await space.workflowReference.resolve(tokenPosition.text, false);
-            if (workflowSymbol) return workflowSymbol;
-          }
-        }
-      }
-    }
-
-    // Default resolution for other symbols
-    if (document.workflowSymbolTable) {
-      return (await document.workflowSymbolTable.resolve(tokenPosition.text, false)) || null;
-    }
-
-    return null;
+    const location = this.getLocationFromDeclaration(symbol);
+    return location;
   }
 
   private async getAllReferences(symbol: BaseSymbol): Promise<Location[]> {
@@ -156,15 +107,17 @@ export class ReferencesProvider extends Provider {
   }
 
   private getLocationsFromReferences(references: TerminalSymbolReference[]): Location[] {
-    return references.map(ref => ({
-      uri: ref.document.uri,
-      range: Range.create(
-        ref.node.symbol.line - 1,
-        ref.node.symbol.column,
-        ref.node.symbol.line - 1,
-        ref.node.symbol.column + ref.node.getText().length
-      ),
-    }));
+    return references.map(ref => {
+      const line = ref.node.symbol.line - 1;
+      const column = ref.node.symbol.column;
+      const text = ref.node.getText();
+      const endColumn = column + text.length;
+      
+      return {
+        uri: ref.document.uri,
+        range: Range.create(line, column, line, endColumn),
+      };
+    });
   }
 
   private getLocationFromDeclaration(symbol: BaseSymbol): Location | undefined {
@@ -183,22 +136,8 @@ export class ReferencesProvider extends Provider {
       return undefined;
     }
 
-    // Find the identifier node within the declaration context
-    let identifierNode: TerminalNode | null = null;
-    
-    // Search through all children to find the matching identifier
-    for (let i = 0; i < parseTree.getChildCount(); i++) {
-      const child = parseTree.getChild(i);
-      
-      // Check by constructor name and instanceof to handle different TerminalNode types
-      const isTerminalNode = child?.constructor?.name === 'TerminalNode' || child instanceof TerminalNode;
-      const textMatches = child?.getText() === symbol.name;
-      
-      if (isTerminalNode && textMatches) {
-        identifierNode = child as TerminalNode;
-        break;
-      }
-    }
+    // Find the identifier node using context-specific approach
+    const identifierNode: TerminalNode | null = this.getIdentifierFromContext(parseTree, symbol.name);
     
     if (!identifierNode) {
       return undefined;
@@ -216,11 +155,114 @@ export class ReferencesProvider extends Provider {
       );
     }
     
-    if (!definitionRange) return undefined;
+    if (!definitionRange) {
+      return undefined;
+    }
 
-    return {
+    const result = {
       uri: symbol.document.uri,
       range: definitionRange,
     };
+    return result;
+  }
+
+  private getIdentifierFromContext(parseTree: any, symbolName: string): TerminalNode | null {
+    const contextName = parseTree.constructor.name;
+    
+    // Context-specific identifier resolution based on grammar structure
+    switch (contextName) {
+      case 'WorkflowHeaderContext':
+        // workflowHeader: WORKFLOW IDENTIFIER (FROM workflowNameRead)?
+        // IDENTIFIER is at position 1
+        return this.getIdentifierAtPosition(parseTree, 1, symbolName);
+        
+      case 'WorkflowDeclarationContext':
+        // WorkflowDeclarationContext contains WorkflowHeaderContext as first child
+        if (parseTree.getChildCount() > 0) {
+          const workflowHeaderChild = parseTree.getChild(0);
+          if (workflowHeaderChild?.constructor?.name === 'WorkflowHeaderContext') {
+            // WorkflowHeaderContext: WORKFLOW IDENTIFIER (FROM workflowNameRead)?
+            return this.getIdentifierAtPosition(workflowHeaderChild, 1, symbolName);
+          }
+        }
+        return this.getIdentifierGeneric(parseTree, symbolName);
+        
+      case 'TaskDefinitionContext':
+        // taskDefinition: DEFINE TASK IDENTIFIER SEMICOLON
+        // IDENTIFIER is at position 2
+        return this.getIdentifierAtPosition(parseTree, 2, symbolName);
+        
+      case 'DataDefinitionContext':
+        // dataDefinition: DEFINE DATA IDENTIFIER (EQUALS STRING)? SEMICOLON
+        // IDENTIFIER is at position 2
+        return this.getIdentifierAtPosition(parseTree, 2, symbolName);
+        
+      case 'ExperimentHeaderContext':
+        // experimentHeader: EXPERIMENT IDENTIFIER
+        // IDENTIFIER is at position 1
+        return this.getIdentifierAtPosition(parseTree, 1, symbolName);
+        
+      case 'ExperimentDeclarationContext':
+        // ExperimentDeclarationContext contains ExperimentHeaderContext as first child
+        if (parseTree.getChildCount() > 0) {
+          const experimentHeaderChild = parseTree.getChild(0);
+          if (experimentHeaderChild?.constructor?.name === 'ExperimentHeaderContext') {
+            // ExperimentHeaderContext: EXPERIMENT IDENTIFIER
+            return this.getIdentifierAtPosition(experimentHeaderChild, 1, symbolName);
+          }
+        }
+        return this.getIdentifierGeneric(parseTree, symbolName);
+        
+      case 'SpaceHeaderContext':
+        // spaceHeader: SPACE IDENTIFIER OF workflowNameRead
+        // IDENTIFIER is at position 1
+        return this.getIdentifierAtPosition(parseTree, 1, symbolName);
+        
+      case 'ParamDefinitionContext':
+        // paramDefinition: PARAM IDENTIFIER EQUALS paramValue SEMICOLON
+        // IDENTIFIER is at position 1
+        return this.getIdentifierAtPosition(parseTree, 1, symbolName);
+        
+      case 'ParamAssignmentContext':
+        // paramAssignment: PARAM IDENTIFIER (EQUALS expression)? SEMICOLON
+        // IDENTIFIER is at position 1
+        return this.getIdentifierAtPosition(parseTree, 1, symbolName);
+        
+      default:
+        // Fallback to generic search for unknown contexts
+        return this.getIdentifierGeneric(parseTree, symbolName);
+    }
+  }
+
+  private getIdentifierAtPosition(parseTree: any, position: number, symbolName: string): TerminalNode | null {
+    if (position >= parseTree.getChildCount()) {
+      return null;
+    }
+    
+    const child = parseTree.getChild(position);
+    const isTerminalNode = child?.constructor?.name === 'TerminalNode' || child instanceof TerminalNode;
+    const textMatches = child?.getText() === symbolName;
+    
+    if (isTerminalNode && textMatches) {
+      return child as TerminalNode;
+    }
+    
+    return null;
+  }
+
+  private getIdentifierGeneric(parseTree: any, symbolName: string): TerminalNode | null {
+    // Fallback generic search (original implementation)
+    for (let i = 0; i < parseTree.getChildCount(); i++) {
+      const child = parseTree.getChild(i);
+      
+      const isTerminalNode = child?.constructor?.name === 'TerminalNode' || child instanceof TerminalNode;
+      const textMatches = child?.getText() === symbolName;
+      
+      if (isTerminalNode && textMatches) {
+        return child as TerminalNode;
+      }
+    }
+    
+    return null;
   }
 }

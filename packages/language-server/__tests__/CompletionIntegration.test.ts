@@ -260,7 +260,7 @@ async function getCompletionsAtPosition(
     const filesToOpen = allFilePaths || [xxpFilePath];
     for (const filePath of filesToOpen) {
       const fileContent = fs.readFileSync(filePath, 'utf8');
-      const fileUri = `file:///${filePath.replace(/\\/g, '/')}`;
+      const fileUri = `file://${filePath.replace(/\\/g, '/')}`;
       // Determine the language type based on file extension
       const languageId = filePath.endsWith('.espace') ? 'espace' : 'xxp';
       const textDocument = TextDocument.create(fileUri, languageId, 1, fileContent);
@@ -268,7 +268,7 @@ async function getCompletionsAtPosition(
     }
 
     // Use the main file's URI for completion params
-    const uri = `file:///${xxpFilePath.replace(/\\/g, '/')}`;
+    const uri = `file://${xxpFilePath.replace(/\\/g, '/')}`;
 
     // Create suggestions provider
     const provider = new SuggestionsProvider();

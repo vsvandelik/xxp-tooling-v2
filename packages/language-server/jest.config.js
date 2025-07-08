@@ -47,6 +47,10 @@ export default {
   // Module file extensions
   moduleFileExtensions: ['ts', 'js', 'json'],
   
+  // Console output settings
+  silent: false,
+  verbose: false,
+  
   // Coverage settings
   collectCoverage: false,
   collectCoverageFrom: [

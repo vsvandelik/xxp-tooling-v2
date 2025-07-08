@@ -17,5 +17,6 @@ workflow ChildWorkflow from ParentWorkflow {
 }
 
 === SUGGESTIONS ===
+- parentData1
 - parentData2
 - childData

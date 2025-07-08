@@ -5,7 +5,7 @@ experiment MyExperiment {
     }
     
     control {
-        start -> ###s1### -> end;
+        START -> ###s1### -> END;
     }
 }
 

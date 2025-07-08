@@ -2,10 +2,12 @@ import { BaseSymbol, SymbolConstructor, SymbolTable } from 'antlr4-c3';
 import { Document } from '../../documents/Document.js';
 import { TerminalSymbolReference } from '../TerminalSymbolReference.js';
 import { TerminalNode } from 'antlr4ng';
+import { SpaceSymbol } from './SpaceSymbol.js';
 
 export class WorkflowSymbol extends SymbolTable {
   public parentWorkflowSymbol?: WorkflowSymbol;
   public references: TerminalSymbolReference[] = [];
+  public referencesSpaces: SpaceSymbol[] = [];
 
   constructor(
     name: string,
@@ -154,5 +156,9 @@ export class WorkflowSymbol extends SymbolTable {
 
   addReference(symbol: TerminalNode, document: Document): void {
     this.references.push(new TerminalSymbolReference(symbol, document));
+  }
+
+  addSpaceReference(spaceSymbol: SpaceSymbol): void {
+    this.referencesSpaces.push(spaceSymbol);
   }
 }

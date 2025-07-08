@@ -1,26 +1,8 @@
 import { describe, it, expect, beforeAll, afterAll } from '@jest/globals';
-import { spawn, ChildProcess } from 'child_process';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
-
-const DEBUGGING = false; // Set to true to enable debugging output
-console.log = DEBUGGING ? console.log.bind(console) : () => {}; // Conditional logging
-
-interface Position {
-  line: number;
-  character: number;
-}
-
-interface Range {
-  start: Position;
-  end: Position;
-}
-
-interface Location {
-  uri: string;
-  range: Range;
-}
+import { SimpleLSPClient, Location, Range } from './SimpleLSPClient';
 
 interface TestCase {
   name: string;
@@ -39,292 +21,6 @@ interface LocationWithFile {
 interface TestFile {
   content: string;
   requestPosition: { line: number; character: number };
-}
-
-class SimpleLSPClient {
-  private process: ChildProcess | null = null;
-  private messageId = 1;
-  private pendingRequests = new Map<number, { resolve: (value: unknown) => void; reject: (reason?: unknown) => void }>();
-  private buffer = '';
-  private isShuttingDown = false;
-  
-  async start(command: string, args: string[] = []): Promise<void> {
-    return new Promise((resolve, reject) => {
-      this.process = spawn(command, args, {
-        stdio: ['pipe', 'pipe', 'pipe']
-      });
-
-      if (!this.process.stdout || !this.process.stdin) {
-        reject(new Error('Failed to create language server process'));
-        return;
-      }
-
-      // Handle responses with proper buffering
-      this.process.stdout.on('data', (data) => {
-        this.buffer += data.toString();
-        this.processMessageBuffer();
-      });
-
-      this.process.stderr?.on('data', (data) => {
-        if (!this.isShuttingDown && !data.toString().includes('Debugger')) {
-          console.error('Language server stderr:', data.toString());
-        }
-      });
-
-      this.process.on('error', (error) => {
-        if (!this.isShuttingDown) {
-          console.error('Process error:', error);
-        }
-        this.cleanup();
-        reject(error);
-      });
-
-      this.process.on('exit', (code, signal) => {
-        if (!this.isShuttingDown) {
-          console.log(`Process exited with code ${code}, signal ${signal}`);
-        }
-        this.cleanup();
-      });
-
-      // Initialize the language server
-      this.sendRequest('initialize', {
-        processId: process.pid,
-        rootUri: null,
-        capabilities: {
-          textDocument: {
-            definition: {
-              linkSupport: true
-            },
-            references: {
-              dynamicRegistration: true
-            }
-          }
-        }
-      }).then(() => {
-        return this.sendNotification('initialized', {});
-      }).then(() => {
-        resolve();
-      }).catch(reject);
-    });
-  }
-
-  async stop(): Promise<void> {
-    if (this.process && !this.isShuttingDown) {
-      this.isShuttingDown = true;
-      console.log('Shutting down language server...');
-      
-      try {
-        // Send shutdown sequence
-        await Promise.race([
-          this.sendRequest('shutdown', {}),
-          new Promise((_, reject) => setTimeout(() => reject(new Error('Shutdown timeout')), 5000))
-        ]);
-        
-        await this.sendNotification('exit', {});
-        
-        // Wait for process to exit naturally
-        await new Promise<void>((resolve) => {
-          if (!this.process) {
-            resolve();
-            return;
-          }
-          
-          const timeout = setTimeout(() => {
-            if (this.process && !this.process.killed) {
-              console.log('Force killing language server process');
-              this.process.kill('SIGKILL');
-            }
-            resolve();
-          }, 3000);
-          
-          this.process.on('exit', () => {
-            clearTimeout(timeout);
-            resolve();
-          });
-        });
-        
-      } catch (error) {
-        console.log('Error during shutdown, force killing:', error);
-        if (this.process && !this.process.killed) {
-          this.process.kill('SIGKILL');
-        }
-      }
-      
-      this.process = null;
-    }
-  }
-
-  async openDocument(uri: string, content: string): Promise<void> {
-    // Determine language ID based on file extension
-    const languageId = uri.toLowerCase().endsWith('.espace') ? 'espace' : 'xxp';
-    
-    await this.sendNotification('textDocument/didOpen', {
-      textDocument: {
-        uri,
-        languageId,
-        version: 1,
-        text: content
-      }
-    });
-  }
-
-  async closeDocument(uri: string): Promise<void> {
-    await this.sendNotification('textDocument/didClose', {
-      textDocument: { uri }
-    });
-  }
-
-  async requestDefinition(uri: string, position: Position): Promise<Location | Location[] | null> {
-    console.log(`Requesting definition for ${uri} at ${JSON.stringify(position)}`);
-    try {
-      const response = await this.sendRequest('textDocument/definition', {
-        textDocument: { uri },
-        position
-      });
-      console.log('Definition response:', response);
-      return response as Location | Location[] | null;
-    } catch (error) {
-      console.error('Definition request failed:', error);
-      return null;
-    }
-  }
-
-  async requestReferences(uri: string, position: Position): Promise<Location[] | null> {
-    console.log(`Requesting references for ${uri} at ${JSON.stringify(position)}`);
-    try {
-      const response = await this.sendRequest('textDocument/references', {
-        textDocument: { uri },
-        position,
-        context: {
-          includeDeclaration: true
-        }
-      });
-      console.log('References response:', response);
-      return response as Location[] | null;
-    } catch (error) {
-      console.error('References request failed:', error);
-      return null;
-    }
-  }
-
-  private async sendRequest(method: string, params: Record<string, unknown>): Promise<unknown> {
-    if (this.isShuttingDown && method !== 'shutdown') {
-      throw new Error('Client is shutting down');
-    }
-
-    const id = this.messageId++;
-    const message = {
-      jsonrpc: '2.0',
-      id,
-      method,
-      params
-    };
-
-    return new Promise((resolve, reject) => {
-      const timeout = setTimeout(() => {
-        if (this.pendingRequests.has(id)) {
-          this.pendingRequests.delete(id);
-          reject(new Error(`Request timeout for method: ${method}`));
-        }
-      }, 10000);
-      
-      this.pendingRequests.set(id, {
-        resolve: (value: unknown) => {
-          clearTimeout(timeout);
-          resolve(value);
-        },
-        reject: (reason?: unknown) => {
-          clearTimeout(timeout);
-          reject(reason);
-        }
-      });
-      
-      this.sendMessage(message);
-    });
-  }
-
-  private async sendNotification(method: string, params: Record<string, unknown>): Promise<void> {
-    const message = {
-      jsonrpc: '2.0',
-      method,
-      params
-    };
-    this.sendMessage(message);
-  }
-
-  private sendMessage(message: Record<string, unknown>): void {
-    if (!this.process?.stdin || this.isShuttingDown) return;
-    
-    const content = JSON.stringify(message);
-    const header = `Content-Length: ${Buffer.byteLength(content, 'utf8')}\r\n\r\n`;
-    this.process.stdin.write(header + content);
-  }
-
-  private processMessageBuffer(): void {
-    // eslint-disable-next-line no-constant-condition
-    while (true) {
-      // Look for complete message
-      const headerEnd = this.buffer.indexOf('\r\n\r\n');
-      if (headerEnd === -1) {
-        break; // No complete header found
-      }
-
-      // Parse header
-      const headers = this.buffer.substring(0, headerEnd);
-      const contentLengthMatch = headers.match(/Content-Length:\s*(\d+)/i);
-      
-      if (!contentLengthMatch) {
-        // Invalid header, skip
-        this.buffer = this.buffer.substring(headerEnd + 4);
-        continue;
-      }
-
-      const contentLength = parseInt(contentLengthMatch[1]!);
-      const messageStart = headerEnd + 4;
-      
-      // Check if we have the complete message
-      if (this.buffer.length < messageStart + contentLength) {
-        break; // Incomplete message, wait for more data
-      }
-
-      // Extract the complete message
-      const messageContent = this.buffer.substring(messageStart, messageStart + contentLength);
-      this.buffer = this.buffer.substring(messageStart + contentLength);
-
-      // Process the message
-      try {
-        const parsed = JSON.parse(messageContent);
-        this.handleMessage(parsed);
-      } catch (error) {
-        console.error('Error parsing JSON message:', error);
-        console.error('Message content:', messageContent);
-      }
-    }
-  }
-
-  private handleMessage(message: Record<string, unknown>): void {
-    if (message['id'] && this.pendingRequests.has(message['id'] as number)) {
-      const request = this.pendingRequests.get(message['id'] as number)!;
-      this.pendingRequests.delete(message['id'] as number);
-
-      if (message['error']) {
-        const error = message['error'] as { message: string; code: number };
-        request.reject(new Error(`LSP Error: ${error.message} (${error.code})`));
-      } else {
-        request.resolve(message['result']);
-      }
-    }
-    // Ignore notifications and other messages
-  }
-
-  private cleanup(): void {
-    // Reject all pending requests
-    this.pendingRequests.forEach(({ reject }) => {
-      reject(new Error('Language server process terminated'));
-    });
-    this.pendingRequests.clear();
-    this.buffer = '';
-  }
 }
 
 describe('Language Server Definition and References Tests (LSP)', () => {
@@ -354,10 +50,37 @@ describe('Language Server Definition and References Tests (LSP)', () => {
   // Dynamic test cases from files
   const testCasesDir = path.join(__dirname, 'references-test-cases');
   let testCaseFiles: string[] = [];
+  
   if (fs.existsSync(testCasesDir)) {
-    testCaseFiles = fs.readdirSync(testCasesDir)
-      .filter(file => file.endsWith('.test'))
-      .map(file => path.join(testCasesDir, file));
+    const specificTestCase = process.env['TEST_CASE'];
+    
+    if (specificTestCase) {
+      // Run only the specified test case
+      const specificTestFile = path.join(testCasesDir, `${specificTestCase}.test`);
+      if (fs.existsSync(specificTestFile)) {
+        testCaseFiles = [specificTestFile];
+        console.log(`Running single test case: ${specificTestCase}`);
+      } else {
+        console.error(`Test case file not found: ${specificTestFile}`);
+        // Create a test that will fail to indicate the missing file
+        testCaseFiles = [];
+      }
+    } else {
+      // Run all test cases (existing behavior)
+      testCaseFiles = fs.readdirSync(testCasesDir)
+        .filter(file => file.endsWith('.test'))
+        .map(file => path.join(testCasesDir, file));
+      console.log(`Running all test cases: ${testCaseFiles.length} found`);
+    }
+  }
+
+  // Handle case where specific test case was requested but not found
+  if (process.env['TEST_CASE'] && testCaseFiles.length === 0) {
+    it(`should find the specified test case file: ${process.env['TEST_CASE']}.test`, () => {
+      const expectedFile = path.join(testCasesDir, `${process.env['TEST_CASE']}.test`);
+      expect(fs.existsSync(expectedFile)).toBe(true);
+    });
+    return; // Exit early since we can't run the missing test
   }
 
   if (testCaseFiles.length === 0) {
@@ -374,7 +97,6 @@ describe('Language Server Definition and References Tests (LSP)', () => {
   // Parse each test case file and create dynamic tests
   testCaseFiles.forEach(testCaseFile => {
     const testCase = parseTestCaseFile(testCaseFile);
-
     it(`should provide definition and references for ${testCase.name}`, async () => {
       // Create a unique subdirectory for this test
       const testTempDir = fs.mkdtempSync(path.join(baseTempDir, `${testCase.name}-`));
@@ -382,9 +104,6 @@ describe('Language Server Definition and References Tests (LSP)', () => {
       const openedDocuments: string[] = [];
 
       try {
-        console.log(`\n=== Running definition/references test: ${testCase.name} ===`);
-        console.log(`Test temp directory: ${testTempDir}`);
-
         // Create temporary files for this test case
         for (const [fileName, content] of testCase.files) {
           const filePath = path.join(testTempDir, fileName);
@@ -396,7 +115,6 @@ describe('Language Server Definition and References Tests (LSP)', () => {
           
           fs.writeFileSync(filePath, content, 'utf8');
           createdFiles.set(fileName, filePath);
-          console.log(`Created file: ${fileName} at ${filePath}`);
         }
 
         // Small delay to ensure filesystem operations complete
@@ -406,10 +124,7 @@ describe('Language Server Definition and References Tests (LSP)', () => {
         for (const [fileName, filePath] of createdFiles) {
           const content = testCase.files.get(fileName)!;
           const uri = `file:///${filePath.replace(/\\/g, '/')}`;
-          
-          console.log(`Opening document: ${fileName} -> ${uri}`);
-          console.log(`Document content (first 200 chars):\n${content.substring(0, 200)}${content.length > 200 ? '...' : ''}`);
-          
+        
           await client.openDocument(uri, content);
           openedDocuments.push(uri);
           
@@ -418,7 +133,6 @@ describe('Language Server Definition and References Tests (LSP)', () => {
         }
 
         // Additional delay for server processing and inheritance resolution
-        console.log('Waiting for document processing...');
         await new Promise(resolve => setTimeout(resolve, 500));
 
         // Find the main file to test on
@@ -430,55 +144,21 @@ describe('Language Server Definition and References Tests (LSP)', () => {
         const mainFilePath = createdFiles.get(mainFileName)!;
         const mainFileUri = `file:///${mainFilePath.replace(/\\/g, '/')}`;
 
-        console.log(`Testing on: ${mainFileName} at position ${JSON.stringify(testCase.requestPosition)}`);
-        
-        // Debug: Show the actual content around the request position
-        const fileContent = testCase.files.get(mainFileName)!;
-        const lines = fileContent.split('\n');
-        const requestLine = lines[testCase.requestPosition.line];
-        if (requestLine) {
-          const start = Math.max(0, testCase.requestPosition.character - 5);
-          const end = Math.min(requestLine.length, testCase.requestPosition.character + 10);
-          console.log(`Context around request position: "${requestLine.substring(start, end)}"`);
-          console.log(`Line ${testCase.requestPosition.line}: "${requestLine}"`);
-          console.log(`Character ${testCase.requestPosition.character}: "${requestLine[testCase.requestPosition.character] || 'EOF'}"`);
-        }
-
-        // Debug: Show all lines with character positions for reference
-        console.log(`File content with line numbers and character positions:`);
-        lines.forEach((line, index) => {
-          console.log(`  ${index}: "${line}"`);
-          if (index < 3) { // Show character ruler for first few lines
-            const ruler = Array.from({length: line.length}, (_, i) => (i % 10).toString()).join('');
-            console.log(`     ${ruler}`);
-          }
-        });
-
         // Request definition
         const definitionResult = await client.requestDefinition(mainFileUri, testCase.requestPosition);
-        console.log(`Definition result:`, JSON.stringify(definitionResult, null, 2));
 
         // Request references
         const referencesResult = await client.requestReferences(mainFileUri, testCase.requestPosition);
-        console.log(`References result:`, JSON.stringify(referencesResult, null, 2));        
         
         // Validate definition
         if (testCase.expectedDefinition === null) {
           expect(definitionResult).toBeNull();
-          console.log(`✅ Definition test passed (no definition expected)`);
         } else {
           expect(definitionResult).not.toBeNull();
-          
-          console.log(`Expected definition: ${locationWithFileToString(testCase.expectedDefinition)}`);
           
           // Handle both single location and array of locations
           const definitions = Array.isArray(definitionResult) ? definitionResult : [definitionResult as Location];
           expect(definitions.length).toBeGreaterThan(0);
-          
-          console.log(`Actual definition ranges:`);
-          definitions.forEach((def, i) => {
-            console.log(`  [${i}] ${rangeToString(def.range)} in ${normalizeUri(def.uri)}`);
-          });
           
           // Find the expected file URI
           const expectedFileUri = getFileUriFromCreatedFiles(testCase.expectedDefinition.fileName, createdFiles);
@@ -500,29 +180,17 @@ describe('Language Server Definition and References Tests (LSP)', () => {
               console.error(`  [${i}] ${rangeToString(def.range)} in ${normalizeUri(def.uri)}`);
             });
             throw new Error(`Definition test failed - no matching definition found. Expected: ${locationWithFileToString(testCase.expectedDefinition)} (URI: ${normalizeUri(expectedFileUri)})`);
-          } else {
-            console.log(`✅ Definition test passed at ${locationWithFileToString(testCase.expectedDefinition)}`);
-          }
-        }        // Validate references
+          } 
+        }
+
+        // Validate references
         if (testCase.expectedReferences.length === 0) {
           expect(referencesResult).toBeNull();
-          console.log(`✅ References test passed (no references expected)`);
         } else {
           expect(referencesResult).not.toBeNull();
           expect(Array.isArray(referencesResult)).toBe(true);
           
           const references = referencesResult as Location[];
-          console.log(`Expected ${testCase.expectedReferences.length} references, got ${references.length}`);
-          
-          console.log(`Expected references:`);
-          testCase.expectedReferences.forEach((location, i) => {
-            console.log(`  [${i}] ${locationWithFileToString(location)}`);
-          });
-          
-          console.log(`Actual reference ranges:`);
-          references.forEach((ref, i) => {
-            console.log(`  [${i}] ${rangeToString(ref.range)} in ${normalizeUri(ref.uri)}`);
-          });
           
           // Group expected references by file
           const expectedByFile = new Map<string, LocationWithFile[]>();
@@ -550,7 +218,6 @@ describe('Language Server Definition and References Tests (LSP)', () => {
             for (const expectedRef of expectedRefs) {
               const matchingRef = fileReferences.find(ref => rangesEqual(ref.range, expectedRef.range));
               if (matchingRef) {
-                console.log(`✅ Found expected reference at ${locationWithFileToString(expectedRef)}`);
                 foundReferences++;
               } else {
                 console.error(`❌ Missing expected reference at ${locationWithFileToString(expectedRef)}`);
@@ -564,11 +231,8 @@ describe('Language Server Definition and References Tests (LSP)', () => {
             throw new Error(`References test failed - missing expected references at: ${missingRefsStr}`);
           } else if (foundReferences !== testCase.expectedReferences.length) {
             throw new Error(`References test failed - expected ${testCase.expectedReferences.length} references, found ${foundReferences}`);
-          } else {
-            console.log(`✅ References test passed`);
           }
-        }        console.log(`📊 Test ${testCase.name} completed (debug mode)`);
-
+        }
       } catch (error) {
         console.error(`📊 Test ${testCase.name} failed: ${error}`);
         throw error; // Re-throw to fail the test
@@ -581,12 +245,10 @@ describe('Language Server Definition and References Tests (LSP)', () => {
         } catch (error) {
           console.warn('Error closing documents:', error);
         }
-
         // Clean up test directory and files
         try {
           if (fs.existsSync(testTempDir)) {
             fs.rmSync(testTempDir, { recursive: true, force: true });
-            console.log(`Cleaned up test directory: ${testTempDir}`);
           }
         } catch (error) {
           console.warn('Error cleaning up test directory:', error);
@@ -672,23 +334,6 @@ function parseLocationWithFileFromContent(content: string): LocationWithFile | n
   };
 }
 
-function parseRangeFromContent(content: string): Range | null {
-  const line = content.trim();
-  if (!line) return null;
-  
-  const match = line.match(/^(\d+):(\d+)-(\d+)$/);
-  if (!match) {
-    throw new Error(`Invalid range format: ${line}. Expected format: line:start-end`);
-  }
-  
-  const [, lineNum, startChar, endChar] = match;
-  // Convert from 1-indexed (test format) to 0-indexed (LSP format)
-  return {
-    start: { line: parseInt(lineNum!) - 1, character: parseInt(startChar!) - 1 },
-    end: { line: parseInt(lineNum!) - 1, character: parseInt(endChar!) - 1 }
-  };
-}
-
 function parseLocationsWithFileFromContent(content: string): LocationWithFile[] {
   const lines = content.split('\n').map(line => line.trim()).filter(line => line);
   const locations: LocationWithFile[] = [];
@@ -701,20 +346,6 @@ function parseLocationsWithFileFromContent(content: string): LocationWithFile[] 
   }
   
   return locations;
-}
-
-function parseRangesFromContent(content: string): Range[] {
-  const lines = content.split('\n').map(line => line.trim()).filter(line => line);
-  const ranges: Range[] = [];
-  
-  for (const line of lines) {
-    const range = parseRangeFromContent(line);
-    if (range) {
-      ranges.push(range);
-    }
-  }
-  
-  return ranges;
 }
 
 function processFileWithMarker(content: string): TestFile {
@@ -746,13 +377,6 @@ function processFileWithMarker(content: string): TestFile {
   
   // Position in the middle of the marked content
   const character = baseCharacter + Math.floor(markedContent.length / 2);
-
-  if (DEBUGGING) {
-    console.log(`Debug - Marker processing:`);
-    console.log(`  Marked content: "${markedContent}"`);
-    console.log(`  Base character: ${baseCharacter}`);
-    console.log(`  Final position: line ${line}, character ${character}`);
-  }
 
   return {
     content: cleanContent,

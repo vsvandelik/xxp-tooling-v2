@@ -13,11 +13,11 @@ workflow WorkflowB {
 === experiment.espace ===
 experiment MultiSpaceExperiment {
     space SpaceA of WorkflowA {
-        strategy strategyA;
+        strategy gridsearch;
     }
     
     space SpaceB of WorkflowB {
-        strategy strategyB;
+        strategy random;
     }
     
     control {
@@ -28,5 +28,5 @@ experiment MultiSpaceExperiment {
 === SUGGESTIONS ===
 - SpaceA
 - SpaceB
-- end
-- start
+- END
+- START

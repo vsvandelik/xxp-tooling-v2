@@ -9,11 +9,12 @@ experiment MyExperiment {
     }
     
     control {
-        start -> ###s1### -?> s2 {
-            condition "accuracy > 0.8";
+        START -> s1;
+        ###s1### -?> s2 {
+            condition "input() == 25";
         }
-        s1 -> end;
-        s2 -> end;
+        s1 -> END;
+        s2 -> END;
     }
 }
 
@@ -23,4 +24,5 @@ experiment.espace:2:11-13
 === REFERENCES ===
 experiment.espace:2:11-13
 experiment.espace:11:18-20
-experiment.espace:14:9-11
+experiment.espace:12:9-11
+experiment.espace:15:9-11

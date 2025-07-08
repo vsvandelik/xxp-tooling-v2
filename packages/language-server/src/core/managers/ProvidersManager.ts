@@ -6,8 +6,6 @@ import { Logger } from '../../utils/Logger.js';
 import { HoverProvider } from '../../providers/HoverProvider.js';
 import { ReferencesProvider } from '../../providers/ReferencesProvider.js';
 import { RenamerProvider } from '../../providers/RenamerProvider.js';
-import { XxpSuggestionsProvider } from '../../providers/XxpSuggestionsProvider.js';
-import { EspaceSuggestionsProvider } from '../../providers/EspaceSuggestionsProvider.js';
 import { SuggestionsProvider } from '../../providers/SuggestionsProvider.js';
 
 export class ProvidersManager {

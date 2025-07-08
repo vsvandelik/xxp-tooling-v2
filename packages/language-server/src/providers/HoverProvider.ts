@@ -4,8 +4,6 @@ import { Hover, HoverParams, MarkupContent } from 'vscode-languageserver';
 import { DataSymbol } from '../core/models/symbols/DataSymbol.js';
 import { TaskSymbol } from '../core/models/symbols/TaskSymbol.js';
 import { WorkflowSymbol } from '../core/models/symbols/WorkflowSymbol.js';
-import { BaseSymbol } from 'antlr4-c3';
-import { ExperimentSymbol } from '../core/models/symbols/ExperimentSymbol.js';
 import { SpaceSymbol } from '../core/models/symbols/SpaceSymbol.js';
 
 export class HoverProvider extends Provider {
@@ -24,31 +22,8 @@ export class HoverProvider extends Provider {
 
     if (document.symbolTable === undefined) return;
 
-    // Try to resolve in different contexts
-    let symbol: BaseSymbol | undefined;
-
-    // First try workflow symbol table
-    if (document.workflowSymbolTable) {
-      symbol = await document.workflowSymbolTable.resolve(tokenPosition.text, true);
-    }
-
-    // If not found, try experiment symbol table for ESPACE files
-    if (!symbol) {
-      const experimentSymbol = document.symbolTable.children.find(
-        c => c instanceof ExperimentSymbol
-      ) as ExperimentSymbol;
-      if (experimentSymbol) {
-        symbol = await experimentSymbol.resolve(tokenPosition.text, true);
-      }
-    }
-
-    // If still not found, try folder symbol table for workflows
-    if (!symbol) {
-      const folderSymbolTable = this.documentManager?.getDocumentSymbolTableForFile(document.uri);
-      if (folderSymbolTable) {
-        symbol = await folderSymbolTable.resolve(tokenPosition.text, false);
-      }
-    }
+    // Use generic symbol resolver
+    const symbol = document.symbolTable!.resolveSymbol(document, tokenPosition.parseTree, tokenPosition.text);
 
     if (symbol instanceof TaskSymbol) {
       return { contents: this.getTaskHoverInformation(symbol) };

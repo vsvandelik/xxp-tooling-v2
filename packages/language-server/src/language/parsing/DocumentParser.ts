@@ -131,8 +131,9 @@ export class DocumentParser {
       input => new ESPACELexer(input),
       tokenStream => new ESPACEParser(tokenStream),
       parser => (parser as ESPACEParser).program(),
-      (documentsManager, document, symbolTable) =>
-        new EspaceSymbolTableBuilder(documentsManager, document, symbolTable),
+      (documentsManager, document, symbolTable) => {
+        return new EspaceSymbolTableBuilder(documentsManager, document, symbolTable);
+      },
       'Extra content found after the end of the experiment space declaration.',
       forcedFsParsing
     );

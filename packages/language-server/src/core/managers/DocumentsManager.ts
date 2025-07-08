@@ -174,7 +174,6 @@ export class DocumentManager {
 
   public getDocumentAndLoadIfNecessary(uri: string): Document | undefined {
     if (!this.parsedDocuments.has(uri)) {
-      console.log(`Loading document from file system: ${uri}`);
       this.logger.warn(`Document not found in cache: ${uri}`);
       return this.loadDocumentDirectlyWithFileSystem(uri);
     }

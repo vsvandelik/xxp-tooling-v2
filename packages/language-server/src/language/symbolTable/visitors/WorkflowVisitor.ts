@@ -88,9 +88,10 @@ export class WorkflowVisitor {
           `Parent workflow '${parentContext.getText()}' not found`
         );
       } else {
-        workflowSymbol.parentWorkflowSymbol = parentWorkflowDocument.symbolTable?.resolveSync(
+        const parentSymbol = parentWorkflowDocument.symbolTable?.resolveSync(
           parentContext.getText()
         ) as WorkflowSymbol;
+        workflowSymbol.parentWorkflowSymbol = parentSymbol;
         Document.addDocumentDependency(this.builder.document, parentWorkflowDocument);
       }
     }

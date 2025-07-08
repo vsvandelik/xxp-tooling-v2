@@ -7,7 +7,11 @@ import {
   EspaceEnumFunctionContext,
   EspaceRangeFunctionContext,
   EspaceExpressionContext,
+  XxpParamAssignmentContext,
 } from '@extremexp/core';
+import { SpaceScopeSymbol } from '../../../core/models/symbols/SpaceScopeSymbol.js';
+import { IScopedSymbol, ScopedSymbol } from 'antlr4-c3';
+import { SpaceSymbol } from '../../../core/models/symbols/SpaceSymbol.js';
 
 export class EspaceParamVisitor {
   constructor(private readonly builder: EspaceSymbolTableBuilder) {}
@@ -17,13 +21,14 @@ export class EspaceParamVisitor {
     const paramValue = ctx.paramValue();
 
     if (!identifier || !paramValue) {
+      // Missing identifier or paramValue
       return this.builder.visitChildren(ctx) as DocumentSymbolTable;
     }
 
     const paramName = identifier.getText();
     const value = this.extractParamValue(paramValue);
 
-    addSymbolOfTypeWithContext(
+    const paramSymbol = addSymbolOfTypeWithContext(
       this.builder,
       ParamSymbol,
       paramName,
@@ -33,7 +38,31 @@ export class EspaceParamVisitor {
       value
     );
 
+    if(paramSymbol) {
+      this.addReferencesToParamsInWorkflowsDefinitions(paramName, paramSymbol);
+    }
+
     return this.builder.visitChildren(ctx) as DocumentSymbolTable;
+  }
+
+  private addReferencesToParamsInWorkflowsDefinitions(paramName: string, paramSymbol: ParamSymbol): void {
+    let spaceScopeSymbol: IScopedSymbol | undefined = this.builder.currentScope;
+    while (spaceScopeSymbol && !(spaceScopeSymbol instanceof SpaceScopeSymbol)) {
+      spaceScopeSymbol = spaceScopeSymbol.parent;
+    }
+
+    const spaceSymbol = spaceScopeSymbol?.previousSibling;
+    if (!spaceSymbol || !(spaceSymbol instanceof SpaceSymbol) || (spaceSymbol as SpaceSymbol).workflowReference === undefined) {
+      return;
+    }
+
+    const workflowSymbol = (spaceSymbol as SpaceSymbol).workflowReference;
+    workflowSymbol?.getAllNestedSymbolsSync(paramName).forEach(param => {
+      if (!(param instanceof ParamSymbol) || !(param.context as XxpParamAssignmentContext)) {
+        return;
+      }
+      paramSymbol.addReference((param.context as XxpParamAssignmentContext).IDENTIFIER(), param.document);
+    });
   }
 
   private extractParamValue(ctx: any): ParamValue | undefined {

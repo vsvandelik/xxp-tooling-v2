@@ -80,6 +80,7 @@ export class EspaceSpaceVisitor {
       return this.builder.defaultResult();
     }
 
+    workflowSymbol?.addSpaceReference(spaceSymbol);
     // Visit the workflow name read to add reference
     this.builder.visit(workflowNameRead);
 
@@ -103,12 +104,7 @@ export class EspaceSpaceVisitor {
   }
 
   public visitStrategy(ctx: EspaceStrategyStatementContext): DocumentSymbolTable {
-    const identifier = ctx.IDENTIFIER();
-    if (!identifier) {
-      return this.builder.visitChildren(ctx) as DocumentSymbolTable;
-    }
-
-    const strategyName = identifier.getText();
+    const strategyName = ctx.getText();
 
     // Find the parent space symbol
     const spaceScope = this.findParentSpaceScope();
