@@ -115,7 +115,7 @@ export class TaskVisitor {
     const hasValue = ctx.expression() !== undefined;
 
     // Create ParamSymbol and add it to the symbol table
-    const paramSymbol = addSymbolOfTypeWithContext(
+    addSymbolOfTypeWithContext(
       this.builder,
       ParamSymbol,
       paramName,

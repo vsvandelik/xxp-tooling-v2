@@ -60,7 +60,7 @@ export class RenamerProvider extends Provider {
       return null;
     }
 
-    const references = await this.getAllReferencesForRename(symbol, document);
+    const references = await this.getAllReferencesForRename(symbol);
     const changes: { [uri: string]: TextEdit[] } = {};
 
     for (const reference of references) {
@@ -127,8 +127,7 @@ export class RenamerProvider extends Provider {
   }
 
   private async getAllReferencesForRename(
-    symbol: BaseSymbol,
-    document: any
+    symbol: BaseSymbol
   ): Promise<TerminalSymbolReference[]> {
     const references: TerminalSymbolReference[] = [];
 

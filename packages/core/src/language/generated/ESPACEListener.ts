@@ -13,6 +13,7 @@ import { SpaceHeaderContext } from "./ESPACEParser.js";
 import { SpaceBodyContext } from "./ESPACEParser.js";
 import { SpaceContentContext } from "./ESPACEParser.js";
 import { StrategyStatementContext } from "./ESPACEParser.js";
+import { StrategyNameContext } from "./ESPACEParser.js";
 import { ParamDefinitionContext } from "./ESPACEParser.js";
 import { ParamValueContext } from "./ESPACEParser.js";
 import { EnumFunctionContext } from "./ESPACEParser.js";
@@ -143,6 +144,16 @@ export class ESPACEListener implements ParseTreeListener {
      * @param ctx the parse tree
      */
     exitStrategyStatement?: (ctx: StrategyStatementContext) => void;
+    /**
+     * Enter a parse tree produced by `ESPACEParser.strategyName`.
+     * @param ctx the parse tree
+     */
+    enterStrategyName?: (ctx: StrategyNameContext) => void;
+    /**
+     * Exit a parse tree produced by `ESPACEParser.strategyName`.
+     * @param ctx the parse tree
+     */
+    exitStrategyName?: (ctx: StrategyNameContext) => void;
     /**
      * Enter a parse tree produced by `ESPACEParser.paramDefinition`.
      * @param ctx the parse tree

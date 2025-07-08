@@ -62,7 +62,7 @@ export class ExperimentModelVisitor extends ESPACEVisitor<any> {
 
     for (const content of body.spaceContent()) {
       if (content.strategyStatement()) {
-        strategy = content.strategyStatement()!.IDENTIFIER().getText();
+        strategy = content.strategyStatement()!.strategyName().getText();
       } else if (content.paramDefinition()) {
         parameters.push(this.visit(content.paramDefinition()!));
       } else if (content.taskConfiguration()) {

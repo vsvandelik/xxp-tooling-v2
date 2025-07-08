@@ -27,7 +27,11 @@ export class ReferencesProvider extends Provider {
     if (!result) return Promise.resolve(null);
     const [document, tokenPosition] = result;
 
-    const symbol = await this.resolveSymbol(document, tokenPosition);
+    const symbol = document.symbolTable!.resolveSymbol(
+      document,
+      tokenPosition.parseTree,
+      tokenPosition.text
+    );
     if (!symbol) return null;
 
     const locations = await this.getAllReferences(symbol);

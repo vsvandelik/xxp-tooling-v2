@@ -14,7 +14,7 @@ export class ParsingErrorListener extends antlr.BaseErrorListener {
     column: number,
     msg: string,
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    e: antlr.RecognitionException | null
+    _e: antlr.RecognitionException | null
   ): void {
     throw new Error(
       `Parsing error in file "${path.basename(this.fileName)}" at line ${line}, column ${column}: ${msg}`

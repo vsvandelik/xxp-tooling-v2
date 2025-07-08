@@ -356,6 +356,7 @@ export class XxpSuggestionsProvider extends Provider {
             return match[1];
           }
         }
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       } catch (error) {
         // Fallback: return null if we can't get the text
       }

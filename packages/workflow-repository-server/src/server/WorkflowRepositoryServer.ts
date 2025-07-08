@@ -235,7 +235,7 @@ export class WorkflowRepositoryServer {
     });
 
     this.app.use(
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars, unused-imports/no-unused-vars
       (error: Error, req: express.Request, res: express.Response, next: express.NextFunction) => {
         console.error('Unhandled error:', error);
 

@@ -290,6 +290,7 @@ export class RunExperimentCommand {
         try {
           const doc = await vscode.workspace.openTextDocument(selected.detail);
           await vscode.window.showTextDocument(doc);
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         } catch (error) {
           // If can't open as file, show in output channel
           const outputChannel = vscode.window.createOutputChannel('ExtremeXP Output');

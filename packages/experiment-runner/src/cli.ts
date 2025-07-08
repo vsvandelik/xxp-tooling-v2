@@ -29,7 +29,7 @@ class CLIProgressCallback implements ProgressCallback {
 
   onTaskComplete(
     taskId: string,
-    params: Record<string, Expression>,
+    _params: Record<string, Expression>,
     outputs: Record<string, string>
   ): void {
     this.spinner?.succeed(
@@ -45,12 +45,12 @@ class CLIProgressCallback implements ProgressCallback {
     console.log(chalk.green(`✓ Space ${spaceId} completed\n`));
   }
 
-  onParameterSetStart(spaceId: string, index: number, params: Record<string, Expression>): void {
+  onParameterSetStart(_spaceId: string, index: number, params: Record<string, Expression>): void {
     console.log(chalk.cyan(`  Parameter set ${index + 1}: ${JSON.stringify(params)}`));
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  onParameterSetComplete(spaceId: string, index: number): void {
+  onParameterSetComplete(_spaceId: string, _index: number): void {
     //console.log(chalk.gray(`    ✓ Parameter set ${index + 1} completed`));
   }
 

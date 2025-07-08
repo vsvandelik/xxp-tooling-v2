@@ -16,6 +16,7 @@ export class DiagnosticReportingErrorListener extends BaseErrorListener {
     line: number,
     charPositionInLine: number,
     msg: string,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars, unused-imports/no-unused-vars
     e: RecognitionException | null
   ): void {
     const endChar = offendingSymbol?.text

@@ -61,8 +61,7 @@ export class TaskResolver {
 
         if (!tempTasks.has(taskId)) {
           const spaceParameters = this.getSpaceParametersForTask(space, task.name);
-          const usedParameters = spaceUsedParameters.get(space.name);
-          const resolvedTask = this.resolveTask(task, spaceParameters, usedParameters);
+          const resolvedTask = this.resolveTask(task, spaceParameters);
           tempTasks.set(taskId, resolvedTask);
         }
       }
@@ -226,8 +225,7 @@ export class TaskResolver {
 
   private resolveTask(
     task: TaskModel,
-    spaceParameters: Map<string, ParameterDefinition>,
-    usedParameters?: Set<string>
+    spaceParameters: Map<string, ParameterDefinition>
   ): ResolvedTask {
     const dynamicParameters: string[] = [];
     const staticParameters: Record<string, ExpressionType> = {};

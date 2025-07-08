@@ -21,7 +21,8 @@ spaceContent:
     | taskConfiguration
     | dataDefinition;
 
-strategyStatement: STRATEGY ( RANDOM | GRIDSEARCH ) SEMICOLON;
+strategyStatement: STRATEGY strategyName SEMICOLON;
+strategyName: ( RANDOM | GRIDSEARCH );
 paramDefinition: PARAM IDENTIFIER EQUALS paramValue SEMICOLON;
 
 paramValue:

@@ -70,6 +70,7 @@ export class ExperimentRunnerServer {
 
     // Error handling middleware
     this.app.use(
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       (err: Error, req: express.Request, res: express.Response, _next: express.NextFunction) => {
         console.error('Error:', err);
         res.status(500).json({

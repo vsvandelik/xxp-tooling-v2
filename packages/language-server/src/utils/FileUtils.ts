@@ -1,6 +1,5 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import { promisify } from 'util';
 
 import { TextDocument } from 'vscode-languageserver-textdocument';
 
@@ -9,8 +8,6 @@ import { FileInfo } from '../core/models/FileInfo.js';
 
 import { Logger } from './Logger.js';
 import { StringUtils } from './StringUtils.js';
-
-const readFileAsync = promisify(fs.readFile);
 
 export class FileUtils {
   static getFolderPath(uri: string): any {
@@ -73,13 +70,8 @@ export class FileUtils {
       : StringUtils.removeDoubleQuotes(filePath);
 
     // Validate file exists
-    try {
-      this.getFileInformation(cleanPath);
-      return cleanPath;
-    } catch (error) {
-      // Re-throw file-not-found or other errors
-      throw error;
-    }
+    this.getFileInformation(cleanPath);
+    return cleanPath;
   }
 
   private static normalizeFileUri(uri: string): string {

@@ -105,7 +105,7 @@ export class EspaceSpaceVisitor {
   }
 
   public visitStrategy(ctx: EspaceStrategyStatementContext): DocumentSymbolTable {
-    const strategyName = ctx.getText();
+    const strategyName = ctx.strategyName().getText();
 
     // Find the parent space symbol
     const spaceScope = this.findParentSpaceScope();

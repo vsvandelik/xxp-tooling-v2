@@ -85,19 +85,19 @@ export class ExperimentService {
 
     // Create progress callback
     const progressCallback: ProgressCallback = {
-      onTaskStart: (taskId, params) => {
+      onTaskStart: (taskId, _params) => {
         this.updateProgress(experimentId, { currentTask: taskId });
       },
-      onTaskComplete: (taskId, params, outputs) => {
+      onTaskComplete: (_taskId, _params, _outputs) => {
         // Progress will be updated by onProgress callback
       },
       onSpaceStart: spaceId => {
         this.updateProgress(experimentId, { currentSpace: spaceId });
       },
-      onSpaceComplete: spaceId => {
+      onSpaceComplete: _spaceId => {
         // Progress will be updated by onProgress callback
       },
-      onError: (error, context) => {
+      onError: (error, _context) => {
         options.onError?.(error);
       },
       onProgress: (progress, message) => {

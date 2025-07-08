@@ -2,12 +2,8 @@ import * as vscode from 'vscode';
 
 import { GenerateArtifactCommand } from './commands/generateArtifact.js';
 import { RunExperimentCommand } from './commands/runExperiment.js';
-
-// Language Client imports
 import { LanguageClientManager } from './languageClient/LanguageClientManager.js';
 import { ProgressPanelManager } from './panels/ProgressPanelManager.js';
-
-// Workflow repository imports
 import { RepositoryConfigManager } from './repository/RepositoryConfigManager.js';
 import { WorkflowCommands } from './repository/WorkflowCommands.js';
 import { WorkflowRepositoryProvider } from './repository/WorkflowRepositoryProvider.js';

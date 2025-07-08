@@ -13,6 +13,7 @@ import { SpaceHeaderContext } from "./ESPACEParser.js";
 import { SpaceBodyContext } from "./ESPACEParser.js";
 import { SpaceContentContext } from "./ESPACEParser.js";
 import { StrategyStatementContext } from "./ESPACEParser.js";
+import { StrategyNameContext } from "./ESPACEParser.js";
 import { ParamDefinitionContext } from "./ESPACEParser.js";
 import { ParamValueContext } from "./ESPACEParser.js";
 import { EnumFunctionContext } from "./ESPACEParser.js";
@@ -106,6 +107,12 @@ export class ESPACEVisitor<Result> extends AbstractParseTreeVisitor<Result> {
      * @return the visitor result
      */
     visitStrategyStatement?: (ctx: StrategyStatementContext) => Result;
+    /**
+     * Visit a parse tree produced by `ESPACEParser.strategyName`.
+     * @param ctx the parse tree
+     * @return the visitor result
+     */
+    visitStrategyName?: (ctx: StrategyNameContext) => Result;
     /**
      * Visit a parse tree produced by `ESPACEParser.paramDefinition`.
      * @param ctx the parse tree

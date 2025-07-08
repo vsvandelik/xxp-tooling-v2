@@ -38,7 +38,6 @@ export class GenerateArtifactCommand {
     }
 
     const espacePath = document.fileName;
-    const workspaceFolder = vscode.workspace.getWorkspaceFolder(document.uri);
 
     // Create progress notification
     await vscode.window.withProgress(
@@ -54,7 +53,7 @@ export class GenerateArtifactCommand {
           const result = await this.runArtifactGenerator(espacePath, token);
 
           if (result.success) {
-            await this.handleSuccess(result, workspaceFolder);
+            await this.handleSuccess(result);
           } else {
             await this.handleFailure(result);
           }
@@ -126,8 +125,7 @@ export class GenerateArtifactCommand {
   }
 
   private async handleSuccess(
-    result: { artifactPath?: string; validation: ValidationResult },
-    workspaceFolder?: vscode.WorkspaceFolder
+    result: { artifactPath?: string; validation: ValidationResult }
   ): Promise<void> {
     // Show validation results if any
     if (result.validation.warnings.length > 0) {

@@ -1,7 +1,7 @@
 import eslint from '@eslint/js';
-import tseslint from 'typescript-eslint';
 import importPlugin from 'eslint-plugin-import';
 import unusedImports from 'eslint-plugin-unused-imports';
+import tseslint from 'typescript-eslint';
 
 export default tseslint.config(
   eslint.configs.recommended,
@@ -55,6 +55,9 @@ export default tseslint.config(
       
       // Consistent newlines after imports
       'import/newline-after-import': 'error',
+      
+      // Disable TypeScript any restrictions
+      '@typescript-eslint/no-explicit-any': 'off',
     },
     settings: {
       'import/resolver': {
