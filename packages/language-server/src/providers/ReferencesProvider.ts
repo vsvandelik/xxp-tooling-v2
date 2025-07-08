@@ -23,6 +23,10 @@ import {
 } from '@extremexp/core';
 import { BaseSymbol } from 'antlr4-c3';
 import { TerminalNode } from 'antlr4ng';
+import { TokenPosition } from '../core/models/TokenPosition.js';
+import { Document } from '../core/documents/Document.js';
+import { DocumentSymbol } from 'vscode';
+import { DocumentSymbolTable } from '../language/symbolTable/DocumentSymbolTable.js';
 
 export class ReferencesProvider extends Provider {
   private logger = Logger.getLogger();
@@ -72,36 +76,9 @@ export class ReferencesProvider extends Provider {
     return location;
   }
 
-  private async resolveSymbol(document: any, tokenPosition: any): Promise<BaseSymbol | null> {
-    const contextName = tokenPosition.parseTree?.constructor?.name;
-    const text = tokenPosition.text;
-
-    // Special handling for ESPACE contexts
-    if (contextName === 'TaskNameReadContext') {
-      const result = await SymbolResolver.resolveEspaceTask(text, document, this.documentManager);
-      if (result) {
-        return result;
-      }
-    }
-
-    // Special handling for ESPACE parameter contexts
-    if (contextName === 'ParamDefinitionContext' || contextName === 'ParamAssignmentContext') {
-      const result = await SymbolResolver.resolveEspaceParameter(text, document, this.documentManager);
-      if (result) {
-        return result;
-      }
-    }
-
-    // Use generic symbol resolver
-    return SymbolResolver.resolveSymbol({
-      text,
-      contextName,
-      document,
-      documentManager: this.documentManager,
-      localOnly: false
-    });
+  private resolveSymbol(document: Document, tokenPosition: TokenPosition): BaseSymbol | undefined {
+    return document.symbolTable!.resolveSymbol(document, tokenPosition.parseTree, tokenPosition.text);
   }
-
 
   private async getAllReferences(symbol: BaseSymbol): Promise<Location[]> {
     const references: TerminalSymbolReference[] = [];
@@ -182,7 +159,7 @@ export class ReferencesProvider extends Provider {
     }
 
     // Find the identifier node using context-specific approach
-    let identifierNode: TerminalNode | null = this.getIdentifierFromContext(parseTree, symbol.name);
+    const identifierNode: TerminalNode | null = this.getIdentifierFromContext(parseTree, symbol.name);
     
     if (!identifierNode) {
       return undefined;

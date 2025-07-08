@@ -94,6 +94,7 @@ export class EspaceSpaceVisitor {
 
     console.error(`[SPACE] SPACE-CREATED: "${spaceSymbol.name}" ref="${spaceSymbol.workflowReference?.name}"`);
 
+    workflowSymbol?.addSpaceReference(spaceSymbol);
     // Visit the workflow name read to add reference
     this.builder.visit(workflowNameRead);
 

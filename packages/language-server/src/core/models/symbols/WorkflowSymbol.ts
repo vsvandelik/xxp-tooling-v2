@@ -2,10 +2,12 @@ import { BaseSymbol, SymbolConstructor, SymbolTable } from 'antlr4-c3';
 import { Document } from '../../documents/Document.js';
 import { TerminalSymbolReference } from '../TerminalSymbolReference.js';
 import { TerminalNode } from 'antlr4ng';
+import { SpaceSymbol } from './SpaceSymbol.js';
 
 export class WorkflowSymbol extends SymbolTable {
   public parentWorkflowSymbol?: WorkflowSymbol;
   public references: TerminalSymbolReference[] = [];
+  public referencesSpaces: SpaceSymbol[] = [];
 
   constructor(
     name: string,
@@ -143,25 +145,24 @@ export class WorkflowSymbol extends SymbolTable {
   }
 
   override resolveSync(name: string, localOnly?: boolean): BaseSymbol | undefined {
-    console.error(`[SYMBOL] WorkflowSymbol.resolveSync: name="${name}", localOnly=${localOnly}, workflow="${this.name}"`);
     const symbol = super.resolveSync(name, localOnly);
 
     if (symbol) {
-      console.error(`[SYMBOL] WorkflowSymbol.resolveSync: Found locally: name="${name}", type="${symbol.constructor.name}"`);
       return symbol;
     }
 
     if (this.parentWorkflowSymbol) {
-      console.error(`[SYMBOL] WorkflowSymbol.resolveSync: Searching in parent: "${this.parentWorkflowSymbol.name}"`);
       return this.parentWorkflowSymbol.resolveSync(name, localOnly);
     }
 
-    console.error(`[SYMBOL] WorkflowSymbol.resolveSync: Not found: name="${name}"`);
     return undefined;
   }
 
   addReference(symbol: TerminalNode, document: Document): void {
-    console.error(`[SYMBOL] WorkflowSymbol.addReference: workflow="${this.name}", text="${symbol.getText()}", line=${symbol.symbol?.line}, column=${symbol.symbol?.column}, uri="${document.uri}"`);
     this.references.push(new TerminalSymbolReference(symbol, document));
+  }
+
+  addSpaceReference(spaceSymbol: SpaceSymbol): void {
+    this.referencesSpaces.push(spaceSymbol);
   }
 }

@@ -1,4 +1,4 @@
-import { BaseSymbol } from 'antlr4-c3';
+import { BaseSymbol, ScopedSymbol } from 'antlr4-c3';
 import { ExperimentSymbol } from '../core/models/symbols/ExperimentSymbol.js';
 import { WorkflowSymbol } from '../core/models/symbols/WorkflowSymbol.js';
 import { SpaceSymbol } from '../core/models/symbols/SpaceSymbol.js';
@@ -67,7 +67,7 @@ export class SymbolResolver {
   }
 
   private static getSymbolTablesInPriorityOrder(context: SymbolResolutionContext): Array<{table: SymbolTable, name: string}> {
-    const tables: Array<{table: SymbolTable, name: string}> = [];
+    const tables: Array<{table: ScopedSymbol, name: string}> = [];
 
     // Context-aware prioritization
     if (this.isDefinitionContext(context.contextName)) {

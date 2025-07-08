@@ -45,9 +45,9 @@ experiment MLExperiment {
     }
     
     control {
-        start -> baseSpace -> extendedSpace -> end;
-        baseSpace -?> end {
-            condition "accuracy > 0.9";
+        START -> baseSpace -> extendedSpace -> end;
+        baseSpace -?> END {
+            condition "input() == 45";
         }
     }
 }
@@ -59,4 +59,4 @@ extendedWorkflow.xxp:3:17-29
 extendedWorkflow.xxp:3:17-29
 extendedWorkflow.xxp:5:20-32
 extendedWorkflow.xxp:10:26-38
-mLExperiment.espace:15:24-36
+mLExperiment.espace:16:24-36

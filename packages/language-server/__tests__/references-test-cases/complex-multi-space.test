@@ -26,11 +26,12 @@ experiment MultiSpaceExperiment {
     }
     
     control {
-        start -> space1 -?> space2 {
+        START -> space1;
+        space1 -?> space2 {
             condition "metric > threshold";
         }
-        space1 -> end;
-        space2 -> end;
+        space1 -> END;
+        space2 -> END;
     }
 }
 
@@ -39,5 +40,5 @@ experiment.espace:10:11-17
 
 === REFERENCES ===
 experiment.espace:10:11-17
-experiment.espace:19:29-35
-experiment.espace:23:9-15
+experiment.espace:20:20-26
+experiment.espace:24:9-15

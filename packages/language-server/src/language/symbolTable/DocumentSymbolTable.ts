@@ -1,7 +1,11 @@
-import { BaseSymbol, ScopedSymbol, SymbolTable } from 'antlr4-c3';
+import { BaseSymbol, IScopedSymbol, ScopedSymbol, SymbolTable } from 'antlr4-c3';
 import { ParseTree } from 'antlr4ng';
 import { WorkflowSymbol } from '../../core/models/symbols/WorkflowSymbol.js';
 import { ExperimentSymbol } from '../../core/models/symbols/ExperimentSymbol.js';
+import { Document } from '../../core/documents/Document.js';
+import { EspaceWorkflowNameReadContext, XxpWorkflowNameReadContext } from '@extremexp/core';
+import { SpaceScopeSymbol } from '../../core/models/symbols/SpaceScopeSymbol.js';
+import { SpaceSymbol } from '../../core/models/symbols/SpaceSymbol.js';
 
 export class DocumentSymbolTable extends SymbolTable {
   constructor(name: string) {
@@ -42,7 +46,7 @@ export class DocumentSymbolTable extends SymbolTable {
     if (type.name === 'SpaceSymbol') {
       // Find ExperimentSymbol and get SpaceSymbols from it
       const experiments = await this.getSymbolsOfType(ExperimentSymbol as any);
-      
+
       const spaceNames: string[] = [];
       for (const experiment of experiments) {
         if (experiment instanceof ScopedSymbol) {
@@ -50,7 +54,7 @@ export class DocumentSymbolTable extends SymbolTable {
           spaceNames.push(...spaces.map(s => s.name));
         }
       }
-      
+
       return spaceNames;
     }
 
@@ -128,11 +132,66 @@ export class DocumentSymbolTable extends SymbolTable {
       if (scope instanceof type) {
         return scope;
       }
-      
+
       scope = scope.parent;
     }
 
     return null;
+  }
+
+  public resolveSymbol(document: Document, parseTree: ParseTree, symbolName: string): BaseSymbol | undefined {
+    if (!parseTree) return undefined;
+
+    const currentContext = parseTree;
+    if (!currentContext) return undefined;
+
+    // Workflow name resolution
+    if (parseTree instanceof XxpWorkflowNameReadContext || parseTree instanceof EspaceWorkflowNameReadContext) {
+      return document.symbolTable!.resolveSync(symbolName, false);
+    }
+
+    let scopeSymbol = DocumentSymbolTable.symbolWithContextRecursive(this, currentContext, document.uri);
+    while (scopeSymbol && !(scopeSymbol instanceof ScopedSymbol)) {
+      scopeSymbol = scopeSymbol.parent;
+    }
+
+    const symbolsInCurrentFile = (scopeSymbol as ScopedSymbol).resolveSync(symbolName, false);
+    if (symbolsInCurrentFile) {
+      return symbolsInCurrentFile;
+    }
+
+    const workflowsToSearchIn: ScopedSymbol[] = [];
+
+    // Space workflow symbols resolution
+    let spaceScopeSymbol: IScopedSymbol | undefined = scopeSymbol;
+    while (!(spaceScopeSymbol instanceof SpaceScopeSymbol) && spaceScopeSymbol && spaceScopeSymbol.parent) {
+      spaceScopeSymbol = spaceScopeSymbol.parent;
+    }
+    if (spaceScopeSymbol instanceof SpaceScopeSymbol && spaceScopeSymbol.symbolReference && spaceScopeSymbol.symbolReference instanceof SpaceSymbol && spaceScopeSymbol.symbolReference.workflowReference) {
+      const foundSymbol = spaceScopeSymbol.symbolReference.workflowReference.resolveSync(symbolName, false);
+      if (foundSymbol) {
+        return foundSymbol;
+      }
+      workflowsToSearchIn.push(spaceScopeSymbol.symbolReference.workflowReference);
+    }
+
+    // References workflows + spaces
+    let workflowScopeSymbol: IScopedSymbol | undefined = scopeSymbol;
+    while (!(workflowScopeSymbol instanceof WorkflowSymbol) && workflowScopeSymbol && workflowScopeSymbol.parent) {
+      workflowScopeSymbol = workflowScopeSymbol.parent;
+    }
+    while (workflowScopeSymbol && workflowScopeSymbol instanceof WorkflowSymbol && workflowScopeSymbol.parentWorkflowSymbol && workflowScopeSymbol.parentWorkflowSymbol instanceof WorkflowSymbol) {
+      workflowsToSearchIn.push(workflowScopeSymbol.parentWorkflowSymbol);
+    }
+
+    for (const workflow of workflowsToSearchIn) {
+      const foundSymbol = workflow.resolveSync(symbolName, false);
+      if (foundSymbol) {
+        return foundSymbol;
+      }
+    }
+
+    return undefined;
   }
 
   private static symbolWithContextRecursive(

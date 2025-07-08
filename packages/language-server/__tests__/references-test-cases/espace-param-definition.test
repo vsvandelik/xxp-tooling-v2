@@ -20,7 +20,7 @@ experiment MyExperiment {
 }
 
 === DEFINITION ===
-simpleWorkflow.xxp:5:15-27
+myExperiment.espace:4:15-27
 
 === REFERENCES ===
 simpleWorkflow.xxp:5:15-27
