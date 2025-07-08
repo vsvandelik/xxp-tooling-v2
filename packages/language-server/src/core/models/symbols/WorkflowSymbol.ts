@@ -127,19 +127,15 @@ export class WorkflowSymbol extends SymbolTable {
   }
 
   override resolve(name: string, localOnly?: boolean): Promise<BaseSymbol | undefined> {
-    console.error(`[SYMBOL] WorkflowSymbol.resolve: name="${name}", localOnly=${localOnly}, workflow="${this.name}"`);
     return super.resolve(name, localOnly).then(async symbol => {
       if (symbol) {
-        console.error(`[SYMBOL] WorkflowSymbol.resolve: Found locally: name="${name}", type="${symbol.constructor.name}"`);
         return symbol;
       }
 
       if (this.parentWorkflowSymbol) {
-        console.error(`[SYMBOL] WorkflowSymbol.resolve: Searching in parent: "${this.parentWorkflowSymbol.name}"`);
         return this.parentWorkflowSymbol.resolve(name, localOnly);
       }
 
-      console.error(`[SYMBOL] WorkflowSymbol.resolve: Not found: name="${name}"`);
       return undefined;
     });
   }

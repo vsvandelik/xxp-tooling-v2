@@ -14,7 +14,6 @@ export class TerminalSymbolWithReferences extends BaseSymbol {
   }
 
   addReference(symbol: TerminalNode, document: Document): void {
-    console.error(`[SYMBOL] TerminalSymbolWithReferences.addReference: name="${this.name}", text="${symbol.getText()}", line=${symbol.symbol?.line}, column=${symbol.symbol?.column}, uri="${document.uri}"`);
     this.references.push(new TerminalSymbolReference(symbol, document));
   }
 }

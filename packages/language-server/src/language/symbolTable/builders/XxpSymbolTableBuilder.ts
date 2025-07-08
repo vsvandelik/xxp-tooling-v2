@@ -58,56 +58,43 @@ export class XxpSymbolTableBuilder
   }
 
   visitWorkflowHeader(ctx: XxpWorkflowHeaderContext): DocumentSymbolTable {
-    console.error(`[BUILDER] XxpSymbolTableBuilder.visitWorkflowHeader: ${ctx.getText()}`);
     return this.workflowVisitor.visitHeader(ctx);
   }
   visitWorkflowBody(ctx: XxpWorkflowBodyContext): DocumentSymbolTable {
-    console.error(`[BUILDER] XxpSymbolTableBuilder.visitWorkflowBody`);
     return this.workflowVisitor.visitBody(ctx);
   }
   visitDataDefinition(ctx: XxpDataDefinitionContext): DocumentSymbolTable {
-    console.error(`[BUILDER] XxpSymbolTableBuilder.visitDataDefinition: ${ctx.getText()}`);
     return this.dataVisitor.visitDefinition(ctx);
   }
   visitTaskDefinition(ctx: XxpTaskDefinitionContext): DocumentSymbolTable {
-    console.error(`[BUILDER] XxpSymbolTableBuilder.visitTaskDefinition: ${ctx.getText()}`);
     return this.taskVisitor.visitDefinition(ctx);
   }
   visitTaskConfiguration(ctx: XxpTaskConfigurationContext): DocumentSymbolTable {
-    console.error(`[BUILDER] XxpSymbolTableBuilder.visitTaskConfiguration: ${ctx.getText()}`);
     return this.taskVisitor.visitConfiguration(ctx);
   }
   visitImplementation(ctx: XxpImplementationContext): DocumentSymbolTable {
-    console.error(`[BUILDER] XxpSymbolTableBuilder.visitImplementation: ${ctx.getText()}`);
     return this.taskVisitor.visitImplementation(ctx);
   }
   visitParamAssignment(ctx: XxpParamAssignmentContext): DocumentSymbolTable {
-    console.error(`[BUILDER] XxpSymbolTableBuilder.visitParamAssignment: ${ctx.getText()}`);
     return this.taskVisitor.visitParam(ctx);
   }
   visitInputStatement(ctx: XxpInputStatementContext): DocumentSymbolTable {
-    console.error(`[BUILDER] XxpSymbolTableBuilder.visitInputStatement: ${ctx.getText()}`);
     return this.taskVisitor.visitInput(ctx);
   }
   visitOutputStatement(ctx: XxpOutputStatementContext): DocumentSymbolTable {
-    console.error(`[BUILDER] XxpSymbolTableBuilder.visitOutputStatement: ${ctx.getText()}`);
     return this.taskVisitor.visitOutput(ctx);
   }
 
   visitWorkflowNameRead(ctx: XxpWorkflowNameReadContext): DocumentSymbolTable {
-    console.error(`[BUILDER] XxpSymbolTableBuilder.visitWorkflowNameRead: ${ctx.getText()}`);
     return this.variableReadVisitor.visitWorkflow(ctx);
   }
   visitDataNameRead(ctx: XxpDataNameReadContext): DocumentSymbolTable {
-    console.error(`[BUILDER] XxpSymbolTableBuilder.visitDataNameRead: ${ctx.getText()}`);
     return this.variableReadVisitor.visitData(ctx);
   }
   visitTaskNameRead(ctx: XxpTaskNameReadContext): DocumentSymbolTable {
-    console.error(`[BUILDER] XxpSymbolTableBuilder.visitTaskNameRead: ${ctx.getText()}`);
     return this.variableReadVisitor.visitTask(ctx);
   }
   visitFileNameString(ctx: XxpFileNameStringContext): DocumentSymbolTable {
-    console.error(`[BUILDER] XxpSymbolTableBuilder.visitFileNameString: ${ctx.getText()}`);
     return this.fileVisitor.visitFileName(ctx);
   }
 }

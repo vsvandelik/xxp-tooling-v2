@@ -163,52 +163,40 @@ export class SymbolResolver {
     document: any, 
     documentManager?: DocumentManager
   ): Promise<BaseSymbol | null> {
-    console.error(`[RESOLVER] ESPACE-PARAM-START: "${text}"`);
     
     const experimentSymbol = document.symbolTable?.children.find(
       (c: BaseSymbol) => c instanceof ExperimentSymbol
     ) as ExperimentSymbol;
     
     if (!experimentSymbol) {
-      console.error(`[RESOLVER] ESPACE-PARAM-NO-EXPERIMENT`);
       return null;
     }
 
-    console.error(`[RESOLVER] ESPACE-PARAM-FOUND-EXP: "${experimentSymbol.name}"`);
 
     // First try local resolution in experiment
     const localSymbol = await experimentSymbol.resolve(text, true);
     if (localSymbol) {
-      console.error(`[RESOLVER] ESPACE-PARAM-FOUND-LOCAL: "${localSymbol.name}"`);
       return localSymbol;
     }
 
-    console.error(`[RESOLVER] ESPACE-PARAM-TRY-WORKFLOWS`);
 
     // If not found locally, search in referenced workflows for parameters
     const spaces = await experimentSymbol.getSymbolsOfType(SpaceSymbol);
-    console.error(`[RESOLVER] ESPACE-PARAM-SPACES: ${spaces.length}`);
     
     for (const space of spaces) {
-      console.error(`[RESOLVER] ESPACE-PARAM-SPACE: "${space.name}"`);
       
       if (space.workflowReference) {
-        console.error(`[RESOLVER] ESPACE-PARAM-WF-REF: "${space.workflowReference.name}"`);
         
         // Look for parameters in the referenced workflow
         const paramSymbol = await space.workflowReference.resolve(text, false);
         if (paramSymbol) {
-          console.error(`[RESOLVER] ESPACE-PARAM-FOUND: "${paramSymbol.name}"`);
           return paramSymbol;
         } else {
-          console.error(`[RESOLVER] ESPACE-PARAM-NOT-IN-WF: "${space.workflowReference.name}"`);
         }
       } else {
-        console.error(`[RESOLVER] ESPACE-PARAM-NO-WF-REF: "${space.name}"`);
       }
     }
 
-    console.error(`[RESOLVER] ESPACE-PARAM-NOT-FOUND`);
     return null;
   }
 }
