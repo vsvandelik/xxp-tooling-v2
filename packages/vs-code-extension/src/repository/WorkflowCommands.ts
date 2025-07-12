@@ -67,6 +67,7 @@ export class WorkflowCommands {
     this.registerCommand('extremexp.workflows.tree.refresh', this.refreshRepositories.bind(this));
     this.registerCommand('extremexp.workflows.tree.addRepository', this.addRepository.bind(this));
     this.registerCommand('extremexp.workflows.tree.search', this.searchInTree.bind(this));
+    this.registerCommand('extremexp.workflows.tree.resetSearch', this.resetSearchInTree.bind(this));
     this.registerCommand('extremexp.workflows.retryConnection', this.retryConnection.bind(this));
   }
 
@@ -547,6 +548,11 @@ export class WorkflowCommands {
 
     this.repositoryProvider.setSearchFilter(searchQuery);
     vscode.window.showInformationMessage(`Searching for: ${searchQuery}`);
+  }
+
+  async resetSearchInTree(): Promise<void> {
+    this.repositoryProvider.setSearchFilter('');
+    vscode.window.showInformationMessage('Search filter cleared');
   }
 
   private async uploadWorkflowFolder(repositoryName: string): Promise<void> {
