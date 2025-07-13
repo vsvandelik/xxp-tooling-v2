@@ -28,7 +28,7 @@ export class ToolResolver {
   private async findTool(toolName: string): Promise<ToolInfo> {
     // Check user configuration first
     const config = vscode.workspace.getConfiguration('extremexp');
-    const configKey = `tools.${toolName.replace('-', '')}.path`; // Remove hyphens for config key
+    const configKey = `tools.${toolName.replace(/-/g, '')}.path`; // Remove all hyphens for config key
     const userPath = config.get<string>(configKey);
     if (userPath && (await this.pathExists(userPath))) {
       return {

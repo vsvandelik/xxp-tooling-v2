@@ -377,6 +377,11 @@
                     "description": "Custom path to experiment-runner-server tool",
                     "default": ""
                 },
+                "extremexp.tools.languageserver.path": {
+                    "type": "string",
+                    "description": "Custom path to language-server tool",
+                    "default": ""
+                },
                 "extremexp.tools.useBuiltIn": {
                     "type": "boolean",
                     "description": "Use built-in tools bundled with extension",
