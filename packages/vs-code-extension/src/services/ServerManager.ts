@@ -167,6 +167,7 @@ export class ServerManager {
     if (this.serverProcess) {
       this.outputChannel.appendLine('Stopping ExtremeXP server...');
 
+
       try {
         // Try graceful shutdown first
         await this.attemptGracefulShutdown();

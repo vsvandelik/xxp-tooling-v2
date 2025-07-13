@@ -208,13 +208,32 @@ describe('SpaceExecutor', () => {
         parameters: [{ param1: 'value1' }]
       };
 
+      // Should throw error and stop execution
       await expect(spaceExecutor.execute('run-id', spaceWithMissingTask, mockTaskMap))
         .rejects.toThrow('Task missing-task not found');
+
+      // Verify parameter set marked as failed
+      expect(mockRepository.updateParamSetExecution).toHaveBeenCalledWith(
+        'run-id',
+        'test-space',
+        0,
+        'failed',
+        expect.any(Number)
+      );
+
+      // Verify space is marked as failed (not completed)
+      expect(mockRepository.updateSpaceExecution).toHaveBeenCalledWith(
+        'run-id',
+        'test-space',
+        'failed',
+        expect.any(Number)
+      );
     });
 
     it('should handle task execution failure', async () => {
       mockTaskExecutor.execute.mockRejectedValueOnce(new Error('Task execution failed'));
 
+      // Should throw error and stop execution
       await expect(spaceExecutor.execute('run-id', mockSpace, mockTaskMap))
         .rejects.toThrow('Task execution failed');
 
@@ -227,8 +246,13 @@ describe('SpaceExecutor', () => {
         expect.any(Number)
       );
 
-      // Space should not be marked as completed
-      expect(mockRepository.updateSpaceExecution).not.toHaveBeenCalled();
+      // Verify space is marked as failed (not completed)
+      expect(mockRepository.updateSpaceExecution).toHaveBeenCalledWith(
+        'run-id',
+        'test-space',
+        'failed',
+        expect.any(Number)
+      );
     });
 
     it('should handle empty task order', async () => {

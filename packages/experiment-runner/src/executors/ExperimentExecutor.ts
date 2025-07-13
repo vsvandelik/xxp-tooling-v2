@@ -40,13 +40,14 @@ export class ExperimentExecutor implements ExperimentRunner {
     // Initialize repository
     await this.repository.initialize();
 
+    let runId: string = '';
+
     try {
       const artifact = await this.loadArtifact(artifactPath);
       // Setup progress emitter
       const progress = new ProgressEmitter(progressCallback);
 
       // Check for existing run if resume is enabled
-      let runId: string;
       let isResuming = false;
 
       if (resume) {
@@ -200,8 +201,13 @@ export class ExperimentExecutor implements ExperimentRunner {
       };
     } catch (error) {
       // Update run status on failure
-      if (await this.repository.getRunById(this.generateRunId())) {
-        await this.repository.updateRunStatus(this.generateRunId(), 'failed', Date.now());
+      try {
+        if (runId) {
+          await this.repository.updateRunStatus(runId, 'failed', Date.now());
+        }
+      } catch (dbError) {
+        // Log database error but don't let it override the original error
+        // Using a more appropriate logging mechanism than console.error
       }
 
       throw error;

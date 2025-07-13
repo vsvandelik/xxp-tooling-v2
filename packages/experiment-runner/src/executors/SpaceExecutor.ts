@@ -132,7 +132,7 @@ export class SpaceExecutor {
           `Completed parameter set ${completedParameterSets}/${totalParameterSets} in space ${space.spaceId}`
         );
       } catch (error) {
-        // Mark parameter set as failed
+        // Mark parameter set as failed and stop execution
         await this.repository.updateParamSetExecution(
           runId,
           space.spaceId,
@@ -140,6 +140,16 @@ export class SpaceExecutor {
           'failed',
           Date.now()
         );
+        
+        // Mark space as failed and stop execution since subsequent tasks may depend on failed output
+        await this.repository.updateSpaceExecution(runId, space.spaceId, 'failed', Date.now());
+        
+        this.progress.emitProgress(
+          (i + 1) / totalParameterSets,
+          `Parameter set ${i + 1}/${totalParameterSets} failed in space ${space.spaceId}: ${(error as Error).message}`
+        );
+        
+        // Re-throw error to stop execution since subsequent tasks may depend on this one
         throw error;
       }
     }
