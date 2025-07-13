@@ -9,6 +9,7 @@ import {
 export interface DatabaseRepository {
   initialize(): Promise<void>;
   close(): Promise<void>;
+  forceClose(): Promise<void>;
 
   // Run operations
   createRun(run: Omit<RunRecord, 'end_time'>): Promise<void>;

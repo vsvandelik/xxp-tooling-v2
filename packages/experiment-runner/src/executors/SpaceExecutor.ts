@@ -39,6 +39,16 @@ export class SpaceExecutor {
         throw new Error(`Parameter set ${i} not found`);
       }
 
+      // Check if experiment has been terminated
+      const currentRun = await this.repository.getRunById(runId);
+      if (currentRun && currentRun.status === 'terminated') {
+        this.progress.emitProgress(
+          i / space.parameters.length,
+          `Experiment terminated during space ${space.spaceId} at parameter set ${i + 1}`
+        );
+        return; // Stop execution
+      }
+
       // Check if already executed
       const paramExec = await this.repository.getParamSetExecution(runId, space.spaceId, i);
 
@@ -62,6 +72,16 @@ export class SpaceExecutor {
         // Execute tasks in order
         let completedTasksInParameterSet = 0;
         for (const taskId of space.tasksOrder) {
+          // Check if experiment has been terminated
+          const currentRun = await this.repository.getRunById(runId);
+          if (currentRun && currentRun.status === 'terminated') {
+            this.progress.emitProgress(
+              (i * tasksPerParameterSet + completedTasksInParameterSet) / totalTasksInSpace,
+              `Experiment terminated during task ${taskId} in parameter set ${i + 1} of space ${space.spaceId}`
+            );
+            return; // Stop execution
+          }
+
           const task = taskMap.get(taskId);
           if (!task) {
             throw new Error(`Task ${taskId} not found`);

@@ -85,12 +85,4 @@ export class WebviewController {
     const status = this.state.status;
     return status === 'failed' || status === 'idle' || status === 'terminated' || status === 'completed';
   }
-
-  isHistoryVisible(): boolean {
-    return this.state.showHistory;
-  }
-
-  shouldAutoRefreshHistory(): boolean {
-    return this.state.showHistory;
-  }
 }

@@ -14,9 +14,28 @@ import { DatabaseRepository } from './DatabaseRepository.js';
 export class SqliteRepository implements DatabaseRepository {
   private db: SqliteDatabase | null = null;
   private isInitialized = false;
+  private initializationPromise: Promise<void> | null = null;
 
   constructor(private dbPath: string) {}
   async initialize(): Promise<void> {
+    // If already initializing, wait for that initialization to complete
+    if (this.initializationPromise) {
+      await this.initializationPromise;
+      return;
+    }
+
+    // If already initialized, just return
+    if (this.isInitialized && this.db) {
+      return;
+    }
+
+    // Start initialization
+    this.initializationPromise = this.doInitialize();
+    await this.initializationPromise;
+    this.initializationPromise = null;
+  }
+
+  private async doInitialize(): Promise<void> {
     try {
       this.db = await open({
         filename: this.dbPath,
@@ -26,6 +45,8 @@ export class SqliteRepository implements DatabaseRepository {
       await this.createTables();
       this.isInitialized = true;
     } catch (error) {
+      this.isInitialized = false;
+      this.db = null;
       throw new Error(
         `Failed to initialize database: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
@@ -33,6 +54,7 @@ export class SqliteRepository implements DatabaseRepository {
   }
 
   async close(): Promise<void> {
+    // Simply close the database when requested
     if (this.db) {
       try {
         await this.db.close();
@@ -41,13 +63,26 @@ export class SqliteRepository implements DatabaseRepository {
       } finally {
         this.db = null;
         this.isInitialized = false;
+        this.initializationPromise = null;
       }
     }
   }
 
+  /**
+   * Force close the database regardless of reference count.
+   * Should only be used during application shutdown or error recovery.
+   */
+  async forceClose(): Promise<void> {
+    await this.close();
+  }
+
   private ensureInitialized(): SqliteDatabase {
     if (!this.isInitialized || !this.db) {
-      throw new Error('Database not initialized. Call initialize() first.');
+      throw new Error(
+        'Database not initialized. Call initialize() first. ' +
+        `Current state: isInitialized=${this.isInitialized}, ` +
+        `hasDb=${!!this.db}`
+      );
     }
     return this.db;
   }
