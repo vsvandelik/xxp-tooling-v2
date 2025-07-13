@@ -106,22 +106,25 @@ export class ExperimentService {
       onError: (error, _context) => {
         options.onError?.(error);
       },
-      onProgress: (progress, message) => {
+      onProgress: async (progress, message) => {
         console.log(`Progress callback triggered: ${progress * 100}% - ${message}`);
         const experiment = this.activeExperiments.get(experimentId);
         if (experiment) {
+          // Get fresh status from executor to get real-time progress numbers
+          const freshStatus = await this.executor.getStatus(experiment.experimentName, experiment.experimentVersion);
+          
           const progressData: ExperimentProgress = {
             experimentId,
             status: experiment.status.status,
             ...(experiment.status.currentSpace && { currentSpace: experiment.status.currentSpace }),
             progress: {
               percentage: progress,
-              completedSpaces: experiment.status.progress.completedSpaces,
-              totalSpaces: experiment.status.progress.totalSpaces,
-              completedParameterSets: experiment.status.progress.completedParameterSets,
-              totalParameterSets: experiment.status.progress.totalParameterSets,
-              completedTasks: experiment.status.progress.completedTasks,
-              totalTasks: experiment.status.progress.totalTasks,
+              completedSpaces: freshStatus?.progress.completedSpaces || 0,
+              totalSpaces: freshStatus?.progress.totalSpaces || experiment.status.progress.totalSpaces,
+              completedParameterSets: freshStatus?.progress.completedParameterSets || 0,
+              totalParameterSets: freshStatus?.progress.totalParameterSets || experiment.status.progress.totalParameterSets,
+              completedTasks: freshStatus?.progress.completedTasks || 0,
+              totalTasks: freshStatus?.progress.totalTasks || experiment.status.progress.totalTasks,
             },
             timestamp: Date.now(),
           };

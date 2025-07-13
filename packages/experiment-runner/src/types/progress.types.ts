@@ -35,5 +35,5 @@ export interface ProgressCallback {
   onUserInputRequired?: (prompt: string) => void;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   onError?: (error: Error, context: any) => void;
-  onProgress?: (progress: number, message: string) => void;
+  onProgress?: (progress: number, message: string) => void | Promise<void>;
 }

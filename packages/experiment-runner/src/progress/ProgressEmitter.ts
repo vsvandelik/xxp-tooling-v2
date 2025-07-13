@@ -43,7 +43,12 @@ export class ProgressEmitter extends EventEmitter {
       this.on('error', ({ error, context }) => this.callback!.onError!(error, context));
     }
     if (this.callback.onProgress) {
-      this.on('progress', ({ progress, message }) => this.callback!.onProgress!(progress, message));
+      this.on('progress', async ({ progress, message }) => {
+        const result = this.callback!.onProgress!(progress, message);
+        if (result instanceof Promise) {
+          await result;
+        }
+      });
     }
   }
 
