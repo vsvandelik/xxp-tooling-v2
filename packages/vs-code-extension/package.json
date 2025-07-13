@@ -233,6 +233,12 @@
                 "icon": "$(search)"
             },
             {
+                "command": "extremexp.workflows.tree.resetSearch",
+                "title": "Reset Search",
+                "category": "ExtremeXP Workflows",
+                "icon": "$(clear-all)"
+            },
+            {
                 "command": "extremexp.workflows.downloadAttachment",
                 "title": "Download Attachment",
                 "category": "ExtremeXP Workflows",
@@ -253,6 +259,14 @@
                 },
                 {
                     "command": "extremexp.workflows.tree.addRepository",
+                    "when": "false"
+                },
+                {
+                    "command": "extremexp.workflows.tree.search",
+                    "when": "false"
+                },
+                {
+                    "command": "extremexp.workflows.tree.resetSearch",
                     "when": "false"
                 },
                 {
@@ -279,6 +293,11 @@
                     "command": "extremexp.workflows.tree.search",
                     "when": "view == extremexp.workflows.repositories",
                     "group": "navigation@3"
+                },
+                {
+                    "command": "extremexp.workflows.tree.resetSearch",
+                    "when": "view == extremexp.workflows.repositories && extremexp.workflows.searchActive",
+                    "group": "navigation@4"
                 }
             ],
             "view/item/context": [

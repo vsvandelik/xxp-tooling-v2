@@ -24,6 +24,8 @@ export class WorkflowRepositoryProvider implements vscode.TreeDataProvider<Workf
       this.initializeRepositories();
       this.refresh();
     });
+    // Initialize search context
+    vscode.commands.executeCommand('setContext', 'extremexp.workflows.searchActive', false);
   }
 
   refresh(): void {
@@ -32,6 +34,8 @@ export class WorkflowRepositoryProvider implements vscode.TreeDataProvider<Workf
 
   setSearchFilter(filter: string): void {
     this.searchFilter = filter;
+    // Set context for VS Code to control button visibility
+    vscode.commands.executeCommand('setContext', 'extremexp.workflows.searchActive', filter !== '');
     this.refresh();
   }
 
@@ -117,7 +121,7 @@ export class WorkflowRepositoryProvider implements vscode.TreeDataProvider<Workf
 
       // Apply search filter if set
       if (this.searchFilter) {
-        items = this.filterItems(items, this.searchFilter);
+        items = await this.filterItems(items, this.searchFilter);
       }
 
       // Add search status if filter is active
@@ -167,7 +171,7 @@ export class WorkflowRepositoryProvider implements vscode.TreeDataProvider<Workf
 
       // Apply search filter if set
       if (this.searchFilter) {
-        items = this.filterItems(items, this.searchFilter);
+        items = await this.filterItems(items, this.searchFilter);
       }
 
       return items;
@@ -232,34 +236,74 @@ export class WorkflowRepositoryProvider implements vscode.TreeDataProvider<Workf
     }
   }
 
-  private filterItems(items: WorkflowTreeItem[], filter: string): WorkflowTreeItem[] {
-    const lowerFilter = filter.toLowerCase();
+  private async filterItems(items: WorkflowTreeItem[], filter: string): Promise<WorkflowTreeItem[]> {
     const filtered: WorkflowTreeItem[] = [];
 
     for (const item of items) {
       if (item.type === 'workflow') {
         // Check workflow metadata
         const metadata = item.context?.metadata;
-        if (metadata) {
-          const matches =
-            metadata.name.toLowerCase().includes(lowerFilter) ||
-            metadata.description.toLowerCase().includes(lowerFilter) ||
-            metadata.author.toLowerCase().includes(lowerFilter) ||
-            metadata.tags.some((tag: string) => tag.toLowerCase().includes(lowerFilter));
-
-          if (matches) {
-            filtered.push(item);
-          }
+        if (metadata && this.workflowMatchesFilter(metadata, filter)) {
+          filtered.push(item);
         }
       } else if (item.type === 'folder') {
-        // For folders, we need to check their children
-        // This is a simplified approach - in a real implementation,
-        // we might want to recursively check all children
-        filtered.push(item);
+        // For folders, check if they contain any matching workflows recursively
+        const hasMatchingWorkflows = await this.folderContainsMatchingWorkflows(item, filter);
+        if (hasMatchingWorkflows) {
+          filtered.push(item);
+        }
       }
     }
 
     return filtered;
+  }
+
+  private async folderContainsMatchingWorkflows(folderItem: WorkflowTreeItem, filter: string): Promise<boolean> {
+    const repositoryName = folderItem.context?.repository;
+    const folderPath = folderItem.context?.path;
+
+    if (!repositoryName || !folderPath) {
+      return false;
+    }
+
+    try {
+      const repository = this.repositoryManager.getRepository(repositoryName);
+      if (!repository) {
+        return false;
+      }
+
+      const tree = await repository.getTreeStructure(folderPath);
+      const items = this.convertTreeNodesToItems(tree.children || [], repositoryName);
+
+      for (const item of items) {
+        if (item.type === 'workflow') {
+          const metadata = item.context?.metadata;
+          if (metadata && this.workflowMatchesFilter(metadata, filter)) {
+            return true;
+          }
+        } else if (item.type === 'folder') {
+          // Recursively check subfolder
+          const hasMatches = await this.folderContainsMatchingWorkflows(item, filter);
+          if (hasMatches) {
+            return true;
+          }
+        }
+      }
+
+      return false;
+    } catch (error) {
+      return false;
+    }
+  }
+
+  private workflowMatchesFilter(metadata: WorkflowMetadata, filter: string): boolean {
+    const lowerFilter = filter.toLowerCase();
+    return (
+      metadata.name.toLowerCase().includes(lowerFilter) ||
+      metadata.description.toLowerCase().includes(lowerFilter) ||
+      metadata.author.toLowerCase().includes(lowerFilter) ||
+      metadata.tags.some((tag: string) => tag.toLowerCase().includes(lowerFilter))
+    );
   }
 
   private convertTreeNodesToItems(
