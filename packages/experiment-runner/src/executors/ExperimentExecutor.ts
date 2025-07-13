@@ -55,6 +55,12 @@ export class ExperimentExecutor implements ExperimentRunner {
         if (existingRun && existingRun.status !== 'completed') {
           runId = existingRun.id;
           isResuming = true;
+          
+          // If resuming a terminated experiment, set status back to running
+          if (existingRun.status === 'terminated') {
+            await this.repository.updateRunStatus(runId, 'running', Date.now());
+          }
+          
           progress.emitProgress(
             0,
             `Resuming experiment ${artifact.experiment} v${artifact.version}`
@@ -116,6 +122,25 @@ export class ExperimentExecutor implements ExperimentRunner {
       }
 
       while (currentSpace !== 'END') {
+        // Check if experiment has been terminated
+        const currentRun = await this.repository.getRunById(runId);
+        if (currentRun && currentRun.status === 'terminated') {
+          progress.emitProgress(
+            completedSpaces.length / totalSpaces,
+            `Experiment terminated at space ${currentSpace}`
+          );
+
+          const summary = await this.calculateTaskSummary(runId, artifact);
+
+          return {
+            runId,
+            status: 'terminated',
+            completedSpaces,
+            outputs: {}, // Empty outputs for terminated experiment
+            summary,
+          };
+        }
+
         progress.emitSpaceStart(currentSpace);
 
         // Execute space
@@ -151,21 +176,7 @@ export class ExperimentExecutor implements ExperimentRunner {
       const outputs = await dataManager.collectFinalOutputs(runId, artifact.spaces, taskMap);
 
       // Calculate summary
-      let totalTasks = 0;
-      for (const space of artifact.spaces) {
-        totalTasks += space.parameters.length * space.tasksOrder.length;
-      }
-
-      const taskStats = await this.repository.getTaskStats(runId);
-      let completedTasks = 0;
-      let failedTasks = 0;
-      let skippedTasks = 0;
-
-      for (const stat of taskStats) {
-        if (stat.status === 'completed') completedTasks = stat.count;
-        else if (stat.status === 'failed') failedTasks = stat.count;
-        else if (stat.status === 'skipped') skippedTasks = stat.count;
-      }
+      const summary = await this.calculateTaskSummary(runId, artifact);
 
       // Update run status
       await this.repository.updateRunStatus(runId, 'completed', Date.now());
@@ -173,7 +184,7 @@ export class ExperimentExecutor implements ExperimentRunner {
       // Emit final progress
       progress.emitProgress(
         1.0,
-        `Experiment completed successfully: ${completedTasks} tasks completed`
+        `Experiment completed successfully: ${summary.completedTasks} tasks completed`
       );
 
       return {
@@ -181,12 +192,7 @@ export class ExperimentExecutor implements ExperimentRunner {
         status: 'completed',
         completedSpaces,
         outputs,
-        summary: {
-          totalTasks,
-          completedTasks,
-          failedTasks,
-          skippedTasks,
-        },
+        summary,
       };
     } catch (error) {
       // Update run status on failure
@@ -203,7 +209,6 @@ export class ExperimentExecutor implements ExperimentRunner {
   }
 
   async getStatus(experimentName: string, experimentVersion: string): Promise<RunStatus | null> {
-    // Database should already be initialized - no need to reinitialize or close
     const run = await this.repository.getRun(experimentName, experimentVersion);
 
     if (!run) {
@@ -239,7 +244,6 @@ export class ExperimentExecutor implements ExperimentRunner {
   }
 
   async terminate(experimentName: string, experimentVersion: string): Promise<boolean> {
-    // Database should already be initialized - no need to reinitialize or close
     const run = await this.repository.getRun(experimentName, experimentVersion);
 
     if (!run || run.status !== 'running') {
@@ -308,5 +312,37 @@ export class ExperimentExecutor implements ExperimentRunner {
       }
     }
     return map;
+  }
+
+  private async calculateTaskSummary(runId: string, artifact: Artifact): Promise<{
+    totalTasks: number;
+    completedTasks: number;
+    failedTasks: number;
+    skippedTasks: number;
+  }> {
+    // Calculate total tasks
+    let totalTasks = 0;
+    for (const space of artifact.spaces) {
+      totalTasks += space.parameters.length * space.tasksOrder.length;
+    }
+
+    // Get task statistics from database
+    const taskStats = await this.repository.getTaskStats(runId);
+    let completedTasks = 0;
+    let failedTasks = 0;
+    let skippedTasks = 0;
+
+    for (const stat of taskStats) {
+      if (stat.status === 'completed') completedTasks = stat.count;
+      else if (stat.status === 'failed') failedTasks = stat.count;
+      else if (stat.status === 'skipped') skippedTasks = stat.count;
+    }
+
+    return {
+      totalTasks,
+      completedTasks,
+      failedTasks,
+      skippedTasks,
+    };
   }
 }
