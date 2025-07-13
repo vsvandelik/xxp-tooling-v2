@@ -17,6 +17,8 @@ interface RunStatus {
     totalSpaces: number;
     completedParameterSets: number;
     totalParameterSets: number;
+    completedTasks: number;
+    totalTasks: number;
   };
 }
 
@@ -122,7 +124,7 @@ describe('ExperimentService', () => {
       const mockArtifact = {
         experiment: 'test-exp',
         version: '1.0.0',
-        spaces: [{ spaceId: 'space1', parameters: [{}] }],
+        spaces: [{ spaceId: 'space1', parameters: [{}], tasksOrder: ['task1'] }],
         tasks: [],
         control: { START: 'task1' },
       };
@@ -138,6 +140,8 @@ describe('ExperimentService', () => {
           totalSpaces: 1,
           completedParameterSets: 0,
           totalParameterSets: 1,
+          completedTasks: 0,
+          totalTasks: 1,
         },
       });
 
@@ -173,7 +177,7 @@ describe('ExperimentService', () => {
         experiment: 'test-exp',
         version: '1.0.0',
         tasks: [{ taskId: 'task1' }],
-        spaces: [{ spaceId: 'space1' }],
+        spaces: [{ spaceId: 'space1', parameters: [{}], tasksOrder: ['task1'] }],
         control: { START: 'task1' },
       };
 
@@ -253,7 +257,7 @@ describe('ExperimentService', () => {
     const mockArtifact = {
       experiment: 'test-exp',
       version: '1.0.0',
-      spaces: [{ spaceId: 'space1', parameters: [{}] }],
+      spaces: [{ spaceId: 'space1', parameters: [{}], tasksOrder: ['task1'] }],
       tasks: [],
       control: { START: 'task1' },
     };
@@ -378,7 +382,7 @@ describe('ExperimentService', () => {
       const mockArtifact = {
         experiment: 'test-exp',
         version: '1.0.0',
-        spaces: [{ spaceId: 'space1', parameters: [{}] }],
+        spaces: [{ spaceId: 'space1', parameters: [{}], tasksOrder: ['task1'] }],
         tasks: [],
         control: { START: 'task1' },
       };
@@ -412,7 +416,7 @@ describe('ExperimentService', () => {
       const mockArtifact = {
         experiment: 'test-exp',
         version: '1.0.0',
-        spaces: [{ spaceId: 'space1', parameters: [{}] }],
+        spaces: [{ spaceId: 'space1', parameters: [{}], tasksOrder: ['task1'] }],
         tasks: [],
         control: { START: 'task1' },
       };
@@ -427,6 +431,8 @@ describe('ExperimentService', () => {
           totalSpaces: 1,
           completedParameterSets: 0,
           totalParameterSets: 1,
+          completedTasks: 0,
+          totalTasks: 1,
         },
       };
 
@@ -481,7 +487,7 @@ describe('ExperimentService', () => {
       const mockArtifact = {
         experiment: 'test-exp',
         version: '1.0.0',
-        spaces: [{ spaceId: 'space1', parameters: [{}] }],
+        spaces: [{ spaceId: 'space1', parameters: [{}], tasksOrder: ['task1'] }],
         tasks: [],
         control: { START: 'task1' },
       };
@@ -519,7 +525,7 @@ describe('ExperimentService', () => {
       const mockArtifact = {
         experiment: 'test-exp',
         version: '1.0.0',
-        spaces: [{ spaceId: 'space1', parameters: [{}] }],
+        spaces: [{ spaceId: 'space1', parameters: [{}], tasksOrder: ['task1'] }],
         tasks: [],
         control: { START: 'task1' },
       };
@@ -537,6 +543,132 @@ describe('ExperimentService', () => {
       const history = await experimentService.getExperimentHistory(experimentId);
 
       expect(history).toEqual([]);
+    });
+  });
+
+  describe('Progress Reporting with Parameter Sets', () => {
+    it('should include parameter sets in progress data from fresh status', async () => {
+      const mockArtifact = {
+        experiment: 'progress-test',
+        version: '1.0.0',
+        spaces: [
+          { spaceId: 'space1', parameters: [{ p1: 'a' }, { p1: 'b' }], tasksOrder: ['task1', 'task2'] },
+          { spaceId: 'space2', parameters: [{ p2: 'x' }], tasksOrder: ['task3'] }
+        ],
+        tasks: [],
+        control: { START: 'space1' },
+      };
+
+      const mockFreshStatus: RunStatus = {
+        runId: 'fresh-run',
+        experimentName: 'progress-test',
+        experimentVersion: '1.0.0',
+        status: 'running',
+        progress: {
+          completedSpaces: 1,
+          totalSpaces: 2,
+          completedParameterSets: 2,
+          totalParameterSets: 3,
+          completedTasks: 4,
+          totalTasks: 6,
+        },
+      };
+
+      mockReadFileSync.mockReturnValue(JSON.stringify(mockArtifact) as any);
+      mockExperimentExecutor.getStatus.mockResolvedValue(mockFreshStatus);
+
+      let progressData: any = null;
+      const experimentId = await experimentService.startExperiment('/path/to/artifact.json', {
+        onProgress: (data) => { progressData = data; }
+      });
+
+      // Wait for experiment to be set up
+      await new Promise(resolve => setTimeout(resolve, 10));
+
+      // Simulate progress callback
+      const activeExperiments = experimentService.getActiveExperiments();
+      const activeExperiment = activeExperiments.find(exp => exp.id === experimentId);
+      expect(activeExperiment).toBeDefined();
+
+      // Simulate the progress callback being triggered
+      const progressCallback = mockExperimentExecutor.run.mock.calls[0]?.[1]?.progressCallback;
+      expect(progressCallback).toBeDefined();
+      
+      if (progressCallback?.onProgress) {
+        await progressCallback.onProgress(0.67, 'Test progress message');
+      }
+
+      // Verify progress data includes all three levels
+      expect(progressData).toMatchObject({
+        experimentId,
+        status: 'completed', // Status reflects the run completion
+        progress: {
+          percentage: 0.67,
+          completedSpaces: 1,
+          totalSpaces: 2,
+          completedParameterSets: 2,
+          totalParameterSets: 3,
+          completedTasks: 4,
+          totalTasks: 6,
+        },
+        timestamp: expect.any(Number),
+      });
+    });
+
+    it('should use real-time status data for progress reporting', async () => {
+      const mockArtifact = {
+        experiment: 'realtime-test',
+        version: '1.0.0',
+        spaces: [{ spaceId: 'space1', parameters: [{}], tasksOrder: ['task1'] }],
+        tasks: [],
+        control: { START: 'space1' },
+      };
+
+      mockReadFileSync.mockReturnValue(JSON.stringify(mockArtifact) as any);
+
+      // Mock getStatus to return different values on each call
+      let callCount = 0;
+      mockExperimentExecutor.getStatus.mockImplementation(() => {
+        return Promise.resolve({
+          runId: 'realtime-run',
+          experimentName: 'realtime-test',
+          experimentVersion: '1.0.0',
+          status: 'running',
+          progress: {
+            completedSpaces: 0,
+            totalSpaces: 1,
+            completedParameterSets: ++callCount, // Increments with each call
+            totalParameterSets: 1,
+            completedTasks: callCount * 2, // Increments with each call
+            totalTasks: 2,
+          },
+        });
+      });
+
+      let progressUpdates: any[] = [];
+      const experimentId = await experimentService.startExperiment('/path/to/artifact.json', {
+        onProgress: (data) => { progressUpdates.push(data); }
+      });
+
+      await new Promise(resolve => setTimeout(resolve, 10));
+
+      const progressCallback = mockExperimentExecutor.run.mock.calls[0]?.[1]?.progressCallback;
+      
+      // Trigger progress callback multiple times
+      if (progressCallback?.onProgress) {
+        await progressCallback.onProgress(0.25, 'First update');
+        await progressCallback.onProgress(0.50, 'Second update');
+        await progressCallback.onProgress(0.75, 'Third update');
+      }
+
+      // Verify that each progress update shows incremental changes
+      expect(progressUpdates).toHaveLength(3);
+      expect(progressUpdates[0].progress.completedParameterSets).toBe(2);
+      expect(progressUpdates[0].progress.completedTasks).toBe(4);
+      expect(progressUpdates[1].progress.completedParameterSets).toBe(3);
+      expect(progressUpdates[1].progress.completedTasks).toBe(6);
+      expect(progressUpdates[2].progress.completedParameterSets).toBe(4);
+      expect(progressUpdates[2].progress.completedTasks).toBe(8);
     });
   });
 

@@ -440,6 +440,10 @@ describe('ExperimentExecutor', () => {
     beforeEach(() => {
       mockRepository.getSpaceStats.mockResolvedValue({ completed: 1, total: 2 });
       mockRepository.getParamSetStats.mockResolvedValue({ completed: 5, total: 10 });
+      mockRepository.getTaskStats.mockResolvedValue([
+        { status: 'completed', count: 8 },
+        { status: 'failed', count: 2 }
+      ]);
     });
 
     it('should return status for existing run', async () => {
@@ -449,7 +453,10 @@ describe('ExperimentExecutor', () => {
         experiment_version: '1.0.0',
         status: 'running',
         current_space: 'space1',
-        current_param_set: 2
+        current_param_set: 2,
+        total_spaces: 3,
+        total_parameter_sets: 15,
+        total_tasks: 45
       };
 
       mockRepository.getRun.mockResolvedValue(mockRun);
@@ -465,14 +472,18 @@ describe('ExperimentExecutor', () => {
         currentParameterSet: 2,
         progress: {
           completedSpaces: 1,
-          totalSpaces: 2,
+          totalSpaces: 3,
           completedParameterSets: 5,
-          totalParameterSets: 10,
+          totalParameterSets: 15,
+          completedTasks: 8,
+          totalTasks: 45,
         },
       });
 
-      expect(mockRepository.initialize).toHaveBeenCalled();
-      expect(mockRepository.close).toHaveBeenCalled();
+      expect(mockRepository.getRun).toHaveBeenCalledWith('test-experiment', '1.0.0');
+      expect(mockRepository.getSpaceStats).toHaveBeenCalledWith('run-id');
+      expect(mockRepository.getParamSetStats).toHaveBeenCalledWith('run-id');
+      expect(mockRepository.getTaskStats).toHaveBeenCalledWith('run-id');
     });
 
     it('should return null for non-existing run', async () => {
@@ -481,8 +492,7 @@ describe('ExperimentExecutor', () => {
       const result = await experimentExecutor.getStatus('non-existing', '1.0.0');
 
       expect(result).toBeNull();
-      expect(mockRepository.initialize).toHaveBeenCalled();
-      expect(mockRepository.close).toHaveBeenCalled();
+      expect(mockRepository.getRun).toHaveBeenCalledWith('non-existing', '1.0.0');
     });
 
     it('should handle run without current space and param set', async () => {
@@ -492,7 +502,10 @@ describe('ExperimentExecutor', () => {
         experiment_version: '1.0.0',
         status: 'completed',
         current_space: undefined,
-        current_param_set: undefined
+        current_param_set: undefined,
+        total_spaces: 2,
+        total_parameter_sets: 10,
+        total_tasks: 30
       };
 
       mockRepository.getRun.mockResolvedValue(mockRun);
@@ -509,6 +522,8 @@ describe('ExperimentExecutor', () => {
           totalSpaces: 2,
           completedParameterSets: 5,
           totalParameterSets: 10,
+          completedTasks: 8,
+          totalTasks: 30,
         },
       });
       expect(result!.currentSpace).toBeUndefined();
@@ -524,6 +539,9 @@ describe('ExperimentExecutor', () => {
           experiment_name: 'test-experiment',
           experiment_version: '1.0.0',
           status: status,
+          total_spaces: 3,
+          total_parameter_sets: 12,
+          total_tasks: 36,
         };
 
         mockRepository.getRun.mockResolvedValue(mockRun);
@@ -537,12 +555,16 @@ describe('ExperimentExecutor', () => {
     it('should handle zero progress stats', async () => {
       mockRepository.getSpaceStats.mockResolvedValue({ completed: 0, total: 0 });
       mockRepository.getParamSetStats.mockResolvedValue({ completed: 0, total: 0 });
+      mockRepository.getTaskStats.mockResolvedValue([]);
 
       const mockRun = {
         id: 'run-id',
         experiment_name: 'test-experiment',
         experiment_version: '1.0.0',
         status: 'running',
+        total_spaces: 5,
+        total_parameter_sets: 20,
+        total_tasks: 60,
       };
 
       mockRepository.getRun.mockResolvedValue(mockRun);
@@ -551,9 +573,11 @@ describe('ExperimentExecutor', () => {
 
       expect(result!.progress).toEqual({
         completedSpaces: 0,
-        totalSpaces: 0,
+        totalSpaces: 5,
         completedParameterSets: 0,
-        totalParameterSets: 0,
+        totalParameterSets: 20,
+        completedTasks: 0,
+        totalTasks: 60,
       });
     });
 
@@ -562,8 +586,6 @@ describe('ExperimentExecutor', () => {
 
       await expect(experimentExecutor.getStatus('test-experiment', '1.0.0'))
         .rejects.toThrow('Database error');
-
-      expect(mockRepository.close).toHaveBeenCalled();
     });
 
     it('should handle database stats retrieval errors', async () => {
@@ -572,6 +594,9 @@ describe('ExperimentExecutor', () => {
         experiment_name: 'test-experiment',
         experiment_version: '1.0.0',
         status: 'running',
+        total_spaces: 4,
+        total_parameter_sets: 16,
+        total_tasks: 48,
       };
 
       mockRepository.getRun.mockResolvedValue(mockRun);
@@ -579,8 +604,6 @@ describe('ExperimentExecutor', () => {
 
       await expect(experimentExecutor.getStatus('test-experiment', '1.0.0'))
         .rejects.toThrow('Stats error');
-
-      expect(mockRepository.close).toHaveBeenCalled();
     });
   });
 
@@ -603,8 +626,6 @@ describe('ExperimentExecutor', () => {
         'terminated',
         expect.any(Number)
       );
-      expect(mockRepository.initialize).toHaveBeenCalled();
-      expect(mockRepository.close).toHaveBeenCalled();
     });
 
     it('should not terminate non-existing experiment', async () => {
@@ -669,8 +690,6 @@ describe('ExperimentExecutor', () => {
 
       await expect(experimentExecutor.terminate('test-experiment', '1.0.0'))
         .rejects.toThrow('Database error');
-
-      expect(mockRepository.close).toHaveBeenCalled();
     });
 
     it('should handle update status errors', async () => {
@@ -686,8 +705,130 @@ describe('ExperimentExecutor', () => {
 
       await expect(experimentExecutor.terminate('test-experiment', '1.0.0'))
         .rejects.toThrow('Update error');
+    });
+  });
 
-      expect(mockRepository.close).toHaveBeenCalled();
+  describe('Progress Reporting with Stored Totals', () => {
+    beforeEach(() => {
+      // Setup mocks for the new test cases
+      mockRepository.getTaskStats.mockResolvedValue([
+        { status: 'completed', count: 5 },
+        { status: 'failed', count: 1 }
+      ]);
+    });
+
+    it('should store calculated totals when creating run', async () => {
+      const complexArtifact = {
+        experiment: 'multi-space-test',
+        version: '2.0.0',
+        spaces: [
+          {
+            spaceId: 'space1',
+            parameters: [{ param1: 'value1' }, { param1: 'value2' }],
+            tasksOrder: ['task1', 'task2']
+          },
+          {
+            spaceId: 'space2', 
+            parameters: [{ param2: 'valueA' }, { param2: 'valueB' }, { param2: 'valueC' }],
+            tasksOrder: ['task3']
+          }
+        ],
+        tasks: [[]],
+        control: { START: 'space1', transitions: [] }
+      };
+
+      mockFs.readFileSync.mockReturnValue(JSON.stringify(complexArtifact));
+
+      await experimentExecutor.run('/path/to/complex-artifact.json');
+
+      // Verify that createRun was called with correct totals
+      expect(mockRepository.createRun).toHaveBeenCalledWith({
+        id: expect.any(String),
+        experiment_name: 'multi-space-test',
+        experiment_version: '2.0.0',
+        artifact_path: '/path/to/complex-artifact.json',
+        artifact_hash: expect.any(String),
+        start_time: expect.any(Number),
+        status: 'running',
+        total_spaces: 2,  // 2 spaces
+        total_parameter_sets: 5,  // 2 + 3 parameter sets
+        total_tasks: 7,  // (2 * 2) + (3 * 1) = 4 + 3 = 7 tasks
+      });
+    });
+
+    it('should use stored totals in getStatus instead of calculating from database records', async () => {
+      const mockRun = {
+        id: 'stored-totals-run',
+        experiment_name: 'test-experiment',
+        experiment_version: '1.0.0',
+        status: 'running',
+        total_spaces: 3,
+        total_parameter_sets: 12,
+        total_tasks: 36,
+      };
+
+      // Mock the database to return different totals (simulating dynamic database records)
+      mockRepository.getRun.mockResolvedValue(mockRun);
+      mockRepository.getSpaceStats.mockResolvedValue({ completed: 1, total: 1 }); // Wrong total
+      mockRepository.getParamSetStats.mockResolvedValue({ completed: 4, total: 6 }); // Wrong total
+      mockRepository.getTaskStats.mockResolvedValue([
+        { status: 'completed', count: 10 },
+        { status: 'failed', count: 2 }
+      ]);
+
+      const result = await experimentExecutor.getStatus('test-experiment', '1.0.0');
+
+      // Should use stored totals from run record, not database stats
+      expect(result!.progress).toEqual({
+        completedSpaces: 1,
+        totalSpaces: 3,  // From stored total, not database total (1)
+        completedParameterSets: 4,
+        totalParameterSets: 12,  // From stored total, not database total (6)
+        completedTasks: 10,
+        totalTasks: 36,  // From stored total, not calculated (12)
+      });
+    });
+
+    it('should calculate correct hierarchy totals for complex experiments', async () => {
+      const hierarchyArtifact = {
+        experiment: 'hierarchy-test',
+        version: '1.0.0',
+        spaces: [
+          {
+            spaceId: 'space1',
+            parameters: [
+              { param1: 'a', param2: 1 },
+              { param1: 'b', param2: 2 },
+              { param1: 'c', param2: 3 },
+              { param1: 'd', param2: 4 },
+              { param1: 'e', param2: 5 }
+            ],
+            tasksOrder: ['preprocess', 'analyze', 'postprocess']
+          },
+          {
+            spaceId: 'space2',
+            parameters: [
+              { strategy: 'fast' },
+              { strategy: 'accurate' }
+            ],
+            tasksOrder: ['validate', 'report']
+          }
+        ],
+        tasks: [[]],
+        control: { START: 'space1', transitions: [] }
+      };
+
+      mockFs.readFileSync.mockReturnValue(JSON.stringify(hierarchyArtifact));
+
+      await experimentExecutor.run('/path/to/hierarchy-artifact.json');
+
+      expect(mockRepository.createRun).toHaveBeenCalledWith(
+        expect.objectContaining({
+          total_spaces: 2,
+          total_parameter_sets: 7,  // 5 + 2
+          total_tasks: 19,  // (5 * 3) + (2 * 2) = 15 + 4 = 19
+        })
+      );
     });
   });
 });

@@ -56,6 +56,7 @@ describe('SpaceExecutor', () => {
       getParamSetExecution: jest.fn(),
       createParamSetExecution: jest.fn(),
       updateParamSetExecution: jest.fn(),
+      getRunById: jest.fn(),
     };
 
     mockTaskExecutor = {
@@ -80,6 +81,7 @@ describe('SpaceExecutor', () => {
       // Default mock return values
       mockRepository.getSpaceExecution.mockResolvedValue(null);
       mockRepository.getParamSetExecution.mockResolvedValue(null);
+      mockRepository.getRunById.mockResolvedValue({ status: 'running' });
       mockRepository.createSpaceExecution.mockResolvedValue(undefined);
       mockRepository.createParamSetExecution.mockResolvedValue(undefined);
       mockRepository.updateParamSetExecution.mockResolvedValue(undefined);
