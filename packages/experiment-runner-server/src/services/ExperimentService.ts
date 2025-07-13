@@ -46,7 +46,9 @@ export class ExperimentService {
   }
 
   async initialize(): Promise<void> {
-    // Initialize any required resources
+    // Initialize the database connection once
+    const repository = this.executor.getRepository();
+    await repository.initialize();
     console.log('ExperimentService initialized');
   }
 
@@ -59,6 +61,10 @@ export class ExperimentService {
     }
     this.activeExperiments.clear();
     this.pendingInputs.clear();
+
+    // Close the database connection once
+    const repository = this.executor.getRepository();
+    await repository.close();
   }
 
   async startExperiment(
@@ -290,77 +296,72 @@ export class ExperimentService {
       throw new Error(`Experiment ${experimentId} not found`);
     }
 
-    // Get the repository from the executor
+    // Get the repository from the executor (already initialized)
     const repository = this.executor.getRepository();
-    await repository.initialize();
 
-    try {
-      // Get the run record using experiment name and version
-      const run = await repository.getRun(experiment.experimentName, experiment.experimentVersion);
-      if (!run) {
-        return [];
+    // Get the run record using experiment name and version
+    const run = await repository.getRun(experiment.experimentName, experiment.experimentVersion);
+    if (!run) {
+      return [];
+    }
+
+    // Get task execution history from the database
+    const taskExecutions = await repository.getTaskExecutionHistory(run.id, options);
+
+    // Load the artifact to get parameter sets and task information
+    const artifact = await this.loadArtifact(experiment.artifactPath);
+
+    // Map TaskExecutionRecord to TaskHistoryItem
+    const historyItems: TaskHistoryItem[] = [];
+
+    for (const execution of taskExecutions) {
+      // Find the space containing this task execution
+      const space = artifact.spaces.find((s: Space) => s.spaceId === execution.space_id);
+      if (!space || !space.parameters[execution.param_set_index]) {
+        continue; // Skip if space or parameter set not found
       }
 
-      // Get task execution history from the database
-      const taskExecutions = await repository.getTaskExecutionHistory(run.id, options);
+      // Get the parameter set for this execution
+      const parameterSet = space.parameters[execution.param_set_index];
 
-      // Load the artifact to get parameter sets and task information
-      const artifact = await this.loadArtifact(experiment.artifactPath);
+      // Get output data for this task execution
+      const outputs: Record<string, string> = {};
 
-      // Map TaskExecutionRecord to TaskHistoryItem
-      const historyItems: TaskHistoryItem[] = [];
+      // Find the task to get its output data names
+      const allTasks = artifact.tasks.flat();
+      const task = allTasks.find((t: Task) => t.taskId === execution.task_id);
 
-      for (const execution of taskExecutions) {
-        // Find the space containing this task execution
-        const space = artifact.spaces.find((s: Space) => s.spaceId === execution.space_id);
-        if (!space || !space.parameters[execution.param_set_index]) {
-          continue; // Skip if space or parameter set not found
-        }
-
-        // Get the parameter set for this execution
-        const parameterSet = space.parameters[execution.param_set_index];
-
-        // Get output data for this task execution
-        const outputs: Record<string, string> = {};
-
-        // Find the task to get its output data names
-        const allTasks = artifact.tasks.flat();
-        const task = allTasks.find((t: Task) => t.taskId === execution.task_id);
-
-        if (task) {
-          // Retrieve each output data mapping
-          for (const outputName of task.outputData) {
-            const outputValue = await repository.getDataMapping(
-              run.id,
-              execution.space_id,
-              execution.param_set_index,
-              outputName
-            );
-            if (outputValue) {
-              outputs[outputName] = outputValue;
-            }
+      if (task) {
+        // Retrieve each output data mapping
+        for (const outputName of task.outputData) {
+          const outputValue = await repository.getDataMapping(
+            run.id,
+            execution.space_id,
+            execution.param_set_index,
+            outputName
+          );
+          if (outputValue) {
+            outputs[outputName] = outputValue;
           }
         }
-
-        const historyItem: TaskHistoryItem = {
-          taskId: execution.task_id,
-          spaceId: execution.space_id,
-          paramSetIndex: execution.param_set_index,
-          parameters: parameterSet,
-          outputs,
-          status: execution.status as 'completed' | 'failed' | 'skipped',
-          startTime: execution.start_time || 0,
-          ...(execution.end_time && { endTime: execution.end_time }),
-          ...(execution.error_message && { errorMessage: execution.error_message }),
-        };
-
-        historyItems.push(historyItem);
       }
 
-      return historyItems;
-    } finally {
-      await repository.close();
+      const historyItem: TaskHistoryItem = {
+        taskId: execution.task_id,
+        spaceId: execution.space_id,
+        paramSetIndex: execution.param_set_index,
+        parameters: parameterSet,
+        outputs,
+        status: execution.status as 'completed' | 'failed' | 'skipped',
+        startTime: execution.start_time || 0,
+        ...(execution.end_time && { endTime: execution.end_time }),
+        ...(execution.error_message && { errorMessage: execution.error_message }),
+      };
+
+      historyItems.push(historyItem);
     }
+
+    return historyItems;
   }
 
   submitUserInput(response: UserInputResponse): boolean {

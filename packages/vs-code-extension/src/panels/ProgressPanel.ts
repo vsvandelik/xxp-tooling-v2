@@ -55,67 +55,17 @@ export class ProgressPanel {
 
   updateProgress(progress: ExperimentProgress): void {
     this.webviewController.updateProgress(progress);
-    
-    // Auto-refresh history if it's currently visible
-    if (this.webviewController.shouldAutoRefreshHistory()) {
-      this.refreshHistoryIfVisible();
-    }
-    
     this.updateContent();
   }
 
   setCompleted(): void {
     this.webviewController.setCompleted();
-    
-    // Auto-refresh history when experiment completes
-    if (this.webviewController.shouldAutoRefreshHistory()) {
-      this.refreshHistoryIfVisible();
-    }
-    
     this.updateContent();
   }
 
   setError(error: Error): void {
     this.webviewController.setError(error.message);
-    
-    // Auto-refresh history when experiment fails
-    if (this.webviewController.shouldAutoRefreshHistory()) {
-      this.refreshHistoryIfVisible();
-    }
-    
     this.updateContent();
-  }
-
-  private async refreshHistoryIfVisible(throwOnError: boolean = false): Promise<void> {
-    if (!this.experimentId || !this.webviewController.isHistoryVisible()) {
-      return;
-    }
-
-    try {
-      const history = await this.experimentService.getExperimentHistory(this.experimentId, {
-        limit: 100,
-      });
-
-      // Convert to TaskHistoryItem format
-      const taskHistory: TaskHistoryItem[] = history.map(item => ({
-        taskId: item.taskId || 'unknown',
-        spaceId: item.spaceId || 'unknown', 
-        status: (item.status as 'completed' | 'failed' | 'running') || 'completed',
-        parameters: Object.fromEntries(
-          Object.entries(item.parameters || {}).map(([k, v]) => [k, String(v)])
-        ),
-        outputs: item.outputs || {},
-      }));
-
-      this.webviewController.setHistory(taskHistory);
-    } catch (error) {
-      if (throwOnError) {
-        throw error;
-      } else {
-        // Silently fail history refresh to avoid disrupting the main progress flow
-        console.warn(`Failed to refresh history: ${error}`);
-      }
-    }
   }
 
   private updateContent(): void {
@@ -187,12 +137,6 @@ export class ProgressPanel {
       const terminated = await this.experimentService.terminateExperiment(this.experimentId);
       if (terminated) {
         this.webviewController.setTerminated();
-        
-        // Auto-refresh history when experiment is terminated
-        if (this.webviewController.shouldAutoRefreshHistory()) {
-          await this.refreshHistoryIfVisible();
-        }
-        
         this.updateContent();
       }
     }
@@ -266,21 +210,28 @@ export class ProgressPanel {
   private async handleToggleHistory(): Promise<void> {
     if (!this.experimentId) return;
 
-    // Toggle the history visibility state
-    this.webviewController.toggleHistory();
-    
-    // If history is now visible, load the latest history data
-    if (this.webviewController.isHistoryVisible()) {
-      try {
-        await this.refreshHistoryIfVisible(true);
-      } catch (error) {
-        vscode.window.showErrorMessage(`Failed to load history: ${error}`);
-        // Toggle back to hide state if loading failed
-        this.webviewController.toggleHistory();
-      }
+    try {
+      const history = await this.experimentService.getExperimentHistory(this.experimentId, {
+        limit: 100,
+      });
+
+      // Convert to TaskHistoryItem format
+      const taskHistory: TaskHistoryItem[] = history.map(item => ({
+        taskId: item.taskId || 'unknown',
+        spaceId: item.spaceId || 'unknown', 
+        status: (item.status as 'completed' | 'failed' | 'running') || 'completed',
+        parameters: Object.fromEntries(
+          Object.entries(item.parameters || {}).map(([k, v]) => [k, String(v)])
+        ),
+        outputs: item.outputs || {},
+      }));
+
+      this.webviewController.setHistory(taskHistory);
+      this.webviewController.toggleHistory();
+      this.updateContent();
+    } catch (error) {
+      vscode.window.showErrorMessage(`Failed to load history: ${error}`);
     }
-    
-    this.updateContent();
   }
 
   private handleToggleLogs(): void {

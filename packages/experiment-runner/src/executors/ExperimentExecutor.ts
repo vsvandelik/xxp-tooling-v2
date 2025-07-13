@@ -196,66 +196,58 @@ export class ExperimentExecutor implements ExperimentRunner {
 
       throw error;
     } finally {
+      // Only close after experiment completion/failure since this is a long-running operation
+      // Note: If using a server-managed repository, this might not actually close the connection
       await this.repository.close();
     }
   }
 
   async getStatus(experimentName: string, experimentVersion: string): Promise<RunStatus | null> {
-    await this.repository.initialize();
+    // Database should already be initialized - no need to reinitialize or close
+    const run = await this.repository.getRun(experimentName, experimentVersion);
 
-    try {
-      const run = await this.repository.getRun(experimentName, experimentVersion);
-
-      if (!run) {
-        return null;
-      }
-
-      // Get stats
-      const spaceStats = await this.repository.getSpaceStats(run.id);
-      const paramStats = await this.repository.getParamSetStats(run.id);
-
-      const result: RunStatus = {
-        runId: run.id,
-        experimentName: run.experiment_name,
-        experimentVersion: run.experiment_version,
-        status: run.status as 'running' | 'completed' | 'failed' | 'terminated',
-        progress: {
-          completedSpaces: spaceStats.completed,
-          totalSpaces: spaceStats.total,
-          completedParameterSets: paramStats.completed,
-          totalParameterSets: paramStats.total,
-        },
-      };
-
-      if (run.current_space !== undefined) {
-        result.currentSpace = run.current_space;
-      }
-
-      if (run.current_param_set !== undefined) {
-        result.currentParameterSet = run.current_param_set;
-      }
-
-      return result;
-    } finally {
-      await this.repository.close();
+    if (!run) {
+      return null;
     }
+
+    // Get stats
+    const spaceStats = await this.repository.getSpaceStats(run.id);
+    const paramStats = await this.repository.getParamSetStats(run.id);
+
+    const result: RunStatus = {
+      runId: run.id,
+      experimentName: run.experiment_name,
+      experimentVersion: run.experiment_version,
+      status: run.status as 'running' | 'completed' | 'failed' | 'terminated',
+      progress: {
+        completedSpaces: spaceStats.completed,
+        totalSpaces: spaceStats.total,
+        completedParameterSets: paramStats.completed,
+        totalParameterSets: paramStats.total,
+      },
+    };
+
+    if (run.current_space !== undefined) {
+      result.currentSpace = run.current_space;
+    }
+
+    if (run.current_param_set !== undefined) {
+      result.currentParameterSet = run.current_param_set;
+    }
+
+    return result;
   }
 
   async terminate(experimentName: string, experimentVersion: string): Promise<boolean> {
-    await this.repository.initialize();
+    // Database should already be initialized - no need to reinitialize or close
+    const run = await this.repository.getRun(experimentName, experimentVersion);
 
-    try {
-      const run = await this.repository.getRun(experimentName, experimentVersion);
-
-      if (!run || run.status !== 'running') {
-        return false;
-      }
-
-      await this.repository.updateRunStatus(run.id, 'terminated', Date.now());
-      return true;
-    } finally {
-      await this.repository.close();
+    if (!run || run.status !== 'running') {
+      return false;
     }
+
+    await this.repository.updateRunStatus(run.id, 'terminated', Date.now());
+    return true;
   }
 
   private async loadArtifact(artifactPath: string): Promise<Artifact> {
