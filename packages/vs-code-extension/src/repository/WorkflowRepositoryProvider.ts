@@ -237,23 +237,14 @@ export class WorkflowRepositoryProvider implements vscode.TreeDataProvider<Workf
   }
 
   private async filterItems(items: WorkflowTreeItem[], filter: string): Promise<WorkflowTreeItem[]> {
-    const lowerFilter = filter.toLowerCase();
     const filtered: WorkflowTreeItem[] = [];
 
     for (const item of items) {
       if (item.type === 'workflow') {
         // Check workflow metadata
         const metadata = item.context?.metadata;
-        if (metadata) {
-          const matches =
-            metadata.name.toLowerCase().includes(lowerFilter) ||
-            metadata.description.toLowerCase().includes(lowerFilter) ||
-            metadata.author.toLowerCase().includes(lowerFilter) ||
-            metadata.tags.some((tag: string) => tag.toLowerCase().includes(lowerFilter));
-
-          if (matches) {
-            filtered.push(item);
-          }
+        if (metadata && this.workflowMatchesFilter(metadata, filter)) {
+          filtered.push(item);
         }
       } else if (item.type === 'folder') {
         // For folders, check if they contain any matching workflows recursively
@@ -283,22 +274,12 @@ export class WorkflowRepositoryProvider implements vscode.TreeDataProvider<Workf
 
       const tree = await repository.getTreeStructure(folderPath);
       const items = this.convertTreeNodesToItems(tree.children || [], repositoryName);
-      
-      const lowerFilter = filter.toLowerCase();
 
       for (const item of items) {
         if (item.type === 'workflow') {
           const metadata = item.context?.metadata;
-          if (metadata) {
-            const matches =
-              metadata.name.toLowerCase().includes(lowerFilter) ||
-              metadata.description.toLowerCase().includes(lowerFilter) ||
-              metadata.author.toLowerCase().includes(lowerFilter) ||
-              metadata.tags.some((tag: string) => tag.toLowerCase().includes(lowerFilter));
-
-            if (matches) {
-              return true;
-            }
+          if (metadata && this.workflowMatchesFilter(metadata, filter)) {
+            return true;
           }
         } else if (item.type === 'folder') {
           // Recursively check subfolder
@@ -313,6 +294,16 @@ export class WorkflowRepositoryProvider implements vscode.TreeDataProvider<Workf
     } catch (error) {
       return false;
     }
+  }
+
+  private workflowMatchesFilter(metadata: WorkflowMetadata, filter: string): boolean {
+    const lowerFilter = filter.toLowerCase();
+    return (
+      metadata.name.toLowerCase().includes(lowerFilter) ||
+      metadata.description.toLowerCase().includes(lowerFilter) ||
+      metadata.author.toLowerCase().includes(lowerFilter) ||
+      metadata.tags.some((tag: string) => tag.toLowerCase().includes(lowerFilter))
+    );
   }
 
   private convertTreeNodesToItems(
