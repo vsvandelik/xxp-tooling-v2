@@ -88,6 +88,51 @@ describe('ToolResolver', () => {
       expect(toolInfo.cwd).toBeDefined();
     });
 
+    it('should resolve language-server tool successfully', async () => {
+      // Mock file existence check
+      mockWorkspace.fs.stat.mockResolvedValue({ type: mockFileType.File });
+
+      const toolInfo = await toolResolver.resolveTool('language-server');
+
+      expect(toolInfo).toBeDefined();
+      expect(toolInfo.name).toBe('language-server');
+      expect(toolInfo.path).toBeDefined();
+      expect(toolInfo.type).toMatch(/^(node|binary)$/);
+      expect(toolInfo.cwd).toBeDefined();
+    });
+
+    it('should use custom language-server path from configuration', async () => {
+      const customPath = '/custom/path/to/language-server.js';
+      
+      // Mock configuration to return custom path
+      const mockConfig = {
+        get: jest.fn((key: string) => {
+          if (key === 'tools.languageserver.path') {
+            return customPath;
+          }
+          return undefined;
+        }) as jest.MockedFunction<any>,
+      };
+      mockWorkspace.getConfiguration.mockReturnValue(mockConfig);
+      
+      // Mock file existence check to succeed only for custom path
+      mockWorkspace.fs.stat.mockImplementation((uri: any) => {
+        if (uri.fsPath === customPath) {
+          return Promise.resolve({ type: mockFileType.File });
+        } else {
+          return Promise.reject(new Error('File not found'));
+        }
+      });
+
+      const toolInfo = await toolResolver.resolveTool('language-server');
+
+      expect(toolInfo).toBeDefined();
+      expect(toolInfo.name).toBe('language-server');
+      expect(toolInfo.path).toBe(customPath);
+      expect(toolInfo.type).toBe('node');
+      expect(mockConfig.get).toHaveBeenCalledWith('tools.languageserver.path');
+    });
+
     it('should return cached tool on second call', async () => {
       // Mock file existence check
       mockWorkspace.fs.stat.mockResolvedValue({ type: mockFileType.File });
@@ -265,6 +310,51 @@ describe('ToolResolver', () => {
       expect(results[0]!.name).toBe('artifact-generator');
       expect(results[1]!.name).toBe('experiment-runner-server');
       expect(results[0]).not.toBe(results[1]);
+    });
+  });
+
+  describe('tool configuration consistency', () => {
+    it('should support custom paths for all external tools', async () => {
+      const tools = [
+        { name: 'artifact-generator', configKey: 'tools.artifactgenerator.path' },
+        { name: 'experiment-runner-server', configKey: 'tools.experimentrunnerserver.path' },
+        { name: 'language-server', configKey: 'tools.languageserver.path' },
+      ];
+
+      for (const tool of tools) {
+        const customPath = `/custom/path/to/${tool.name}.js`;
+        
+        // Mock configuration to return custom path for this tool
+        const mockConfig = {
+          get: jest.fn((key: string) => {
+            if (key === tool.configKey) {
+              return customPath;
+            }
+            return undefined;
+          }) as jest.MockedFunction<any>,
+        };
+        mockWorkspace.getConfiguration.mockReturnValue(mockConfig);
+
+        // Mock file existence check to succeed only for custom path
+        mockWorkspace.fs.stat.mockImplementation((uri: any) => {
+          if (uri.fsPath === customPath) {
+            return Promise.resolve({ type: mockFileType.File });
+          } else {
+            return Promise.reject(new Error('File not found'));
+          }
+        });
+
+        const toolInfo = await toolResolver.resolveTool(tool.name);
+
+        expect(toolInfo).toBeDefined();
+        expect(toolInfo.name).toBe(tool.name);
+        expect(toolInfo.path).toBe(customPath);
+        expect(toolInfo.type).toBe('node');
+        expect(mockConfig.get).toHaveBeenCalledWith(tool.configKey);
+
+        // Clear cache for next iteration
+        toolResolver.clearCache();
+      }
     });
   });
 });
