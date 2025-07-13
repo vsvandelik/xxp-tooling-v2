@@ -1,19 +1,25 @@
-import { RunResult } from '@extremexp/experiment-runner';
 import * as vscode from 'vscode';
 
 import { ExperimentService } from '../services/ExperimentService.js';
 import { ExperimentProgress, UserInputRequest } from '../types/experiment.types.js';
+
+import { WebviewController } from './WebviewController.js';
+import { WebviewRenderer } from './WebviewRenderer.js';
+import { TaskHistoryItem } from './WebviewState.js';
 
 export class ProgressPanel {
   private panel: vscode.WebviewPanel;
   private experimentId: string | null = null;
   private artifactPath: string | null = null;
   private disposed = false;
+  private webviewController: WebviewController;
 
   constructor(
     private context: vscode.ExtensionContext,
     private experimentService: ExperimentService
   ) {
+    this.webviewController = new WebviewController();
+    
     this.panel = vscode.window.createWebviewPanel(
       'extremexpProgress',
       'ExtremeXP Progress',
@@ -24,7 +30,7 @@ export class ProgressPanel {
       }
     );
 
-    this.panel.webview.html = this.getWebviewContent();
+    this.updateContent();
     this.setupMessageHandlers();
 
     this.panel.onDidDispose(() => {
@@ -34,10 +40,8 @@ export class ProgressPanel {
 
   setExperimentId(experimentId: string): void {
     this.experimentId = experimentId;
-    this.panel.webview.postMessage({
-      type: 'setExperimentId',
-      experimentId,
-    });
+    this.webviewController.setExperimentId(experimentId);
+    this.updateContent();
 
     // Register user input handler
     this.experimentService.registerUserInputHandler(experimentId, request => {
@@ -50,27 +54,73 @@ export class ProgressPanel {
   }
 
   updateProgress(progress: ExperimentProgress): void {
-    this.panel.webview.postMessage({
-      type: 'progress',
-      data: progress,
-    });
+    this.webviewController.updateProgress(progress);
+    
+    // Auto-refresh history if it's currently visible
+    if (this.webviewController.shouldAutoRefreshHistory()) {
+      this.refreshHistoryIfVisible();
+    }
+    
+    this.updateContent();
   }
 
-  setCompleted(result: RunResult): void {
-    this.panel.webview.postMessage({
-      type: 'completed',
-      data: result,
-    });
+  setCompleted(): void {
+    this.webviewController.setCompleted();
+    
+    // Auto-refresh history when experiment completes
+    if (this.webviewController.shouldAutoRefreshHistory()) {
+      this.refreshHistoryIfVisible();
+    }
+    
+    this.updateContent();
   }
 
   setError(error: Error): void {
-    this.panel.webview.postMessage({
-      type: 'error',
-      data: {
-        message: error.message,
-        stack: error.stack,
-      },
-    });
+    this.webviewController.setError(error.message);
+    
+    // Auto-refresh history when experiment fails
+    if (this.webviewController.shouldAutoRefreshHistory()) {
+      this.refreshHistoryIfVisible();
+    }
+    
+    this.updateContent();
+  }
+
+  private async refreshHistoryIfVisible(throwOnError: boolean = false): Promise<void> {
+    if (!this.experimentId || !this.webviewController.isHistoryVisible()) {
+      return;
+    }
+
+    try {
+      const history = await this.experimentService.getExperimentHistory(this.experimentId, {
+        limit: 100,
+      });
+
+      // Convert to TaskHistoryItem format
+      const taskHistory: TaskHistoryItem[] = history.map(item => ({
+        taskId: item.taskId || 'unknown',
+        spaceId: item.spaceId || 'unknown', 
+        status: (item.status as 'completed' | 'failed' | 'running') || 'completed',
+        parameters: Object.fromEntries(
+          Object.entries(item.parameters || {}).map(([k, v]) => [k, String(v)])
+        ),
+        outputs: item.outputs || {},
+      }));
+
+      this.webviewController.setHistory(taskHistory);
+    } catch (error) {
+      if (throwOnError) {
+        throw error;
+      } else {
+        // Silently fail history refresh to avoid disrupting the main progress flow
+        console.warn(`Failed to refresh history: ${error}`);
+      }
+    }
+  }
+
+  private updateContent(): void {
+    const state = this.webviewController.getState();
+    this.panel.webview.html = WebviewRenderer.renderContent(state);
   }
 
   show(): void {
@@ -105,11 +155,17 @@ export class ProgressPanel {
         case 'resume':
           await this.handleResume();
           break;
-        case 'showHistory':
-          await this.handleShowHistory();
+        case 'toggleHistory':
+          await this.handleToggleHistory();
+          break;
+        case 'toggleLogs':
+          this.handleToggleLogs();
           break;
         case 'userInputResponse':
           await this.handleUserInputResponse(message.data);
+          break;
+        case 'cancelUserInput':
+          this.handleCancelUserInput();
           break;
         case 'openOutput':
           await this.handleOpenOutput(message.path);
@@ -130,9 +186,14 @@ export class ProgressPanel {
     if (confirmed === 'Yes') {
       const terminated = await this.experimentService.terminateExperiment(this.experimentId);
       if (terminated) {
-        this.panel.webview.postMessage({
-          type: 'terminated',
-        });
+        this.webviewController.setTerminated();
+        
+        // Auto-refresh history when experiment is terminated
+        if (this.webviewController.shouldAutoRefreshHistory()) {
+          await this.refreshHistoryIfVisible();
+        }
+        
+        this.updateContent();
       }
     }
   }
@@ -173,8 +234,8 @@ export class ProgressPanel {
         onProgress: progress => {
           this.updateProgress(progress);
         },
-        onComplete: result => {
-          this.setCompleted(result);
+        onComplete: () => {
+          this.setCompleted();
         },
         onError: error => {
           this.setError(error);
@@ -186,12 +247,10 @@ export class ProgressPanel {
         this.experimentService.unregisterUserInputHandler(this.experimentId);
       }
 
-      // Update the experiment ID and notify the webview
+      // Update the experiment ID and controller
       this.experimentId = newExperimentId;
-      this.panel.webview.postMessage({
-        type: 'setExperimentId',
-        experimentId: newExperimentId,
-      });
+      this.webviewController.setExperimentId(newExperimentId);
+      this.updateContent();
 
       // Register user input handler for the new experiment ID
       this.experimentService.registerUserInputHandler(newExperimentId, request => {
@@ -204,32 +263,41 @@ export class ProgressPanel {
     }
   }
 
-  private async handleShowHistory(): Promise<void> {
+  private async handleToggleHistory(): Promise<void> {
     if (!this.experimentId) return;
 
-    try {
-      const history = await this.experimentService.getExperimentHistory(this.experimentId, {
-        limit: 100,
-      });
-
-      this.panel.webview.postMessage({
-        type: 'history',
-        data: history,
-      });
-    } catch (error) {
-      vscode.window.showErrorMessage(`Failed to load history: ${error}`);
+    // Toggle the history visibility state
+    this.webviewController.toggleHistory();
+    
+    // If history is now visible, load the latest history data
+    if (this.webviewController.isHistoryVisible()) {
+      try {
+        await this.refreshHistoryIfVisible(true);
+      } catch (error) {
+        vscode.window.showErrorMessage(`Failed to load history: ${error}`);
+        // Toggle back to hide state if loading failed
+        this.webviewController.toggleHistory();
+      }
     }
+    
+    this.updateContent();
+  }
+
+  private handleToggleLogs(): void {
+    this.webviewController.toggleLogs();
+    this.updateContent();
   }
 
   private handleUserInputRequest(request: UserInputRequest): void {
-    this.panel.webview.postMessage({
-      type: 'inputRequired',
-      data: request,
-    });
+    this.webviewController.setUserInputRequest(request.requestId, request.prompt);
+    this.updateContent();
   }
 
-  private async handleUserInputResponse(data: { requestId: string; value: string }): Promise<void> {
+  private async handleUserInputResponse(data: { value: string }): Promise<void> {
     if (!this.experimentId) return;
+
+    const state = this.webviewController.getState();
+    if (!state.userInputRequest) return;
 
     const serverUrl = await this.experimentService['serverManager'].getServerUrl();
     if (!serverUrl) return;
@@ -240,10 +308,18 @@ export class ProgressPanel {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        requestId: data.requestId,
+        requestId: state.userInputRequest.requestId,
         value: data.value,
       }),
     });
+
+    this.webviewController.clearUserInputRequest();
+    this.updateContent();
+  }
+
+  private handleCancelUserInput(): void {
+    this.webviewController.clearUserInputRequest();
+    this.updateContent();
   }
 
   private async handleOpenOutput(path: string): Promise<void> {
@@ -253,506 +329,5 @@ export class ProgressPanel {
     } catch (error) {
       vscode.window.showErrorMessage(`Failed to open output: ${error}`);
     }
-  }
-
-  private getWebviewContent(): string {
-    return `<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ExtremeXP Progress</title>
-    <style>
-        body {
-            font-family: var(--vscode-font-family);
-            color: var(--vscode-foreground);
-            background-color: var(--vscode-editor-background);
-            padding: 20px;
-            margin: 0;
-        }
-        
-        .header {
-            margin-bottom: 20px;
-        }
-        
-        .experiment-name {
-            font-size: 1.5em;
-            font-weight: bold;
-            margin-bottom: 10px;
-        }
-        
-        .status {
-            display: inline-block;
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-size: 0.9em;
-            font-weight: bold;
-        }
-        
-        .status.running {
-            background-color: var(--vscode-testing-runIcon);
-            color: var(--vscode-editor-background);
-        }
-        
-        .status.completed {
-            background-color: var(--vscode-testing-iconPassed);
-            color: var(--vscode-editor-background);
-        }
-        
-        .status.failed {
-            background-color: var(--vscode-testing-iconFailed);
-            color: var(--vscode-editor-background);
-        }
-        
-        .status.terminated {
-            background-color: var(--vscode-testing-iconSkipped);
-            color: var(--vscode-editor-background);
-        }
-        
-        .progress-section {
-            margin: 20px 0;
-        }
-        
-        .progress-bar {
-            width: 100%;
-            height: 20px;
-            background-color: var(--vscode-progressBar-background);
-            border-radius: 10px;
-            overflow: hidden;
-            margin: 10px 0;
-        }
-        
-        .progress-fill {
-            height: 100%;
-            background-color: var(--vscode-progressBar-foreground);
-            transition: width 0.3s ease;
-        }
-        
-        .progress-text {
-            text-align: center;
-            margin: 5px 0;
-        }
-        
-        .current-info {
-            margin: 20px 0;
-        }
-        
-        .info-row {
-            margin: 5px 0;
-        }
-        
-        .info-label {
-            font-weight: bold;
-            display: inline-block;
-            width: 120px;
-        }
-        
-        .controls {
-            margin: 20px 0;
-        }
-        
-        button {
-            background-color: var(--vscode-button-background);
-            color: var(--vscode-button-foreground);
-            border: none;
-            padding: 6px 14px;
-            margin-right: 10px;
-            cursor: pointer;
-            border-radius: 2px;
-        }
-        
-        button:hover {
-            background-color: var(--vscode-button-hoverBackground);
-        }
-        
-        button:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-        
-        .logs {
-            margin-top: 20px;
-            max-height: 300px;
-            overflow-y: auto;
-            background-color: var(--vscode-editor-background);
-            border: 1px solid var(--vscode-panel-border);
-            padding: 10px;
-            font-family: var(--vscode-editor-font-family);
-            font-size: var(--vscode-editor-font-size);
-        }
-        
-        .log-entry {
-            margin: 2px 0;
-        }
-        
-        .log-time {
-            color: var(--vscode-descriptionForeground);
-            margin-right: 10px;
-        }
-        
-        .user-input-dialog {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background-color: var(--vscode-editor-background);
-            border: 1px solid var(--vscode-panel-border);
-            padding: 20px;
-            border-radius: 4px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-            display: none;
-        }
-        
-        .user-input-dialog.show {
-            display: block;
-        }
-        
-        .user-input-dialog h3 {
-            margin-top: 0;
-        }
-        
-        .user-input-dialog input {
-            width: 100%;
-            padding: 6px;
-            margin: 10px 0;
-            background-color: var(--vscode-input-background);
-            color: var(--vscode-input-foreground);
-            border: 1px solid var(--vscode-input-border);
-        }
-        
-        .history-panel {
-            display: none;
-            margin-top: 20px;
-            max-height: 400px;
-            overflow-y: auto;
-        }
-        
-        .history-panel.show {
-            display: block;
-        }
-        
-        .task-history-item {
-            background-color: var(--vscode-editor-background);
-            border: 1px solid var(--vscode-panel-border);
-            padding: 10px;
-            margin: 5px 0;
-            border-radius: 4px;
-        }
-        
-        .task-header {
-            font-weight: bold;
-            margin-bottom: 5px;
-        }
-        
-        .task-params, .task-outputs {
-            margin: 5px 0;
-            font-size: 0.9em;
-        }
-        
-        .task-status {
-            display: inline-block;
-            padding: 2px 6px;
-            border-radius: 3px;
-            font-size: 0.8em;
-            margin-left: 10px;
-        }
-        
-        .task-status.completed {
-            background-color: var(--vscode-testing-iconPassed);
-            color: var(--vscode-editor-background);
-        }
-        
-        .task-status.failed {
-            background-color: var(--vscode-testing-iconFailed);
-            color: var(--vscode-editor-background);
-        }
-        
-        .output-link {
-            color: var(--vscode-textLink-foreground);
-            cursor: pointer;
-            text-decoration: underline;
-        }
-    </style>
-</head>
-<body>
-    <div class="header">
-        <div class="experiment-name" id="experimentName">Waiting for experiment...</div>
-        <span class="status" id="status">Initializing</span>
-    </div>
-    
-    <div class="progress-section">
-        <div class="progress-bar">
-            <div class="progress-fill" id="progressFill" style="width: 0%"></div>
-        </div>
-        <div class="progress-text" id="progressText">0%</div>
-    </div>
-    
-    <div class="current-info">
-        <div class="info-row">
-            <span class="info-label">Current Space:</span>
-            <span id="currentSpace">-</span>
-        </div>
-        <div class="info-row">
-            <span class="info-label">Current Task:</span>
-            <span id="currentTask">-</span>
-        </div>
-        <div class="info-row">
-            <span class="info-label">Progress:</span>
-            <span id="progressDetails">Spaces: 0/0 | Tasks: 0/0</span>
-        </div>
-    </div>
-    
-    <div class="controls">
-        <button id="terminateBtn" onclick="terminate()">Terminate</button>
-        <button id="resumeBtn" onclick="resume()">Resume</button>
-        <button id="historyBtn" onclick="toggleHistory()">Show History</button>
-        <button id="logsBtn" onclick="toggleLogs()">Show Logs</button>
-    </div>
-    
-    <div class="history-panel" id="historyPanel"></div>
-    
-    <div class="logs" id="logs" style="display: none;"></div>
-    
-    <div class="user-input-dialog" id="userInputDialog">
-        <h3>User Input Required</h3>
-        <p id="inputPrompt"></p>
-        <input type="text" id="userInput" />
-        <button onclick="submitUserInput()">Submit</button>
-        <button onclick="cancelUserInput()">Cancel</button>
-    </div>
-
-    <script>
-        const vscode = acquireVsCodeApi();
-        let currentExperimentId = null;
-        let currentInputRequest = null;
-        let experimentData = null;
-        let logs = [];
-        
-        function terminate() {
-            vscode.postMessage({ type: 'terminate' });
-        }
-        
-        function resume() {
-            vscode.postMessage({ type: 'resume' });
-        }
-        
-        function toggleHistory() {
-            const panel = document.getElementById('historyPanel');
-            const btn = document.getElementById('historyBtn');
-            
-            if (panel.classList.contains('show')) {
-                panel.classList.remove('show');
-                btn.textContent = 'Show History';
-            } else {
-                panel.classList.add('show');
-                btn.textContent = 'Hide History';
-                vscode.postMessage({ type: 'showHistory' });
-            }
-        }
-        
-        function toggleLogs() {
-            const logsDiv = document.getElementById('logs');
-            const btn = document.getElementById('logsBtn');
-            
-            if (logsDiv.style.display === 'none') {
-                logsDiv.style.display = 'block';
-                btn.textContent = 'Hide Logs';
-                logsDiv.scrollTop = logsDiv.scrollHeight;
-            } else {
-                logsDiv.style.display = 'none';
-                btn.textContent = 'Show Logs';
-            }
-        }
-        
-        function submitUserInput() {
-            if (!currentInputRequest) return;
-            
-            const value = document.getElementById('userInput').value;
-            vscode.postMessage({
-                type: 'userInputResponse',
-                data: {
-                    requestId: currentInputRequest.requestId,
-                    value: value
-                }
-            });
-            
-            hideUserInputDialog();
-        }
-        
-        function cancelUserInput() {
-            hideUserInputDialog();
-        }
-        
-        function showUserInputDialog(request) {
-            currentInputRequest = request;
-            document.getElementById('inputPrompt').textContent = request.prompt;
-            document.getElementById('userInput').value = '';
-            document.getElementById('userInputDialog').classList.add('show');
-            document.getElementById('userInput').focus();
-        }
-        
-        function hideUserInputDialog() {
-            currentInputRequest = null;
-            document.getElementById('userInputDialog').classList.remove('show');
-        }
-        
-        function addLog(message) {
-            const time = new Date().toLocaleTimeString();
-            logs.push({ time, message });
-            
-            const logsDiv = document.getElementById('logs');
-            const entry = document.createElement('div');
-            entry.className = 'log-entry';
-            entry.innerHTML = '<span class="log-time">' + time + '</span>' + message;
-            logsDiv.appendChild(entry);
-            
-            // Auto-scroll to bottom
-            logsDiv.scrollTop = logsDiv.scrollHeight;
-        }
-        
-        function updateButtonStates(status) {
-            const terminateBtn = document.getElementById('terminateBtn');
-            const resumeBtn = document.getElementById('resumeBtn');
-            
-            console.log('Updating button states for status:', status);
-            
-            // Terminate button: enabled only when running
-            terminateBtn.disabled = status !== 'running';
-            
-            // Resume button: enabled when failed or idle (to allow resuming previous experiments)
-            const statusLower = status.toLowerCase();
-            resumeBtn.disabled = !(statusLower === 'failed' || statusLower === 'idle' || statusLower === 'terminated' || statusLower === 'completed');
-            
-            console.log('Resume button disabled:', resumeBtn.disabled, 'for status:', statusLower);
-        }
-        
-        function updateProgress(progress) {
-            console.log('WebView updateProgress called with:', progress);
-            console.log('Progress status:', progress.status);
-            const percentage = Math.round(progress.progress.percentage * 100);
-            document.getElementById('progressFill').style.width = percentage + '%';
-            document.getElementById('progressText').textContent = percentage + '%';
-            
-            document.getElementById('currentSpace').textContent = progress.currentSpace || '-';
-            document.getElementById('currentTask').textContent = progress.currentTask || '-';
-            
-            const details = 'Spaces: ' + progress.progress.completedSpaces + '/' + progress.progress.totalSpaces +
-                          ' | Tasks: ' + progress.progress.completedTasks + '/' + progress.progress.totalTasks;
-            document.getElementById('progressDetails').textContent = details;
-            
-            // Update status
-            const statusEl = document.getElementById('status');
-            statusEl.textContent = progress.status;
-            statusEl.className = 'status ' + progress.status.toLowerCase();
-            
-            // Update button states based on status
-            updateButtonStates(progress.status);
-            
-            // Add log entry
-            if (progress.currentTask) {
-                addLog('Started task: ' + progress.currentTask);
-            }
-        }
-        
-        function displayHistory(history) {
-            const panel = document.getElementById('historyPanel');
-            panel.innerHTML = '';
-            
-            history.forEach(task => {
-                const item = document.createElement('div');
-                item.className = 'task-history-item';
-                
-                const params = Object.entries(task.parameters)
-                    .map(([k, v]) => k + '=' + v)
-                    .join(', ');
-                    
-                const outputs = Object.entries(task.outputs)
-                    .map(([k, v]) => {
-                        if (v.endsWith('.json') || v.endsWith('.txt') || v.endsWith('.csv')) {
-                            return k + ': <span class="output-link" onclick="openOutput(&quot;' + v + '&quot;)">' + v + '</span>';
-                        }
-                        return k + '=' + v;
-                    })
-                    .join(', ');
-                
-                item.innerHTML = 
-                    '<div class="task-header">' +
-                        task.taskId + ' (Space: ' + task.spaceId + ')' +
-                        '<span class="task-status ' + task.status + '">' + task.status + '</span>' +
-                    '</div>' +
-                    '<div class="task-params">Parameters: ' + params + '</div>' +
-                    '<div class="task-outputs">Outputs: ' + outputs + '</div>';
-                
-                panel.appendChild(item);
-            });
-        }
-        
-        function openOutput(path) {
-            vscode.postMessage({ type: 'openOutput', path: path });
-        }
-        
-        // Handle messages from extension
-        window.addEventListener('message', event => {
-            console.log('WebView received message:', event.data);
-            const message = event.data;
-            
-            switch (message.type) {
-                case 'setExperimentId':
-                    currentExperimentId = message.experimentId;
-                    document.getElementById('experimentName').textContent = 'Experiment: ' + message.experimentId;
-                    updateButtonStates('running'); // Assume running when experiment starts
-                    addLog('Experiment started: ' + message.experimentId);
-                    break;
-                    
-                case 'progress':
-                    console.log('WebView handling progress message:', message.data);
-                    updateProgress(message.data);
-                    break;
-                    
-                case 'completed':
-                    experimentData = message.data;
-                    document.getElementById('status').textContent = 'Completed';
-                    document.getElementById('status').className = 'status completed';
-                    updateButtonStates('completed');
-                    addLog('Experiment completed successfully');
-                    break;
-                    
-                case 'error':
-                    document.getElementById('status').textContent = 'Failed';
-                    document.getElementById('status').className = 'status failed';
-                    updateButtonStates('failed'); // Use lowercase to match the logic
-                    addLog('ERROR: ' + message.data.message);
-                    break;
-                    
-                case 'terminated':
-                    document.getElementById('status').textContent = 'Terminated';
-                    document.getElementById('status').className = 'status terminated';
-                    updateButtonStates('terminated');
-                    addLog('Experiment terminated by user');
-                    break;
-                    
-                case 'inputRequired':
-                    showUserInputDialog(message.data);
-                    break;
-                    
-                case 'history':
-                    displayHistory(message.data);
-                    break;
-            }
-        });
-        
-        // Enter key submits user input
-        document.getElementById('userInput').addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                submitUserInput();
-            }
-        });
-        
-        // Set initial button states - resume should be enabled initially for testing
-        // In a real scenario, this would depend on whether there's a previous failed experiment
-        updateButtonStates('idle');
-    </script>
-</body>
-</html>`;
   }
 }

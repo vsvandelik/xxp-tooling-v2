@@ -345,12 +345,6 @@
                 }
             ]
         },
-        "viewsWelcome": [
-            {
-                "view": "extremexp.workflows.repositories",
-                "contents": "No workflow repositories configured.\n[Add Repository](command:extremexp.workflows.addRepository)\nTo learn more about workflow repositories, [read our documentation](https://github.com/extremexp/xxp-tooling-v2#workflow-repositories)."
-            }
-        ],
         "configuration": {
             "title": "ExtremeXP",
             "properties": {
