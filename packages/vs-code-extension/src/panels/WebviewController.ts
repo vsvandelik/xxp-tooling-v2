@@ -25,6 +25,8 @@ export class WebviewController {
       percentage: progress.progress.percentage,
       completedSpaces: progress.progress.completedSpaces,
       totalSpaces: progress.progress.totalSpaces,
+      completedParameterSets: progress.progress.completedParameterSets,
+      totalParameterSets: progress.progress.totalParameterSets,
       completedTasks: progress.progress.completedTasks,
       totalTasks: progress.progress.totalTasks,
     };

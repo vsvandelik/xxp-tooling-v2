@@ -218,6 +218,15 @@ export class ExperimentExecutor implements ExperimentRunner {
     // Get stats
     const spaceStats = await this.repository.getSpaceStats(run.id);
     const paramStats = await this.repository.getParamSetStats(run.id);
+    const taskStats = await this.repository.getTaskStats(run.id);
+    
+    // Calculate task counts
+    let completedTasks = 0;
+    let totalTasks = 0;
+    for (const stat of taskStats) {
+      if (stat.status === 'completed') completedTasks = stat.count;
+      totalTasks += stat.count;
+    }
 
     const result: RunStatus = {
       runId: run.id,
@@ -229,6 +238,8 @@ export class ExperimentExecutor implements ExperimentRunner {
         totalSpaces: spaceStats.total,
         completedParameterSets: paramStats.completed,
         totalParameterSets: paramStats.total,
+        completedTasks,
+        totalTasks,
       },
     };
 

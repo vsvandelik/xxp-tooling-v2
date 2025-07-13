@@ -24,5 +24,7 @@ export interface RunStatus {
     totalSpaces: number;
     completedParameterSets: number;
     totalParameterSets: number;
+    completedTasks: number;
+    totalTasks: number;
   };
 }

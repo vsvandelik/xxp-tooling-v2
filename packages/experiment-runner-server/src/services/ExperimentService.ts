@@ -118,10 +118,10 @@ export class ExperimentService {
               percentage: progress,
               completedSpaces: experiment.status.progress.completedSpaces,
               totalSpaces: experiment.status.progress.totalSpaces,
-              completedTasks: Math.floor(
-                progress * (experiment.status.progress.totalParameterSets || 1)
-              ),
-              totalTasks: experiment.status.progress.totalParameterSets || 1,
+              completedParameterSets: experiment.status.progress.completedParameterSets,
+              totalParameterSets: experiment.status.progress.totalParameterSets,
+              completedTasks: experiment.status.progress.completedTasks,
+              totalTasks: experiment.status.progress.totalTasks,
             },
             timestamp: Date.now(),
           };
@@ -219,6 +219,12 @@ export class ExperimentService {
                 totalParameterSets: artifact.spaces.reduce(
                   (sum: number, space: { parameters: string | Expression[] }) =>
                     sum + space.parameters.length,
+                  0
+                ),
+                completedTasks: 0,
+                totalTasks: artifact.spaces.reduce(
+                  (sum: number, space: { parameters: string | Expression[]; tasksOrder: string[] }) =>
+                    sum + space.parameters.length * space.tasksOrder.length,
                   0
                 ),
               },

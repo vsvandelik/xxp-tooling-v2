@@ -216,7 +216,7 @@ export class WebviewRenderer {
 
   static renderContent(state: WebviewState): string {
     const percentage = Math.round(state.progress.percentage * 100);
-    const progressDetails = `Spaces: ${state.progress.completedSpaces}/${state.progress.totalSpaces} | Tasks: ${state.progress.completedTasks}/${state.progress.totalTasks}`;
+    const progressDetails = `Spaces: ${state.progress.completedSpaces}/${state.progress.totalSpaces} | Parameter Sets: ${state.progress.completedParameterSets}/${state.progress.totalParameterSets} | Tasks: ${state.progress.completedTasks}/${state.progress.totalTasks}`;
 
     return `<!DOCTYPE html>
 <html lang="en">
