@@ -84,8 +84,6 @@ export class ExperimentExecutor implements ExperimentRunner {
         }
         // Calculate totals from artifact
         const totalSpaces = artifact.spaces.length;
-        const totalParameterSets = artifact.spaces.reduce((sum, space) => sum + space.parameters.length, 0);
-        const totalTasks = artifact.spaces.reduce((sum, space) => sum + space.parameters.length * space.tasksOrder.length, 0);
 
         await this.repository.createRun({
           id: runId,
@@ -96,8 +94,6 @@ export class ExperimentExecutor implements ExperimentRunner {
           start_time: Date.now(),
           status: 'running',
           total_spaces: totalSpaces,
-          total_parameter_sets: totalParameterSets,
-          total_tasks: totalTasks,
         });
       }
       // Create components
@@ -223,34 +219,66 @@ export class ExperimentExecutor implements ExperimentRunner {
       return null;
     }
 
-    // Get completed counts from database
+    // Get overall space stats
     const spaceStats = await this.repository.getSpaceStats(run.id);
-    const paramStats = await this.repository.getParamSetStats(run.id);
-    const taskStats = await this.repository.getTaskStats(run.id);
-    
-    // Calculate completed task count
-    let completedTasks = 0;
-    for (const stat of taskStats) {
-      if (stat.status === 'completed') completedTasks = stat.count;
-    }
 
-    const result: RunStatus = {
-      runId: run.id,
-      experimentName: run.experiment_name,
-      experimentVersion: run.experiment_version,
-      status: run.status as 'running' | 'completed' | 'failed' | 'terminated',
-      progress: {
-        completedSpaces: spaceStats.completed,
-        totalSpaces: run.total_spaces,
-        completedParameterSets: paramStats.completed,
-        totalParameterSets: run.total_parameter_sets,
-        completedTasks,
-        totalTasks: run.total_tasks,
-      },
-    };
+    let result: RunStatus;
 
-    if (run.current_space !== undefined) {
-      result.currentSpace = run.current_space;
+    if (run.current_space) {
+      // Get space-specific progress for the current space
+      const currentSpaceExecution = await this.repository.getSpaceExecutionWithTotals(run.id, run.current_space);
+      const spaceParamStats = await this.repository.getParamSetStatsForSpace(run.id, run.current_space);
+      const currentTaskProgress = await this.repository.getCurrentTaskProgress(run.id);
+      
+      // For hierarchical progress, show completed tasks within current parameter set
+      let completedTasks = 0;
+      let totalTasks = currentSpaceExecution?.total_tasks || 0;
+      
+      if (currentTaskProgress) {
+        completedTasks = currentTaskProgress.taskIndex - 1; // taskIndex is 1-based, so subtract 1 for completed count
+        totalTasks = currentTaskProgress.totalTasks;
+      }
+
+      result = {
+        runId: run.id,
+        experimentName: run.experiment_name,
+        experimentVersion: run.experiment_version,
+        status: run.status as 'running' | 'completed' | 'failed' | 'terminated',
+        progress: {
+          completedSpaces: spaceStats.completed,
+          totalSpaces: run.total_spaces,
+          completedParameterSets: spaceParamStats.completed,
+          totalParameterSets: currentSpaceExecution?.total_param_sets || 0,
+          completedTasks,
+          totalTasks,
+        },
+        currentSpace: run.current_space,
+      };
+    } else {
+      // Overall progress (no current space - experiment completed/not started)
+      const paramStats = await this.repository.getParamSetStats(run.id);
+      const taskStats = await this.repository.getTaskStats(run.id);
+      
+      // Calculate completed task count
+      let completedTasks = 0;
+      for (const stat of taskStats) {
+        if (stat.status === 'completed') completedTasks = stat.count;
+      }
+
+      result = {
+        runId: run.id,
+        experimentName: run.experiment_name,
+        experimentVersion: run.experiment_version,
+        status: run.status as 'running' | 'completed' | 'failed' | 'terminated',
+        progress: {
+          completedSpaces: spaceStats.completed,
+          totalSpaces: run.total_spaces,
+          completedParameterSets: paramStats.completed,
+          totalParameterSets: paramStats.total,
+          completedTasks,
+          totalTasks: taskStats.reduce((sum, stat) => sum + stat.count, 0),
+        },
+      };
     }
 
     if (run.current_param_set !== undefined) {

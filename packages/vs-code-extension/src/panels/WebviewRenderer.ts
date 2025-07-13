@@ -73,6 +73,12 @@ export class WebviewRenderer {
             margin: 5px 0;
         }
         
+        .progress-label {
+            font-weight: bold;
+            margin-bottom: 5px;
+            color: var(--vscode-foreground);
+        }
+        
         .current-info {
             margin: 20px 0;
         }
@@ -216,7 +222,12 @@ export class WebviewRenderer {
 
   static renderContent(state: WebviewState): string {
     const percentage = Math.round(state.progress.percentage * 100);
-    const progressDetails = `Spaces: ${state.progress.completedSpaces}/${state.progress.totalSpaces} | Parameter Sets: ${state.progress.completedParameterSets}/${state.progress.totalParameterSets} | Tasks: ${state.progress.completedTasks}/${state.progress.totalTasks}`;
+    
+    // Create hierarchical progress details
+    const overallProgress = `Overall Spaces: ${state.progress.completedSpaces}/${state.progress.totalSpaces}`;
+    const currentSpaceLabel = state.currentSpace ? `Current Space (${state.currentSpace})` : 'Current Space';
+    const spaceProgress = `Parameter Sets: ${state.progress.completedParameterSets}/${state.progress.totalParameterSets}`;
+    const taskProgress = `Tasks in Current Set: ${state.progress.completedTasks}/${state.progress.totalTasks}`;
 
     return `<!DOCTYPE html>
 <html lang="en">
@@ -235,6 +246,7 @@ export class WebviewRenderer {
     </div>
     
     <div class="progress-section">
+        <div class="progress-label">${currentSpaceLabel} Progress</div>
         <div class="progress-bar">
             <div class="progress-fill" style="width: ${percentage}%"></div>
         </div>
@@ -251,8 +263,15 @@ export class WebviewRenderer {
             <span>${state.currentTask}</span>
         </div>
         <div class="info-row">
-            <span class="info-label">Progress:</span>
-            <span>${progressDetails}</span>
+            <span class="info-label">${overallProgress}</span>
+        </div>
+        <div class="info-row">
+            <span class="info-label">${currentSpaceLabel}:</span>
+            <span>${spaceProgress}</span>
+        </div>
+        <div class="info-row">
+            <span class="info-label">Current Parameter Set:</span>
+            <span>${taskProgress}</span>
         </div>
     </div>
     

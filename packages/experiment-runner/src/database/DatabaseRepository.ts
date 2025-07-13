@@ -83,6 +83,11 @@ export interface DatabaseRepository {
   getControlState(runId: string): Promise<string | null>;
 
   // Progress operations
+  updateRunProgress(runId: string, currentSpace?: string, currentParamSet?: number, currentTask?: string): Promise<void>;
   getSpaceStats(runId: string): Promise<{ total: number; completed: number }>;
   getParamSetStats(runId: string): Promise<{ total: number; completed: number }>;
+  getParamSetStatsForSpace(runId: string, spaceId: string): Promise<{ total: number; completed: number }>;
+  getTaskStatsForSpace(runId: string, spaceId: string): Promise<{ status: string; count: number }[]>;
+  getSpaceExecutionWithTotals(runId: string, spaceId: string): Promise<{space_id: string, status: string, total_param_sets: number, total_tasks: number} | null>;
+  getCurrentTaskProgress(runId: string): Promise<{currentTask: string | null, taskIndex: number, totalTasks: number} | null>;
 }

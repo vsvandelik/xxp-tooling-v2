@@ -9,9 +9,8 @@ export interface RunRecord {
   status: string;
   current_space?: string;
   current_param_set?: number;
+  current_task?: string;
   total_spaces: number;
-  total_parameter_sets: number;
-  total_tasks: number;
 }
 
 export interface SpaceExecutionRecord {
@@ -20,6 +19,8 @@ export interface SpaceExecutionRecord {
   status: string;
   start_time?: number;
   end_time?: number;
+  total_param_sets: number;
+  total_tasks: number;
 }
 
 export interface ParamSetExecutionRecord {
