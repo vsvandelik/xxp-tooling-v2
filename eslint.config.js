@@ -55,9 +55,6 @@ export default tseslint.config(
       
       // Consistent newlines after imports
       'import/newline-after-import': 'error',
-      
-      // Disable TypeScript any restrictions
-      '@typescript-eslint/no-explicit-any': 'off',
     },
     settings: {
       'import/resolver': {

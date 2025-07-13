@@ -88,7 +88,7 @@ export class RunExperimentCommand {
           panel.updateProgress(progress);
         },
         onComplete: async result => {
-          panel.setCompleted(result);
+          panel.setCompleted();
 
           // Show completion notification
           const action = await vscode.window.showInformationMessage(
