@@ -1,27 +1,44 @@
 {
   "entryPoints": [
-    "packages/core/src/index.ts",
+    /*"packages/core/src/index.ts",
     "packages/artifact-generator/src/cli.ts",
     "packages/artifact-generator/src/generators/ArtifactGenerator.ts",
     "packages/workflow-repository/src/index.ts",
     "packages/language-server/src/server.ts",
     "packages/language-server/src/core/managers/DocumentsManager.ts",
     "packages/language-server/src/core/managers/ProvidersManager.ts",
-    "packages/language-server/src/core/managers/WorkspaceManager.ts"
+    "packages/language-server/src/core/managers/WorkspaceManager.ts"*/
   ],
-  "out": "docs",
-  "name": "XXP Tooling v2 - ExtremeXP",
-  "readme": "README-docs.md",
-  "includeVersion": true,
+  "out": "docs/generated",
+  "name": "ExtremeXP Tooling",
+  "readme": "docs/static/intro.md",
+  "projectDocuments": [
+    "docs/static/user_documentation.md",
+    "docs/static/technical_documentation.md"
+  ],
+  "hideGenerator": false,
+  "cleanOutputDir": true,
+  /*"includeVersion": true,
   "excludePrivate": true,
   "excludeProtected": true,
   "excludeInternal": true,
   "categorizeByGroup": true,
   "categoryOrder": [
+    "Documentation",
     "Core",
-    "Artifact Generation",
+    "Artifact Generation", 
     "Workflow Repository",
     "Language Server",
+    "Experiment Execution",
+    "Development Tools",
+    "*"
+  ],
+  "groupOrder": [
+    "Documentation",
+    "Core Language Support",
+    "Development Tools", 
+    "Experiment Execution",
+    "Workflow Management",
     "*"
   ],
   "sort": ["source-order"],
@@ -51,14 +68,18 @@
     "SetSignature"
   ],
   "navigationLinks": {
-    "GitHub": "https://github.com/vsvandelik/xxp-tooling-v2"
+    "GitHub": "https://github.com/vsvandelik/xxp-tooling-v2",
+    "User Guide": "/documents/User_Documentation.html",
+    "Technical Docs": "/documents/Technical_Documentation.html"
   },
   "sidebarLinks": {
-    "Documentation": "https://vsvandelik.github.io/xxp-tooling-v2/"
+    "📖 User Documentation": "/documents/User_Documentation.html",
+    "🔧 Technical Documentation": "/documents/Technical_Documentation.html",
+    "🏠 Documentation Home": "/index.html"
   },
   "hideGenerator": false,
   "cleanOutputDir": true,
   "titleLink": "https://vsvandelik.github.io/xxp-tooling-v2/",
-  "sourceLinkTemplate": "https://github.com/vsvandelik/xxp-tooling-v2/blob/{gitRevision}/{path}#L{line}",
+  "sourceLinkTemplate": "https://github.com/vsvandelik/xxp-tooling-v2/blob/{gitRevision}/{path}#L{line}",*/
   "gitRevision": "main"
 }

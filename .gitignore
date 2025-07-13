@@ -9,7 +9,7 @@ dist/
 *.tsbuildinfo
 
 # Documentation (generated)
-docs/
+docs/generated/
 
 # Environment variables
 .env
