@@ -100,6 +100,9 @@ export class SqliteRepository implements DatabaseRepository {
         status TEXT NOT NULL,
         current_space TEXT,
         current_param_set INTEGER,
+        total_spaces INTEGER NOT NULL DEFAULT 0,
+        total_parameter_sets INTEGER NOT NULL DEFAULT 0,
+        total_tasks INTEGER NOT NULL DEFAULT 0,
         UNIQUE(experiment_name, experiment_version)
       );
       
@@ -163,7 +166,7 @@ export class SqliteRepository implements DatabaseRepository {
 
     try {
       await db.run(
-        'INSERT INTO runs (id, experiment_name, experiment_version, artifact_path, artifact_hash, start_time, status) VALUES (?, ?, ?, ?, ?, ?, ?)',
+        'INSERT INTO runs (id, experiment_name, experiment_version, artifact_path, artifact_hash, start_time, status, total_spaces, total_parameter_sets, total_tasks) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
         [
           run.id,
           run.experiment_name,
@@ -172,6 +175,9 @@ export class SqliteRepository implements DatabaseRepository {
           run.artifact_hash,
           run.start_time,
           run.status,
+          run.total_spaces,
+          run.total_parameter_sets,
+          run.total_tasks,
         ]
       );
     } catch (error) {

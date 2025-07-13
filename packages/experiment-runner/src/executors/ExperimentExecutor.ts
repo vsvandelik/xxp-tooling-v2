@@ -82,6 +82,11 @@ export class ExperimentExecutor implements ExperimentRunner {
             `Deleted existing run data for ${artifact.experiment} v${artifact.version} before starting a new run.`
           );
         }
+        // Calculate totals from artifact
+        const totalSpaces = artifact.spaces.length;
+        const totalParameterSets = artifact.spaces.reduce((sum, space) => sum + space.parameters.length, 0);
+        const totalTasks = artifact.spaces.reduce((sum, space) => sum + space.parameters.length * space.tasksOrder.length, 0);
+
         await this.repository.createRun({
           id: runId,
           experiment_name: artifact.experiment,
@@ -90,6 +95,9 @@ export class ExperimentExecutor implements ExperimentRunner {
           artifact_hash: this.hashArtifact(artifact),
           start_time: Date.now(),
           status: 'running',
+          total_spaces: totalSpaces,
+          total_parameter_sets: totalParameterSets,
+          total_tasks: totalTasks,
         });
       }
       // Create components
@@ -215,17 +223,15 @@ export class ExperimentExecutor implements ExperimentRunner {
       return null;
     }
 
-    // Get stats
+    // Get completed counts from database
     const spaceStats = await this.repository.getSpaceStats(run.id);
     const paramStats = await this.repository.getParamSetStats(run.id);
     const taskStats = await this.repository.getTaskStats(run.id);
     
-    // Calculate task counts
+    // Calculate completed task count
     let completedTasks = 0;
-    let totalTasks = 0;
     for (const stat of taskStats) {
       if (stat.status === 'completed') completedTasks = stat.count;
-      totalTasks += stat.count;
     }
 
     const result: RunStatus = {
@@ -235,11 +241,11 @@ export class ExperimentExecutor implements ExperimentRunner {
       status: run.status as 'running' | 'completed' | 'failed' | 'terminated',
       progress: {
         completedSpaces: spaceStats.completed,
-        totalSpaces: spaceStats.total,
+        totalSpaces: run.total_spaces,
         completedParameterSets: paramStats.completed,
-        totalParameterSets: paramStats.total,
+        totalParameterSets: run.total_parameter_sets,
         completedTasks,
-        totalTasks,
+        totalTasks: run.total_tasks,
       },
     };
 
