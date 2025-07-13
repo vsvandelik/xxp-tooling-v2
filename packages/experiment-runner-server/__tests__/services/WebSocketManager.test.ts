@@ -232,6 +232,8 @@ describe('WebSocketManager', () => {
           percentage: 0.5,
           completedSpaces: 1,
           totalSpaces: 2,
+          completedParameterSets: 3,
+          totalParameterSets: 6,
           completedTasks: 5,
           totalTasks: 10,
         },

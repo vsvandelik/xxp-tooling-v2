@@ -1,5 +1,7 @@
 import { ChildProcess } from 'child_process';
+import * as fs from 'fs';
 import * as net from 'net';
+import * as os from 'os';
 import * as path from 'path';
 
 import * as vscode from 'vscode';
@@ -164,6 +166,7 @@ export class ServerManager {
   async stopServer(): Promise<void> {
     if (this.serverProcess) {
       this.outputChannel.appendLine('Stopping ExtremeXP server...');
+
 
       try {
         // Try graceful shutdown first
@@ -360,6 +363,25 @@ export class ServerManager {
     }
   }
 
+  private getDefaultDatabaseDirectory(): string {
+    const platform = os.platform();
+    
+    if (platform === 'win32') {
+      // Windows: Use local app data directory
+      return path.join(os.homedir(), 'AppData', 'Local', 'ExtremeXP');
+    } else if (platform === 'darwin') {
+      // macOS: Use application support directory
+      return path.join(os.homedir(), 'Library', 'Application Support', 'ExtremeXP');
+    } else {
+      // Linux/Unix: Use XDG data directory or .local/share
+      const xdgDataHome = process.env['XDG_DATA_HOME'];
+      if (xdgDataHome) {
+        return path.join(xdgDataHome, 'extremexp');
+      }
+      return path.join(os.homedir(), '.local', 'share', 'extremexp');
+    }
+  }
+
   private getDatabasePath(): string {
     const config = vscode.workspace.getConfiguration('extremexp');
     const dbPath = config.get<string>('experiments.defaultDatabase');
@@ -368,13 +390,22 @@ export class ServerManager {
       return dbPath;
     }
 
-    // Default to workspace folder
-    const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
-    if (workspaceFolder) {
-      return path.join(workspaceFolder.uri.fsPath, 'experiment_runs.db');
+    // Default to platform-specific application data directory
+    const defaultDir = this.getDefaultDatabaseDirectory();
+    
+    // Ensure the directory exists
+    try {
+      fs.mkdirSync(defaultDir, { recursive: true });
+    } catch (error) {
+      // If we can't create the directory, fall back to workspace or current directory
+      const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+      if (workspaceFolder) {
+        return path.join(workspaceFolder.uri.fsPath, 'experiment_runs.db');
+      }
+      return './experiment_runs.db';
     }
-
-    return './experiment_runs.db';
+    
+    return path.join(defaultDir, 'experiment_runs.db');
   }
 
   private async waitForServer(timeout: number = 10000): Promise<void> {

@@ -14,6 +14,11 @@ export class SpaceExecutor {
   ) {}
 
   async execute(runId: string, space: Space, taskMap: Map<string, Task>): Promise<void> {
+    // Get counts for progress calculation
+    const totalParameterSets = space.parameters.length;
+    const tasksPerParameterSet = space.tasksOrder.length;
+    const totalTasksInSpace = totalParameterSets * tasksPerParameterSet; // For overall progress calculation
+
     // Check/create space execution record
     const spaceExec = await this.repository.getSpaceExecution(runId, space.spaceId);
 
@@ -23,13 +28,10 @@ export class SpaceExecutor {
         space_id: space.spaceId,
         status: 'running', // TODO: Replace with enum
         start_time: Date.now(),
+        total_param_sets: totalParameterSets,
+        total_tasks: tasksPerParameterSet, // Store tasks per set, not total tasks
       });
     }
-
-    // Get total tasks for progress calculation
-    const totalParameterSets = space.parameters.length;
-    const tasksPerParameterSet = space.tasksOrder.length;
-    const totalTasksInSpace = totalParameterSets * tasksPerParameterSet;
 
     // Execute each parameter set
     for (let i = 0; i < space.parameters.length; i++) {
@@ -68,10 +70,22 @@ export class SpaceExecutor {
         start_time: Date.now(),
       });
 
+      // Update run progress to current parameter set
+      await this.repository.updateRunProgress(runId, space.spaceId, i, undefined);
+
       try {
         // Execute tasks in order
         let completedTasksInParameterSet = 0;
-        for (const taskId of space.tasksOrder) {
+        for (let taskIndex = 0; taskIndex < space.tasksOrder.length; taskIndex++) {
+          const taskId = space.tasksOrder[taskIndex];
+          
+          if (!taskId) {
+            throw new Error(`Task at index ${taskIndex} not found in space ${space.spaceId}`);
+          }
+          
+          // Update current task in run progress
+          await this.repository.updateRunProgress(runId, space.spaceId, i, taskId);
+
           // Check if experiment has been terminated
           const currentRun = await this.repository.getRunById(runId);
           if (currentRun && currentRun.status === 'terminated') {
@@ -95,7 +109,7 @@ export class SpaceExecutor {
           const progressPercentage = completedTasksInSpace / totalTasksInSpace;
           this.progress.emitProgress(
             progressPercentage,
-            `Completed task ${taskId} in parameter set ${i + 1}/${totalParameterSets} of space ${space.spaceId}`
+            `Completed task ${taskId} (${taskIndex + 1}/${tasksPerParameterSet}) in parameter set ${i + 1}/${totalParameterSets} of space ${space.spaceId}`
           );
         }
 
@@ -118,7 +132,7 @@ export class SpaceExecutor {
           `Completed parameter set ${completedParameterSets}/${totalParameterSets} in space ${space.spaceId}`
         );
       } catch (error) {
-        // Mark parameter set as failed
+        // Mark parameter set as failed and stop execution
         await this.repository.updateParamSetExecution(
           runId,
           space.spaceId,
@@ -126,6 +140,16 @@ export class SpaceExecutor {
           'failed',
           Date.now()
         );
+        
+        // Mark space as failed and stop execution since subsequent tasks may depend on failed output
+        await this.repository.updateSpaceExecution(runId, space.spaceId, 'failed', Date.now());
+        
+        this.progress.emitProgress(
+          (i + 1) / totalParameterSets,
+          `Parameter set ${i + 1}/${totalParameterSets} failed in space ${space.spaceId}: ${(error as Error).message}`
+        );
+        
+        // Re-throw error to stop execution since subsequent tasks may depend on this one
         throw error;
       }
     }

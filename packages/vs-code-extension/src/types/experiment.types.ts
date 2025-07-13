@@ -39,6 +39,8 @@ export interface ExperimentProgress {
     percentage: number;
     completedSpaces: number;
     totalSpaces: number;
+    completedParameterSets: number;
+    totalParameterSets: number;
     completedTasks: number;
     totalTasks: number;
   };

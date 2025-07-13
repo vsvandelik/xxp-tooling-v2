@@ -399,7 +399,7 @@
                 },
                 "extremexp.experiments.defaultDatabase": {
                     "type": "string",
-                    "description": "Default database path for experiments",
+                    "description": "Custom path for the experiment runs database. If empty, uses platform-specific application data directory (Windows: %LOCALAPPDATA%/ExtremeXP, macOS: ~/Library/Application Support/ExtremeXP, Linux: ~/.local/share/extremexp)",
                     "default": ""
                 },
                 "extremexp.workflows.repositories": {

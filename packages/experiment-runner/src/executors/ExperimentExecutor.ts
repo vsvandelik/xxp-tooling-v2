@@ -40,13 +40,14 @@ export class ExperimentExecutor implements ExperimentRunner {
     // Initialize repository
     await this.repository.initialize();
 
+    let runId: string = '';
+
     try {
       const artifact = await this.loadArtifact(artifactPath);
       // Setup progress emitter
       const progress = new ProgressEmitter(progressCallback);
 
       // Check for existing run if resume is enabled
-      let runId: string;
       let isResuming = false;
 
       if (resume) {
@@ -82,6 +83,9 @@ export class ExperimentExecutor implements ExperimentRunner {
             `Deleted existing run data for ${artifact.experiment} v${artifact.version} before starting a new run.`
           );
         }
+        // Calculate totals from artifact
+        const totalSpaces = artifact.spaces.length;
+
         await this.repository.createRun({
           id: runId,
           experiment_name: artifact.experiment,
@@ -90,6 +94,7 @@ export class ExperimentExecutor implements ExperimentRunner {
           artifact_hash: this.hashArtifact(artifact),
           start_time: Date.now(),
           status: 'running',
+          total_spaces: totalSpaces,
         });
       }
       // Create components
@@ -196,8 +201,13 @@ export class ExperimentExecutor implements ExperimentRunner {
       };
     } catch (error) {
       // Update run status on failure
-      if (await this.repository.getRunById(this.generateRunId())) {
-        await this.repository.updateRunStatus(this.generateRunId(), 'failed', Date.now());
+      try {
+        if (runId) {
+          await this.repository.updateRunStatus(runId, 'failed', Date.now());
+        }
+      } catch (dbError) {
+        // Log database error but don't let it override the original error
+        // Using a more appropriate logging mechanism than console.error
       }
 
       throw error;
@@ -215,25 +225,66 @@ export class ExperimentExecutor implements ExperimentRunner {
       return null;
     }
 
-    // Get stats
+    // Get overall space stats
     const spaceStats = await this.repository.getSpaceStats(run.id);
-    const paramStats = await this.repository.getParamSetStats(run.id);
 
-    const result: RunStatus = {
-      runId: run.id,
-      experimentName: run.experiment_name,
-      experimentVersion: run.experiment_version,
-      status: run.status as 'running' | 'completed' | 'failed' | 'terminated',
-      progress: {
-        completedSpaces: spaceStats.completed,
-        totalSpaces: spaceStats.total,
-        completedParameterSets: paramStats.completed,
-        totalParameterSets: paramStats.total,
-      },
-    };
+    let result: RunStatus;
 
-    if (run.current_space !== undefined) {
-      result.currentSpace = run.current_space;
+    if (run.current_space) {
+      // Get space-specific progress for the current space
+      const currentSpaceExecution = await this.repository.getSpaceExecutionWithTotals(run.id, run.current_space);
+      const spaceParamStats = await this.repository.getParamSetStatsForSpace(run.id, run.current_space);
+      const currentTaskProgress = await this.repository.getCurrentTaskProgress(run.id);
+      
+      // For hierarchical progress, show completed tasks within current parameter set
+      let completedTasks = 0;
+      let totalTasks = currentSpaceExecution?.total_tasks || 0;
+      
+      if (currentTaskProgress) {
+        completedTasks = currentTaskProgress.taskIndex - 1; // taskIndex is 1-based, so subtract 1 for completed count
+        totalTasks = currentTaskProgress.totalTasks;
+      }
+
+      result = {
+        runId: run.id,
+        experimentName: run.experiment_name,
+        experimentVersion: run.experiment_version,
+        status: run.status as 'running' | 'completed' | 'failed' | 'terminated',
+        progress: {
+          completedSpaces: spaceStats.completed,
+          totalSpaces: run.total_spaces,
+          completedParameterSets: spaceParamStats.completed,
+          totalParameterSets: currentSpaceExecution?.total_param_sets || 0,
+          completedTasks,
+          totalTasks,
+        },
+        currentSpace: run.current_space,
+      };
+    } else {
+      // Overall progress (no current space - experiment completed/not started)
+      const paramStats = await this.repository.getParamSetStats(run.id);
+      const taskStats = await this.repository.getTaskStats(run.id);
+      
+      // Calculate completed task count
+      let completedTasks = 0;
+      for (const stat of taskStats) {
+        if (stat.status === 'completed') completedTasks = stat.count;
+      }
+
+      result = {
+        runId: run.id,
+        experimentName: run.experiment_name,
+        experimentVersion: run.experiment_version,
+        status: run.status as 'running' | 'completed' | 'failed' | 'terminated',
+        progress: {
+          completedSpaces: spaceStats.completed,
+          totalSpaces: run.total_spaces,
+          completedParameterSets: paramStats.completed,
+          totalParameterSets: paramStats.total,
+          completedTasks,
+          totalTasks: taskStats.reduce((sum, stat) => sum + stat.count, 0),
+        },
+      };
     }
 
     if (run.current_param_set !== undefined) {

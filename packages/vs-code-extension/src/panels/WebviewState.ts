@@ -15,6 +15,8 @@ export interface ProgressData {
   percentage: number;
   completedSpaces: number;
   totalSpaces: number;
+  completedParameterSets: number;
+  totalParameterSets: number;
   completedTasks: number;
   totalTasks: number;
 }
@@ -44,6 +46,8 @@ export const createInitialWebviewState = (): WebviewState => ({
     percentage: 0,
     completedSpaces: 0,
     totalSpaces: 0,
+    completedParameterSets: 0,
+    totalParameterSets: 0,
     completedTasks: 0,
     totalTasks: 0,
   },

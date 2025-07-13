@@ -100,6 +100,8 @@ export class SqliteRepository implements DatabaseRepository {
         status TEXT NOT NULL,
         current_space TEXT,
         current_param_set INTEGER,
+        current_task TEXT,
+        total_spaces INTEGER NOT NULL DEFAULT 0,
         UNIQUE(experiment_name, experiment_version)
       );
       
@@ -109,6 +111,8 @@ export class SqliteRepository implements DatabaseRepository {
         status TEXT NOT NULL,
         start_time INTEGER,
         end_time INTEGER,
+        total_param_sets INTEGER NOT NULL DEFAULT 0,
+        total_tasks INTEGER NOT NULL DEFAULT 0,
         PRIMARY KEY (run_id, space_id),
         FOREIGN KEY (run_id) REFERENCES runs(id) ON DELETE CASCADE
       );
@@ -163,7 +167,7 @@ export class SqliteRepository implements DatabaseRepository {
 
     try {
       await db.run(
-        'INSERT INTO runs (id, experiment_name, experiment_version, artifact_path, artifact_hash, start_time, status) VALUES (?, ?, ?, ?, ?, ?, ?)',
+        'INSERT INTO runs (id, experiment_name, experiment_version, artifact_path, artifact_hash, start_time, status, total_spaces) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
         [
           run.id,
           run.experiment_name,
@@ -172,6 +176,7 @@ export class SqliteRepository implements DatabaseRepository {
           run.artifact_hash,
           run.start_time,
           run.status,
+          run.total_spaces,
         ]
       );
     } catch (error) {
@@ -253,8 +258,8 @@ export class SqliteRepository implements DatabaseRepository {
 
     try {
       await db.run(
-        'INSERT INTO space_executions (run_id, space_id, status, start_time) VALUES (?, ?, ?, ?)',
-        [record.run_id, record.space_id, record.status, record.start_time]
+        'INSERT INTO space_executions (run_id, space_id, status, start_time, total_param_sets, total_tasks) VALUES (?, ?, ?, ?, ?, ?)',
+        [record.run_id, record.space_id, record.status, record.start_time, record.total_param_sets, record.total_tasks]
       );
     } catch (error) {
       throw new Error(
@@ -611,6 +616,21 @@ export class SqliteRepository implements DatabaseRepository {
     }
   }
 
+  async updateRunProgress(runId: string, currentSpace?: string, currentParamSet?: number, currentTask?: string): Promise<void> {
+    const db = this.ensureInitialized();
+
+    try {
+      await db.run(
+        'UPDATE runs SET current_space = ?, current_param_set = ?, current_task = ? WHERE id = ?',
+        [currentSpace, currentParamSet, currentTask, runId]
+      );
+    } catch (error) {
+      throw new Error(
+        `Failed to update run progress: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
+    }
+  }
+
   // Progress operations
   async getSpaceStats(runId: string): Promise<{ total: number; completed: number }> {
     const db = this.ensureInitialized();
@@ -652,6 +672,102 @@ export class SqliteRepository implements DatabaseRepository {
     } catch (error) {
       throw new Error(
         `Failed to get param set stats: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
+    }
+  }
+
+  async getParamSetStatsForSpace(runId: string, spaceId: string): Promise<{ total: number; completed: number }> {
+    const db = this.ensureInitialized();
+
+    try {
+      const result = await db.get<{ total: number; completed: number }>(
+        `
+        SELECT 
+          COUNT(*) as total,
+          COUNT(CASE WHEN status = 'completed' THEN 1 END) as completed
+        FROM param_set_executions
+        WHERE run_id = ? AND space_id = ?
+      `,
+        [runId, spaceId]
+      );
+      return { total: result?.total || 0, completed: result?.completed || 0 };
+    } catch (error) {
+      throw new Error(
+        `Failed to get param set stats for space: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
+    }
+  }
+
+  async getTaskStatsForSpace(runId: string, spaceId: string): Promise<{ status: string; count: number }[]> {
+    const db = this.ensureInitialized();
+
+    try {
+      return await db.all<{ status: string; count: number }[]>(
+        'SELECT status, COUNT(*) as count FROM task_executions WHERE run_id = ? AND space_id = ? GROUP BY status',
+        [runId, spaceId]
+      );
+    } catch (error) {
+      throw new Error(
+        `Failed to get task stats for space: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
+    }
+  }
+
+  async getSpaceExecutionWithTotals(runId: string, spaceId: string): Promise<{space_id: string, status: string, total_param_sets: number, total_tasks: number} | null> {
+    const db = this.ensureInitialized();
+
+    try {
+      const result = await db.get<{space_id: string, status: string, total_param_sets: number, total_tasks: number}>(
+        'SELECT space_id, status, total_param_sets, total_tasks FROM space_executions WHERE run_id = ? AND space_id = ?',
+        [runId, spaceId]
+      );
+      return result || null;
+    } catch (error) {
+      throw new Error(
+        `Failed to get space execution with totals: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
+    }
+  }
+
+  async getCurrentTaskProgress(runId: string): Promise<{currentTask: string | null, taskIndex: number, totalTasks: number} | null> {
+    const db = this.ensureInitialized();
+
+    try {
+      const result = await db.get<{current_space: string, current_param_set: number, current_task: string}>(
+        'SELECT current_space, current_param_set, current_task FROM runs WHERE id = ?',
+        [runId]
+      );
+      
+      if (!result?.current_space || result.current_param_set === undefined) {
+        return null;
+      }
+
+      // Get space execution to find total tasks per set
+      const spaceExecution = await db.get<{total_tasks: number}>(
+        'SELECT total_tasks FROM space_executions WHERE run_id = ? AND space_id = ?',
+        [runId, result.current_space]
+      );
+
+      if (!spaceExecution) {
+        return null;
+      }
+
+      // Get task order from completed task executions to determine current task index
+      const completedTasks = await db.all<{task_id: string}[]>(
+        'SELECT task_id FROM task_executions WHERE run_id = ? AND space_id = ? AND param_set_index = ? AND status = "completed" ORDER BY start_time',
+        [runId, result.current_space, result.current_param_set]
+      );
+
+      const taskIndex = completedTasks.length + 1; // Current task is the next one after completed ones
+
+      return {
+        currentTask: result.current_task,
+        taskIndex,
+        totalTasks: spaceExecution.total_tasks
+      };
+    } catch (error) {
+      throw new Error(
+        `Failed to get current task progress: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
     }
   }
