@@ -21,6 +21,10 @@ jest.mock('../src/database/SqliteRepository.js', () => ({
     getSpaceStats: jest.fn(),
     getParamSetStats: jest.fn(),
     getTaskStats: jest.fn(),
+    getParamSetStatsForSpace: jest.fn(),
+    getTaskStatsForSpace: jest.fn(),
+    getSpaceExecutionWithTotals: jest.fn(),
+    getCurrentTaskProgress: jest.fn(),
   })),
 }));
 
@@ -115,6 +119,10 @@ describe('ExperimentExecutor', () => {
       getSpaceStats: jest.fn(),
       getParamSetStats: jest.fn(),
       getTaskStats: jest.fn(),
+      getParamSetStatsForSpace: jest.fn(),
+      getTaskStatsForSpace: jest.fn(),
+      getSpaceExecutionWithTotals: jest.fn(),
+      getCurrentTaskProgress: jest.fn(),
     };
 
     experimentExecutor = new ExperimentExecutor(mockRepository);
@@ -455,11 +463,22 @@ describe('ExperimentExecutor', () => {
         current_space: 'space1',
         current_param_set: 2,
         total_spaces: 3,
-        total_parameter_sets: 15,
-        total_tasks: 45
       };
 
       mockRepository.getRun.mockResolvedValue(mockRun);
+      mockRepository.getSpaceStats.mockResolvedValue({ completed: 1, total: 3 });
+      mockRepository.getSpaceExecutionWithTotals.mockResolvedValue({ 
+        space_id: 'space1', 
+        status: 'running', 
+        total_param_sets: 5, 
+        total_tasks: 3 
+      });
+      mockRepository.getParamSetStatsForSpace.mockResolvedValue({ completed: 2, total: 5 });
+      mockRepository.getCurrentTaskProgress.mockResolvedValue({ 
+        currentTask: 'task2', 
+        taskIndex: 2, 
+        totalTasks: 3 
+      });
 
       const result = await experimentExecutor.getStatus('test-experiment', '1.0.0');
 
@@ -473,17 +492,18 @@ describe('ExperimentExecutor', () => {
         progress: {
           completedSpaces: 1,
           totalSpaces: 3,
-          completedParameterSets: 5,
-          totalParameterSets: 15,
-          completedTasks: 8,
-          totalTasks: 45,
+          completedParameterSets: 2,
+          totalParameterSets: 5,
+          completedTasks: 1, // taskIndex - 1 = 2 - 1 = 1
+          totalTasks: 3,
         },
       });
 
       expect(mockRepository.getRun).toHaveBeenCalledWith('test-experiment', '1.0.0');
       expect(mockRepository.getSpaceStats).toHaveBeenCalledWith('run-id');
-      expect(mockRepository.getParamSetStats).toHaveBeenCalledWith('run-id');
-      expect(mockRepository.getTaskStats).toHaveBeenCalledWith('run-id');
+      expect(mockRepository.getSpaceExecutionWithTotals).toHaveBeenCalledWith('run-id', 'space1');
+      expect(mockRepository.getParamSetStatsForSpace).toHaveBeenCalledWith('run-id', 'space1');
+      expect(mockRepository.getCurrentTaskProgress).toHaveBeenCalledWith('run-id');
     });
 
     it('should return null for non-existing run', async () => {
@@ -504,11 +524,16 @@ describe('ExperimentExecutor', () => {
         current_space: undefined,
         current_param_set: undefined,
         total_spaces: 2,
-        total_parameter_sets: 10,
-        total_tasks: 30
       };
 
       mockRepository.getRun.mockResolvedValue(mockRun);
+      mockRepository.getSpaceStats.mockResolvedValue({ completed: 2, total: 2 });
+      mockRepository.getParamSetStats.mockResolvedValue({ completed: 8, total: 10 });
+      mockRepository.getTaskStats.mockResolvedValue([
+        { status: 'completed', count: 25 },
+        { status: 'running', count: 2 },
+        { status: 'failed', count: 1 }
+      ]);
 
       const result = await experimentExecutor.getStatus('test-experiment', '1.0.0');
 
@@ -518,12 +543,12 @@ describe('ExperimentExecutor', () => {
         experimentVersion: '1.0.0',
         status: 'completed',
         progress: {
-          completedSpaces: 1,
+          completedSpaces: 2,
           totalSpaces: 2,
-          completedParameterSets: 5,
+          completedParameterSets: 8,
           totalParameterSets: 10,
-          completedTasks: 8,
-          totalTasks: 30,
+          completedTasks: 25,
+          totalTasks: 28, // 25 + 2 + 1 = 28
         },
       });
       expect(result!.currentSpace).toBeUndefined();
@@ -540,8 +565,6 @@ describe('ExperimentExecutor', () => {
           experiment_version: '1.0.0',
           status: status,
           total_spaces: 3,
-          total_parameter_sets: 12,
-          total_tasks: 36,
         };
 
         mockRepository.getRun.mockResolvedValue(mockRun);
@@ -563,8 +586,6 @@ describe('ExperimentExecutor', () => {
         experiment_version: '1.0.0',
         status: 'running',
         total_spaces: 5,
-        total_parameter_sets: 20,
-        total_tasks: 60,
       };
 
       mockRepository.getRun.mockResolvedValue(mockRun);
@@ -575,9 +596,9 @@ describe('ExperimentExecutor', () => {
         completedSpaces: 0,
         totalSpaces: 5,
         completedParameterSets: 0,
-        totalParameterSets: 20,
+        totalParameterSets: 0, // From mockParamSetStats.total
         completedTasks: 0,
-        totalTasks: 60,
+        totalTasks: 0, // Sum of task stats (empty array = 0)
       });
     });
 
@@ -595,8 +616,6 @@ describe('ExperimentExecutor', () => {
         experiment_version: '1.0.0',
         status: 'running',
         total_spaces: 4,
-        total_parameter_sets: 16,
-        total_tasks: 48,
       };
 
       mockRepository.getRun.mockResolvedValue(mockRun);
@@ -751,8 +770,6 @@ describe('ExperimentExecutor', () => {
         start_time: expect.any(Number),
         status: 'running',
         total_spaces: 2,  // 2 spaces
-        total_parameter_sets: 5,  // 2 + 3 parameter sets
-        total_tasks: 7,  // (2 * 2) + (3 * 1) = 4 + 3 = 7 tasks
       });
     });
 
@@ -763,8 +780,6 @@ describe('ExperimentExecutor', () => {
         experiment_version: '1.0.0',
         status: 'running',
         total_spaces: 3,
-        total_parameter_sets: 12,
-        total_tasks: 36,
       };
 
       // Mock the database to return different totals (simulating dynamic database records)
@@ -778,14 +793,14 @@ describe('ExperimentExecutor', () => {
 
       const result = await experimentExecutor.getStatus('test-experiment', '1.0.0');
 
-      // Should use stored totals from run record, not database stats
+      // Should use stored total for spaces, but dynamic calculation for params/tasks
       expect(result!.progress).toEqual({
         completedSpaces: 1,
         totalSpaces: 3,  // From stored total, not database total (1)
         completedParameterSets: 4,
-        totalParameterSets: 12,  // From stored total, not database total (6)
+        totalParameterSets: 6,  // From database stats since no current space
         completedTasks: 10,
-        totalTasks: 36,  // From stored total, not calculated (12)
+        totalTasks: 12,  // From sum of task stats: 10 + 2 = 12
       });
     });
 
@@ -825,8 +840,6 @@ describe('ExperimentExecutor', () => {
       expect(mockRepository.createRun).toHaveBeenCalledWith(
         expect.objectContaining({
           total_spaces: 2,
-          total_parameter_sets: 7,  // 5 + 2
-          total_tasks: 19,  // (5 * 3) + (2 * 2) = 15 + 4 = 19
         })
       );
     });

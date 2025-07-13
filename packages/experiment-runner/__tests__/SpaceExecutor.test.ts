@@ -57,6 +57,7 @@ describe('SpaceExecutor', () => {
       createParamSetExecution: jest.fn(),
       updateParamSetExecution: jest.fn(),
       getRunById: jest.fn(),
+      updateRunProgress: jest.fn(),
     };
 
     mockTaskExecutor = {
@@ -98,6 +99,8 @@ describe('SpaceExecutor', () => {
         space_id: 'test-space',
         status: 'running',
         start_time: expect.any(Number),
+        total_param_sets: 2,
+        total_tasks: 2,
       });
 
       // Verify parameter set executions
@@ -290,11 +293,11 @@ describe('SpaceExecutor', () => {
       // Progress should be emitted after each task
       expect(mockProgress.emitProgress).toHaveBeenCalledWith(
         0.5, // 1/2 tasks completed
-        'Completed task task1 in parameter set 1/1 of space test-space'
+        'Completed task task1 (1/2) in parameter set 1/1 of space test-space'
       );
       expect(mockProgress.emitProgress).toHaveBeenCalledWith(
         1.0, // 2/2 tasks completed
-        'Completed task task2 in parameter set 1/1 of space test-space'
+        'Completed task task2 (2/2) in parameter set 1/1 of space test-space'
       );
       expect(mockProgress.emitProgress).toHaveBeenCalledWith(
         1.0, // 1/1 parameter sets completed

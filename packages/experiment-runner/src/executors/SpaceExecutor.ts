@@ -79,6 +79,10 @@ export class SpaceExecutor {
         for (let taskIndex = 0; taskIndex < space.tasksOrder.length; taskIndex++) {
           const taskId = space.tasksOrder[taskIndex];
           
+          if (!taskId) {
+            throw new Error(`Task at index ${taskIndex} not found in space ${space.spaceId}`);
+          }
+          
           // Update current task in run progress
           await this.repository.updateRunProgress(runId, space.spaceId, i, taskId);
 
