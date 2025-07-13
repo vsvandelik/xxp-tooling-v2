@@ -84,11 +84,11 @@ export class RunExperimentCommand {
       // Start the experiment
       const experimentId = await this.experimentService.startExperiment(artifactPath, {
         resume,
-        onProgress: progress => {
-          panel.updateProgress(progress);
+        onProgress: async (progress) => {
+          await panel.updateProgress(progress);
         },
         onComplete: async result => {
-          panel.setCompleted();
+          await panel.setCompleted();
 
           // Show completion notification
           const action = await vscode.window.showInformationMessage(
@@ -103,8 +103,8 @@ export class RunExperimentCommand {
             panel.show();
           }
         },
-        onError: error => {
-          panel.setError(error);
+        onError: async (error) => {
+          await panel.setError(error);
           vscode.window.showErrorMessage(`Experiment failed: ${error.message}`);
         },
       });

@@ -53,18 +53,21 @@ export class ProgressPanel {
     this.artifactPath = artifactPath;
   }
 
-  updateProgress(progress: ExperimentProgress): void {
+  async updateProgress(progress: ExperimentProgress): Promise<void> {
     this.webviewController.updateProgress(progress);
+    await this.updateHistoryIfVisible();
     this.updateContent();
   }
 
-  setCompleted(): void {
+  async setCompleted(): Promise<void> {
     this.webviewController.setCompleted();
+    await this.updateHistoryIfVisible();
     this.updateContent();
   }
 
-  setError(error: Error): void {
+  async setError(error: Error): Promise<void> {
     this.webviewController.setError(error.message);
+    await this.updateHistoryIfVisible();
     this.updateContent();
   }
 
@@ -175,14 +178,14 @@ export class ProgressPanel {
       // Start the experiment with resume flag
       const newExperimentId = await this.experimentService.startExperiment(artifactFilePath, {
         resume: true,
-        onProgress: progress => {
-          this.updateProgress(progress);
+        onProgress: async (progress) => {
+          await this.updateProgress(progress);
         },
-        onComplete: () => {
-          this.setCompleted();
+        onComplete: async () => {
+          await this.setCompleted();
         },
-        onError: error => {
-          this.setError(error);
+        onError: async (error) => {
+          await this.setError(error);
         },
       });
 
@@ -207,31 +210,59 @@ export class ProgressPanel {
     }
   }
 
+  private async fetchAndSetHistory(): Promise<void> {
+    if (!this.experimentId) return;
+
+    const history = await this.experimentService.getExperimentHistory(this.experimentId, {
+      limit: 100,
+    });
+
+    // Convert to TaskHistoryItem format
+    const taskHistory: TaskHistoryItem[] = history.map(item => ({
+      taskId: item.taskId || 'unknown',
+      spaceId: item.spaceId || 'unknown', 
+      status: (item.status as 'completed' | 'failed' | 'running') || 'completed',
+      parameters: Object.fromEntries(
+        Object.entries(item.parameters || {}).map(([k, v]) => [k, String(v)])
+      ),
+      outputs: item.outputs || {},
+    }));
+
+    this.webviewController.setHistory(taskHistory);
+  }
+
+  private async updateHistoryIfVisible(): Promise<void> {
+    if (!this.experimentId) return;
+    
+    // Only update history if it's currently being shown
+    const state = this.webviewController.getState();
+    if (!state.showHistory) return;
+
+    try {
+      await this.fetchAndSetHistory();
+    } catch (error) {
+      // Silent failure to avoid spamming the user with error messages
+      // History will be updated on next manual toggle
+      console.error('Failed to update history:', error);
+    }
+  }
+
   private async handleToggleHistory(): Promise<void> {
     if (!this.experimentId) return;
 
-    try {
-      const history = await this.experimentService.getExperimentHistory(this.experimentId, {
-        limit: 100,
-      });
-
-      // Convert to TaskHistoryItem format
-      const taskHistory: TaskHistoryItem[] = history.map(item => ({
-        taskId: item.taskId || 'unknown',
-        spaceId: item.spaceId || 'unknown', 
-        status: (item.status as 'completed' | 'failed' | 'running') || 'completed',
-        parameters: Object.fromEntries(
-          Object.entries(item.parameters || {}).map(([k, v]) => [k, String(v)])
-        ),
-        outputs: item.outputs || {},
-      }));
-
-      this.webviewController.setHistory(taskHistory);
-      this.webviewController.toggleHistory();
-      this.updateContent();
-    } catch (error) {
-      vscode.window.showErrorMessage(`Failed to load history: ${error}`);
+    this.webviewController.toggleHistory();
+    
+    // If we're now showing history, fetch the latest data
+    const state = this.webviewController.getState();
+    if (state.showHistory) {
+      try {
+        await this.fetchAndSetHistory();
+      } catch (error) {
+        vscode.window.showErrorMessage(`Failed to load history: ${error}`);
+      }
     }
+    
+    this.updateContent();
   }
 
   private handleToggleLogs(): void {
