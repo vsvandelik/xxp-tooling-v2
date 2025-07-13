@@ -55,12 +55,12 @@ export class ExperimentExecutor implements ExperimentRunner {
         if (existingRun && existingRun.status !== 'completed') {
           runId = existingRun.id;
           isResuming = true;
-          
+
           // If resuming a terminated experiment, set status back to running
           if (existingRun.status === 'terminated') {
             await this.repository.updateRunStatus(runId, 'running', Date.now());
           }
-          
+
           progress.emitProgress(
             0,
             `Resuming experiment ${artifact.experiment} v${artifact.version}`
@@ -314,7 +314,10 @@ export class ExperimentExecutor implements ExperimentRunner {
     return map;
   }
 
-  private async calculateTaskSummary(runId: string, artifact: Artifact): Promise<{
+  private async calculateTaskSummary(
+    runId: string,
+    artifact: Artifact
+  ): Promise<{
     totalTasks: number;
     completedTasks: number;
     failedTasks: number;

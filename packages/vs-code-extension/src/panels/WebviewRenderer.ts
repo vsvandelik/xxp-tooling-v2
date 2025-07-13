@@ -287,25 +287,28 @@ export class WebviewRenderer {
   }
 
   private static isResumeEnabled(status: WebviewState['status']): boolean {
-    return status === 'failed' || status === 'idle' || status === 'terminated' || status === 'completed';
+    return (
+      status === 'failed' || status === 'idle' || status === 'terminated' || status === 'completed'
+    );
   }
 
   private static renderHistory(history: WebviewState['history']): string {
-    return history.map(task => {
-      const params = Object.entries(task.parameters)
-        .map(([k, v]) => `${k}=${v}`)
-        .join(', ');
-        
-      const outputs = Object.entries(task.outputs)
-        .map(([k, v]) => {
-          if (v.endsWith('.json') || v.endsWith('.txt') || v.endsWith('.csv')) {
-            return `${k}: <span class="output-link" onclick="openOutput('${v}')">${v}</span>`;
-          }
-          return `${k}=${v}`;
-        })
-        .join(', ');
+    return history
+      .map(task => {
+        const params = Object.entries(task.parameters)
+          .map(([k, v]) => `${k}=${v}`)
+          .join(', ');
 
-      return `
+        const outputs = Object.entries(task.outputs)
+          .map(([k, v]) => {
+            if (v.endsWith('.json') || v.endsWith('.txt') || v.endsWith('.csv')) {
+              return `${k}: <span class="output-link" onclick="openOutput('${v}')">${v}</span>`;
+            }
+            return `${k}=${v}`;
+          })
+          .join(', ');
+
+        return `
         <div class="task-history-item">
           <div class="task-header">
             ${task.taskId} (Space: ${task.spaceId})
@@ -315,15 +318,19 @@ export class WebviewRenderer {
           <div class="task-outputs">Outputs: ${outputs}</div>
         </div>
       `;
-    }).join('');
+      })
+      .join('');
   }
 
   private static renderLogs(logs: WebviewState['logs']): string {
-    return logs.map(log => 
-      `<div class="log-entry">
+    return logs
+      .map(
+        log =>
+          `<div class="log-entry">
         <span class="log-time">${log.time}</span>${log.message}
       </div>`
-    ).join('');
+      )
+      .join('');
   }
 
   private static getClientScript(): string {

@@ -482,10 +482,7 @@ export class ArtifactGenerator {
     return false;
   }
 
-  private validateWorkflows(
-    workflows: WorkflowModel[],
-    errors: string[]
-  ): void {
+  private validateWorkflows(workflows: WorkflowModel[], errors: string[]): void {
     for (const workflow of workflows) {
       // Check for duplicate task definitions
       const taskNames = workflow.tasks.map(task => task.name);
@@ -525,10 +522,7 @@ export class ArtifactGenerator {
     }
   }
 
-  private validateStrategies(
-    experiment: ExperimentModel,
-    errors: string[]
-  ): void {
+  private validateStrategies(experiment: ExperimentModel, errors: string[]): void {
     const validStrategies = ['gridsearch', 'randomsearch'];
 
     for (const space of experiment.spaces) {
@@ -538,10 +532,7 @@ export class ArtifactGenerator {
     }
   }
 
-  private validateWorkflowInheritance(
-    workflows: WorkflowModel[],
-    errors: string[]
-  ): void {
+  private validateWorkflowInheritance(workflows: WorkflowModel[], errors: string[]): void {
     const workflowMap = new Map<string, WorkflowModel>();
     for (const workflow of workflows) {
       workflowMap.set(workflow.name, workflow);
@@ -620,10 +611,7 @@ export class ArtifactGenerator {
     }
   }
 
-  private validateCircularTaskDependencies(
-    workflows: WorkflowModel[],
-    errors: string[]
-  ): void {
+  private validateCircularTaskDependencies(workflows: WorkflowModel[], errors: string[]): void {
     for (const workflow of workflows) {
       // Build dependency graph based on input/output data relationships
       const dependencyGraph = new Map<string, string[]>();

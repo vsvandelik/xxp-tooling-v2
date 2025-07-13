@@ -1,6 +1,11 @@
 import { ExperimentProgress } from '../types/experiment.types.js';
 
-import { WebviewState, LogEntry, TaskHistoryItem, createInitialWebviewState } from './WebviewState.js';
+import {
+  WebviewState,
+  LogEntry,
+  TaskHistoryItem,
+  createInitialWebviewState,
+} from './WebviewState.js';
 
 export class WebviewController {
   private state: WebviewState;
@@ -83,6 +88,8 @@ export class WebviewController {
 
   isResumeEnabled(): boolean {
     const status = this.state.status;
-    return status === 'failed' || status === 'idle' || status === 'terminated' || status === 'completed';
+    return (
+      status === 'failed' || status === 'idle' || status === 'terminated' || status === 'completed'
+    );
   }
 }

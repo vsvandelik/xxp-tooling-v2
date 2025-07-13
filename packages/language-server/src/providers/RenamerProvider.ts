@@ -126,9 +126,7 @@ export class RenamerProvider extends Provider {
     return null;
   }
 
-  private async getAllReferencesForRename(
-    symbol: BaseSymbol
-  ): Promise<TerminalSymbolReference[]> {
+  private async getAllReferencesForRename(symbol: BaseSymbol): Promise<TerminalSymbolReference[]> {
     const references: TerminalSymbolReference[] = [];
 
     // Add all references from the symbol

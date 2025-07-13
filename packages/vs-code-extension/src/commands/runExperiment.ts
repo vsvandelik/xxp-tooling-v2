@@ -84,7 +84,7 @@ export class RunExperimentCommand {
       // Start the experiment
       const experimentId = await this.experimentService.startExperiment(artifactPath, {
         resume,
-        onProgress: async (progress) => {
+        onProgress: async progress => {
           await panel.updateProgress(progress);
         },
         onComplete: async result => {
@@ -103,7 +103,7 @@ export class RunExperimentCommand {
             panel.show();
           }
         },
-        onError: async (error) => {
+        onError: async error => {
           await panel.setError(error);
           vscode.window.showErrorMessage(`Experiment failed: ${error.message}`);
         },
@@ -290,7 +290,7 @@ export class RunExperimentCommand {
         try {
           const doc = await vscode.workspace.openTextDocument(selected.detail);
           await vscode.window.showTextDocument(doc);
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
         } catch (error) {
           // If can't open as file, show in output channel
           const outputChannel = vscode.window.createOutputChannel('ExtremeXP Output');

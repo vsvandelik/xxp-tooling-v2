@@ -80,8 +80,8 @@ export class SqliteRepository implements DatabaseRepository {
     if (!this.isInitialized || !this.db) {
       throw new Error(
         'Database not initialized. Call initialize() first. ' +
-        `Current state: isInitialized=${this.isInitialized}, ` +
-        `hasDb=${!!this.db}`
+          `Current state: isInitialized=${this.isInitialized}, ` +
+          `hasDb=${!!this.db}`
       );
     }
     return this.db;

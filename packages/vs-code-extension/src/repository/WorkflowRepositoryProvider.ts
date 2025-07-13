@@ -236,7 +236,10 @@ export class WorkflowRepositoryProvider implements vscode.TreeDataProvider<Workf
     }
   }
 
-  private async filterItems(items: WorkflowTreeItem[], filter: string): Promise<WorkflowTreeItem[]> {
+  private async filterItems(
+    items: WorkflowTreeItem[],
+    filter: string
+  ): Promise<WorkflowTreeItem[]> {
     const filtered: WorkflowTreeItem[] = [];
 
     for (const item of items) {
@@ -258,7 +261,10 @@ export class WorkflowRepositoryProvider implements vscode.TreeDataProvider<Workf
     return filtered;
   }
 
-  private async folderContainsMatchingWorkflows(folderItem: WorkflowTreeItem, filter: string): Promise<boolean> {
+  private async folderContainsMatchingWorkflows(
+    folderItem: WorkflowTreeItem,
+    filter: string
+  ): Promise<boolean> {
     const repositoryName = folderItem.context?.repository;
     const folderPath = folderItem.context?.path;
 

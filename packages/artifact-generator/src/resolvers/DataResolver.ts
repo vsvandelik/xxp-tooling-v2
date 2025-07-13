@@ -127,9 +127,7 @@ export class DataResolver {
     return data;
   }
 
-  private resolveSpaceLevelData(
-    experiment: ExperimentModel
-  ): Map<string, Record<string, string>> {
+  private resolveSpaceLevelData(experiment: ExperimentModel): Map<string, Record<string, string>> {
     const spaceLevelData = new Map<string, Record<string, string>>();
 
     for (const space of experiment.spaces) {

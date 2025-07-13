@@ -19,7 +19,7 @@ export class ProgressPanel {
     private experimentService: ExperimentService
   ) {
     this.webviewController = new WebviewController();
-    
+
     this.panel = vscode.window.createWebviewPanel(
       'extremexpProgress',
       'ExtremeXP Progress',
@@ -178,13 +178,13 @@ export class ProgressPanel {
       // Start the experiment with resume flag
       const newExperimentId = await this.experimentService.startExperiment(artifactFilePath, {
         resume: true,
-        onProgress: async (progress) => {
+        onProgress: async progress => {
           await this.updateProgress(progress);
         },
         onComplete: async () => {
           await this.setCompleted();
         },
-        onError: async (error) => {
+        onError: async error => {
           await this.setError(error);
         },
       });
@@ -220,7 +220,7 @@ export class ProgressPanel {
     // Convert to TaskHistoryItem format
     const taskHistory: TaskHistoryItem[] = history.map(item => ({
       taskId: item.taskId || 'unknown',
-      spaceId: item.spaceId || 'unknown', 
+      spaceId: item.spaceId || 'unknown',
       status: (item.status as 'completed' | 'failed' | 'running') || 'completed',
       parameters: Object.fromEntries(
         Object.entries(item.parameters || {}).map(([k, v]) => [k, String(v)])
@@ -233,7 +233,7 @@ export class ProgressPanel {
 
   private async updateHistoryIfVisible(): Promise<void> {
     if (!this.experimentId) return;
-    
+
     // Only update history if it's currently being shown
     const state = this.webviewController.getState();
     if (!state.showHistory) return;
@@ -251,7 +251,7 @@ export class ProgressPanel {
     if (!this.experimentId) return;
 
     this.webviewController.toggleHistory();
-    
+
     // If we're now showing history, fetch the latest data
     const state = this.webviewController.getState();
     if (state.showHistory) {
@@ -261,7 +261,7 @@ export class ProgressPanel {
         vscode.window.showErrorMessage(`Failed to load history: ${error}`);
       }
     }
-    
+
     this.updateContent();
   }
 

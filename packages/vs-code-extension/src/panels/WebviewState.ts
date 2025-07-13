@@ -29,10 +29,12 @@ export interface WebviewState {
   history: TaskHistoryItem[];
   showLogs: boolean;
   showHistory: boolean;
-  userInputRequest?: {
-    requestId: string;
-    prompt: string;
-  } | undefined;
+  userInputRequest?:
+    | {
+        requestId: string;
+        prompt: string;
+      }
+    | undefined;
 }
 
 export const createInitialWebviewState = (): WebviewState => ({

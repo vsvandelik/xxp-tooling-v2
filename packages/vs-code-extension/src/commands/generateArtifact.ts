@@ -124,9 +124,10 @@ export class GenerateArtifactCommand {
     return { errors, warnings };
   }
 
-  private async handleSuccess(
-    result: { artifactPath?: string; validation: ValidationResult }
-  ): Promise<void> {
+  private async handleSuccess(result: {
+    artifactPath?: string;
+    validation: ValidationResult;
+  }): Promise<void> {
     // Show validation results if any
     if (result.validation.warnings.length > 0) {
       const warningMessage = `Artifact generated with ${result.validation.warnings.length} warning(s)`;
