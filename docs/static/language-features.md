@@ -12,7 +12,7 @@ The ExtremeXP VS Code Extension provides comprehensive language support for both
 
 The extension provides intuitive, color-coded syntax highlighting that significantly improves the readability of your XXP and ESPACE code. Different elements such as language keywords (`workflow`, `define`, `param`), identifiers (workflow names, task names, data variables), strings, numbers, booleans, comments (`//`), and operators (`->`, `-?>`, `=`) are visually distinguished with distinct colors. This clear visual differentiation helps you quickly grasp the structure and components of your experiment definitions.
 
-> **Note**: A screenshot demonstrating syntax highlighting for both XXP and ESPACE files would go here.
+![Syntax highlighting example](../assets/syntax-highlighting.png)
 
 ## Auto-completion and IntelliSense
 
@@ -23,7 +23,7 @@ The ExtremeXP extension offers intelligent auto-completion and IntelliSense feat
 
 You can trigger IntelliSense manually by pressing `Ctrl+Space` (Windows/Linux) or `Cmd+Space` (macOS) to see all relevant suggestions based on your current cursor position and workflow definition.
 
-> **Note**: A screenshot showing auto-completion suggestions in action would go here.
+![IntelliSense example](../assets/code-suggestions.png)
 
 ## Real-time Validation
 
@@ -35,7 +35,6 @@ Detected errors and warnings are clearly indicated:
 * **Detailed error messages**: Hovering over an underlined section displays a tooltip with a descriptive error message explaining the problem.
 * **Problems panel**: All errors and warnings are aggregated in VS Code's "Problems" panel (`View > Problems`), allowing for easy review and navigation directly to the problematic lines of code.
 
-> **Note**: A screenshot showing error highlighting and tooltip examples would go here.
 
 ## Context-Aware Help
 
@@ -47,8 +46,6 @@ Gain quick access to documentation and relevant information directly within your
 * Relevant documentation snippets.
 
 This feature allows you to get help without interrupting your coding flow or leaving the editor.
-
-> **Note**: A screenshot showing hover information examples would go here.
 
 ## Navigation Features
 
@@ -75,8 +72,6 @@ The extension offers basic refactoring capabilities to help you maintain and evo
 
 * **Rename Symbol**: Use the "Rename Symbol" feature to safely rename tasks, parameters, and workflows across multiple files.
     * **Usage**: Place your cursor on the symbol you wish to rename, then press `F2` or right-click and select "Rename Symbol". Enter the new name, and the extension will automatically update all references to that symbol throughout your workspace.
-
-> **Note**: A screenshot demonstrating the "Rename Symbol" feature would go here.
 
 ## Language Server Management
 
@@ -108,5 +103,3 @@ With a firm grasp of the ExtremeXP language features, you're well-equipped to cr
 1.  **Create Experiments**: Learn how to generate executable artifacts and run your experiments using the framework by consulting the [Executing Experiments](executing-experiments.md) guide.
 2.  **Collaborate**: Discover how to share and manage your experiment workflows with others using [Workflow Repositories](workflow-repositories.md).
 3.  **Advanced Usage**: Explore more complex workflow patterns and optimization techniques as you become more proficient with the framework.
-
-> **Note**: Links to video tutorials or interactive guides demonstrating these language features in practice would be beneficial here.

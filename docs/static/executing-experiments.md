@@ -126,12 +126,7 @@ This command opens a dedicated interface to display the real-time progress of an
       * **Task Status**: Displays the individual completion status of each task within the experiment.
       * **Web Interface**: Opens a dedicated browser-based progress monitoring dashboard for a more comprehensive view.
 
-> **Note**: A screenshot of the progress monitoring interface (`image_02419e.jpg`) would go here. It typically shows:
->
->   * Overall experiment progress percentage.
->   * Number of experiments and tasks.
->   * A list of individual experiments with their ID, workflow name, current status (e.g., `Running`, `Completed`, `Failed`), and duration.
->   * When an experiment is selected, a list of its tasks with their ID, name, status, and duration.
+![Progress Monitoring Dashboard](../assets/progres_panel.png)
 
 #### Server Management Commands
 
@@ -188,8 +183,6 @@ The web-based progress dashboard (accessed via `ExtremeXP: Show Progress`) provi
   * **Task Status Grid**: A visual grid or list shows the state of each individual task (e.g., pending, running, completed, failed) and its duration.
   * **Log Streaming**: Real-time log output from tasks is streamed, often with filtering capabilities to help in debugging.
   * **Interactive Controls**: Depending on the runner's capabilities, you may have controls to pause, resume, or terminate an experiment.
-
-> **Note**: Screenshots of the progress dashboard with various views (e.g., task grid) would go here.
 
 ### Resume and Recovery
 
@@ -255,5 +248,3 @@ After successfully executing your first experiments, delve deeper into ExtremeXP
 
 1.  **Share Results**: Learn how to use [Workflow Repositories](https://www.google.com/search?q=workflow-repository-server.md) for sharing, versioning, and collaborating on experiment definitions.
 2.  **Advanced Patterns**: Explore more complex experimental designs and techniques.
-
-> **Note**: Links to example experiments and step-by-step execution tutorials would be beneficial here.

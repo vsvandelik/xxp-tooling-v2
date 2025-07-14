@@ -33,7 +33,7 @@ This is the recommended method for installing the ExtremeXP extension.
 7.  **Complete Installation**: VS Code will install the extension. You will see a confirmation message once the installation is successful.
 8.  **Restart VS Code**: It is highly recommended to restart Visual Studio Code after installation to ensure all extension components and language services are fully loaded and initialized.
 
-> **Note**: A screenshot demonstrating the VSIX installation process would go here.
+![Install extension from VSIX file](../assets/install-vsix.png)
 
 ## Post-Installation Setup
 
@@ -55,7 +55,7 @@ To verify that the extension is installed and functioning correctly:
 3.  **Test Command Palette**: Open the Command Palette (`Ctrl+Shift+P` / `Cmd+Shift+P`) and type "ExtremeXP". A list of ExtremeXP-specific commands should appear. Try running a command like "ExtremeXP: Generate Artifact" (even if the file is empty, you should see relevant output or an error indicating an empty file).
 4.  **Verify extension status**: Go to the Extensions view (`Ctrl+Shift+X` / `Cmd+Shift+X`) and search for "ExtremeXP". Ensure the extension is listed as "Enabled".
 
-> **Note**: A screenshot showing successful installation verification with syntax highlighting and Command Palette would go here.
+![Verification of successful installation](../assets/installation-verification.png)
 
 ## Configuration
 
