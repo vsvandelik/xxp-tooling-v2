@@ -49,7 +49,7 @@ The "Workflow Repositories" tree view provides a hierarchical overview of your c
   * **Visibility**: Its visibility is controlled by the `extremexp.workflows.enabled` setting.
   * **Default state**: Visible when the ExtremeXP extension is active.
 
-#### Tree Structure (refer to `image_f83574.png`)
+#### Tree Structure
 
   * ##### Repository Nodes
 
@@ -67,8 +67,6 @@ The "Workflow Repositories" tree view provides a hierarchical overview of your c
 
       * **Icon**: Attachments associated with a workflow are visible as child nodes under the workflow, typically with a paperclip or file icon.
       * **Context**: Right-clicking an attachment node reveals a context menu with attachment-specific operations (e.g., Download Attachment, Open Attachment).
-
-> **Note**: A screenshot showing the tree view structure and different node types (like `image_f83574.png` with attachments) would go here.
 
 ### Repository Management Commands
 
@@ -187,7 +185,7 @@ The `ExtremeXP: Open Workflow Browser` command launches a web-based interface in
 
   * **Purpose**: Open the integrated web-based workflow browser interface.
   * **Access**: Command Palette.
-  * **Interface**: The browser offers a full-featured web interface for repository management, presented within a VS Code editor tab (refer to `image_f7d7e1.png` and `image_f7d7c1.png`).
+  * **Interface**: The browser offers a full-featured web interface for repository management, presented within a VS Code editor tab
 
 #### Browser Features
 
@@ -198,8 +196,6 @@ The `ExtremeXP: Open Workflow Browser` command launches a web-based interface in
       * **Direct Downloads**: Download workflows directly into your active VS Code workspace.
       * **Opening Workflows**: Open workflows in VS Code with a single click.
       * **Authentication**: Shares authentication status with the VS Code extension for a seamless experience.
-
-> **Note**: Screenshots of the web browser interface (`image_f7d7e1.png`, `image_f7d7c1.png`) showing different views and features would go here.
 
 ## Repository Configuration
 
@@ -340,5 +336,3 @@ After setting up and familiarizing yourself with workflow repositories:
 
 1.  **Integration**: Explore how ExtremeXP repositories can integrate with your existing development and deployment processes.
 2.  **Community**: Participate in workflow sharing communities and contribute to best practice development.
-
-> **Note**: Links to repository server setup guides and administration documentation would be beneficial here.
