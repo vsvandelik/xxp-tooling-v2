@@ -1,3 +1,8 @@
+/**
+ * @fileoverview Space executor for managing parameter space execution.
+ * Handles the execution of all parameter sets within a space and coordinates task execution.
+ */
+
 import { createHash } from 'crypto';
 
 import { DatabaseRepository } from '../database/DatabaseRepository.js';
@@ -6,13 +11,36 @@ import { Expression, Space, Task } from '../types/artifact.types.js';
 
 import { TaskExecutor } from './TaskExecutor.js';
 
+/**
+ * Executor responsible for managing the execution of parameter spaces.
+ * Coordinates the execution of all parameter sets within a space and manages
+ * progress tracking, database persistence, and task orchestration.
+ */
 export class SpaceExecutor {
+  /**
+   * Creates a new space executor.
+   * 
+   * @param repository - Database repository for persistence
+   * @param taskExecutor - Task executor for individual task execution
+   * @param progress - Progress emitter for status updates
+   */
   constructor(
     private repository: DatabaseRepository,
     private taskExecutor: TaskExecutor,
     private progress: ProgressEmitter
   ) {}
 
+  /**
+   * Executes all parameter sets within a space.
+   * Creates space execution records, iterates through all parameter sets,
+   * and coordinates task execution for each parameter combination.
+   * 
+   * @param runId - Unique identifier for the experiment run
+   * @param space - Space definition containing parameters and task order
+   * @param taskMap - Map of task IDs to task definitions
+   * @returns Promise that resolves when space execution is complete
+   * @throws Error if parameter set not found or execution fails
+   */
   async execute(runId: string, space: Space, taskMap: Map<string, Task>): Promise<void> {
     // Get counts for progress calculation
     const totalParameterSets = space.parameters.length;

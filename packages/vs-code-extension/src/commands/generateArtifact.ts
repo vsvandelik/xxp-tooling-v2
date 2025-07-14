@@ -1,17 +1,45 @@
+/**
+ * @fileoverview Generate Artifact command for converting ESPACE files to JSON artifacts.
+ * Provides VS Code command integration for running the artifact generator tool
+ * with progress reporting, validation feedback, and result handling.
+ */
+
 import * as path from 'path';
 
 import * as vscode from 'vscode';
 
 import { ToolExecutor } from '../services/ToolExecutor.js';
 
+/**
+ * Result of artifact generation validation process.
+ * Contains errors and warnings extracted from tool output.
+ */
 interface ValidationResult {
+  /** Array of error messages from validation */
   errors: string[];
+  /** Array of warning messages from validation */
   warnings: string[];
 }
 
+/**
+ * Command class for generating JSON artifacts from ESPACE experiment files.
+ * Handles the complete workflow from file validation to result presentation.
+ */
 export class GenerateArtifactCommand {
+  /**
+   * Creates a new generate artifact command instance.
+   * 
+   * @param toolExecutor - Tool executor for running the artifact generator
+   */
   constructor(private toolExecutor: ToolExecutor) {}
 
+  /**
+   * Executes the generate artifact command for the currently active ESPACE file.
+   * Validates file type, runs artifact generation with progress reporting,
+   * and handles success/failure scenarios with user feedback.
+   * 
+   * @throws Error if file operations or tool execution fails
+   */
   async execute(): Promise<void> {
     // Check if active editor has .espace file
     const activeEditor = vscode.window.activeTextEditor;
@@ -64,6 +92,13 @@ export class GenerateArtifactCommand {
     );
   }
 
+  /**
+   * Runs the artifact generator tool on the specified ESPACE file.
+   * 
+   * @param espacePath - Absolute path to the ESPACE file
+   * @param cancellationToken - VS Code cancellation token for user cancellation
+   * @returns Promise resolving to generation result with validation information
+   */
   private async runArtifactGenerator(
     espacePath: string,
     cancellationToken: vscode.CancellationToken
@@ -102,6 +137,12 @@ export class GenerateArtifactCommand {
     }
   }
 
+  /**
+   * Parses tool output to extract validation errors and warnings.
+   * 
+   * @param output - Combined stdout and stderr from tool execution
+   * @returns Validation result with categorized errors and warnings
+   */
   private parseValidationOutput(output: string): ValidationResult {
     const errors: string[] = [];
     const warnings: string[] = [];
@@ -124,6 +165,12 @@ export class GenerateArtifactCommand {
     return { errors, warnings };
   }
 
+  /**
+   * Handles successful artifact generation by showing appropriate user feedback.
+   * Offers options to view warnings or open the generated artifact.
+   * 
+   * @param result - Successful generation result with artifact path and validation
+   */
   private async handleSuccess(result: {
     artifactPath?: string;
     validation: ValidationResult;
@@ -155,6 +202,12 @@ export class GenerateArtifactCommand {
     }
   }
 
+  /**
+   * Handles failed artifact generation by showing error information.
+   * Offers option to view detailed validation errors.
+   * 
+   * @param result - Failed generation result with validation errors
+   */
   private async handleFailure(result: {
     validation: ValidationResult;
     error?: string;
@@ -173,6 +226,12 @@ export class GenerateArtifactCommand {
     }
   }
 
+  /**
+   * Shows detailed validation results in a VS Code output channel.
+   * Displays errors and warnings in a formatted, readable manner.
+   * 
+   * @param validation - Validation result containing errors and warnings
+   */
   private async showValidationResults(validation: ValidationResult): Promise<void> {
     // Create output channel for validation results
     const outputChannel = vscode.window.createOutputChannel('ExtremeXP Artifact Validation');
@@ -197,6 +256,12 @@ export class GenerateArtifactCommand {
     outputChannel.show();
   }
 
+  /**
+   * Opens the generated artifact JSON file in VS Code editor.
+   * 
+   * @param artifactPath - Absolute path to the generated artifact file
+   * @throws Error if file cannot be opened
+   */
   private async openArtifact(artifactPath: string): Promise<void> {
     try {
       const document = await vscode.workspace.openTextDocument(artifactPath);

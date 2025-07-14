@@ -1,3 +1,8 @@
+/**
+ * @fileoverview ANTLR visitor for converting ESPACE parse trees to experiment models.
+ * Implements the visitor pattern to transform parsed ESPACE syntax into structured data models.
+ */
+
 import { ESPACEVisitor } from '@extremexp/core';
 import {
   ControlBlockContext,
@@ -22,6 +27,10 @@ import {
   Transition,
 } from '../models/ExperimentModel.js';
 
+/**
+ * ANTLR visitor that converts ESPACE parse trees into experiment models.
+ * Traverses the parse tree and builds structured data models representing the experiment.
+ */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export class ExperimentModelVisitor extends ESPACEVisitor<any> {
   override visitExperimentDeclaration = (ctx: ExperimentDeclarationContext): ExperimentModel => {

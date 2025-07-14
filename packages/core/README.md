@@ -1,177 +1,340 @@
 # @extremexp/core
 
-Core language parsing and utilities for the ExtremeXP ecosystem, providing ANTLR-based parsing for XXP and ESPACE languages.
+Core language processing library for the ExtremeXP tooling ecosystem, providing ANTLR-generated parsers, lexers, and shared utilities for ESPACE and XXP domain-specific languages.
 
 ## Overview
 
-This package serves as the foundation for all ExtremeXP tooling by providing:
+The core package serves as the foundation for all ExtremeXP language processing, providing:
 
-- ANTLR4 grammar definitions for XXP and ESPACE languages
-- Generated parsers and lexers
-- AST (Abstract Syntax Tree) utilities
-- Shared type definitions and utilities
-- Language-specific analysis capabilities
+- **ANTLR-generated parsers and lexers** for ESPACE and XXP languages
+- **Grammar definitions** in ANTLR4 format
+- **Shared utilities** for consistent naming conventions
+- **TypeScript type definitions** for all language constructs
 
-## Features
+## Architecture
 
-### Language Support
-- **XXP Language**: Workflow definition language with support for:
-  - Parameter definitions and inheritance
-  - Task orchestration and dependencies
-  - Conditional execution paths
-  - Script integration points
+### Language Components
 
-- **ESPACE Language**: Experiment space definition language with support for:
-  - Parameter space definitions
-  - Experiment configurations
-  - Workflow references and parameter overrides
-  - Execution constraints
+The package supports two domain-specific languages:
 
-### Parsing Capabilities
-- Full ANTLR4-based parsing with error recovery
-- AST generation with position tracking
-- Symbol table construction
-- Cross-reference resolution between XXP and ESPACE files
+#### ESPACE (Experiment Space Definition Language)
+- **Purpose**: Define experiments with parameter spaces and control flow
+- **File extension**: `.espace`
+- **Key constructs**: experiments, spaces, control blocks, parameter definitions
 
-## Installation
+#### XXP (eXtreme eXPeriment Processing Language)  
+- **Purpose**: Define workflows with tasks and data flow
+- **File extension**: `.xxp`
+- **Key constructs**: workflows, tasks, task chains, data definitions
 
-```bash
-npm install @extremexp/core
+### Generated Components
+
+All language processing components are generated from ANTLR4 grammar files:
+
+```
+src/language/generated/
+├── ESPACELexer.ts      # ESPACE tokenizer
+├── ESPACEParser.ts     # ESPACE syntax parser
+├── ESPACEVisitor.ts    # ESPACE tree visitor interface
+├── ESPACEListener.ts   # ESPACE tree listener interface
+├── XXPLexer.ts         # XXP tokenizer
+├── XXPParser.ts        # XXP syntax parser
+├── XXPVisitor.ts       # XXP tree visitor interface
+└── XXPListener.ts      # XXP tree listener interface
+```
+
+### Grammar Definitions
+
+Source grammar files define the language syntax:
+
+```
+src/language/grammar/
+├── ESPACE.g4          # ESPACE grammar definition
+└── XXP.g4             # XXP grammar definition
+```
+
+### Utilities
+
+Shared utilities for consistent behavior across the toolchain:
+
+```
+src/utils/
+└── naming.ts          # File naming conventions
 ```
 
 ## Usage
 
-### Basic Parsing
+### ESPACE Language Processing
 
 ```typescript
-import { DocumentParser, DocumentType } from '@extremexp/core';
+import { 
+  ESPACEParser, 
+  ESPACELexer, 
+  ESPACEVisitor 
+} from '@extremexp/core';
+import * as antlr from 'antlr4ng';
 
-const parser = new DocumentParser();
-
-// Parse XXP file
-const xxpContent = `
-workflow MyWorkflow {
-  parameter string inputPath;
-  
-  task processData {
-    script: "python process.py ${inputPath}"
-  }
-}
-`;
-
-const xxpResult = parser.parseDocument(xxpContent, DocumentType.XXP);
-
-// Parse ESPACE file
-const espaceContent = `
+// Parse ESPACE content
+const content = `
 experiment MyExperiment {
-  space MySpace {
-    workflow MyWorkflow;
-    parameter inputPath: ["data1.txt", "data2.txt"];
+  space trainingSpace of TrainingWorkflow {
+    strategy gridsearch;
+    param learningRate = range(0.01, 0.1, 0.01);
+  }
+  
+  control {
+    start -> trainingSpace -> end;
   }
 }
 `;
 
-const espaceResult = parser.parseDocument(espaceContent, DocumentType.ESPACE);
+const input = antlr.CharStream.fromString(content);
+const lexer = new ESPACELexer(input);
+const tokens = new antlr.CommonTokenStream(lexer);
+const parser = new ESPACEParser(tokens);
+
+const tree = parser.program();
 ```
 
-### Working with AST
+### XXP Language Processing
 
-For detailed information on working with ANTLR parse trees, visitors, and listeners, please refer to the [ANTLR documentation](https://www.antlr.org/). The generated lexers and parsers follow standard ANTLR patterns for TypeScript/JavaScript targets.
+```typescript
+import { 
+  XXPParser, 
+  XXPLexer, 
+  XXPVisitor 
+} from '@extremexp/core';
+import * as antlr from 'antlr4ng';
 
-## API Reference
+// Parse XXP content
+const content = `
+workflow TrainingWorkflow {
+  define task preprocess;
+  define task train;
+  define task evaluate;
+  
+  start -> preprocess -> train -> evaluate -> end;
+  
+  configure task train {
+    implementation "train_model.py";
+    param epochs = 100;
+    input trainingData;
+    output trainedModel;
+  }
+}
+`;
 
-### Core Classes
+const input = antlr.CharStream.fromString(content);
+const lexer = new XXPLexer(input);
+const tokens = new antlr.CommonTokenStream(lexer);
+const parser = new XXPParser(tokens);
 
-#### `DocumentParser`
-Main parsing interface for XXP and ESPACE documents.
+const tree = parser.program();
+```
 
-**Methods:**
-- `parseDocument(content: string, type: DocumentType): ParseResult`
-- `parseXXPDocument(content: string): ParseResult`
-- `parseESPACEDocument(content: string): ParseResult`
+### Context Type Exports
 
-#### `DocumentType`
-Enumeration of supported document types:
-- `XXP` - Workflow definition files
-- `ESPACE` - Experiment space definition files
+The package exports aliased context types for both languages to avoid naming conflicts:
 
-### Utility Functions
+```typescript
+import {
+  // ESPACE contexts
+  EspaceExperimentHeaderContext,
+  EspaceSpaceDeclarationContext,
+  EspaceControlBlockContext,
+  // XXP contexts
+  XxpWorkflowHeaderContext,
+  XxpTaskDefinitionContext,
+  XxpTaskConfigurationContext
+} from '@extremexp/core';
+```
 
-#### `FileUtils`
-- `getDocumentType(uri: string): DocumentType | undefined`
-- `isXXPFile(uri: string): boolean`
-- `isESPACEFile(uri: string): boolean`
+### Naming Utilities
 
-#### `ASTUtils`
-- `findNodeAt(tree: ParseTree, position: Position): ParseTree | undefined`
-- `getNodeText(node: ParseTree): string`
-- `getNodeRange(node: ParseTree): Range`
+```typescript
+import { workflowNameToFileName } from '@extremexp/core';
 
-## Grammar Files
+// Convert workflow names to file names
+const fileName = workflowNameToFileName('MyBestWorkflow');
+// Returns: 'myBestWorkflow.xxp'
+```
 
-The ANTLR grammar files are located in `src/language/grammar/`:
+## Language Syntax
 
-- `XXP.g4` - XXP language grammar
-- `ESPACE.g4` - ESPACE language grammar
+### ESPACE Syntax Examples
 
-To regenerate parsers after grammar changes:
+```espace
+experiment OptimizationExperiment {
+  // Define parameter spaces
+  space hyperparameterSearch of MLWorkflow {
+    strategy gridsearch;
+    param learningRate = range(0.001, 0.1, 0.001);
+    param batchSize = enum(16, 32, 64, 128);
+    param optimizer = enum("adam", "sgd", "rmsprop");
+  }
+  
+  space evaluation of EvaluationWorkflow {
+    strategy random;
+    param testSplit = 0.2;
+  }
+  
+  // Define control flow
+  control {
+    start -> hyperparameterSearch -> evaluation -> end;
+  }
+  
+  // Define experiment-level data
+  define data dataset = "data/training_set.csv";
+}
+```
+
+### XXP Syntax Examples
+
+```xxp
+workflow MLWorkflow from BaseWorkflow {
+  // Define data
+  define data trainingData = "data/processed_training.csv";
+  define data validationData = "data/processed_validation.csv";
+  define data trainedModel;
+  
+  // Define tasks
+  define task preprocess;
+  define task train;
+  define task validate;
+  
+  // Define execution order
+  start -> preprocess -> train -> validate -> end;
+  
+  // Configure tasks
+  configure task preprocess {
+    implementation "preprocessing/clean_data.py";
+    input dataset;
+    output trainingData, validationData;
+  }
+  
+  configure task train {
+    implementation "training/train_model.py";
+    param epochs;
+    param learningRate;
+    param batchSize;
+    input trainingData;
+    output trainedModel;
+  }
+  
+  configure task validate {
+    implementation "validation/validate_model.py";
+    input trainedModel, validationData;
+    output validationResults;
+  }
+}
+```
+
+## Grammar Features
+
+### ESPACE Grammar Features
+
+- **Experiment declarations** with nested spaces and control blocks
+- **Parameter definitions** with enum, range, and value types
+- **Control flow** with simple and conditional transitions
+- **Strategy statements** (gridsearch, random)
+- **Data definitions** at experiment and space levels
+- **Task configurations** for parameter overrides
+
+### XXP Grammar Features
+
+- **Workflow declarations** with optional inheritance
+- **Task definitions** and execution chains
+- **Data definitions** with optional initial values
+- **Task configurations** with implementation, parameters, and I/O
+- **Support for comments** and flexible whitespace
+
+## File Naming Conventions
+
+The package enforces consistent file naming:
+
+- **ESPACE files**: Use camelCase names, save as `experimentName.espace`
+- **XXP files**: Use camelCase names, save as `workflowName.xxp`
+- **First letter lowercase**: `workflowNameToFileName("MyWorkflow")` → `"myWorkflow.xxp"`
+
+## Grammar Generation
+
+The ANTLR-generated components are built from source grammars:
 
 ```bash
+# Regenerate language components from grammar files
 npm run antlr
 ```
 
-## Development
+This runs the ANTLR4 generator with TypeScript target:
+```bash
+antlr4ng -Dlanguage=TypeScript -visitor -listener -o src/language/generated/ src/language/grammar/*.g4
+```
 
-### Building
+## Dependencies
+
+- **antlr4ng**: ANTLR4 runtime for TypeScript
+- **antlr4-c3**: Code completion support for ANTLR grammars
+
+## Development Dependencies
+
+- **antlr4ng-cli**: ANTLR4 CLI tool for TypeScript generation
+
+## Integration
+
+The core package is designed to be used by:
+
+- **@extremexp/artifact-generator**: For parsing and validation
+- **@extremexp/language-server**: For language support in IDEs
+- **@extremexp/vs-code-extension**: For VS Code integration
+- **Any custom tools** requiring ESPACE/XXP language processing
+
+## Extension
+
+### Custom Visitors
+
+Create custom visitors to process parsed syntax trees:
+
+```typescript
+import { ESPACEVisitor } from '@extremexp/core';
+
+class CustomAnalysisVisitor extends ESPACEVisitor<void> {
+  visitExperimentDeclaration(ctx: any): void {
+    // Custom analysis logic
+    this.visitChildren(ctx);
+  }
+}
+```
+
+### Custom Listeners
+
+Use listeners for event-driven processing:
+
+```typescript
+import { ESPACEListener } from '@extremexp/core';
+
+class CustomProcessingListener implements ESPACEListener {
+  enterExperimentDeclaration(ctx: any): void {
+    // Process experiment start
+  }
+  
+  exitExperimentDeclaration(ctx: any): void {
+    // Process experiment end
+  }
+}
+```
+
+## Build Process
 
 ```bash
+# Install dependencies
+npm install
+
+# Generate ANTLR components
+npm run antlr
+
+# Build TypeScript
 npm run build
-```
 
-### Testing
-
-```bash
+# Run tests
 npm run test
-npm run test:coverage
 ```
-
-### Regenerating ANTLR Parsers
-
-```bash
-npm run antlr
-```
-
-This will regenerate the TypeScript parser files in `src/language/generated/`.
-
-## Architecture
-
-```
-src/
-├── language/
-│   ├── grammar/           # ANTLR grammar files
-│   │   ├── XXP.g4
-│   │   └── ESPACE.g4
-│   └── generated/         # Generated ANTLR parsers
-│       ├── XXPLexer.ts
-│       ├── XXPParser.ts
-│       ├── ESPACELexer.ts
-│       └── ESPACEParser.ts
-├── utils/                 # Utility functions
-│   ├── FileUtils.ts
-│   ├── ASTUtils.ts
-│   └── PositionUtils.ts
-└── index.ts              # Main exports
-```
-
-## Contributing
-
-When modifying grammars:
-
-1. Edit the `.g4` files in `src/language/grammar/`
-2. Run `npm run antlr` to regenerate parsers
-3. Update tests to cover new language features
-4. Run `npm test` to verify changes
-
-## License
-
-MIT

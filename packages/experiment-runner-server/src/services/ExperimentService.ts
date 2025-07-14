@@ -1,3 +1,9 @@
+/**
+ * @fileoverview Service for managing experiment execution in server environment.
+ * Provides high-level interface for running multiple concurrent experiments with
+ * progress tracking, user input handling, and state management.
+ */
+
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { spawn } from 'child_process';
 import * as path from 'path';
@@ -23,28 +29,54 @@ import {
   GenerateArtifactResponse,
 } from '../types/server.types.js';
 
+/**
+ * Configuration options for the experiment service.
+ */
 interface ExperimentServiceConfig {
+  /** Path to the SQLite database file for storing experiment data */
   databasePath: string;
+  /** Maximum number of concurrent experiments allowed */
   maxConcurrent: number;
 }
 
+/**
+ * Represents a pending user input request.
+ */
 interface PendingInput {
+  /** The user input request */
   request: UserInputRequest;
+  /** Promise resolve function for the input value */
   resolve: (value: string) => void;
+  /** Promise reject function for errors or timeouts */
   reject: (error: Error) => void;
 }
 
+/**
+ * Service for managing experiment execution in a server environment.
+ * Handles multiple concurrent experiments with progress tracking and user interaction.
+ */
 export class ExperimentService {
   private executor: ExperimentExecutor;
   private activeExperiments: Map<string, ActiveExperiment> = new Map();
   private pendingInputs: Map<string, PendingInput> = new Map();
   private config: ExperimentServiceConfig;
 
+  /**
+   * Creates a new experiment service.
+   * 
+   * @param config - Service configuration including database path and concurrency limits
+   */
   constructor(config: ExperimentServiceConfig) {
     this.config = config;
     this.executor = new ExperimentExecutor(config.databasePath);
   }
 
+  /**
+   * Initializes the experiment service and database connection.
+   * Must be called before using the service.
+   * 
+   * @returns Promise that resolves when initialization is complete
+   */
   async initialize(): Promise<void> {
     // Initialize the database connection once
     const repository = this.executor.getRepository();
@@ -52,6 +84,12 @@ export class ExperimentService {
     console.log('ExperimentService initialized');
   }
 
+  /**
+   * Shuts down the experiment service gracefully.
+   * Terminates all running experiments and closes database connections.
+   * 
+   * @returns Promise that resolves when shutdown is complete
+   */
   async shutdown(): Promise<void> {
     // Terminate all active experiments
     for (const [id, experiment] of this.activeExperiments) {
@@ -67,6 +105,20 @@ export class ExperimentService {
     await repository.close();
   }
 
+  /**
+   * Starts a new experiment execution or resumes an existing one.
+   * 
+   * @param artifactPath - Path to the experiment artifact JSON file
+   * @param options - Execution options including callbacks and settings
+   * @param options.experimentId - Optional specific experiment ID to use
+   * @param options.resume - Whether to resume a previously interrupted experiment
+   * @param options.onProgress - Callback for progress updates
+   * @param options.onInputRequired - Callback for user input requests
+   * @param options.onComplete - Callback for experiment completion
+   * @param options.onError - Callback for experiment errors
+   * @returns Promise resolving to the experiment ID
+   * @throws Error if maximum concurrent experiments reached or experiment fails to start
+   */
   async startExperiment(
     artifactPath: string,
     options: {
@@ -181,6 +233,20 @@ export class ExperimentService {
     return experimentId;
   }
 
+  /**
+   * Internal method to execute an experiment in the background.
+   * Handles artifact loading, progress tracking, and status updates.
+   * 
+   * @param experimentId - Unique identifier for the experiment
+   * @param artifactPath - Path to the experiment artifact file
+   * @param options - Execution configuration and callbacks
+   * @param options.resume - Whether this is resuming an interrupted experiment
+   * @param options.progressCallback - Callback for progress events
+   * @param options.userInputProvider - Provider for user input requests
+   * @param options.onComplete - Optional completion callback
+   * @param options.onError - Optional error callback
+   * @returns Promise that resolves when experiment completes or fails
+   */
   private async runExperiment(
     experimentId: string,
     artifactPath: string,
@@ -256,6 +322,13 @@ export class ExperimentService {
     }
   }
 
+  /**
+   * Terminates a running experiment gracefully.
+   * Stops execution and rejects any pending user input requests.
+   * 
+   * @param experimentId - ID of the experiment to terminate
+   * @returns Promise resolving to true if terminated, false if experiment not found
+   */
   async terminateExperiment(experimentId: string): Promise<boolean> {
     const experiment = this.activeExperiments.get(experimentId);
     if (!experiment) {
@@ -281,6 +354,12 @@ export class ExperimentService {
     return terminated;
   }
 
+  /**
+   * Gets the current status and progress of an experiment.
+   * 
+   * @param experimentId - ID of the experiment to query
+   * @returns Promise resolving to current status or null if experiment not found
+   */
   async getExperimentStatus(experimentId: string): Promise<RunStatus | null> {
     const experiment = this.activeExperiments.get(experimentId);
     if (!experiment) {
@@ -290,6 +369,19 @@ export class ExperimentService {
     return this.executor.getStatus(experiment.experimentName, experiment.experimentVersion);
   }
 
+  /**
+   * Retrieves the execution history for an experiment.
+   * Returns detailed information about completed task executions.
+   * 
+   * @param experimentId - ID of the experiment to query
+   * @param options - Optional filtering and pagination options
+   * @param options.limit - Maximum number of history items to return
+   * @param options.offset - Number of items to skip (for pagination)
+   * @param options.spaceId - Filter by specific space ID
+   * @param options.taskId - Filter by specific task ID
+   * @returns Promise resolving to array of task history items
+   * @throws Error if experiment not found
+   */
   async getExperimentHistory(
     experimentId: string,
     options?: {
@@ -373,6 +465,12 @@ export class ExperimentService {
     return historyItems;
   }
 
+  /**
+   * Submits user input response to a pending input request.
+   * 
+   * @param response - User input response containing request ID and value
+   * @returns True if input was successfully submitted, false if request not found
+   */
   submitUserInput(response: UserInputResponse): boolean {
     const pending = this.pendingInputs.get(response.requestId);
     if (!pending) {
@@ -384,10 +482,23 @@ export class ExperimentService {
     return true;
   }
 
+  /**
+   * Gets all currently active experiments.
+   * 
+   * @returns Array of active experiment objects
+   */
   getActiveExperiments(): ActiveExperiment[] {
     return Array.from(this.activeExperiments.values());
   }
 
+  /**
+   * Updates progress tracking for an active experiment.
+   * 
+   * @param experimentId - ID of the experiment to update
+   * @param updates - Progress updates to apply
+   * @param updates.currentSpace - Current space being executed
+   * @param updates.currentTask - Current task being executed
+   */
   private updateProgress(
     experimentId: string,
     updates: Partial<{
@@ -402,14 +513,31 @@ export class ExperimentService {
     // Note: currentTask is not stored in RunStatus, only emitted in progress events
   }
 
+  /**
+   * Generates a unique experiment ID.
+   * 
+   * @returns Unique experiment identifier
+   */
   private generateExperimentId(): string {
     return `exp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
   }
 
+  /**
+   * Generates a unique request ID for user input requests.
+   * 
+   * @returns Unique request identifier
+   */
   private generateRequestId(): string {
     return `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
   }
 
+  /**
+   * Loads and parses an experiment artifact from a JSON file.
+   * 
+   * @param artifactPath - Path to the artifact JSON file
+   * @returns Promise resolving to the parsed artifact object
+   * @throws Error if file cannot be read or parsed
+   */
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private async loadArtifact(artifactPath: string): Promise<any> {
     const fs = await import('fs');
@@ -417,6 +545,13 @@ export class ExperimentService {
     return JSON.parse(content);
   }
 
+  /**
+   * Validates an experiment artifact file for correctness.
+   * Checks for required fields and basic structural integrity.
+   * 
+   * @param artifactPath - Path to the artifact JSON file to validate
+   * @returns Promise resolving to validation result with errors and warnings
+   */
   async validateArtifact(artifactPath: string): Promise<ValidationResult> {
     try {
       const artifact = await this.loadArtifact(artifactPath);
@@ -463,6 +598,14 @@ export class ExperimentService {
     }
   }
 
+  /**
+   * Generates an experiment artifact from an ESPACE file.
+   * Spawns the artifact-generator CLI tool to process the ESPACE file.
+   * 
+   * @param espacePath - Path to the ESPACE experiment definition file
+   * @param outputPath - Optional output path for the generated artifact
+   * @returns Promise resolving to generation result with success status and validation
+   */
   async generateArtifact(
     espacePath: string,
     outputPath?: string

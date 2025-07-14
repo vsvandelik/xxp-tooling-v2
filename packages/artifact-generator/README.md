@@ -1,223 +1,201 @@
 # @extremexp/artifact-generator
 
-Command-line tool for generating experiment artifacts from ESPACE experiment files.
+A powerful CLI tool and library for generating executable experiment artifacts from ExtremeXP ESPACE experiment files.
 
 ## Overview
 
-The Artifact Generator is a CLI tool that parses ESPACE experiment configurations and their associated XXP workflow definitions to generate JSON artifacts for experiment execution.
+The artifact generator is responsible for:
 
-## Features
+- **Parsing** ESPACE experiment files and XXP workflow files
+- **Validating** experiment definitions, workflow inheritance, and control flows
+- **Resolving** task dependencies, parameter relationships, and data flows
+- **Generating** JSON artifacts that can be executed by the experiment runner
 
-- **JSON Artifact Generation**: Creates structured experiment artifacts for execution engines
-- **Parameter Resolution**: Handle parameter inheritance and overrides across workflow hierarchies
-- **Validation**: Verify workflow and experiment definitions with detailed error reporting
-- **Control Flow Analysis**: Validates experiment control flow and detects unreachable spaces
+## Architecture
 
-## Installation
+The package is organized into several key modules:
 
-### As a Global CLI Tool
+### Core Components
 
-```bash
-npm install -g @extremexp/artifact-generator
-```
+- **ArtifactGenerator** - Main orchestrator class that coordinates the entire generation process
+- **CLI** - Command-line interface for standalone usage
 
-### In a Project
+### Parsers
 
-```bash
-npm install @extremexp/artifact-generator
-```
+- **ExperimentParser** - Parses ESPACE experiment files using ANTLR
+- **WorkflowParser** - Parses XXP workflow files using ANTLR
+- **DataFlowResolver** - Validates data flow between tasks
+
+### Resolvers
+
+- **TaskResolver** - Resolves task definitions with inheritance and deduplication
+- **ParameterResolver** - Resolves parameter spaces and combinations
+- **DataResolver** - Resolves data dependencies and mappings
+- **FileResolver** - Locates workflow and implementation files
+
+### Generators
+
+- **TaskGenerator** - Generates task definitions for the artifact
+- **SpaceGenerator** - Generates parameter space definitions
+- **ControlFlowGenerator** - Generates control flow definitions
+
+### Models
+
+- **ArtifactModel** - Final artifact structure
+- **ExperimentModel** - Parsed experiment representation
+- **WorkflowModel** - Parsed workflow representation
 
 ## Usage
 
-### Basic Usage
+### Command Line Interface
 
 ```bash
-# Generate artifact from ESPACE experiment file
+# Generate artifact from ESPACE file
 artifact-generator experiment.espace
 
-# Generate with custom output location
-artifact-generator experiment.espace -o /path/to/output.json
+# Generate to specific output file
+artifact-generator experiment.espace -o my-artifact.json
 
-# Validate only without generating artifacts
+# Validate only (no artifact generation)
 artifact-generator experiment.espace --validate-only
 
 # Enable verbose logging
 artifact-generator experiment.espace --verbose
 ```
 
-### Command Line Options
-
-```
-Usage: artifact-generator [options] <espace-file>
-
-Arguments:
-  espace-file          Path to the ESPACE experiment file
-
-Options:
-  -V, --version        output the version number
-  -o, --output <path>  Output file path (default: artifact.json in same directory as input file)
-  --validate-only      Only validate, do not generate artifact
-  --verbose            Enable verbose logging
-  -h, --help           display help for command
-```
-
-### Examples
-
-#### Generate Experiment Artifact
-```bash
-# Generate JSON artifact from experiment file
-artifact-generator myexperiment.espace
-# Creates artifact.json in the same directory
-
-# Generate with specific output path
-artifact-generator myexperiment.espace -o /output/experiment-artifact.json
-```
-
-#### Validation Only
-```bash
-# Validate experiment and workflow files without generating artifacts
-artifact-generator myexperiment.espace --validate-only
-```
-
-## Programmatic Usage
+### Programmatic Usage
 
 ```typescript
-import { ArtifactGenerator, ArtifactGeneratorOptions } from '@extremexp/artifact-generator';
+import { ArtifactGenerator } from '@extremexp/artifact-generator';
 
 const generator = new ArtifactGenerator({
   verbose: true
 });
 
-try {
-  const { artifact, validation } = await generator.generate('experiment.espace');
-  console.log('Generated artifact:', artifact);
-  if (validation.warnings.length > 0) {
-    console.warn('Warnings:', validation.warnings);
-  }
-} catch (error) {
-  console.error('Generation failed:', error);
+// Generate artifact
+const result = await generator.generate('path/to/experiment.espace');
+if (result.artifact) {
+  console.log('Generated artifact:', result.artifact);
+}
+
+// Validate only
+const validation = await generator.validate('path/to/experiment.espace');
+if (validation.errors.length > 0) {
+  console.error('Validation errors:', validation.errors);
 }
 ```
 
-## Output Format
+## Artifact Structure
 
-The generated artifact is a JSON file containing:
+The generated artifacts follow this structure:
 
-- **Experiment metadata**: Name and version
-- **Tasks**: Resolved task definitions with parameters and implementations
-- **Spaces**: Parameter space configurations and execution orders
-- **Control flow**: Experiment transitions and flow control
-- **Data dependencies**: Input and output data definitions
-
-Example artifact structure:
 ```json
 {
-  "experiment": "MyExperiment",
+  "experiment": "ExperimentName",
   "version": "1.0",
-  "tasks": [...],
-  "spaces": [...],
-  "control": {...},
-  "inputData": {...}
+  "tasks": [
+    [
+      {
+        "taskId": "workflow:taskName",
+        "workflow": "WorkflowName",
+        "implementation": "path/to/implementation.py",
+        "dynamicParameters": ["param1", "param2"],
+        "staticParameters": {"param3": "value"},
+        "inputData": ["input1"],
+        "outputData": ["output1"]
+      }
+    ]
+  ],
+  "spaces": [
+    {
+      "spaceId": "spaceName",
+      "tasksOrder": ["workflow:taskName"],
+      "parameters": [{"param1": "value1", "param2": "value2"}],
+      "inputData": {"data1": "path/to/file"}
+    }
+  ],
+  "control": {
+    "START": "spaceName",
+    "transitions": [
+      {"from": "spaceName", "to": "END"}
+    ]
+  },
+  "inputData": {"globalData": "path/to/file"}
 }
 ```
 
-## Architecture
+## Key Features
 
-```
-src/
-├── cli.ts                 # Command-line interface
-├── generators/            # Artifact generation engines
-│   ├── ArtifactGenerator.ts
-│   ├── ControlFlowGenerator.ts
-│   ├── SpaceGenerator.ts
-│   └── TaskGenerator.ts
-├── parsers/               # Input file parsers
-│   ├── ExperimentParser.ts
-│   ├── WorkflowParser.ts
-│   └── DataFlowResolver.ts
-├── resolvers/             # Parameter and dependency resolution
-│   ├── ParameterResolver.ts
-│   ├── TaskResolver.ts
-│   ├── DataResolver.ts
-│   └── FileResolver.ts
-├── visitors/              # AST processing
-└── models/                # Data models
-    ├── ArtifactModel.ts
-    ├── ExperimentModel.ts
-    └── WorkflowModel.ts
-```
+### Workflow Inheritance
 
-## Development
+The generator supports workflow inheritance where child workflows can:
+- Inherit tasks from parent workflows
+- Override task configurations (implementation, parameters, I/O)
+- Add new tasks
+- Inherit data definitions and task chains
 
-### Building
+### Parameter Classification
 
-```bash
-npm run build
-```
+Parameters are automatically classified as:
+- **Dynamic**: Parameters with enum/range values that vary across experiment runs
+- **Static**: Parameters with fixed values defined in workflows
 
-### Testing
+### Task Deduplication
 
-```bash
-npm run test
-npm run test:coverage
-```
+Tasks that are identical across different workflow instances are automatically deduplicated to optimize artifact size and execution.
 
-### Running Development Version
+### Validation
 
-```bash
-npm run cli:dev -- experiment.espace --output ./test-output.json
-```
+Comprehensive validation includes:
+- Syntax validation for ESPACE and XXP files
+- Workflow inheritance cycle detection
+- Control flow reachability analysis
+- Task chain validation
+- Data flow validation
+- Implementation file existence checking
+
+## File Conventions
+
+- **ESPACE files**: `.espace` extension for experiment definitions
+- **XXP files**: `.xxp` extension for workflow definitions
+- **Implementation files**: Referenced by relative paths from workflow files
 
 ## Error Handling
 
-The generator provides detailed error reporting for common issues:
+The generator provides detailed error messages for:
+- Syntax errors in ESPACE/XXP files
+- Missing workflow or task references
+- Circular inheritance or dependencies
+- Invalid control flow definitions
+- Missing implementation files
+- Data flow inconsistencies
 
-- **Syntax errors**: Parse errors in XXP or ESPACE files
-- **Missing references**: Undefined workflows, tasks, or parameters  
-- **Control flow issues**: Unreachable spaces, infinite loops
-- **Data flow problems**: Missing inputs, circular dependencies
-- **File system errors**: Missing implementation files
+## Extension Points
 
-Example error output:
+The architecture supports extension through:
+- Custom visitors for new language features
+- Additional generators for different artifact formats
+- Custom resolvers for specialized dependency resolution
+- Pluggable validation rules
+
+## Dependencies
+
+- **@extremexp/core**: Core language parsing components
+- **commander**: CLI argument parsing
+- **ANTLR4**: Language parsing runtime
+
+## Development
+
 ```bash
-$ artifact-generator invalid.espace
+# Build the package
+npm run build
 
-Validation errors:
-  - Workflow 'MissingWorkflow' referenced in space 'Space1' not found
-  - Space 'UnreachableSpace' is defined but unreachable in control flow
-  - Implementation file 'missing_script.py' for task 'task1' not found
+# Run tests
+npm run test
+
+# Run with coverage
+npm run test:coverage
+
+# Development CLI usage
+npm run cli:dev -- experiment.espace
 ```
-
-## Integration
-
-### VS Code Extension
-The artifact generator is integrated into the VS Code extension and can be triggered via:
-- Command palette: "ExtremeXP: Generate Artifact"
-- Right-click context menu on ESPACE files
-
-### Build Systems
-Integrate with build tools:
-
-```json
-// package.json
-{
-  "scripts": {
-    "build:artifacts": "artifact-generator experiment.espace -o artifacts/",
-    "prebuild": "npm run build:artifacts"
-  }
-}
-```
-
-## Contributing
-
-When contributing to the artifact generator:
-
-1. Ensure new features have corresponding tests
-2. Update the CLI interface if adding new options
-3. Maintain backward compatibility in the output format
-4. Add validation for new language features
-5. Update documentation
-
-## License
-
-MIT

@@ -1,16 +1,39 @@
+/**
+ * @fileoverview Workflow storage service for server-side workflow management.
+ * Provides high-level storage operations, ZIP handling, conflict resolution,
+ * and metadata aggregation for the workflow repository server.
+ */
+
 import * as fs from 'fs/promises';
 import * as path from 'path';
 
 import { WorkflowContent, LocalWorkflowRepository } from '@extremexp/workflow-repository';
 
+/**
+ * Service class providing storage operations for workflows on the server.
+ * Wraps LocalWorkflowRepository with additional server-specific functionality
+ * including conflict resolution, ZIP handling, and override permissions.
+ */
 export class WorkflowStorageService {
+  /** Underlying local workflow repository instance */
   private repository: LocalWorkflowRepository;
-  private uploadOverrides = new Map<string, boolean>(); // Track allowed overrides per session
+  /** Track allowed overrides per session with workflow-request mapping */
+  private uploadOverrides = new Map<string, boolean>();
 
+  /**
+   * Creates a new workflow storage service.
+   * 
+   * @param basePath - Base directory path for workflow storage
+   */
   constructor(private basePath: string) {
     this.repository = new LocalWorkflowRepository(basePath);
   }
 
+  /**
+   * Ensures the storage directory exists and is accessible.
+   * 
+   * @throws Error if directory creation fails
+   */
   async ensureInitialized(): Promise<void> {
     try {
       await fs.access(this.basePath);
@@ -19,6 +42,12 @@ export class WorkflowStorageService {
     }
   }
 
+  /**
+   * Retrieves all unique tags from workflows in the repository.
+   * 
+   * @returns Promise resolving to sorted array of tag strings
+   * @throws Error if repository access fails
+   */
   async getAllTags(): Promise<string[]> {
     const workflows = await this.repository.list();
     const tagSet = new Set<string>();
@@ -30,6 +59,12 @@ export class WorkflowStorageService {
     return Array.from(tagSet).sort();
   }
 
+  /**
+   * Retrieves all unique authors from workflows in the repository.
+   * 
+   * @returns Promise resolving to sorted array of author names
+   * @throws Error if repository access fails
+   */
   async getAllAuthors(): Promise<string[]> {
     const workflows = await this.repository.list();
     const authorSet = new Set<string>();
@@ -41,11 +76,24 @@ export class WorkflowStorageService {
     return Array.from(authorSet).sort();
   }
 
+  /**
+   * Gets the owner/author of a specific workflow.
+   * 
+   * @param workflowId - Unique workflow identifier
+   * @returns Promise resolving to author name or null if not found
+   */
   async getWorkflowOwner(workflowId: string): Promise<string | null> {
     const workflow = await this.repository.get(workflowId);
     return workflow?.metadata.author || null;
   }
 
+  /**
+   * Checks if a workflow with the same name exists at the specified path.
+   * 
+   * @param workflowPath - Target path to check
+   * @param workflowName - Workflow name to search for
+   * @returns Promise resolving to existence check result with optional ID
+   */
   async checkForExistingWorkflow(
     workflowPath: string,
     workflowName: string
@@ -60,11 +108,25 @@ export class WorkflowStorageService {
     return { exists: false };
   }
 
+  /**
+   * Checks if override permission has been granted for a workflow.
+   * 
+   * @param workflowId - Unique workflow identifier
+   * @param requestId - Request session identifier
+   * @returns Promise resolving to true if override is allowed
+   */
   async canOverrideWorkflow(workflowId: string, requestId: string): Promise<boolean> {
     const key = `${workflowId}-${requestId}`;
     return this.uploadOverrides.get(key) || false;
   }
 
+  /**
+   * Sets override permission for a workflow upload request.
+   * 
+   * @param workflowId - Unique workflow identifier
+   * @param requestId - Request session identifier
+   * @param allowed - Whether to allow the override
+   */
   setOverridePermission(workflowId: string, requestId: string, allowed: boolean): void {
     const key = `${workflowId}-${requestId}`;
     if (allowed) {
@@ -81,6 +143,13 @@ export class WorkflowStorageService {
     }
   }
 
+  /**
+   * Creates a downloadable ZIP archive for a workflow.
+   * 
+   * @param workflowId - Unique workflow identifier
+   * @returns Promise resolving to ZIP buffer or null if workflow not found
+   * @throws Error if ZIP creation fails
+   */
   async createWorkflowZip(workflowId: string): Promise<Buffer | null> {
     const content = await this.repository.getContent(workflowId);
     if (!content) {
@@ -119,6 +188,13 @@ export class WorkflowStorageService {
     return await zip.generateAsync({ type: 'nodebuffer' });
   }
 
+  /**
+   * Extracts workflow content and metadata from a ZIP archive.
+   * 
+   * @param zipBuffer - ZIP file buffer to extract
+   * @returns Promise resolving to extracted content and metadata or null if invalid
+   * @throws Error if extraction fails
+   */
   async extractWorkflowFromZip(
     zipBuffer: Buffer
   ): Promise<{ content: WorkflowContent; metadata: any } | null> {
@@ -201,11 +277,22 @@ export class WorkflowStorageService {
     }
   }
 
+  /**
+   * Validates that a workflow path is safe and allowed.
+   * 
+   * @param workflowPath - Path to validate
+   * @returns Promise resolving to true if path is valid
+   */
   async validateWorkflowPath(workflowPath: string): Promise<boolean> {
     const normalizedPath = path.normalize(workflowPath);
     return !normalizedPath.includes('..') && !path.isAbsolute(normalizedPath);
   }
 
+  /**
+   * Gets the underlying local workflow repository instance.
+   * 
+   * @returns LocalWorkflowRepository instance
+   */
   getRepository(): LocalWorkflowRepository {
     return this.repository;
   }

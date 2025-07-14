@@ -1,3 +1,9 @@
+/**
+ * @fileoverview Main entry point for the ExtremeXP workflow repository library.
+ * Exports all public APIs for workflow management including models, interfaces,
+ * repository implementations, and manager classes.
+ */
+
 // Core models
 export { WorkflowMetadata } from './models/WorkflowMetadata.js';
 export { WorkflowAttachment } from './models/WorkflowAttachment.js';

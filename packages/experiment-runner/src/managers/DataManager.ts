@@ -1,9 +1,33 @@
+/**
+ * @fileoverview Data manager for experiment output collection.
+ * Handles the collection and aggregation of experiment output data
+ * from completed task executions.
+ */
+
 import { DatabaseRepository } from '../database/DatabaseRepository.js';
 import { Space, Task } from '../types/artifact.types.js';
 
+/**
+ * Manager responsible for collecting and organizing experiment output data.
+ * Aggregates outputs from completed tasks and provides final result summaries.
+ */
 export class DataManager {
+  /**
+   * Creates a new data manager.
+   * 
+   * @param repository - Database repository for accessing execution data
+   */
   constructor(private repository: DatabaseRepository) {}
 
+  /**
+   * Collects final output data from all completed task executions.
+   * Aggregates outputs from all spaces and parameter sets into a structured result.
+   * 
+   * @param runId - Unique identifier for the experiment run
+   * @param spaces - Array of spaces that were executed
+   * @param taskMap - Map of task IDs to task definitions
+   * @returns Promise resolving to aggregated output data organized by space
+   */
   async collectFinalOutputs(
     runId: string,
     spaces: Space[],

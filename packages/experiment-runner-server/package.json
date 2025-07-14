@@ -3,15 +3,15 @@
     "version": "1.0.0",
     "description": "HTTP server for ExtremeXP experiment execution",
     "type": "module",
-    "main": "./dist/server.js",
-    "types": "./dist/server.d.ts",
+    "main": "./dist/index.js",
+    "types": "./dist/index.d.ts",
     "bin": {
         "experiment-runner-server": "./dist/server.js"
     },
     "exports": {
         ".": {
-            "types": "./dist/server.d.ts",
-            "default": "./dist/server.js"
+            "types": "./dist/index.d.ts",
+            "default": "./dist/index.js"
         }
     },
     "files": [

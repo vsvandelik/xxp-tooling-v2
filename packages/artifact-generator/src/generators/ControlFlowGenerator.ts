@@ -1,7 +1,22 @@
+/**
+ * @fileoverview Generator for experiment control flow definitions.
+ * Converts experiment control flow models into executable control definitions.
+ */
+
 import { ControlDefinition, TransitionDefinition } from '../models/ArtifactModel.js';
 import { ExperimentModel } from '../models/ExperimentModel.js';
 
+/**
+ * Generates control flow definitions for experiment artifacts.
+ * Handles both explicit control flows and default flow generation.
+ */
 export class ControlFlowGenerator {
+  /**
+   * Generates a control flow definition from an experiment model.
+   * 
+   * @param experiment - The experiment model containing control flow information
+   * @returns Control definition for the artifact
+   */
   generate(experiment: ExperimentModel): ControlDefinition {
     if (!experiment.controlFlow) {
       // Create default control flow if none specified
@@ -43,6 +58,12 @@ export class ControlFlowGenerator {
     return new ControlDefinition(startSpace, transitions);
   }
 
+  /**
+   * Creates a default control flow when none is explicitly defined.
+   * 
+   * @param experiment - The experiment model
+   * @returns Default control definition (linear flow for multiple spaces, direct flow for single space)
+   */
   private createDefaultControlFlow(experiment: ExperimentModel): ControlDefinition {
     if (experiment.spaces.length === 0) {
       throw new Error('No spaces defined in experiment');

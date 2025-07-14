@@ -1,19 +1,50 @@
+/**
+ * @fileoverview Tool resolver for locating ExtremeXP toolchain executables.
+ * Provides intelligent tool discovery across bundled tools, development environments,
+ * user configurations, and node_modules with caching for performance.
+ */
+
 import * as path from 'path';
 
 import * as vscode from 'vscode';
 
+/**
+ * Information about a resolved tool including execution details.
+ */
 export interface ToolInfo {
+  /** Name of the tool (e.g., 'artifact-generator') */
   name: string;
+  /** Absolute path to the tool executable */
   path: string;
+  /** Execution type - Node.js script or native binary */
   type: 'node' | 'binary';
+  /** Optional working directory for tool execution */
   cwd?: string;
 }
 
+/**
+ * Service for resolving ExtremeXP tool locations across different deployment scenarios.
+ * Handles bundled tools, development environments, user configurations, and package installations.
+ */
 export class ToolResolver {
+  /** Cache of resolved tool information for performance optimization */
   private toolCache = new Map<string, ToolInfo>();
 
+  /**
+   * Creates a new tool resolver instance.
+   * 
+   * @param context - VS Code extension context for accessing extension paths
+   */
   constructor(private context: vscode.ExtensionContext) {}
 
+  /**
+   * Resolves the location and execution information for a named tool.
+   * Uses caching to avoid repeated file system operations.
+   * 
+   * @param toolName - Name of the tool to resolve (e.g., 'artifact-generator')
+   * @returns Promise resolving to tool information
+   * @throws Error if tool cannot be found in any search location
+   */
   async resolveTool(toolName: string): Promise<ToolInfo> {
     // Check cache first
     if (this.toolCache.has(toolName)) {
@@ -25,6 +56,14 @@ export class ToolResolver {
     return toolInfo;
   }
 
+  /**
+   * Searches for a tool across all possible locations.
+   * Checks user configuration first, then searches predefined paths.
+   * 
+   * @param toolName - Name of the tool to find
+   * @returns Promise resolving to tool information
+   * @throws Error if tool is not found in any location
+   */
   private async findTool(toolName: string): Promise<ToolInfo> {
     // Check user configuration first
     const config = vscode.workspace.getConfiguration('extremexp');
@@ -55,6 +94,13 @@ export class ToolResolver {
     throw new Error(`Tool '${toolName}' not found. Please check your configuration.`);
   }
 
+  /**
+   * Gets the ordered list of search paths for a specific tool.
+   * Includes bundled tools, development paths, and node_modules locations.
+   * 
+   * @param toolName - Name of the tool to get search paths for
+   * @returns Array of absolute paths to search in priority order
+   */
   private getSearchPaths(toolName: string): string[] {
     const workspacePath = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath || '';
     const extensionPath = this.context.extensionPath;
@@ -104,6 +150,12 @@ export class ToolResolver {
     return toolMappings[toolName] || [];
   }
 
+  /**
+   * Checks if a file exists at the specified path.
+   * 
+   * @param filePath - Absolute path to check
+   * @returns Promise resolving to true if file exists and is a file
+   */
   private async pathExists(filePath: string): Promise<boolean> {
     try {
       const stat = await vscode.workspace.fs.stat(vscode.Uri.file(filePath));
@@ -113,14 +165,30 @@ export class ToolResolver {
     }
   }
 
+  /**
+   * Determines the execution type of a tool based on its file extension.
+   * 
+   * @param toolPath - Path to the tool executable
+   * @returns 'node' for .js files, 'binary' for everything else
+   */
   private getToolType(toolPath: string): 'node' | 'binary' {
     return toolPath.endsWith('.js') ? 'node' : 'binary';
   }
 
+  /**
+   * Gets the appropriate working directory for tool execution.
+   * 
+   * @param toolPath - Path to the tool executable
+   * @returns Directory containing the tool executable
+   */
   private getToolWorkingDirectory(toolPath: string): string {
     return path.dirname(toolPath);
   }
 
+  /**
+   * Clears the tool resolution cache.
+   * Useful when configuration changes or during development.
+   */
   clearCache(): void {
     this.toolCache.clear();
   }

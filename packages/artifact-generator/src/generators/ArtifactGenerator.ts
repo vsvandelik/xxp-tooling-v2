@@ -1,3 +1,8 @@
+/**
+ * @fileoverview Main artifact generator class for ExtremeXP workflows.
+ * Orchestrates parsing, validation, and generation of experiment artifacts from ESPACE files.
+ */
+
 import * as fs from 'fs';
 import path from 'path';
 
@@ -16,21 +21,41 @@ import { ControlFlowGenerator } from './ControlFlowGenerator.js';
 import { SpaceGenerator } from './SpaceGenerator.js';
 import { TaskGenerator } from './TaskGenerator.js';
 
+/**
+ * Configuration options for the artifact generator.
+ */
 export interface ArtifactGeneratorOptions {
+  /** Enable verbose logging output */
   verbose?: boolean;
+  /** Override the default workflow directory */
   workflowDirectory?: string;
 }
 
+/**
+ * Result of validation operations containing errors and warnings.
+ */
 export interface ValidationResult {
+  /** Array of validation error messages that prevent generation */
   errors: string[];
+  /** Array of validation warning messages that don't prevent generation */
   warnings: string[];
 }
 
+/**
+ * Output from the artifact generation process.
+ */
 export interface ArtifactGeneratorOutput {
+  /** Generated artifact JSON object (only present if generation succeeded) */
   artifact?: any;
+  /** Validation results from the generation process */
   validation: ValidationResult;
 }
 
+/**
+ * Main artifact generator class responsible for parsing ESPACE experiment files,
+ * validating workflow definitions, resolving dependencies, and generating
+ * executable experiment artifacts.
+ */
 export class ArtifactGenerator {
   private verbose = false;
   private experimentParser = new ExperimentParser();
@@ -44,10 +69,21 @@ export class ArtifactGenerator {
   private spaceGenerator = new SpaceGenerator();
   private controlFlowGenerator = new ControlFlowGenerator();
 
+  /**
+   * Creates a new ArtifactGenerator instance.
+   * 
+   * @param options - Configuration options for the generator
+   */
   constructor(options: ArtifactGeneratorOptions) {
     this.verbose = options.verbose || false;
   }
 
+  /**
+   * Generates an experiment artifact from an ESPACE file.
+   * 
+   * @param espaceFilePath - Path to the ESPACE experiment file
+   * @returns Promise resolving to the generated artifact and validation results
+   */
   async generate(espaceFilePath: string): Promise<ArtifactGeneratorOutput> {
     if (this.verbose) {
       console.log(`Generating artifact from: ${espaceFilePath}`);
@@ -108,6 +144,12 @@ export class ArtifactGenerator {
     return { artifact: artifact.toJSON(), validation };
   }
 
+  /**
+   * Validates an ESPACE experiment file without generating the artifact.
+   * 
+   * @param espaceFilePath - Path to the ESPACE experiment file to validate
+   * @returns Promise resolving to validation results with errors and warnings
+   */
   async validate(espaceFilePath: string): Promise<ValidationResult> {
     this.initializeFileResolver(espaceFilePath);
 

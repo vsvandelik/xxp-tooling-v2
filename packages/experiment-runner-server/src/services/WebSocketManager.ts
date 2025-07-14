@@ -1,3 +1,8 @@
+/**
+ * @fileoverview WebSocket manager for real-time experiment communication.
+ * Handles client subscriptions, progress updates, and user input requests via Socket.IO.
+ */
+
 import { RunResult } from '@extremexp/experiment-runner';
 import { Server as SocketIOServer, Socket } from 'socket.io';
 
@@ -5,20 +10,38 @@ import { ExperimentProgress, UserInputRequest, UserInputResponse } from '../type
 
 import { ExperimentService } from './ExperimentService.js';
 
+/**
+ * Represents a connected WebSocket client and their experiment subscriptions.
+ */
 interface ClientConnection {
+  /** Unique socket identifier */
   socketId: string;
+  /** Set of experiment IDs this client is subscribed to */
   experimentIds: Set<string>;
 }
 
+/**
+ * Manages WebSocket connections for real-time experiment monitoring.
+ * Handles client subscriptions, broadcasts progress updates, and manages user input requests.
+ */
 export class WebSocketManager {
   private connections: Map<string, ClientConnection> = new Map();
   private experimentSockets: Map<string, Set<string>> = new Map();
 
+  /**
+   * Creates a new WebSocket manager.
+   * 
+   * @param io - Socket.IO server instance
+   * @param experimentService - Experiment service for handling requests
+   */
   constructor(
     private io: SocketIOServer,
     private experimentService: ExperimentService
   ) {}
 
+  /**
+   * Initializes WebSocket event handlers and starts listening for connections.
+   */
   initialize(): void {
     this.io.on('connection', socket => {
       console.log(`Client connected: ${socket.id}`);
@@ -37,6 +60,11 @@ export class WebSocketManager {
     });
   }
 
+  /**
+   * Sets up event handlers for a new socket connection.
+   * 
+   * @param socket - The socket connection to configure
+   */
   private setupSocketHandlers(socket: Socket): void {
     // Subscribe to experiment updates
     socket.on('subscribe', (experimentId: string) => {
@@ -129,6 +157,11 @@ export class WebSocketManager {
     );
   }
 
+  /**
+   * Handles client disconnection and cleanup.
+   * 
+   * @param socketId - ID of the disconnected socket
+   */
   private handleDisconnect(socketId: string): void {
     const connection = this.connections.get(socketId);
     if (connection) {
@@ -149,15 +182,34 @@ export class WebSocketManager {
 
   // Methods called by ExperimentService
 
+  /**
+   * Broadcasts progress updates to all subscribers of an experiment.
+   * 
+   * @param experimentId - ID of the experiment
+   * @param progress - Progress data to broadcast
+   */
   emitProgress(experimentId: string, progress: ExperimentProgress): void {
     console.log(`Emitting progress for experiment ${experimentId}:`, progress);
     this.io.to(`experiment:${experimentId}`).emit('progress', progress);
   }
 
+  /**
+   * Broadcasts user input request to all subscribers of an experiment.
+   * 
+   * @param experimentId - ID of the experiment
+   * @param request - User input request to broadcast
+   */
   emitUserInputRequest(experimentId: string, request: UserInputRequest): void {
     this.io.to(`experiment:${experimentId}`).emit('inputRequired', request);
   }
 
+  /**
+   * Broadcasts experiment completion to all subscribers.
+   * Automatically cleans up subscriptions for the completed experiment.
+   * 
+   * @param experimentId - ID of the completed experiment
+   * @param result - Experiment execution result
+   */
   emitExperimentComplete(experimentId: string, result: RunResult): void {
     this.io.to(`experiment:${experimentId}`).emit('complete', {
       experimentId,
@@ -177,6 +229,12 @@ export class WebSocketManager {
     }
   }
 
+  /**
+   * Broadcasts experiment error to all subscribers.
+   * 
+   * @param experimentId - ID of the failed experiment
+   * @param error - Error that occurred during execution
+   */
   emitExperimentError(experimentId: string, error: Error): void {
     this.io.to(`experiment:${experimentId}`).emit('error', {
       experimentId,
@@ -187,6 +245,15 @@ export class WebSocketManager {
     });
   }
 
+  /**
+   * Sends validation result to a specific client.
+   * 
+   * @param socketId - ID of the target socket
+   * @param validation - Validation result with errors and warnings
+   * @param validation.errors - Array of validation errors
+   * @param validation.warnings - Array of validation warnings
+   * @param validation.isValid - Whether validation passed
+   */
   emitValidationResult(
     socketId: string,
     validation: {
@@ -198,10 +265,21 @@ export class WebSocketManager {
     this.io.to(socketId).emit('validationResult', validation);
   }
 
+  /**
+   * Gets the number of currently connected clients.
+   * 
+   * @returns Number of connected WebSocket clients
+   */
   getConnectedClients(): number {
     return this.connections.size;
   }
 
+  /**
+   * Gets the number of clients subscribed to a specific experiment.
+   * 
+   * @param experimentId - ID of the experiment
+   * @returns Number of subscribers for the experiment
+   */
   getExperimentSubscribers(experimentId: string): number {
     return this.experimentSockets.get(experimentId)?.size || 0;
   }

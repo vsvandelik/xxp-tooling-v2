@@ -1,3 +1,8 @@
+/**
+ * @fileoverview Parameter resolver for ExtremeXP experiments.
+ * Generates parameter value combinations for different exploration strategies.
+ */
+
 import {
   ExperimentModel,
   SpaceModel,
@@ -6,12 +11,28 @@ import {
 } from '../models/ExperimentModel.js';
 import { WorkflowModel } from '../models/WorkflowModel.js';
 
+/**
+ * Represents parameter combinations for a specific space.
+ */
 export interface ParameterCombination {
+  /** ID of the space these combinations belong to */
   spaceId: string;
+  /** Array of parameter value combinations */
   combinations: Record<string, ExpressionType>[];
 }
 
+/**
+ * Resolves parameter definitions into concrete value combinations.
+ * Supports different exploration strategies like grid search and random search.
+ */
 export class ParameterResolver {
+  /**
+   * Resolves parameter combinations for all spaces in an experiment.
+   * 
+   * @param experiment - The experiment model containing spaces and parameters
+   * @param workflows - Optional workflow models for parameter filtering
+   * @returns Array of parameter combinations for each space
+   */
   resolve(experiment: ExperimentModel, workflows?: WorkflowModel[]): ParameterCombination[] {
     const results: ParameterCombination[] = [];
 
@@ -26,6 +47,14 @@ export class ParameterResolver {
     return results;
   }
 
+  /**
+   * Generates parameter combinations for a specific space based on its strategy.
+   * 
+   * @param space - The space model containing parameter definitions
+   * @param workflows - Optional workflow models for parameter filtering
+   * @returns Array of parameter value combinations
+   * @throws Error if unknown strategy is specified
+   */
   private generateParameterCombinations(
     space: SpaceModel,
     workflows?: WorkflowModel[]

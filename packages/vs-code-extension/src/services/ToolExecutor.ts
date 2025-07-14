@@ -1,28 +1,67 @@
+/**
+ * @fileoverview Tool executor for running ExtremeXP toolchain components.
+ * Provides standardized execution interface with cancellation support, timeout handling,
+ * streaming output, and cross-platform compatibility for Node.js and binary tools.
+ */
+
 import { spawn, ChildProcess } from 'child_process';
 
 import * as vscode from 'vscode';
 
 import { ToolResolver } from './ToolResolver.js';
 
+/**
+ * Options for tool execution including environment and control settings.
+ */
 export interface ToolExecutionOptions {
+  /** Command line arguments to pass to the tool */
   args?: string[];
+  /** Working directory for tool execution */
   cwd?: string;
+  /** Environment variables to set for the tool process */
   env?: Record<string, string>;
+  /** Maximum execution time in milliseconds */
   timeout?: number;
+  /** VS Code cancellation token for user cancellation */
   cancellationToken?: vscode.CancellationToken;
 }
 
+/**
+ * Result of tool execution including output and status information.
+ */
 export interface ToolExecutionResult {
+  /** Whether the tool executed successfully (exit code 0) */
   success: boolean;
+  /** Process exit code */
   exitCode: number;
+  /** Standard output from the tool */
   stdout: string;
+  /** Standard error output from the tool */
   stderr: string;
+  /** Whether execution was cancelled by user or timeout */
   cancelled?: boolean;
 }
 
+/**
+ * Service for executing ExtremeXP tools with proper environment and error handling.
+ * Provides both buffered and streaming execution modes with cancellation support.
+ */
 export class ToolExecutor {
+  /**
+   * Creates a new tool executor instance.
+   * 
+   * @param toolResolver - Tool resolver for locating executable tools
+   */
   constructor(private toolResolver: ToolResolver) {}
 
+  /**
+   * Executes a tool with buffered output and returns the complete result.
+   * Supports cancellation, timeout, and cross-platform argument handling.
+   * 
+   * @param toolName - Name of the tool to execute
+   * @param options - Execution options including arguments and environment
+   * @returns Promise resolving to complete execution result
+   */
   async execute(
     toolName: string,
     options: ToolExecutionOptions = {}
@@ -124,6 +163,14 @@ export class ToolExecutor {
     });
   }
 
+  /**
+   * Executes a tool with real-time streaming output callbacks.
+   * Returns the child process for further management and monitoring.
+   * 
+   * @param toolName - Name of the tool to execute
+   * @param options - Execution options with streaming callbacks
+   * @returns Promise resolving to the spawned child process
+   */
   async executeStreaming(
     toolName: string,
     options: ToolExecutionOptions & {

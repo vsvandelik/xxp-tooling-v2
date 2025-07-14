@@ -1,3 +1,9 @@
+/**
+ * @fileoverview Server manager for ExtremeXP experiment runner server lifecycle.
+ * Provides comprehensive server process management including startup, shutdown,
+ * port management, configuration handling, and status monitoring with VS Code integration.
+ */
+
 import { ChildProcess } from 'child_process';
 import * as fs from 'fs';
 import * as net from 'net';
@@ -8,16 +14,34 @@ import * as vscode from 'vscode';
 
 import { ToolExecutor } from './ToolExecutor.js';
 
+/** Server status enumeration for lifecycle tracking */
 export type ServerStatus = 'running' | 'stopped' | 'starting' | 'error';
 
+/**
+ * Manages the ExtremeXP experiment runner server lifecycle and configuration.
+ * Handles server process startup/shutdown, port management, configuration updates,
+ * and provides status monitoring with event-driven notifications.
+ */
 export class ServerManager {
+  /** Child process instance of the running server */
   private serverProcess: ChildProcess | null = null;
+  /** Current server status for lifecycle tracking */
   private status: ServerStatus = 'stopped';
+  /** Port number for server communication */
   private port: number = 3000;
+  /** VS Code output channel for server logs */
   private outputChannel: vscode.OutputChannel;
+  /** Array of status change event handlers */
   private statusChangeHandlers: ((status: ServerStatus) => void)[] = [];
+  /** Process ID of the running server for management */
   private serverPid: number | null = null;
 
+  /**
+   * Creates a new server manager instance.
+   * 
+   * @param context - VS Code extension context for resource management
+   * @param toolExecutor - Tool executor for running server processes
+   */
   constructor(
     private context: vscode.ExtensionContext,
     private toolExecutor: ToolExecutor
@@ -26,11 +50,20 @@ export class ServerManager {
     this.loadConfiguration();
   }
 
+  /**
+   * Loads server configuration from VS Code settings.
+   */
   private loadConfiguration(): void {
     const config = vscode.workspace.getConfiguration('extremexp');
     this.port = config.get<number>('server.port', 3000);
   }
 
+  /**
+   * Ensures the experiment runner server is running.
+   * Attempts auto-start if configured and handles port conflicts gracefully.
+   * 
+   * @throws Error if server cannot be started and auto-start fails
+   */
   async ensureServerRunning(): Promise<void> {
     if (this.status === 'running') {
       return;
@@ -76,6 +109,12 @@ export class ServerManager {
     }
   }
 
+  /**
+   * Starts the experiment runner server process.
+   * Handles port availability checking, process spawning, and readiness verification.
+   * 
+   * @throws Error if server startup fails or port is unavailable
+   */
   async startServer(): Promise<void> {
     if (this.status === 'running' || this.status === 'starting') {
       return;
@@ -163,6 +202,10 @@ export class ServerManager {
     }
   }
 
+  /**
+   * Stops the running experiment runner server.
+   * Attempts graceful shutdown before forcing termination if necessary.
+   */
   async stopServer(): Promise<void> {
     if (this.serverProcess) {
       this.outputChannel.appendLine('Stopping ExtremeXP server...');
@@ -184,6 +227,11 @@ export class ServerManager {
     }
   }
 
+  /**
+   * Attempts graceful server shutdown using appropriate signals.
+   * 
+   * @throws Error if graceful shutdown times out
+   */
   private async attemptGracefulShutdown(): Promise<void> {
     if (!this.serverProcess) return;
 
@@ -213,6 +261,9 @@ export class ServerManager {
     });
   }
 
+  /**
+   * Forces immediate server termination using platform-specific kill commands.
+   */
   private async forceKillServer(): Promise<void> {
     if (this.serverProcess) {
       this.outputChannel.appendLine('Force killing server process...');
@@ -238,6 +289,9 @@ export class ServerManager {
     }
   }
 
+  /**
+   * Terminates the entire process tree on Windows using taskkill.
+   */
   private terminateProcessTree(): void {
     if (!this.serverPid) return;
 
@@ -257,11 +311,21 @@ export class ServerManager {
     });
   }
 
+  /**
+   * Restarts the server by stopping and starting it.
+   * 
+   * @throws Error if restart process fails
+   */
   async restartServer(): Promise<void> {
     await this.stopServer();
     await this.startServer();
   }
 
+  /**
+   * Gets the server URL if the server is running.
+   * 
+   * @returns Server URL or null if server is not running
+   */
   async getServerUrl(): Promise<string | null> {
     if (this.status !== 'running') {
       return null;
@@ -269,10 +333,21 @@ export class ServerManager {
     return `http://localhost:${this.port}`;
   }
 
+  /**
+   * Gets the current server status.
+   * 
+   * @returns Current server status
+   */
   getStatus(): ServerStatus {
     return this.status;
   }
 
+  /**
+   * Registers a status change event handler.
+   * 
+   * @param handler - Function to call when server status changes
+   * @returns Disposable to unregister the handler
+   */
   onStatusChange(handler: (status: ServerStatus) => void): vscode.Disposable {
     this.statusChangeHandlers.push(handler);
     return new vscode.Disposable(() => {
@@ -283,6 +358,10 @@ export class ServerManager {
     });
   }
 
+  /**
+   * Reloads server configuration from VS Code settings.
+   * Automatically restarts server if port changes while running.
+   */
   reloadConfiguration(): void {
     const config = vscode.workspace.getConfiguration('extremexp');
     const oldPort = this.port;
@@ -313,6 +392,10 @@ export class ServerManager {
     }
   }
 
+  /**
+   * Disposes of the server manager and cleans up resources.
+   * Stops the server and clears all event handlers.
+   */
   async dispose(): Promise<void> {
     this.outputChannel.appendLine('Disposing ServerManager...');
 
@@ -328,11 +411,22 @@ export class ServerManager {
     this.outputChannel.dispose();
   }
 
+  /**
+   * Sets the server status and notifies all registered handlers.
+   * 
+   * @param status - New server status
+   */
   private setStatus(status: ServerStatus): void {
     this.status = status;
     this.statusChangeHandlers.forEach(handler => handler(status));
   }
 
+  /**
+   * Checks if a port is available for server binding.
+   * 
+   * @param port - Port number to check
+   * @returns Promise resolving to true if port is available
+   */
   private async checkPortAvailable(port: number): Promise<boolean> {
     return new Promise(resolve => {
       const server = net.createServer();
@@ -350,6 +444,11 @@ export class ServerManager {
     });
   }
 
+  /**
+   * Locates the experiment runner server module using tool resolver.
+   * 
+   * @returns Promise resolving to server module path or null if not found
+   */
   private async findServerModule(): Promise<string | null> {
     try {
       const toolInfo = await this.toolExecutor['toolResolver'].resolveTool(
@@ -363,6 +462,11 @@ export class ServerManager {
     }
   }
 
+  /**
+   * Gets the platform-specific default database directory.
+   * 
+   * @returns Platform-appropriate database directory path
+   */
   private getDefaultDatabaseDirectory(): string {
     const platform = os.platform();
     
@@ -382,6 +486,12 @@ export class ServerManager {
     }
   }
 
+  /**
+   * Gets the database path from configuration or default location.
+   * Creates the directory if it doesn't exist.
+   * 
+   * @returns Absolute path to the experiment database file
+   */
   private getDatabasePath(): string {
     const config = vscode.workspace.getConfiguration('extremexp');
     const dbPath = config.get<string>('experiments.defaultDatabase');
@@ -408,6 +518,12 @@ export class ServerManager {
     return path.join(defaultDir, 'experiment_runs.db');
   }
 
+  /**
+   * Waits for the server to become ready by polling the health endpoint.
+   * 
+   * @param timeout - Maximum time to wait in milliseconds
+   * @throws Error if server doesn't become ready within timeout
+   */
   private async waitForServer(timeout: number = 10000): Promise<void> {
     const startTime = Date.now();
 
@@ -427,6 +543,12 @@ export class ServerManager {
     throw new Error('Server failed to start within timeout');
   }
 
+  /**
+   * Finds an available port starting from the specified port.
+   * 
+   * @param startPort - Starting port number to check
+   * @returns Promise resolving to available port or null if none found
+   */
   private async findAvailablePort(startPort: number = 3001): Promise<number | null> {
     for (let port = startPort; port < startPort + 10; port++) {
       if (await this.checkPortAvailable(port)) {
@@ -436,6 +558,10 @@ export class ServerManager {
     return null;
   }
 
+  /**
+   * Kills processes using the configured port using platform-specific commands.
+   * Attempts to restart the server after killing conflicting processes.
+   */
   private async killProcessOnPort(): Promise<void> {
     try {
       this.outputChannel.appendLine(`Attempting to kill process on port ${this.port}...`);

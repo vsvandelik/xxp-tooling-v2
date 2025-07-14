@@ -1,10 +1,30 @@
+/**
+ * @fileoverview Generator for experiment space definitions.
+ * Converts experiment spaces with parameter combinations into executable space definitions.
+ */
+
 import { SpaceDefinition } from '../models/ArtifactModel.js';
 import { ExperimentModel, SpaceModel } from '../models/ExperimentModel.js';
 import { WorkflowModel } from '../models/WorkflowModel.js';
 import { ParameterCombination } from '../resolvers/ParameterResolver.js';
 import { ResolvedTask, TaskResolver } from '../resolvers/TaskResolver.js';
 
+/**
+ * Generates space definitions for experiment artifacts.
+ * Combines parameter spaces with task execution order and data mappings.
+ */
 export class SpaceGenerator {
+  /**
+   * Generates space definitions from experiment spaces and resolved components.
+   * 
+   * @param experiment - The experiment model containing spaces
+   * @param parameterCombinations - Resolved parameter combinations for each space
+   * @param resolvedTasks - Map of resolved task definitions
+   * @param taskResolver - Task resolver for ID mapping
+   * @param workflows - Array of workflow models
+   * @param spaceLevelData - Space-specific data overrides
+   * @returns Array of space definitions for the artifact
+   */
   generate(
     experiment: ExperimentModel,
     parameterCombinations: ParameterCombination[],
@@ -38,6 +58,15 @@ export class SpaceGenerator {
     return spaceDefinitions;
   }
 
+  /**
+   * Determines the execution order of tasks for a given space.
+   * 
+   * @param space - The space model
+   * @param resolvedTasks - Map of resolved task definitions
+   * @param taskResolver - Task resolver for ID mapping
+   * @param workflows - Array of workflow models
+   * @returns Array of task IDs in execution order
+   */
   private getTasksOrder(
     space: SpaceModel,
     resolvedTasks: Map<string, ResolvedTask>,

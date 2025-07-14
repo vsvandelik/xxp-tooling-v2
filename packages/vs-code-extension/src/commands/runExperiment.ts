@@ -1,3 +1,9 @@
+/**
+ * @fileoverview Run Experiment command for executing JSON artifacts.
+ * Provides VS Code command integration for running experiments with artifact validation,
+ * progress tracking, resume capabilities, and comprehensive result handling.
+ */
+
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -6,12 +12,29 @@ import * as vscode from 'vscode';
 import { ProgressPanelManager } from '../panels/ProgressPanelManager.js';
 import { ExperimentService } from '../services/ExperimentService.js';
 
+/**
+ * Command class for running experiments from JSON artifact files.
+ * Handles artifact selection, validation, execution progress, and result presentation.
+ */
 export class RunExperimentCommand {
+  /**
+   * Creates a new run experiment command instance.
+   * 
+   * @param experimentService - Service for experiment execution and management
+   * @param progressPanelManager - Manager for progress panel webviews
+   */
   constructor(
     private experimentService: ExperimentService,
     private progressPanelManager: ProgressPanelManager
   ) {}
 
+  /**
+   * Executes the run experiment command with full workflow handling.
+   * Handles artifact selection, validation, resume detection, progress tracking,
+   * and result presentation with comprehensive error handling.
+   * 
+   * @throws Error if file operations or experiment execution fails
+   */
   async execute(): Promise<void> {
     try {
       // Determine which artifact file to run
@@ -119,6 +142,12 @@ export class RunExperimentCommand {
     }
   }
 
+  /**
+   * Prompts user to select an artifact file for experiment execution.
+   * Checks active editor, searches workspace, and provides file browser fallback.
+   * 
+   * @returns Promise resolving to selected artifact file path or undefined if cancelled
+   */
   private async selectArtifactFile(): Promise<string | undefined> {
     // Check if active editor has a JSON file
     const activeEditor = vscode.window.activeTextEditor;
@@ -196,6 +225,11 @@ export class RunExperimentCommand {
     }
   }
 
+  /**
+   * Searches the workspace for artifact.json files.
+   * 
+   * @returns Promise resolving to array of artifact file paths
+   */
   private async findArtifactFiles(): Promise<string[]> {
     const pattern = new vscode.RelativePattern(
       vscode.workspace.workspaceFolders![0]!,
@@ -206,6 +240,11 @@ export class RunExperimentCommand {
     return files.map(uri => uri.fsPath);
   }
 
+  /**
+   * Opens file browser dialog for manual artifact file selection.
+   * 
+   * @returns Promise resolving to selected file path or undefined if cancelled
+   */
   private async browseForArtifact(): Promise<string | undefined> {
     const result = await vscode.window.showOpenDialog({
       canSelectFiles: true,
@@ -221,6 +260,13 @@ export class RunExperimentCommand {
     return result?.[0]?.fsPath;
   }
 
+  /**
+   * Extracts experiment metadata from artifact JSON file.
+   * 
+   * @param artifactPath - Absolute path to the artifact file
+   * @returns Promise resolving to experiment name and version
+   * @throws Error if file cannot be read or parsed
+   */
   private async getArtifactInfo(artifactPath: string): Promise<{
     experiment: string;
     version: string;
@@ -233,6 +279,11 @@ export class RunExperimentCommand {
     };
   }
 
+  /**
+   * Displays validation errors and warnings in a VS Code output channel.
+   * 
+   * @param validation - Validation result containing errors and warnings
+   */
   private showValidationErrors(validation: { errors: string[]; warnings: string[] }): void {
     const outputChannel = vscode.window.createOutputChannel('ExtremeXP Artifact Validation');
 
@@ -256,6 +307,12 @@ export class RunExperimentCommand {
     outputChannel.show();
   }
 
+  /**
+   * Presents experiment outputs to the user with selection interface.
+   * Attempts to open file outputs in editor or displays in output channel.
+   * 
+   * @param outputs - Nested object containing space outputs with values
+   */
   private async openOutputs(outputs: Record<string, Record<string, string>>): Promise<void> {
     // Create a quick pick to select which output to view
     const items: vscode.QuickPickItem[] = [];

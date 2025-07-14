@@ -1,3 +1,8 @@
+/**
+ * @fileoverview Task resolver for ExtremeXP workflows.
+ * Resolves task definitions from workflows and experiments, handling inheritance and parameter resolution.
+ */
+
 import {
   ExperimentModel,
   ExpressionType,
@@ -9,19 +14,43 @@ import { WorkflowModel, TaskModel } from '../models/WorkflowModel.js';
 
 import { ParameterCombination } from './ParameterResolver.js';
 
+/**
+ * Represents a fully resolved task with all parameters and metadata.
+ */
 export interface ResolvedTask {
+  /** Unique identifier for the task */
   id: string;
+  /** Name of the task */
   name: string;
+  /** Name of the workflow this task belongs to */
   workflowName: string;
+  /** Path to the task implementation file */
   implementation: string | null;
+  /** All parameters for this task */
   parameters: Map<string, ExpressionType>;
+  /** Input data requirements */
   inputs: string[];
+  /** Output data produced */
   outputs: string[];
+  /** Parameters that vary across experiment runs */
   dynamicParameters: string[];
+  /** Parameters with fixed values */
   staticParameters: Record<string, ExpressionType>;
 }
 
+/**
+ * Resolves task definitions from experiment spaces and workflow inheritance.
+ * Handles parameter classification, inheritance resolution, and task deduplication.
+ */
 export class TaskResolver {
+  /**
+   * Resolves all tasks from experiment spaces and workflows.
+   * 
+   * @param experiment - The experiment model containing spaces and task configurations
+   * @param workflows - Array of workflow models to resolve tasks from
+   * @param resolvedParameters - Optional parameter combinations for classification
+   * @returns Map of task ID to resolved task definitions
+   */
   resolve(
     experiment: ExperimentModel,
     workflows: WorkflowModel[],

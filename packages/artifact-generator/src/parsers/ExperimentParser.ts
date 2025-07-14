@@ -1,3 +1,8 @@
+/**
+ * @fileoverview Parser for ESPACE experiment files.
+ * Converts ESPACE syntax into structured experiment models.
+ */
+
 import * as fs from 'fs';
 
 import { ESPACEParser, ESPACELexer } from '@extremexp/core';
@@ -7,7 +12,18 @@ import { ExperimentModel } from '../models/ExperimentModel.js';
 import { ExperimentModelVisitor } from '../visitors/ExperimentModelVisitor.js';
 import { ParsingErrorListener } from '../visitors/ParsingErrorListener.js';
 
+/**
+ * Parser for ESPACE experiment definition files.
+ * Uses ANTLR-generated lexer and parser to convert ESPACE syntax into structured models.
+ */
 export class ExperimentParser {
+  /**
+   * Parses an ESPACE experiment file into an ExperimentModel.
+   * 
+   * @param espaceFileName - Path to the ESPACE experiment file
+   * @returns Promise resolving to the parsed experiment model
+   * @throws Error if the file cannot be read or contains syntax errors
+   */
   async parse(espaceFileName: string): Promise<ExperimentModel> {
     const content = await fs.promises.readFile(espaceFileName, 'utf-8');
     const input = antlr.CharStream.fromString(content);

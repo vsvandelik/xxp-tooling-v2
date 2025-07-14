@@ -1,3 +1,9 @@
+/**
+ * @fileoverview Main experiment executor implementation.
+ * Orchestrates the execution of experiment artifacts with support for resuming,
+ * progress tracking, and state management.
+ */
+
 import { createHash } from 'crypto';
 import fs from 'fs';
 import path, { resolve } from 'path';
@@ -15,9 +21,19 @@ import { ConsoleInputProvider } from '../userInput/ConsoleInputProvider.js';
 import { SpaceExecutor } from './SpaceExecutor.js';
 import { TaskExecutor } from './TaskExecutor.js';
 
+/**
+ * Main implementation of the experiment execution engine.
+ * Manages the complete lifecycle of experiment execution including persistence,
+ * progress tracking, and state recovery.
+ */
 export class ExperimentExecutor implements ExperimentRunner {
   private repository: DatabaseRepository;
 
+  /**
+   * Creates a new experiment executor.
+   * 
+   * @param repositoryOrPath - Database repository instance or path to SQLite database file
+   */
   constructor(repositoryOrPath?: DatabaseRepository | string) {
     if (typeof repositoryOrPath === 'string' || repositoryOrPath === undefined) {
       this.repository = new SqliteRepository(repositoryOrPath || './experiment_runs.db');
@@ -26,10 +42,24 @@ export class ExperimentExecutor implements ExperimentRunner {
     }
   }
 
+  /**
+   * Gets the underlying database repository instance.
+   * 
+   * @returns The database repository being used for persistence
+   */
   getRepository(): DatabaseRepository {
     return this.repository;
   }
 
+  /**
+   * Executes an experiment from an artifact file.
+   * Supports resuming interrupted experiments and provides comprehensive progress tracking.
+   * 
+   * @param artifactPath - Path to the experiment artifact JSON file
+   * @param options - Execution options including callbacks and resume settings
+   * @returns Promise resolving to the experiment execution result
+   * @throws Error if artifact is invalid or execution fails
+   */
   async run(artifactPath: string, options: ExperimentRunnerOptions = {}): Promise<RunResult> {
     const {
       progressCallback = {},
@@ -218,6 +248,13 @@ export class ExperimentExecutor implements ExperimentRunner {
     }
   }
 
+  /**
+   * Gets the current status and progress of an experiment.
+   * 
+   * @param experimentName - Name of the experiment
+   * @param experimentVersion - Version of the experiment
+   * @returns Promise resolving to current status or null if experiment not found
+   */
   async getStatus(experimentName: string, experimentVersion: string): Promise<RunStatus | null> {
     const run = await this.repository.getRun(experimentName, experimentVersion);
 
@@ -294,6 +331,13 @@ export class ExperimentExecutor implements ExperimentRunner {
     return result;
   }
 
+  /**
+   * Terminates a running experiment gracefully.
+   * 
+   * @param experimentName - Name of the experiment to terminate
+   * @param experimentVersion - Version of the experiment to terminate
+   * @returns Promise resolving to true if terminated, false if not running
+   */
   async terminate(experimentName: string, experimentVersion: string): Promise<boolean> {
     const run = await this.repository.getRun(experimentName, experimentVersion);
 
@@ -305,6 +349,13 @@ export class ExperimentExecutor implements ExperimentRunner {
     return true;
   }
 
+  /**
+   * Loads and validates an experiment artifact from a JSON file.
+   * 
+   * @param artifactPath - Path to the artifact JSON file
+   * @returns Promise resolving to the parsed and validated artifact
+   * @throws Error if file cannot be read, parsed, or is invalid
+   */
   private async loadArtifact(artifactPath: string): Promise<Artifact> {
     // Validate artifactPath
     if (!artifactPath.endsWith('.json')) {
