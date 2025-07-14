@@ -1,5 +1,5 @@
 /**
- * @fileoverview Main VS Code extension entry point for ExtremeXP workflows and experiments.
+ * Main VS Code extension entry point for ExtremeXP workflows and experiments.
  * Provides comprehensive support for XXP and ESPACE languages including syntax highlighting,
  * language server integration, workflow repository management, and experiment execution.
  */

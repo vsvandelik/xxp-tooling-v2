@@ -1,5 +1,5 @@
 /**
- * @fileoverview Workflow metadata model definition.
+ * Workflow metadata model definition.
  * Defines the structure for workflow metadata including identification,
  * authorship, timestamps, and file information.
  */

@@ -1,5 +1,5 @@
 /**
- * @fileoverview Local filesystem implementation of workflow repository.
+ * Local filesystem implementation of workflow repository.
  * Provides workflow storage and retrieval operations on the local filesystem
  * with support for both single-file and multi-file workflows.
  */

@@ -1,5 +1,5 @@
 /**
- * @fileoverview HTTP server for ExtremeXP experiment execution.
+ * HTTP server for ExtremeXP experiment execution.
  * Provides REST API and WebSocket interface for running and monitoring experiments remotely.
  */
 

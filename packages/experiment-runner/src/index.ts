@@ -1,5 +1,5 @@
 /**
- * @fileoverview Main entry point for the ExtremeXP experiment runner library.
+ * Main entry point for the ExtremeXP experiment runner library.
  * Exports core execution engine and type definitions for running experiment artifacts.
  */
 

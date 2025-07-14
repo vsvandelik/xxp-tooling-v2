@@ -1,5 +1,5 @@
 /**
- * @fileoverview Console-based user input provider implementation.
+ * Console-based user input provider implementation.
  * Provides user input functionality through command-line interface
  * using Node.js readline for interactive prompts.
  */

@@ -1,5 +1,5 @@
 /**
- * @fileoverview Database repository interface for experiment data persistence.
+ * Database repository interface for experiment data persistence.
  * Defines the contract for storing and retrieving experiment execution state,
  * progress tracking, and result data.
  */

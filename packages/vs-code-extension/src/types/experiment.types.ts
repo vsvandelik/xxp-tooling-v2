@@ -1,5 +1,5 @@
 /**
- * @fileoverview Type definitions for experiment execution and communication.
+ * Type definitions for experiment execution and communication.
  * Defines interfaces for server configuration, experiment lifecycle, progress tracking,
  * user interaction, and API communication between VS Code extension and experiment server.
  */

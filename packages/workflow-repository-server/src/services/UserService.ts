@@ -1,5 +1,5 @@
 /**
- * @fileoverview User service for authentication and user management.
+ * User service for authentication and user management.
  * Provides user creation, authentication, JWT token management,
  * and role-based authorization for the workflow repository server.
  */

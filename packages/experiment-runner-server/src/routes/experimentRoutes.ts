@@ -1,5 +1,5 @@
 /**
- * @fileoverview Express router for experiment-related API endpoints.
+ * Express router for experiment-related API endpoints.
  * Provides REST API for experiment execution, monitoring, and artifact management.
  */
 

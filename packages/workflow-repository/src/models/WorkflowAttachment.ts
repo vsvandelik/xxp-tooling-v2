@@ -1,5 +1,5 @@
 /**
- * @fileoverview Workflow attachment model definition.
+ * Workflow attachment model definition.
  * Defines the structure for workflow attachment file metadata
  * including file information and timestamps.
  */

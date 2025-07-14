@@ -1,5 +1,5 @@
 /**
- * @fileoverview Run Experiment command for executing JSON artifacts.
+ * Run Experiment command for executing JSON artifacts.
  * Provides VS Code command integration for running experiments with artifact validation,
  * progress tracking, resume capabilities, and comprehensive result handling.
  */

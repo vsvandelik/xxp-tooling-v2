@@ -1,5 +1,5 @@
 /**
- * @fileoverview Type definitions for experiment progress tracking and callbacks.
+ * Type definitions for experiment progress tracking and callbacks.
  * Defines interfaces for monitoring experiment execution progress and receiving updates.
  */
 

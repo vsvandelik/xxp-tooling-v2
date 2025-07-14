@@ -1,5 +1,5 @@
 /**
- * @fileoverview ANTLR visitor for converting ESPACE parse trees to experiment models.
+ * ANTLR visitor for converting ESPACE parse trees to experiment models.
  * Implements the visitor pattern to transform parsed ESPACE syntax into structured data models.
  */
 

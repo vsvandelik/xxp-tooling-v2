@@ -1,5 +1,5 @@
 /**
- * @fileoverview Remote workflow repository implementation for HTTP-based workflow storage.
+ * Remote workflow repository implementation for HTTP-based workflow storage.
  * Provides client-side API communication with workflow repository servers,
  * including authentication, workflow management, and content synchronization.
  */

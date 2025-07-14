@@ -1,5 +1,5 @@
 /**
- * @fileoverview ANTLR visitor for converting XXP parse trees to workflow models.
+ * ANTLR visitor for converting XXP parse trees to workflow models.
  * Implements the visitor pattern to transform parsed XXP syntax into structured data models.
  */
 

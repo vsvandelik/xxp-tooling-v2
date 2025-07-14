@@ -1,5 +1,5 @@
 /**
- * @fileoverview Data models for XXP workflow definitions.
+ * Data models for XXP workflow definitions.
  * Contains models for parsed workflow structures including tasks, data, and inheritance.
  */
 

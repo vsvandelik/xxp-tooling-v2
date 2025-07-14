@@ -1,5 +1,5 @@
 /**
- * @fileoverview Main entry point for the ExtremeXP experiment runner server.
+ * Main entry point for the ExtremeXP experiment runner server.
  * Exports server components and type definitions for remote experiment execution.
  */
 

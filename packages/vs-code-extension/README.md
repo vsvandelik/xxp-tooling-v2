@@ -488,4 +488,4 @@ MIT License - see LICENSE file for details.
 
 ## Changelog
 
-See [CHANGELOG.md](./CHANGELOG.md) for release history and changes.
+Release history and changes are tracked through Git commits and GitHub releases.

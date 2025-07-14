@@ -1,5 +1,5 @@
 /**
- * @fileoverview Task resolver for ExtremeXP workflows.
+ * Task resolver for ExtremeXP workflows.
  * Resolves task definitions from workflows and experiments, handling inheritance and parameter resolution.
  */
 

@@ -1,5 +1,5 @@
 /**
- * @fileoverview Parser for ESPACE experiment files.
+ * Parser for ESPACE experiment files.
  * Converts ESPACE syntax into structured experiment models.
  */
 

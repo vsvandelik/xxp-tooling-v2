@@ -1,5 +1,5 @@
 /**
- * @fileoverview Tool executor for running ExtremeXP toolchain components.
+ * Tool executor for running ExtremeXP toolchain components.
  * Provides standardized execution interface with cancellation support, timeout handling,
  * streaming output, and cross-platform compatibility for Node.js and binary tools.
  */

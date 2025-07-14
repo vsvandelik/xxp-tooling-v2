@@ -1,5 +1,5 @@
 /**
- * @fileoverview Command-line interface for the ExtremeXP experiment runner.
+ * Command-line interface for the ExtremeXP experiment runner.
  * Provides CLI commands for running, monitoring, and controlling experiments.
  */
 

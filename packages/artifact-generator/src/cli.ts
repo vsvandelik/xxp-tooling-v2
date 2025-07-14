@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * @fileoverview Command-line interface for the ExtremeXP artifact generator.
+ * Command-line interface for the ExtremeXP artifact generator.
  * Provides a CLI tool to generate experiment artifacts from ESPACE files.
  */
 

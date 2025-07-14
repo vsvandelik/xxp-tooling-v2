@@ -1,5 +1,5 @@
 /**
- * @fileoverview Server manager for ExtremeXP experiment runner server lifecycle.
+ * Server manager for ExtremeXP experiment runner server lifecycle.
  * Provides comprehensive server process management including startup, shutdown,
  * port management, configuration handling, and status monitoring with VS Code integration.
  */

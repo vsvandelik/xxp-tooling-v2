@@ -1,5 +1,5 @@
 /**
- * @fileoverview Workflow controller for handling HTTP API requests.
+ * Workflow controller for handling HTTP API requests.
  * Provides comprehensive REST API endpoints for workflow management including
  * upload, download, update, delete, search, and discovery operations.
  */

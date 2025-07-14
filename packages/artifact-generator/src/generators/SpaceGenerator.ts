@@ -1,5 +1,5 @@
 /**
- * @fileoverview Generator for experiment space definitions.
+ * Generator for experiment space definitions.
  * Converts experiment spaces with parameter combinations into executable space definitions.
  */
 

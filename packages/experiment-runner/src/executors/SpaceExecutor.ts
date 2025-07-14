@@ -1,5 +1,5 @@
 /**
- * @fileoverview Space executor for managing parameter space execution.
+ * Space executor for managing parameter space execution.
  * Handles the execution of all parameter sets within a space and coordinates task execution.
  */
 

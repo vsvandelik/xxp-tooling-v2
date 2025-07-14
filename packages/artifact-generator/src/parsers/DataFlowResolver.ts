@@ -1,5 +1,5 @@
 /**
- * @fileoverview Data flow validation for ExtremeXP workflows.
+ * Data flow validation for ExtremeXP workflows.
  * Validates that all required data inputs are available and data flows are consistent.
  */
 

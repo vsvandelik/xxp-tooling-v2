@@ -1,5 +1,5 @@
 /**
- * @fileoverview Generate Artifact command for converting ESPACE files to JSON artifacts.
+ * Generate Artifact command for converting ESPACE files to JSON artifacts.
  * Provides VS Code command integration for running the artifact generator tool
  * with progress reporting, validation feedback, and result handling.
  */

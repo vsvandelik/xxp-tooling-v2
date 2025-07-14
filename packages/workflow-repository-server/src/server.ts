@@ -1,5 +1,5 @@
 /**
- * @fileoverview Main server entry point for the workflow repository server.
+ * Main server entry point for the workflow repository server.
  * Handles server configuration, startup, error handling, and graceful shutdown
  * for the ExtremeXP workflow repository HTTP API server.
  */

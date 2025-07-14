@@ -1,5 +1,5 @@
 /**
- * @fileoverview Generator for experiment control flow definitions.
+ * Generator for experiment control flow definitions.
  * Converts experiment control flow models into executable control definitions.
  */
 

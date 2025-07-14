@@ -1,5 +1,5 @@
 /**
- * @fileoverview Data resolver for ExtremeXP experiments.
+ * Data resolver for ExtremeXP experiments.
  * Resolves data definitions and validates data requirements across experiments and workflows.
  */
 

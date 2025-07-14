@@ -1,5 +1,5 @@
 /**
- * @fileoverview Parser for XXP workflow files.
+ * Parser for XXP workflow files.
  * Converts XXP syntax into structured workflow models.
  */
 

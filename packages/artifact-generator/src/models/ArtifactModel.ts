@@ -1,5 +1,5 @@
 /**
- * @fileoverview Data models for generated experiment artifacts.
+ * Data models for generated experiment artifacts.
  * Contains definitions for the final JSON structure of experiment artifacts.
  */
 

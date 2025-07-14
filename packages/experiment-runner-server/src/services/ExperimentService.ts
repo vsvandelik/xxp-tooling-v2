@@ -1,5 +1,5 @@
 /**
- * @fileoverview Service for managing experiment execution in server environment.
+ * Service for managing experiment execution in server environment.
  * Provides high-level interface for running multiple concurrent experiments with
  * progress tracking, user input handling, and state management.
  */

@@ -1,5 +1,5 @@
 /**
- * @fileoverview Core library for ExtremeXP language processing.
+ * Core library for ExtremeXP language processing.
  * Exports ANTLR-generated parsers, lexers, and utilities for ESPACE and XXP languages.
  */
 

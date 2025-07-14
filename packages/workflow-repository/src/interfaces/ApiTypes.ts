@@ -1,5 +1,5 @@
 /**
- * @fileoverview API type definitions for workflow repository HTTP operations.
+ * API type definitions for workflow repository HTTP operations.
  * Defines request and response structures for REST API communication
  * between clients and workflow repository servers.
  */

@@ -1,5 +1,5 @@
 /**
- * @fileoverview Main entry point for the ExtremeXP workflow repository library.
+ * Main entry point for the ExtremeXP workflow repository library.
  * Exports all public APIs for workflow management including models, interfaces,
  * repository implementations, and manager classes.
  */

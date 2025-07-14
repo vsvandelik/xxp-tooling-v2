@@ -1,5 +1,5 @@
 /**
- * @fileoverview Control flow manager for experiment execution flow.
+ * Control flow manager for experiment execution flow.
  * Handles transition logic between spaces, condition evaluation,
  * and state persistence for experiment resumption.
  */

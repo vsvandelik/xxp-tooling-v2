@@ -1,5 +1,5 @@
 /**
- * @fileoverview File resolver for ExtremeXP workflows.
+ * File resolver for ExtremeXP workflows.
  * Handles file path resolution and workflow file discovery with inheritance support.
  */
 

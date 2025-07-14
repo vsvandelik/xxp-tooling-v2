@@ -1,5 +1,5 @@
 /**
- * @fileoverview Main workflow repository server implementation.
+ * Main workflow repository server implementation.
  * Provides HTTP server with REST API for workflow storage, authentication,
  * and management operations across the ExtremeXP tooling ecosystem.
  */

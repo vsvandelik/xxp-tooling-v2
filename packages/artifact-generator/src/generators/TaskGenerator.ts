@@ -1,5 +1,5 @@
 /**
- * @fileoverview Generator for task definitions in experiment artifacts.
+ * Generator for task definitions in experiment artifacts.
  * Converts resolved tasks into grouped task definitions for parallel execution.
  */
 

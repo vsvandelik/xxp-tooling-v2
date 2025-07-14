@@ -1,5 +1,5 @@
 /**
- * @fileoverview Workflow storage service for server-side workflow management.
+ * Workflow storage service for server-side workflow management.
  * Provides high-level storage operations, ZIP handling, conflict resolution,
  * and metadata aggregation for the workflow repository server.
  */

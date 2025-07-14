@@ -1,5 +1,5 @@
 /**
- * @fileoverview SQLite implementation of the database repository.
+ * SQLite implementation of the database repository.
  * Provides persistent storage for experiment data using SQLite database.
  */
 

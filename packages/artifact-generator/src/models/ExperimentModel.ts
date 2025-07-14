@@ -1,5 +1,5 @@
 /**
- * @fileoverview Data models for ESPACE experiment definitions.
+ * Data models for ESPACE experiment definitions.
  * Contains models for parsed experiment structures including spaces, parameters, and control flow.
  */
 

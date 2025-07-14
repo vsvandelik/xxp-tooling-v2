@@ -1,5 +1,5 @@
 /**
- * @fileoverview Type definitions for experiment runner interfaces and options.
+ * Type definitions for experiment runner interfaces and options.
  * Defines the main interfaces for experiment execution engines.
  */
 

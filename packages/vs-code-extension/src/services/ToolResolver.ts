@@ -1,5 +1,5 @@
 /**
- * @fileoverview Tool resolver for locating ExtremeXP toolchain executables.
+ * Tool resolver for locating ExtremeXP toolchain executables.
  * Provides intelligent tool discovery across bundled tools, development environments,
  * user configurations, and node_modules with caching for performance.
  */

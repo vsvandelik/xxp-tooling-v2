@@ -1,5 +1,5 @@
 /**
- * @fileoverview Repository configuration and search options models.
+ * Repository configuration and search options models.
  * Defines structures for configuring workflow repositories and
  * specifying search criteria for workflow discovery.
  */

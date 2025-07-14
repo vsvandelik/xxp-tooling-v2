@@ -1,5 +1,5 @@
 /**
- * @fileoverview Workflow item and content model definitions.
+ * Workflow item and content model definitions.
  * Defines structures for complete workflow data including content,
  * metadata, and attachment information.
  */

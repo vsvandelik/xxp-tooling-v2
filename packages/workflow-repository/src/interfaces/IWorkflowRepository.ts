@@ -1,5 +1,5 @@
 /**
- * @fileoverview Core workflow repository interface.
+ * Core workflow repository interface.
  * Defines the contract for workflow storage and retrieval operations
  * across different repository implementations (local, remote).
  */

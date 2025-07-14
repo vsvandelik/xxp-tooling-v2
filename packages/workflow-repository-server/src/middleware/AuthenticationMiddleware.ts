@@ -1,5 +1,5 @@
 /**
- * @fileoverview Authentication middleware for Express.js workflows.
+ * Authentication middleware for Express.js workflows.
  * Provides JWT token validation, user context injection, and role-based
  * authorization for protected API endpoints.
  */

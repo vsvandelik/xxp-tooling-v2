@@ -1,5 +1,5 @@
 /**
- * @fileoverview WebSocket manager for real-time experiment communication.
+ * WebSocket manager for real-time experiment communication.
  * Handles client subscriptions, progress updates, and user input requests via Socket.IO.
  */
 

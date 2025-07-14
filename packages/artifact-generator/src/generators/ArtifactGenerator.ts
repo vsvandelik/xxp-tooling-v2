@@ -1,5 +1,5 @@
 /**
- * @fileoverview Main artifact generator class for ExtremeXP workflows.
+ * Main artifact generator class for ExtremeXP workflows.
  * Orchestrates parsing, validation, and generation of experiment artifacts from ESPACE files.
  */
 

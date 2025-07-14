@@ -1,5 +1,5 @@
 /**
- * @fileoverview Main experiment executor implementation.
+ * Main experiment executor implementation.
  * Orchestrates the execution of experiment artifacts with support for resuming,
  * progress tracking, and state management.
  */

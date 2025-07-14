@@ -1,5 +1,5 @@
 /**
- * @fileoverview Database type definitions for experiment data persistence.
+ * Database type definitions for experiment data persistence.
  * Defines interfaces for all database records used in experiment storage
  * including runs, executions, and data mappings.
  */

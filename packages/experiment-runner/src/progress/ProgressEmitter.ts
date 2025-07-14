@@ -1,5 +1,5 @@
 /**
- * @fileoverview Progress emitter for experiment execution tracking.
+ * Progress emitter for experiment execution tracking.
  * Manages progress event emission and callback coordination for real-time
  * experiment monitoring and status updates.
  */

@@ -1,5 +1,5 @@
 /**
- * @fileoverview Custom error listener for ANTLR parsing errors.
+ * Custom error listener for ANTLR parsing errors.
  * Provides enhanced error messages with file context and location information.
  */
 

@@ -1,5 +1,5 @@
 /**
- * @fileoverview Experiment service for managing experiment execution and communication.
+ * Experiment service for managing experiment execution and communication.
  * Provides WebSocket-based real-time communication with the experiment runner server,
  * handles experiment lifecycle, progress tracking, and user input management.
  */

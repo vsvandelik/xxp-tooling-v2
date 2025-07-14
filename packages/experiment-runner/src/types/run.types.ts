@@ -1,5 +1,5 @@
 /**
- * @fileoverview Type definitions for experiment run results and status.
+ * Type definitions for experiment run results and status.
  * Defines interfaces for experiment execution outcomes and progress tracking.
  */
 

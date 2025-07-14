@@ -1,5 +1,5 @@
 /**
- * @fileoverview Parameter resolver for ExtremeXP experiments.
+ * Parameter resolver for ExtremeXP experiments.
  * Generates parameter value combinations for different exploration strategies.
  */
 

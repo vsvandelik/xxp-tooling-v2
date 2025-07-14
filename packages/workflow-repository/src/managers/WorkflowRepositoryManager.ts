@@ -1,5 +1,5 @@
 /**
- * @fileoverview Workflow repository manager for coordinating multiple repositories.
+ * Workflow repository manager for coordinating multiple repositories.
  * Manages a collection of local and remote workflow repositories and provides
  * a unified interface for multi-repository operations.
  */

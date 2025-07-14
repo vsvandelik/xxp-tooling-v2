@@ -1,5 +1,5 @@
 /**
- * @fileoverview Interface for user input providers.
+ * Interface for user input providers.
  * Defines the contract for handling user input requests during experiment execution.
  */
 

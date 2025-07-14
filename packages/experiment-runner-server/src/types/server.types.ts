@@ -1,5 +1,5 @@
 /**
- * @fileoverview Type definitions for experiment runner server.
+ * Type definitions for experiment runner server.
  * Defines interfaces for server configuration, API requests/responses, and data structures.
  */
 

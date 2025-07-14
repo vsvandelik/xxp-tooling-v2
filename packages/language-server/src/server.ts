@@ -1,5 +1,5 @@
 /**
- * @fileoverview Main entry point for the ExtremeXP Language Server.
+ * Main entry point for the ExtremeXP Language Server.
  * Provides comprehensive language support for XXP (workflow definition) and ESPACE
  * (experiment specification) languages including syntax validation, code completion,
  * hover information, references, and diagnostics.

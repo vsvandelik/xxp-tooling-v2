@@ -1,5 +1,5 @@
 /**
- * @fileoverview User model definitions for authentication and authorization.
+ * User model definitions for authentication and authorization.
  * Defines user data structures, roles, credentials, and authentication tokens
  * for the workflow repository system.
  */

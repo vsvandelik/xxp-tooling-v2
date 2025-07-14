@@ -1,5 +1,5 @@
 /**
- * @fileoverview Main entry point for the ExtremeXP workflow repository server.
+ * Main entry point for the ExtremeXP workflow repository server.
  * Exports core server components including the main server class, services,
  * middleware, and controllers for workflow repository management.
  */

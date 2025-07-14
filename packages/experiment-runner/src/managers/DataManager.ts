@@ -1,5 +1,5 @@
 /**
- * @fileoverview Data manager for experiment output collection.
+ * Data manager for experiment output collection.
  * Handles the collection and aggregation of experiment output data
  * from completed task executions.
  */

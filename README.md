@@ -203,7 +203,7 @@ npm run test:watch
 - **Artifact generator**: Constructor and validation testing
 - **VS Code extension**: Basic module import testing
 
-See [TESTING.md](./TESTING.md) for detailed testing documentation and best practices.
+For detailed testing documentation and best practices, refer to the test files in each package's `test/` directory.
 
 ### Development
 
