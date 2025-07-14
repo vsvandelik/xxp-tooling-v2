@@ -1,14 +1,37 @@
+/**
+ * Data resolver for ExtremeXP experiments.
+ * Resolves data definitions and validates data requirements across experiments and workflows.
+ */
+
 import { ExperimentModel, SpaceModel } from '../models/ExperimentModel.js';
 import { WorkflowModel } from '../models/WorkflowModel.js';
 
 import { ResolvedTask } from './TaskResolver.js';
 
+/**
+ * Result of data resolution containing experiment and space-level data mappings.
+ */
 export interface ResolvedData {
+  /** Global data definitions available to all spaces */
   experimentLevelData: Record<string, string>;
-  spaceLevelData: Map<string, Record<string, string>>; // spaceId -> data overrides
+  /** Space-specific data overrides mapped by space ID */
+  spaceLevelData: Map<string, Record<string, string>>;
 }
 
+/**
+ * Resolves data definitions from experiments and workflows.
+ * Handles inheritance, validation, and space-specific overrides.
+ */
 export class DataResolver {
+  /**
+   * Resolves all data definitions for an experiment.
+   * 
+   * @param experiment - The experiment model
+   * @param workflows - Array of workflow models
+   * @param resolvedTasks - Map of resolved task definitions
+   * @returns Resolved data with experiment and space-level mappings
+   * @throws Error if required data inputs are not satisfied
+   */
   resolve(
     experiment: ExperimentModel,
     workflows: WorkflowModel[],
@@ -40,6 +63,12 @@ export class DataResolver {
     };
   }
 
+  /**
+   * Builds a map of workflow names to workflow models for efficient lookup.
+   * 
+   * @param workflows - Array of workflow models
+   * @returns Map of workflow name to workflow model
+   */
   private buildWorkflowMap(workflows: WorkflowModel[]): Map<string, WorkflowModel> {
     const workflowMap = new Map<string, WorkflowModel>();
     for (const workflow of workflows) {

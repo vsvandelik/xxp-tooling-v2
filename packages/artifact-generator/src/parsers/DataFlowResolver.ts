@@ -1,8 +1,25 @@
+/**
+ * Data flow validation for ExtremeXP workflows.
+ * Validates that all required data inputs are available and data flows are consistent.
+ */
+
 import { ExperimentModel, SpaceModel } from '../models/ExperimentModel.js';
 import { WorkflowModel } from '../models/WorkflowModel.js';
 import { ResolvedTask } from '../resolvers/TaskResolver.js';
 
+/**
+ * Validates data flow consistency within experiments and workflows.
+ * Ensures all task inputs are satisfied by available data sources.
+ */
 export class DataFlowResolver {
+  /**
+   * Validates data flow for all spaces in an experiment.
+   * 
+   * @param experiment - The experiment model to validate
+   * @param workflows - Array of workflow models
+   * @param resolvedTasks - Map of resolved task definitions
+   * @throws Error if data flow validation fails
+   */
   validate(
     experiment: ExperimentModel,
     workflows: WorkflowModel[],
@@ -13,6 +30,15 @@ export class DataFlowResolver {
     }
   }
 
+  /**
+   * Validates data flow for a specific space.
+   * 
+   * @param space - The space model to validate
+   * @param workflows - Array of workflow models
+   * @param resolvedTasks - Map of resolved task definitions
+   * @param experiment - The parent experiment model
+   * @throws Error if data flow validation fails for this space
+   */
   private validateSpaceDataFlow(
     space: SpaceModel,
     workflows: WorkflowModel[],

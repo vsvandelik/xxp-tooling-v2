@@ -1,3 +1,8 @@
+/**
+ * SQLite implementation of the database repository.
+ * Provides persistent storage for experiment data using SQLite database.
+ */
+
 import { open, Database as SqliteDatabase } from 'sqlite';
 import sqlite3 from 'sqlite3';
 
@@ -11,6 +16,10 @@ import {
 
 import { DatabaseRepository } from './DatabaseRepository.js';
 
+/**
+ * SQLite implementation of the database repository.
+ * Handles all database operations for experiment data persistence using SQLite.
+ */
 export class SqliteRepository implements DatabaseRepository {
   private db: SqliteDatabase | null = null;
   private isInitialized = false;

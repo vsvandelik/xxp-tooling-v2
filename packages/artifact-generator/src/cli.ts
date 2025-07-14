@@ -1,5 +1,10 @@
 #!/usr/bin/env node
 
+/**
+ * Command-line interface for the ExtremeXP artifact generator.
+ * Provides a CLI tool to generate experiment artifacts from ESPACE files.
+ */
+
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -64,6 +69,13 @@ program
 
 program.parse();
 
+/**
+ * Prints validation results to the console and exits the process if there are errors.
+ * 
+ * @param validation - The validation result containing errors and warnings
+ * @param validation.errors - Array of validation error messages
+ * @param validation.warnings - Array of validation warning messages
+ */
 function printValidationResults(validation: { errors: string[]; warnings: string[] }): void {
   if (validation.errors.length > 0) {
     console.error('Validation errors:');

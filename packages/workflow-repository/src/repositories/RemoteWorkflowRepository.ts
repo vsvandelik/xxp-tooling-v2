@@ -1,3 +1,9 @@
+/**
+ * Remote workflow repository implementation for HTTP-based workflow storage.
+ * Provides client-side API communication with workflow repository servers,
+ * including authentication, workflow management, and content synchronization.
+ */
+
 import {
   ApiResponse,
   LoginRequest,
@@ -15,15 +21,34 @@ import { WorkflowAttachment } from '../models/WorkflowAttachment.js';
 import { WorkflowItem, WorkflowContent } from '../models/WorkflowItem.js';
 import { WorkflowMetadata } from '../models/WorkflowMetadata.js';
 
+/**
+ * Remote workflow repository implementation for HTTP-based workflow storage.
+ * Provides client-side access to workflow repository servers with automatic
+ * authentication, content synchronization, and comprehensive workflow management.
+ */
 export class RemoteWorkflowRepository implements IWorkflowRepository {
+  /** JWT authentication token for API requests */
   private authToken?: string;
 
+  /**
+   * Creates a new remote workflow repository client.
+   * 
+   * @param baseUrl - Base URL of the workflow repository server
+   * @param username - Optional username for authentication
+   * @param password - Optional password for authentication
+   */
   constructor(
     private baseUrl: string,
     private username?: string,
     private password?: string
   ) {}
 
+  /**
+   * Authenticates with the remote server using provided credentials.
+   * 
+   * @returns Promise resolving to true if authentication succeeded
+   * @throws Error if network request fails
+   */
   async authenticate(): Promise<boolean> {
     if (!this.username || !this.password) {
       return false;
@@ -56,6 +81,14 @@ export class RemoteWorkflowRepository implements IWorkflowRepository {
     }
   }
 
+  /**
+   * Lists workflows from the remote repository.
+   * 
+   * @param path - Optional path to list workflows from
+   * @param options - Optional search and filtering options
+   * @returns Promise resolving to array of workflow metadata
+   * @throws Error if server request fails or returns error
+   */
   async list(path?: string, options?: WorkflowSearchOptions): Promise<readonly WorkflowMetadata[]> {
     const params = new URLSearchParams();
 
@@ -76,6 +109,13 @@ export class RemoteWorkflowRepository implements IWorkflowRepository {
     return result.data.workflows;
   }
 
+  /**
+   * Retrieves a complete workflow item including content and attachments.
+   * 
+   * @param id - Unique workflow identifier
+   * @returns Promise resolving to workflow item or null if not found
+   * @throws Error if server communication fails
+   */
   async get(id: string): Promise<WorkflowItem | null> {
     try {
       const metadataResponse = await this.makeRequest(`/workflows/${id}`);
@@ -102,6 +142,13 @@ export class RemoteWorkflowRepository implements IWorkflowRepository {
     }
   }
 
+  /**
+   * Downloads and extracts workflow content from the remote server.
+   * 
+   * @param id - Unique workflow identifier
+   * @returns Promise resolving to workflow content or null if not found
+   * @throws Error if download or extraction fails
+   */
   async getContent(id: string): Promise<WorkflowContent | null> {
     try {
       const response = await this.makeRequest(`/workflows/${id}/content`);
@@ -145,6 +192,15 @@ export class RemoteWorkflowRepository implements IWorkflowRepository {
     }
   }
 
+  /**
+   * Uploads a new workflow to the remote repository.
+   * 
+   * @param path - Target path for the workflow
+   * @param content - Workflow content including main file and attachments
+   * @param metadata - Workflow metadata excluding system-generated fields
+   * @returns Promise resolving to complete workflow metadata
+   * @throws Error if authentication fails or upload is rejected
+   */
   async upload(
     path: string,
     content: WorkflowContent,
@@ -189,6 +245,15 @@ export class RemoteWorkflowRepository implements IWorkflowRepository {
     return result.data;
   }
 
+  /**
+   * Updates an existing workflow in the remote repository.
+   * 
+   * @param id - Unique workflow identifier
+   * @param content - Updated workflow content
+   * @param metadata - Partial metadata updates
+   * @returns Promise resolving to updated workflow metadata
+   * @throws Error if authentication fails or workflow not found
+   */
   async update(
     id: string,
     content: WorkflowContent,
@@ -231,6 +296,13 @@ export class RemoteWorkflowRepository implements IWorkflowRepository {
     return result.data;
   }
 
+  /**
+   * Deletes a workflow from the remote repository.
+   * 
+   * @param id - Unique workflow identifier
+   * @returns Promise resolving to true if deletion succeeded
+   * @throws Error if authentication fails
+   */
   async delete(id: string): Promise<boolean> {
     await this.ensureAuthenticated();
 
@@ -246,6 +318,12 @@ export class RemoteWorkflowRepository implements IWorkflowRepository {
     }
   }
 
+  /**
+   * Checks if a workflow exists in the remote repository.
+   * 
+   * @param id - Unique workflow identifier
+   * @returns Promise resolving to true if workflow exists
+   */
   async exists(id: string): Promise<boolean> {
     try {
       const response = await this.makeRequest(`/workflows/${id}`);
@@ -255,6 +333,13 @@ export class RemoteWorkflowRepository implements IWorkflowRepository {
     }
   }
 
+  /**
+   * Searches workflows in the remote repository.
+   * 
+   * @param options - Search criteria including query, tags, author, etc.
+   * @returns Promise resolving to array of matching workflow metadata
+   * @throws Error if server request fails
+   */
   async search(options: WorkflowSearchOptions): Promise<readonly WorkflowMetadata[]> {
     const params = new URLSearchParams();
 
@@ -275,6 +360,13 @@ export class RemoteWorkflowRepository implements IWorkflowRepository {
     return result.data.workflows;
   }
 
+  /**
+   * Retrieves the hierarchical tree structure of workflows.
+   * 
+   * @param path - Optional path to get tree structure from
+   * @returns Promise resolving to workflow tree node
+   * @throws Error if server request fails
+   */
   async getTreeStructure(path?: string): Promise<WorkflowTreeNode> {
     const url = path ? `/tree/${path}` : '/tree';
     const response = await this.makeRequest(url);
@@ -287,6 +379,12 @@ export class RemoteWorkflowRepository implements IWorkflowRepository {
     return result.data.tree;
   }
 
+  /**
+   * Retrieves all available tags from the remote repository.
+   * 
+   * @returns Promise resolving to array of tag strings
+   * @throws Error if server request fails
+   */
   async getTags(): Promise<string[]> {
     const response = await this.makeRequest('/tags');
     const result: ApiResponse<TagsResponse> = await response.json();
@@ -298,6 +396,12 @@ export class RemoteWorkflowRepository implements IWorkflowRepository {
     return result.data.tags;
   }
 
+  /**
+   * Retrieves all workflow authors from the remote repository.
+   * 
+   * @returns Promise resolving to array of author names
+   * @throws Error if server request fails
+   */
   async getAuthors(): Promise<string[]> {
     const response = await this.makeRequest('/authors');
     const result: ApiResponse<AuthorsResponse> = await response.json();
@@ -309,6 +413,14 @@ export class RemoteWorkflowRepository implements IWorkflowRepository {
     return result.data.authors;
   }
 
+  /**
+   * Makes an authenticated HTTP request to the server.
+   * 
+   * @param endpoint - API endpoint path
+   * @param options - Request options with optional content type skipping
+   * @returns Promise resolving to HTTP response
+   * @throws Error if request fails
+   */
   private async makeRequest(
     endpoint: string,
     options: RequestInit & { skipContentType?: boolean } = {}
@@ -346,6 +458,11 @@ export class RemoteWorkflowRepository implements IWorkflowRepository {
     return response;
   }
 
+  /**
+   * Ensures the client is authenticated before making protected requests.
+   * 
+   * @throws Error if authentication fails
+   */
   private async ensureAuthenticated(): Promise<void> {
     if (!this.authToken && this.username && this.password) {
       const authenticated = await this.authenticate();
@@ -355,6 +472,14 @@ export class RemoteWorkflowRepository implements IWorkflowRepository {
     }
   }
 
+  /**
+   * Creates a ZIP archive containing workflow content and metadata.
+   * 
+   * @param content - Workflow content including main file and attachments
+   * @param metadata - Workflow metadata for manifest creation
+   * @returns Promise resolving to ZIP buffer
+   * @throws Error if ZIP creation fails
+   */
   private async createWorkflowZip(content: WorkflowContent, metadata: any): Promise<Buffer> {
     const JSZip = await import('jszip');
     const zip = new JSZip.default();
@@ -384,6 +509,13 @@ export class RemoteWorkflowRepository implements IWorkflowRepository {
     return buffer;
   }
 
+  /**
+   * Loads attachment metadata for a workflow.
+   * 
+   * @param workflowId - Unique workflow identifier
+   * @param metadata - Workflow metadata containing attachment information
+   * @returns Promise resolving to array of attachment metadata
+   */
   private async loadAttachments(
     workflowId: string,
     metadata: WorkflowMetadata
@@ -417,6 +549,12 @@ export class RemoteWorkflowRepository implements IWorkflowRepository {
     }
   }
 
+  /**
+   * Determines MIME type based on file extension.
+   * 
+   * @param fileName - Name of the file including extension
+   * @returns MIME type string or default octet-stream
+   */
   private getMimeType(fileName: string): string {
     const ext = fileName.split('.').pop()?.toLowerCase();
     const mimeTypes: Record<string, string> = {

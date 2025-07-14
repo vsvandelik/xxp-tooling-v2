@@ -1,3 +1,8 @@
+/**
+ * Parser for XXP workflow files.
+ * Converts XXP syntax into structured workflow models.
+ */
+
 import * as fs from 'fs';
 
 import { XXPLexer, XXPParser } from '@extremexp/core';
@@ -7,7 +12,18 @@ import { WorkflowModel } from '../models/WorkflowModel.js';
 import { ParsingErrorListener } from '../visitors/ParsingErrorListener.js';
 import { WorkflowModelVisitor } from '../visitors/WorkflowModelVisitor.js';
 
+/**
+ * Parser for XXP workflow definition files.
+ * Uses ANTLR-generated lexer and parser to convert XXP syntax into structured models.
+ */
 export class WorkflowParser {
+  /**
+   * Parses an XXP workflow file into a WorkflowModel.
+   * 
+   * @param filePath - Path to the XXP workflow file
+   * @returns Promise resolving to the parsed workflow model
+   * @throws Error if the file cannot be read or contains syntax errors
+   */
   async parse(filePath: string): Promise<WorkflowModel> {
     const content = fs.readFileSync(filePath, 'utf8');
     const input = antlr.CharStream.fromString(content);

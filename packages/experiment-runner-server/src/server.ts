@@ -1,3 +1,8 @@
+/**
+ * HTTP server for ExtremeXP experiment execution.
+ * Provides REST API and WebSocket interface for running and monitoring experiments remotely.
+ */
+
 import { createServer } from 'http';
 import * as path from 'path';
 import { fileURLToPath } from 'url';
@@ -11,6 +16,10 @@ import { ExperimentService } from './services/ExperimentService.js';
 import { WebSocketManager } from './services/WebSocketManager.js';
 import { ServerConfig } from './types/server.types.js';
 
+/**
+ * HTTP server providing REST API and WebSocket interface for experiment execution.
+ * Manages multiple concurrent experiments with real-time progress updates.
+ */
 export class ExperimentRunnerServer {
   private app: express.Application;
   private httpServer: ReturnType<typeof createServer>;
@@ -19,6 +28,11 @@ export class ExperimentRunnerServer {
   private wsManager: WebSocketManager;
   private config: ServerConfig;
 
+  /**
+   * Creates a new experiment runner server.
+   * 
+   * @param config - Server configuration including port, database path, and options
+   */
   constructor(config: ServerConfig) {
     this.config = config;
     this.app = express();
@@ -42,6 +56,10 @@ export class ExperimentRunnerServer {
     this.setupWebSocket();
   }
 
+  /**
+   * Configures Express middleware for the server.
+   * Sets up CORS, body parsing, and optional request logging.
+   */
   private setupMiddleware(): void {
     this.app.use(cors());
     this.app.use(express.json());
@@ -56,6 +74,9 @@ export class ExperimentRunnerServer {
     }
   }
 
+  /**
+   * Sets up Express routes and error handling middleware.
+   */
   private setupRoutes(): void {
     // Health check
     this.app.get('/health', (req, res) => {
@@ -81,10 +102,18 @@ export class ExperimentRunnerServer {
     );
   }
 
+  /**
+   * Initializes WebSocket communication manager.
+   */
   private setupWebSocket(): void {
     this.wsManager.initialize();
   }
 
+  /**
+   * Starts the HTTP server and initializes all services.
+   * 
+   * @returns Promise that resolves when server is listening
+   */
   async start(): Promise<void> {
     await this.experimentService.initialize();
 
@@ -96,6 +125,11 @@ export class ExperimentRunnerServer {
     });
   }
 
+  /**
+   * Stops the HTTP server and shuts down all services gracefully.
+   * 
+   * @returns Promise that resolves when server is fully stopped
+   */
   async stop(): Promise<void> {
     await this.experimentService.shutdown();
     this.io.close();

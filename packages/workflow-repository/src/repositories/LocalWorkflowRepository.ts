@@ -1,3 +1,9 @@
+/**
+ * Local filesystem implementation of workflow repository.
+ * Provides workflow storage and retrieval operations on the local filesystem
+ * with support for both single-file and multi-file workflows.
+ */
+
 import { createHash } from 'crypto';
 import * as fs from 'fs/promises';
 import * as path from 'path';
@@ -8,15 +14,34 @@ import { WorkflowAttachment } from '../models/WorkflowAttachment.js';
 import { WorkflowItem, WorkflowContent } from '../models/WorkflowItem.js';
 import { WorkflowMetadata } from '../models/WorkflowMetadata.js';
 
+/**
+ * Workflow manifest structure for multi-file workflows.
+ * Stored as workflow.json in workflow directories.
+ */
 interface WorkflowManifest {
+  /** Name of the workflow */
   name: string;
+  /** Description of the workflow */
   description: string;
+  /** Author of the workflow */
   author: string;
+  /** Array of tags for categorization */
   tags: string[];
+  /** Name of the main workflow file */
   mainFile: string;
 }
 
+/**
+ * Local filesystem implementation of the workflow repository.
+ * Manages workflows stored on the local filesystem with support for
+ * single-file workflows (.xxp, .espace) and multi-file workflow directories.
+ */
 export class LocalWorkflowRepository implements IWorkflowRepository {
+  /**
+   * Creates a new local workflow repository.
+   * 
+   * @param basePath - Base directory path for workflow storage
+   */
   constructor(private readonly basePath: string) {}
 
   async list(

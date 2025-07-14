@@ -1,3 +1,9 @@
+/**
+ * User service for authentication and user management.
+ * Provides user creation, authentication, JWT token management,
+ * and role-based authorization for the workflow repository server.
+ */
+
 import {
   User,
   UserCredentials,
@@ -8,10 +14,20 @@ import {
 import * as bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 
+/**
+ * Internal user data structure including password hash.
+ * Extends the public User interface with authentication information.
+ */
 interface UserData extends User {
+  /** Bcrypt hashed password for authentication */
   passwordHash: string;
 }
 
+/**
+ * Service for managing user authentication and authorization.
+ * Provides in-memory user storage, password hashing, JWT token generation,
+ * and role-based access control for the workflow repository.
+ */
 export class UserService {
   private users = new Map<string, UserData>();
   private readonly jwtSecret: string;

@@ -1,20 +1,51 @@
-# @extremexp/workflow-repository
+# ExtremeXP Workflow Repository
 
-Client library for managing workflows in the ExtremeXP ecosystem, providing local and remote repository access with comprehensive workflow management capabilities.
+The `@extremexp/workflow-repository` package provides a unified client library for managing workflow files across local and remote repositories in the ExtremeXP tooling ecosystem. It offers a consistent interface for storing, retrieving, searching, and organizing workflow definitions.
 
 ## Overview
 
-The Workflow Repository client library enables developers to manage, store, and share XXP workflows and ESPACE experiments through both local file system repositories and remote server-hosted repositories.
+This package implements a flexible repository system that supports multiple storage backends:
 
-## Features
+- **Local Repositories**: File system-based storage with manifest files and metadata extraction
+- **Remote Repositories**: HTTP API-based storage with authentication and ZIP transfer
+- **Multi-Repository Management**: Unified interface for working with multiple repositories simultaneously
 
-- **Local Repositories**: File system-based workflow storage
-- **Remote Repositories**: Server-hosted workflow repositories with authentication
-- **Repository Management**: Add, remove, and configure multiple repositories
-- **Workflow Operations**: Upload, download, search, and manage workflows
-- **Attachment Support**: Handle workflow attachments and dependencies
-- **Metadata Management**: Track workflow versions, authors, and descriptions
-- **Search Capabilities**: Find workflows by name, author, tags, or content
+The library handles both single-file workflows (`.xxp`, `.espace`) and multi-file workflow packages with attachments, providing comprehensive metadata management and search capabilities.
+
+## Architecture
+
+### Core Components
+
+#### Repository Implementations
+
+**LocalWorkflowRepository**
+- Manages workflows on the local filesystem
+- Supports single-file workflows and directory-based packages
+- Extracts metadata from file comments and manifest files
+- Generates SHA-256 workflow IDs for uniqueness
+- Provides hierarchical folder navigation
+
+**RemoteWorkflowRepository**
+- Interfaces with HTTP-based workflow repository servers
+- Handles JWT authentication and automatic token refresh
+- Uses ZIP format for efficient workflow transfer
+- Supports all CRUD operations via REST API
+
+#### Manager Layer
+
+**WorkflowRepositoryManager**
+- Coordinates multiple repository instances
+- Provides unified search across all configured repositories
+- Manages default repository selection
+- Handles repository lifecycle and configuration
+
+#### Data Models
+
+- **WorkflowMetadata**: Core workflow information and timestamps
+- **WorkflowItem**: Complete workflow with content and attachments
+- **WorkflowContent**: Raw workflow data (main file + attachments)
+- **WorkflowAttachment**: File metadata for additional resources
+- **RepositoryConfig**: Repository connection and authentication settings
 
 ## Installation
 
@@ -26,418 +57,434 @@ npm install @extremexp/workflow-repository
 
 ### Basic Repository Operations
 
+#### Local Repository
+
+```typescript
+import { LocalWorkflowRepository, WorkflowContent } from '@extremexp/workflow-repository';
+
+const localRepo = new LocalWorkflowRepository('/path/to/workflows');
+
+// List all workflows
+const workflows = await localRepo.list();
+console.log(`Found ${workflows.length} workflows`);
+
+// Get a specific workflow
+const workflow = await localRepo.get('workflow-id');
+if (workflow) {
+  console.log(`Workflow: ${workflow.metadata.name}`);
+  console.log(`Author: ${workflow.metadata.author}`);
+  console.log(`Content: ${workflow.mainFileContent}`);
+}
+
+// Upload a new workflow
+const content: WorkflowContent = {
+  mainFile: `
+    // @name Data Processing Pipeline
+    // @description Processes CSV data with validation
+    // @author John Doe
+    // @tags data-processing, csv, validation
+    
+    experiment DataProcessing {
+      workflow CSVProcessor;
+    }
+  `,
+  attachments: new Map([
+    ['config.json', Buffer.from('{"timeout": 30}')],
+    ['schema.xsd', Buffer.from('<schema>...</schema>')]
+  ])
+};
+
+const metadata = await localRepo.upload('/pipelines/data-processing', content, {
+  name: 'Data Processing Pipeline',
+  description: 'Processes CSV data with validation',
+  author: 'John Doe',
+  tags: ['data-processing', 'csv', 'validation'],
+  path: '/pipelines/data-processing',
+  mainFile: 'data-processing.espace'
+});
+
+console.log(`Uploaded workflow with ID: ${metadata.id}`);
+```
+
+#### Remote Repository
+
+```typescript
+import { RemoteWorkflowRepository } from '@extremexp/workflow-repository';
+
+const remoteRepo = new RemoteWorkflowRepository(
+  'https://workflows.example.com/api',
+  'username',
+  'password'
+);
+
+// Search workflows
+const searchResults = await remoteRepo.search({
+  query: 'machine learning',
+  tags: ['ml', 'training'],
+  limit: 10
+});
+
+console.log(`Found ${searchResults.length} ML workflows`);
+
+// Download workflow content
+const content = await remoteRepo.getContent('workflow-id');
+if (content) {
+  console.log('Main file:', content.mainFile);
+  console.log('Attachments:', Array.from(content.attachments.keys()));
+}
+```
+
+### Multi-Repository Management
+
 ```typescript
 import { 
   WorkflowRepositoryManager, 
-  LocalWorkflowRepository, 
-  RemoteWorkflowRepository 
+  RepositoryConfig 
 } from '@extremexp/workflow-repository';
 
-// Create repository manager
 const manager = new WorkflowRepositoryManager();
 
-// Add local repository
-const localRepo = new LocalWorkflowRepository({
-  name: 'Local Workflows',
-  path: './workflows'
-});
-await manager.addRepository(localRepo);
-
-// Add remote repository
-const remoteRepo = new RemoteWorkflowRepository({
-  name: 'Team Workflows',
-  url: 'https://workflows.example.com',
-  authToken: 'username:password'
-});
-await manager.addRepository(remoteRepo);
-```
-
-### Workflow Management
-
-```typescript
-// List all workflows across repositories
-const workflows = await manager.listWorkflows();
-console.log(`Found ${workflows.length} workflows`);
-
-// Search for specific workflows
-const searchResults = await manager.searchWorkflows({
-  query: 'machine learning',
-  author: 'john.doe',
-  tags: ['classification', 'python']
-});
-
-// Download a workflow
-const workflow = await manager.getWorkflow('ml-classification-v2');
-console.log(`Downloaded: ${workflow.name}`);
-
-// Upload a new workflow
-await manager.uploadWorkflow({
-  name: 'new-experiment',
-  content: workflowContent,
-  description: 'My new experiment workflow',
-  tags: ['experiment', 'data-analysis'],
-  attachments: [
-    { name: 'data.csv', content: csvData },
-    { name: 'script.py', content: pythonScript }
-  ]
-});
-```
-
-### Repository Configuration
-
-```typescript
-// Get repository configuration
-const config = await manager.getRepositoryConfig('Team Workflows');
-
-// Update repository settings
-await manager.updateRepository('Team Workflows', {
-  isDefault: true,
-  authToken: 'new-token'
-});
-
-// Remove repository
-await manager.removeRepository('Old Repository');
-```
-
-## API Reference
-
-### WorkflowRepositoryManager
-
-Main interface for managing multiple workflow repositories.
-
-#### Methods
-
-##### `addRepository(repository: WorkflowRepository): Promise<void>`
-Add a new repository to the manager.
-
-##### `removeRepository(name: string): Promise<void>`
-Remove a repository by name.
-
-##### `listRepositories(): WorkflowRepository[]`
-Get list of all configured repositories.
-
-##### `getRepository(name: string): WorkflowRepository | undefined`
-Get a specific repository by name.
-
-##### `listWorkflows(repositoryName?: string): Promise<WorkflowInfo[]>`
-List workflows from all repositories or a specific repository.
-
-##### `searchWorkflows(criteria: SearchCriteria): Promise<WorkflowInfo[]>`
-Search for workflows across repositories.
-
-##### `getWorkflow(name: string, repositoryName?: string): Promise<Workflow>`
-Download a workflow by name.
-
-##### `uploadWorkflow(workflow: WorkflowUpload): Promise<void>`
-Upload a workflow to the default repository.
-
-### LocalWorkflowRepository
-
-File system-based repository implementation.
-
-```typescript
-const localRepo = new LocalWorkflowRepository({
-  name: 'My Local Workflows',
-  path: '/path/to/workflows',
+// Configure local repository
+const localConfig: RepositoryConfig = {
+  type: 'local',
+  name: 'local-workflows',
+  path: '/home/user/workflows',
   isDefault: true
+};
+
+// Configure remote repository
+const remoteConfig: RepositoryConfig = {
+  type: 'remote',
+  name: 'team-workflows',
+  path: '',
+  url: 'https://workflows.company.com/api',
+  authToken: 'user:token123'
+};
+
+manager.addRepository(localConfig);
+manager.addRepository(remoteConfig);
+
+// Search across all repositories
+const allWorkflows = await manager.searchAll({
+  query: 'optimization',
+  limit: 20
 });
 
-// Repository will use this directory structure:
-// /path/to/workflows/
-// ├── workflow1.xxp
-// ├── workflow2.xxp
-// ├── experiment1.espace
-// └── .metadata/
-//     ├── workflow1.json
-//     ├── workflow2.json
-//     └── experiment1.json
+console.log(`Found ${allWorkflows.length} optimization workflows across all repos`);
+
+// Get workflow from specific repository
+const workflow = await manager.get('workflow-id', 'team-workflows');
 ```
 
-### RemoteWorkflowRepository
+### Workflow Formats
 
-Server-hosted repository implementation.
+#### Single-File Workflows
+
+Single-file workflows contain metadata in comments at the top of the file:
 
 ```typescript
-const remoteRepo = new RemoteWorkflowRepository({
-  name: 'Company Workflows',
-  url: 'https://workflows.company.com',
-  authToken: 'username:password', // or JWT token
-  isDefault: false
-});
-```
+// @name Image Processing Pipeline
+// @description Batch processes images with filters
+// @author Alice Smith
+// @tags image-processing, batch, filters
 
-## Data Types
-
-### WorkflowInfo
-```typescript
-interface WorkflowInfo {
-  id: string;
-  name: string;
-  description?: string;
-  author?: string;
-  version?: string;
-  tags: string[];
-  createdAt: Date;
-  updatedAt: Date;
-  size: number;
-  repository: string;
-  attachments: AttachmentInfo[];
+experiment ImageProcessing {
+  workflow BatchImageProcessor;
+  
+  space Images {
+    parameter inputPath: string;
+    parameter outputPath: string;
+    parameter filter: "blur" | "sharpen" | "brighten";
+    
+    task processImages {
+      executable: "python";
+      arguments: ["process_images.py", "${inputPath}", "${outputPath}", "${filter}"];
+    }
+  }
 }
 ```
 
-### Workflow
-```typescript
-interface Workflow extends WorkflowInfo {
-  content: string;  // XXP or ESPACE file content
-  metadata: WorkflowMetadata;
+#### Multi-File Workflows
+
+Multi-file workflows use a `workflow.json` manifest with additional files:
+
+**workflow.json:**
+```json
+{
+  "name": "ML Training Pipeline",
+  "description": "Complete machine learning training workflow",
+  "author": "Data Science Team",
+  "tags": ["machine-learning", "training", "pipeline"],
+  "mainFile": "training.espace"
 }
 ```
 
-### WorkflowUpload
+**training.espace:**
 ```typescript
-interface WorkflowUpload {
-  name: string;
-  content: string;
-  description?: string;
-  author?: string;
-  version?: string;
-  tags?: string[];
-  attachments?: AttachmentUpload[];
+experiment MLTraining {
+  workflow TrainingPipeline;
+  
+  space Models {
+    parameter dataset: string;
+    parameter algorithm: "svm" | "random-forest" | "neural-network";
+    
+    task trainModel {
+      executable: "python";
+      arguments: ["train.py", "${dataset}", "${algorithm}"];
+      inputData: ["config.json", "requirements.txt"];
+      outputData: ["model.pkl", "metrics.json"];
+    }
+  }
 }
 ```
 
-### SearchCriteria
+**Additional files:**
+- `config.json` - Training configuration
+- `requirements.txt` - Python dependencies
+- `train.py` - Training script
+
+### Search and Discovery
+
 ```typescript
-interface SearchCriteria {
-  query?: string;        // Search in name and description
-  author?: string;       // Filter by author
-  tags?: string[];       // Filter by tags (AND operation)
-  repository?: string;   // Search in specific repository
-  dateRange?: {          // Filter by date range
-    from?: Date;
-    to?: Date;
-  };
+import { WorkflowSearchOptions } from '@extremexp/workflow-repository';
+
+// Advanced search with multiple criteria
+const searchOptions: WorkflowSearchOptions = {
+  query: 'data processing',
+  tags: ['etl', 'transformation'],
+  author: 'Data Team',
+  path: '/production',
+  limit: 50,
+  offset: 0
+};
+
+const results = await repository.search(searchOptions);
+
+// Browse repository structure
+const tree = await repository.getTreeStructure('/machine-learning');
+console.log('ML Workflows:');
+function printTree(node, indent = '') {
+  console.log(`${indent}${node.name} (${node.type})`);
+  if (node.children) {
+    node.children.forEach(child => printTree(child, indent + '  '));
+  }
 }
+printTree(tree);
+```
+
+### Authentication for Remote Repositories
+
+```typescript
+import { RemoteWorkflowRepository } from '@extremexp/workflow-repository';
+
+// Using username/password
+const repo1 = new RemoteWorkflowRepository(
+  'https://api.example.com',
+  'username',
+  'password'
+);
+
+// Using existing auth token (format: username:password)
+const repo2 = new RemoteWorkflowRepository(
+  'https://api.example.com',
+  undefined,
+  undefined,
+  'user123:token456'
+);
+
+// The repository handles JWT token generation and refresh automatically
+const workflows = await repo2.list();
 ```
 
 ## Configuration
 
-### Repository Configuration File
+### Repository Configuration
 
-Create `.workflow-repos.json` in your project root:
-
-```json
-{
-  "repositories": [
-    {
-      "name": "Local Development",
-      "type": "local",
-      "path": "./workflows",
-      "isDefault": true
-    },
-    {
-      "name": "Team Repository",
-      "type": "remote",
-      "url": "https://workflows.example.com",
-      "authToken": "user:pass",
-      "isDefault": false
-    }
-  ],
-  "settings": {
-    "autoSync": true,
-    "cacheTimeout": 300,
-    "maxFileSize": "10MB"
-  }
+```typescript
+interface RepositoryConfig {
+  type: 'local' | 'remote';        // Repository type
+  name: string;                    // Unique repository name
+  path: string;                    // Local: directory path, Remote: endpoint path
+  url?: string;                    // Remote: base API URL
+  authToken?: string;              // Remote: authentication token
+  isDefault?: boolean;             // Whether to use as default repository
 }
 ```
 
 ### Environment Variables
 
+When using the repository in applications, configure via environment variables:
+
 ```bash
-WORKFLOW_REPOS_CONFIG=./custom-repos.json
-WORKFLOW_CACHE_DIR=./cache
-WORKFLOW_DEFAULT_AUTHOR=john.doe
-WORKFLOW_AUTO_SYNC=true
-```
+# Local repository
+WORKFLOW_REPO_TYPE=local
+WORKFLOW_REPO_PATH=/path/to/workflows
 
-## Advanced Usage
-
-### Custom Repository Implementation
-
-```typescript
-import { WorkflowRepository, WorkflowInfo } from '@extremexp/workflow-repository';
-
-export class CustomWorkflowRepository implements WorkflowRepository {
-  constructor(private config: CustomConfig) {}
-
-  async listWorkflows(): Promise<WorkflowInfo[]> {
-    // Implement custom listing logic
-    return [];
-  }
-
-  async getWorkflow(name: string): Promise<Workflow> {
-    // Implement custom download logic
-    throw new Error('Not implemented');
-  }
-
-  async uploadWorkflow(workflow: WorkflowUpload): Promise<void> {
-    // Implement custom upload logic
-  }
-
-  async deleteWorkflow(name: string): Promise<void> {
-    // Implement custom deletion logic
-  }
-
-  async searchWorkflows(criteria: SearchCriteria): Promise<WorkflowInfo[]> {
-    // Implement custom search logic
-    return [];
-  }
-}
-```
-
-### Batch Operations
-
-```typescript
-// Bulk download workflows
-const workflowNames = ['workflow1', 'workflow2', 'workflow3'];
-const workflows = await Promise.all(
-  workflowNames.map(name => manager.getWorkflow(name))
-);
-
-// Bulk upload workflows
-const uploads = [
-  { name: 'workflow1', content: content1 },
-  { name: 'workflow2', content: content2 }
-];
-await Promise.all(
-  uploads.map(upload => manager.uploadWorkflow(upload))
-);
-```
-
-### Caching and Synchronization
-
-```typescript
-// Enable caching for better performance
-const manager = new WorkflowRepositoryManager({
-  enableCache: true,
-  cacheTimeout: 300, // 5 minutes
-  autoSync: true     // Auto-sync with remote repositories
-});
-
-// Manual cache management
-await manager.clearCache();
-await manager.syncRepositories();
+# Remote repository
+WORKFLOW_REPO_TYPE=remote
+WORKFLOW_REPO_URL=https://workflows.example.com/api
+WORKFLOW_REPO_AUTH=username:password
 ```
 
 ## Error Handling
 
+The library provides comprehensive error handling for common scenarios:
+
 ```typescript
-import { 
-  RepositoryError, 
-  AuthenticationError, 
-  WorkflowNotFoundError 
-} from '@extremexp/workflow-repository';
+try {
+  const workflow = await repository.get('non-existent-id');
+  // workflow will be null if not found
+} catch (error) {
+  console.error('Repository error:', error.message);
+}
 
 try {
-  const workflow = await manager.getWorkflow('non-existent');
+  await repository.upload('/path', content, metadata);
 } catch (error) {
-  if (error instanceof WorkflowNotFoundError) {
-    console.log('Workflow not found');
-  } else if (error instanceof AuthenticationError) {
-    console.log('Authentication failed');
-  } else if (error instanceof RepositoryError) {
-    console.log('Repository error:', error.message);
+  if (error.message.includes('already exists')) {
+    console.log('Workflow already exists at this path');
+  } else if (error.message.includes('authentication')) {
+    console.log('Authentication failed - check credentials');
+  } else {
+    console.error('Upload failed:', error.message);
   }
 }
 ```
 
-## Integration
+## Integration with ExtremeXP Tools
 
 ### VS Code Extension
-The library is integrated with the VS Code extension for:
-- Repository management UI
-- Workflow browser and search
-- Drag-and-drop workflow installation
-- Automatic workflow synchronization
 
-### CLI Integration
-```bash
-# Example CLI usage (if CLI wrapper exists)
-workflow-repo list
-workflow-repo search "machine learning"
-workflow-repo download ml-workflow-v2
-workflow-repo upload ./my-workflow.xxp --tags "ml,python"
+The repository library is used by the VS Code extension for workflow browsing:
+
+```typescript
+// In VS Code extension
+const manager = new WorkflowRepositoryManager();
+manager.addRepository(userConfig);
+
+// Populate workflow tree view
+const tree = await manager.getTreeStructure();
+vscode.window.createTreeView('workflows', { treeDataProvider: new WorkflowTreeProvider(tree) });
 ```
 
-## Security Considerations
+### Language Server
 
-### Authentication
-- Support for username/password and JWT token authentication
-- Secure token storage and refresh mechanisms
-- Per-repository authentication configuration
+Integration with language server for workflow resolution:
 
-### Data Validation
-- Workflow content validation before upload
-- File type and size restrictions
-- Malicious content detection
+```typescript
+// In language server
+const repository = new LocalWorkflowRepository(workspaceRoot);
+const workflow = await repository.get(workflowId);
+if (workflow) {
+  // Provide completions and validation based on workflow definition
+}
+```
 
-### Network Security
-- HTTPS enforcement for remote repositories
-- Certificate validation
-- Request timeout and retry mechanisms
+### Artifact Generator
 
-## Performance Optimization
+Using workflows in artifact generation:
 
-### Caching Strategy
-- Workflow metadata caching
-- Content caching with TTL
-- Incremental synchronization
-- Lazy loading of workflow content
+```typescript
+// In artifact generator
+const content = await repository.getContent(workflowId);
+const artifactGenerator = new ArtifactGenerator(content.mainFile);
+const artifact = await artifactGenerator.generate();
+```
 
-### Batch Operations
-- Parallel download/upload operations
-- Connection pooling for remote repositories
-- Compression for large workflow files
+## Performance Considerations
+
+- **Caching**: Repository implementations cache metadata for improved performance
+- **Lazy Loading**: Large attachments are loaded only when requested
+- **Batch Operations**: Use search with pagination for large repositories
+- **Connection Pooling**: Remote repositories reuse HTTP connections
+- **SHA-256 Hashing**: Workflow IDs are computed efficiently using crypto module
+
+## Extension Points
+
+### Custom Repository Implementation
+
+```typescript
+import { IWorkflowRepository } from '@extremexp/workflow-repository';
+
+class DatabaseWorkflowRepository implements IWorkflowRepository {
+  constructor(private connectionString: string) {}
+  
+  async list(path?: string, options?: WorkflowSearchOptions): Promise<readonly WorkflowMetadata[]> {
+    // Custom database implementation
+  }
+  
+  // Implement other required methods...
+}
+
+// Use with manager
+const manager = new WorkflowRepositoryManager();
+manager.addRepository(customConfig, new DatabaseWorkflowRepository(connectionString));
+```
+
+### Custom Authentication
+
+```typescript
+class CustomAuthRemoteRepository extends RemoteWorkflowRepository {
+  protected async authenticate(): Promise<string> {
+    // Custom authentication logic (OAuth, API keys, etc.)
+    return await this.getCustomToken();
+  }
+}
+```
 
 ## Testing
 
-```bash
-# Run unit tests
-npm test
-
-# Run integration tests with test repositories
-npm run test:integration
-
-# Run tests with coverage
-npm run test:coverage
-```
-
-### Test Configuration
+The package includes comprehensive test utilities:
 
 ```typescript
-// Test with mock repositories
-import { MockWorkflowRepository } from '@extremexp/workflow-repository/testing';
+import { LocalWorkflowRepository } from '@extremexp/workflow-repository';
+import { promises as fs } from 'fs';
+import * as path from 'path';
 
-const mockRepo = new MockWorkflowRepository();
-mockRepo.addWorkflow({
-  name: 'test-workflow',
-  content: 'workflow TestWorkflow { ... }'
+// Create test repository
+const testDir = await fs.mkdtemp(path.join(__dirname, 'test-repo-'));
+const repository = new LocalWorkflowRepository(testDir);
+
+// Test workflow operations
+const content: WorkflowContent = {
+  mainFile: 'experiment Test { workflow SimpleTest; }',
+  attachments: new Map()
+};
+
+const metadata = await repository.upload('/test', content, {
+  name: 'Test Workflow',
+  description: 'Test description',
+  author: 'Test Author',
+  tags: ['test'],
+  path: '/test',
+  mainFile: 'test.espace'
 });
 
-const manager = new WorkflowRepositoryManager();
-await manager.addRepository(mockRepo);
+expect(metadata.name).toBe('Test Workflow');
+
+// Cleanup
+await fs.rm(testDir, { recursive: true });
 ```
 
-## Contributing
+## API Reference
 
-When extending the workflow repository:
+### Main Classes
 
-1. Implement the `WorkflowRepository` interface for new repository types
-2. Add proper error handling and validation
-3. Include comprehensive tests for new features
-4. Update documentation and examples
-5. Consider security implications of new features
+- **LocalWorkflowRepository**: Filesystem-based repository implementation
+- **RemoteWorkflowRepository**: HTTP API-based repository implementation
+- **WorkflowRepositoryManager**: Multi-repository coordinator
 
-## License
+### Interfaces
 
-MIT
+- **IWorkflowRepository**: Core repository interface
+- **WorkflowMetadata**: Workflow metadata structure
+- **WorkflowContent**: Raw workflow content
+- **RepositoryConfig**: Repository configuration
+
+### Types
+
+- **WorkflowTreeNode**: Hierarchical repository structure
+- **WorkflowSearchOptions**: Search and filtering criteria
+- **WorkflowAttachment**: File attachment metadata
+
+For detailed API documentation, see the TypeDoc-generated documentation.

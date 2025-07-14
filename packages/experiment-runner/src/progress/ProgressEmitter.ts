@@ -1,8 +1,19 @@
+/**
+ * Progress emitter for experiment execution tracking.
+ * Manages progress event emission and callback coordination for real-time
+ * experiment monitoring and status updates.
+ */
+
 import EventEmitter from 'events';
 
 import { Expression } from '../types/artifact.types.js';
 import { ProgressCallback } from '../types/progress.types.js';
 
+/**
+ * Emitter responsible for broadcasting progress events during experiment execution.
+ * Extends EventEmitter to provide both callback-based and event-based progress tracking.
+ * Coordinates between execution components and external progress callbacks.
+ */
 export class ProgressEmitter extends EventEmitter {
   constructor(private callback?: ProgressCallback) {
     super();

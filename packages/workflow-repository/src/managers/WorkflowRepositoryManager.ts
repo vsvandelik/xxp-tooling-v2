@@ -1,3 +1,9 @@
+/**
+ * Workflow repository manager for coordinating multiple repositories.
+ * Manages a collection of local and remote workflow repositories and provides
+ * a unified interface for multi-repository operations.
+ */
+
 import { IWorkflowRepository, WorkflowTreeNode } from '../interfaces/IWorkflowRepository.js';
 import { RepositoryConfig, WorkflowSearchOptions } from '../models/RepositoryConfig.js';
 import { WorkflowItem, WorkflowContent } from '../models/WorkflowItem.js';
@@ -5,6 +11,11 @@ import { WorkflowMetadata } from '../models/WorkflowMetadata.js';
 import { LocalWorkflowRepository } from '../repositories/LocalWorkflowRepository.js';
 import { RemoteWorkflowRepository } from '../repositories/RemoteWorkflowRepository.js';
 
+/**
+ * Manager for coordinating multiple workflow repositories.
+ * Provides a unified interface for working with multiple local and remote
+ * repositories simultaneously, including cross-repository search and operations.
+ */
 export class WorkflowRepositoryManager {
   private repositories = new Map<string, IWorkflowRepository>();
   private configs = new Map<string, RepositoryConfig>();

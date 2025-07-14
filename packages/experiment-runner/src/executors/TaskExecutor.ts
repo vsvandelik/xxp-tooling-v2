@@ -1,22 +1,58 @@
+/**
+ * Task executor for individual task execution.
+ * Handles the execution of individual tasks with parameter resolution,
+ * input/output data management, and subprocess execution.
+ */
+
 import { spawn } from 'child_process';
 
 import { DatabaseRepository } from '../database/DatabaseRepository.js';
 import { ProgressEmitter } from '../progress/ProgressEmitter.js';
 import { Task, ParameterSet, Expression, Artifact } from '../types/artifact.types.js';
 
+/**
+ * Executor responsible for running individual tasks within parameter sets.
+ * Manages task execution including parameter resolution, input/output data
+ * handling, subprocess spawning, and result collection.
+ */
 export class TaskExecutor {
   private artifact: Artifact | null = null;
 
+  /**
+   * Creates a new task executor.
+   * 
+   * @param repository - Database repository for persistence
+   * @param artifactFolder - Base folder path for resolving relative paths
+   * @param progress - Progress emitter for status updates
+   */
   constructor(
     private repository: DatabaseRepository,
     private artifactFolder: string,
     private progress: ProgressEmitter
   ) {}
 
+  /**
+   * Sets the artifact context for parameter resolution.
+   * 
+   * @param artifact - Experiment artifact containing global data definitions
+   */
   setArtifact(artifact: Artifact): void {
     this.artifact = artifact;
   }
 
+  /**
+   * Executes a single task with the given parameters.
+   * Handles task lifecycle including status tracking, parameter resolution,
+   * subprocess execution, and output collection.
+   * 
+   * @param runId - Unique identifier for the experiment run
+   * @param spaceId - Space identifier containing this task
+   * @param paramSetIndex - Index of the parameter set being executed
+   * @param task - Task definition to execute
+   * @param paramSet - Parameter values for this execution
+   * @returns Promise resolving to output data mappings
+   * @throws Error if task execution fails or parameters cannot be resolved
+   */
   async execute(
     runId: string,
     spaceId: string,

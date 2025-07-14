@@ -1,5 +1,12 @@
+/**
+ * Main server entry point for the workflow repository server.
+ * Handles server configuration, startup, error handling, and graceful shutdown
+ * for the ExtremeXP workflow repository HTTP API server.
+ */
+
 import { WorkflowRepositoryServer, ServerConfig } from './server/WorkflowRepositoryServer.js';
 
+/** Server configuration loaded from environment variables with fallback defaults */
 const config: ServerConfig = {
   port: parseInt(process.env['PORT'] || '3001'),
   storagePath: process.env['STORAGE_PATH'] || './workflow-repository',
@@ -7,6 +14,12 @@ const config: ServerConfig = {
   corsOrigin: process.env['CORS_ORIGIN'] || '*',
 };
 
+/**
+ * Starts the workflow repository server with configuration and error handling.
+ * Displays startup information, API documentation, and default credentials.
+ * 
+ * @throws Error if server fails to start or port is in use
+ */
 async function startServer(): Promise<void> {
   console.log('Starting Workflow Repository Server...');
   console.log('Configuration:', {
@@ -53,11 +66,17 @@ async function startServer(): Promise<void> {
   }
 }
 
+/**
+ * Handles graceful shutdown on SIGINT (Ctrl+C).
+ */
 process.on('SIGINT', () => {
   console.log('\n👋 Shutting down server...');
   process.exit(0);
 });
 
+/**
+ * Handles graceful shutdown on SIGTERM (process termination).
+ */
 process.on('SIGTERM', () => {
   console.log('\n👋 Shutting down server...');
   process.exit(0);

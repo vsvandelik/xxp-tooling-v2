@@ -1,3 +1,8 @@
+/**
+ * Command-line interface for the ExtremeXP experiment runner.
+ * Provides CLI commands for running, monitoring, and controlling experiments.
+ */
+
 import chalk from 'chalk';
 import { Command } from 'commander';
 import ora, { Ora } from 'ora';
@@ -8,7 +13,16 @@ import { Expression } from './types/artifact.types.js';
 import { ProgressCallback } from './types/progress.types.js';
 import { UserInputProvider } from './userInput/UserInputProvider.js';
 
+/**
+ * CLI-specific user input provider that uses prompts for interactive input.
+ */
 class CLIInputProvider implements UserInputProvider {
+  /**
+   * Prompts the user for input using the command line interface.
+   * 
+   * @param prompt - The prompt message to display to the user
+   * @returns Promise resolving to the user's input
+   */
   async getInput(prompt: string): Promise<string> {
     const response = await prompts({
       type: 'text',
@@ -19,14 +33,30 @@ class CLIInputProvider implements UserInputProvider {
   }
 }
 
+/**
+ * CLI-specific progress callback that provides colorized terminal output with spinners.
+ */
 class CLIProgressCallback implements ProgressCallback {
   private spinner: Ora | undefined;
 
+  /**
+   * Called when a task starts execution.
+   * 
+   * @param taskId - Unique identifier of the task
+   * @param params - Parameter values for this task execution
+   */
   onTaskStart(taskId: string, params: Record<string, Expression>): void {
     this.spinner = ora(`Running task ${chalk.blue(taskId)}`).start();
     console.log(chalk.gray(`  Parameters: ${JSON.stringify(params)}`));
   }
 
+  /**
+   * Called when a task completes successfully.
+   * 
+   * @param taskId - Unique identifier of the task
+   * @param _params - Parameter values used (unused in CLI)
+   * @param outputs - Output data produced by the task
+   */
   onTaskComplete(
     taskId: string,
     _params: Record<string, Expression>,
@@ -37,34 +67,74 @@ class CLIProgressCallback implements ProgressCallback {
     );
   }
 
+  /**
+   * Called when a parameter space starts execution.
+   * 
+   * @param spaceId - Unique identifier of the space
+   */
   onSpaceStart(spaceId: string): void {
     console.log(chalk.yellow(`\nStarting space: ${spaceId}`));
   }
 
+  /**
+   * Called when a parameter space completes execution.
+   * 
+   * @param spaceId - Unique identifier of the space
+   */
   onSpaceComplete(spaceId: string): void {
     console.log(chalk.green(`✓ Space ${spaceId} completed\n`));
   }
 
+  /**
+   * Called when a parameter set starts execution within a space.
+   * 
+   * @param _spaceId - Space identifier (unused in CLI)
+   * @param index - Index of the parameter set (0-based)
+   * @param params - Parameter values for this set
+   */
   onParameterSetStart(_spaceId: string, index: number, params: Record<string, Expression>): void {
     console.log(chalk.cyan(`  Parameter set ${index + 1}: ${JSON.stringify(params)}`));
   }
 
+  /**
+   * Called when a parameter set completes execution.
+   * 
+   * @param _spaceId - Space identifier (unused)
+   * @param _index - Parameter set index (unused)
+   */
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   onParameterSetComplete(_spaceId: string, _index: number): void {
     //console.log(chalk.gray(`    ✓ Parameter set ${index + 1} completed`));
   }
 
+  /**
+   * Called when user input is required during experiment execution.
+   * 
+   * @param prompt - The prompt message requesting user input
+   */
   onUserInputRequired(prompt: string): void {
     this.spinner?.stop();
     console.log(chalk.magenta(`\nUser input required: ${prompt}`));
   }
 
+  /**
+   * Called when an error occurs during experiment execution.
+   * 
+   * @param error - The error that occurred
+   * @param context - Additional context information about the error
+   */
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   onError(error: Error, context: any): void {
     this.spinner?.fail(`Error: ${error.message}`);
     console.error(chalk.red(`Context: ${JSON.stringify(context)}`));
   }
 
+  /**
+   * Called to report overall experiment progress.
+   * 
+   * @param progress - Progress value between 0 and 1
+   * @param message - Progress message
+   */
   onProgress(progress: number, message: string): void {
     console.log(chalk.blue(`[${Math.round(progress * 100)}%] ${message}`));
   }

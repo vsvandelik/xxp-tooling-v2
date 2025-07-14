@@ -1,3 +1,10 @@
+/**
+ * Main entry point for the ExtremeXP Language Server.
+ * Provides comprehensive language support for XXP (workflow definition) and ESPACE
+ * (experiment specification) languages including syntax validation, code completion,
+ * hover information, references, and diagnostics.
+ */
+
 import {
   createConnection,
   TextDocuments,
@@ -13,21 +20,22 @@ import { DocumentManager } from './core/managers/DocumentsManager.js';
 import { ProvidersManager } from './core/managers/ProvidersManager.js';
 import { Logger } from './utils/Logger.js';
 
-// Create a connection for the server
+/** Language Server Protocol connection to the client */
 const connection: Connection = createConnection(ProposedFeatures.all);
+/** Logger instance for server debugging and diagnostics */
 const logger = Logger.setupLogger(connection);
 
 console.log('Language server starting...');
 console.log('Process args:', process.argv);
 console.log('Debug port should be available on 6009');
 
-// Create a document manager with all open documents
+/** Document manager for tracking open text documents */
 const documents: TextDocuments<TextDocument> = new TextDocuments(TextDocument);
 
-// Create our core services
+/** Core document manager for XXP and ESPACE file handling */
 const documentManager = new DocumentManager();
 
-// Create a providers manager
+/** Providers manager for registering language service providers */
 const providersManager = new ProvidersManager(connection, documentManager);
 
 connection.onInitialize((): InitializeResult => {

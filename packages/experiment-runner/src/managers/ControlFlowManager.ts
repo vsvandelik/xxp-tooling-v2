@@ -1,15 +1,43 @@
+/**
+ * Control flow manager for experiment execution flow.
+ * Handles transition logic between spaces, condition evaluation,
+ * and state persistence for experiment resumption.
+ */
+
 import { DatabaseRepository } from '../database/DatabaseRepository.js';
 import { ProgressEmitter } from '../progress/ProgressEmitter.js';
 import { Transition } from '../types/artifact.types.js';
 import { UserInputProvider } from '../userInput/UserInputProvider.js';
 
+/**
+ * Manager responsible for controlling experiment execution flow.
+ * Evaluates transition conditions, determines next spaces to execute,
+ * and manages control state for resumption capabilities.
+ */
 export class ControlFlowManager {
+  /**
+   * Creates a new control flow manager.
+   * 
+   * @param repository - Database repository for state persistence
+   * @param progress - Progress emitter for status updates
+   * @param userInputProvider - Provider for user input during condition evaluation
+   */
   constructor(
     private repository: DatabaseRepository,
     private progress: ProgressEmitter,
     private userInputProvider: UserInputProvider
   ) {}
 
+  /**
+   * Determines the next space to execute based on transition conditions.
+   * Evaluates transition conditions and handles user input for dynamic decisions.
+   * 
+   * @param runId - Unique identifier for the experiment run
+   * @param currentSpace - Current space being executed
+   * @param transitions - Array of possible transitions from current space
+   * @returns Promise resolving to next space ID or 'END' if no valid transitions
+   * @throws Error if condition evaluation fails
+   */
   async getNextSpace(
     runId: string,
     currentSpace: string,

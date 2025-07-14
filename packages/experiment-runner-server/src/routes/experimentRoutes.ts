@@ -1,3 +1,8 @@
+/**
+ * Express router for experiment-related API endpoints.
+ * Provides REST API for experiment execution, monitoring, and artifact management.
+ */
+
 import { Router, Request, Response } from 'express';
 
 import { ExperimentService } from '../services/ExperimentService.js';
@@ -9,6 +14,13 @@ import {
   GenerateArtifactResponse,
 } from '../types/server.types.js';
 
+/**
+ * Creates Express router with experiment-related routes.
+ * 
+ * @param experimentService - Service for managing experiment execution
+ * @param wsManager - WebSocket manager for real-time updates
+ * @returns Configured Express router with all experiment endpoints
+ */
 export function createExperimentRoutes(
   experimentService: ExperimentService,
   wsManager: WebSocketManager

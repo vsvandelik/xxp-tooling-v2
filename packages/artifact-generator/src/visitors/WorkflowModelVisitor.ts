@@ -1,3 +1,8 @@
+/**
+ * ANTLR visitor for converting XXP parse trees to workflow models.
+ * Implements the visitor pattern to transform parsed XXP syntax into structured data models.
+ */
+
 import { XXPVisitor } from '@extremexp/core';
 import {
   WorkflowDeclarationContext,
@@ -20,6 +25,10 @@ import {
   WorkflowModel,
 } from '../models/WorkflowModel.js';
 
+/**
+ * ANTLR visitor that converts XXP parse trees into workflow models.
+ * Traverses the parse tree and builds structured data models representing the workflow.
+ */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export class WorkflowModelVisitor extends XXPVisitor<any> {
   private workflowName: string | undefined = undefined;

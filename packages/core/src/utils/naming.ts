@@ -1,5 +1,7 @@
 /**
- * Utility functions for converting names to file names following the project conventions.
+ * Utility functions for converting names to file names following project conventions.
+ * Provides standardized naming transformations for workflows and experiments with consistent
+ * camelCase preservation and lowercasing rules across the ExtremeXP toolchain.
  */
 
 /**

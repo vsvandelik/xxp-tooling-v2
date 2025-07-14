@@ -1,3 +1,8 @@
+/**
+ * Core library for ExtremeXP language processing.
+ * Exports ANTLR-generated parsers, lexers, and utilities for ESPACE and XXP languages.
+ */
+
 // Export ESPACE language components
 export { ESPACEParser } from './language/generated/ESPACEParser.js';
 export { ESPACELexer } from './language/generated/ESPACELexer.js';

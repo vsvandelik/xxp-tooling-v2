@@ -1,3 +1,9 @@
+/**
+ * Main workflow repository server implementation.
+ * Provides HTTP server with REST API for workflow storage, authentication,
+ * and management operations across the ExtremeXP tooling ecosystem.
+ */
+
 import { ApiResponse, LoginRequest, LoginResponse } from '@extremexp/workflow-repository';
 import cors from 'cors';
 import express, { Request } from 'express';
@@ -7,13 +13,25 @@ import { AuthenticationMiddleware } from '../middleware/AuthenticationMiddleware
 import { UserService } from '../services/UserService.js';
 import { WorkflowStorageService } from '../services/WorkflowStorageService.js';
 
+/**
+ * Configuration options for the workflow repository server.
+ */
 export interface ServerConfig {
+  /** Port number for the HTTP server */
   port: number;
+  /** Base directory path for workflow storage */
   storagePath: string;
+  /** Secret key for JWT token signing */
   jwtSecret: string;
+  /** CORS origin configuration (optional) */
   corsOrigin?: string;
 }
 
+/**
+ * Main workflow repository server providing HTTP API for workflow management.
+ * Integrates authentication, storage services, and REST API endpoints
+ * for comprehensive workflow repository functionality.
+ */
 export class WorkflowRepositoryServer {
   private app: express.Application;
   private storageService: WorkflowStorageService;
@@ -21,6 +39,11 @@ export class WorkflowRepositoryServer {
   private authMiddleware: AuthenticationMiddleware;
   private workflowController: WorkflowController;
 
+  /**
+   * Creates a new workflow repository server.
+   * 
+   * @param config - Server configuration including port, storage path, and security settings
+   */
   constructor(private config: ServerConfig) {
     this.app = express();
     this.storageService = new WorkflowStorageService(config.storagePath);
@@ -33,6 +56,12 @@ export class WorkflowRepositoryServer {
     this.setupErrorHandling();
   }
 
+  /**
+   * Starts the HTTP server and initializes storage services.
+   * 
+   * @returns Promise that resolves when server is listening
+   * @throws Error if port is in use or server fails to start
+   */
   async start(): Promise<void> {
     await this.storageService.ensureInitialized();
 

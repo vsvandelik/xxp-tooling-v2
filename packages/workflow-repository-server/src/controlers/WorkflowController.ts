@@ -1,3 +1,9 @@
+/**
+ * Workflow controller for handling HTTP API requests.
+ * Provides comprehensive REST API endpoints for workflow management including
+ * upload, download, update, delete, search, and discovery operations.
+ */
+
 import {
   ApiResponse,
   UploadWorkflowRequest,
@@ -16,14 +22,32 @@ import { v4 as uuidv4 } from 'uuid';
 import { UserService } from '../services/UserService.js';
 import { WorkflowStorageService } from '../services/WorkflowStorageService.js';
 
+/**
+ * Controller class handling all workflow-related HTTP API endpoints.
+ * Provides comprehensive workflow management functionality including CRUD operations,
+ * file uploads, search capabilities, and metadata discovery.
+ */
 export class WorkflowController {
+  /** Multer instance for handling file uploads */
   private upload = multer({ storage: multer.memoryStorage() });
 
+  /**
+   * Creates a new workflow controller.
+   * 
+   * @param storageService - Service for workflow storage operations
+   * @param userService - Service for user authentication and authorization
+   */
   constructor(
     private storageService: WorkflowStorageService,
     private userService: UserService
   ) {}
 
+  /**
+   * Lists workflows with optional search and filtering.
+   * 
+   * @param req - Express request object with optional query parameters
+   * @param res - Express response object
+   */
   listWorkflows = async (req: Request, res: Response): Promise<void> => {
     try {
       const query: SearchWorkflowRequest = req.query;
@@ -61,6 +85,12 @@ export class WorkflowController {
     }
   };
 
+  /**
+   * Retrieves metadata for a specific workflow.
+   * 
+   * @param req - Express request object with workflow ID in params
+   * @param res - Express response object
+   */
   getWorkflow = async (req: Request, res: Response): Promise<void> => {
     try {
       const { id } = req.params;
@@ -100,6 +130,12 @@ export class WorkflowController {
     }
   };
 
+  /**
+   * Downloads a complete workflow as a ZIP archive.
+   * 
+   * @param req - Express request object with workflow ID in params
+   * @param res - Express response object with ZIP content
+   */
   downloadWorkflow = async (req: Request, res: Response): Promise<void> => {
     try {
       const { id } = req.params;
@@ -135,6 +171,12 @@ export class WorkflowController {
     }
   };
 
+  /**
+   * Downloads a specific file from a workflow.
+   * 
+   * @param req - Express request object with workflow ID and file path
+   * @param res - Express response object with file content
+   */
   downloadWorkflowFile = async (req: Request, res: Response): Promise<void> => {
     try {
       const { id, '*': filePath } = req.params;
@@ -204,6 +246,10 @@ export class WorkflowController {
     }
   };
 
+  /**
+   * Uploads a new workflow to the repository.
+   * Handles file upload, validation, conflict detection, and storage.
+   */
   uploadWorkflow = [
     multer({ storage: multer.memoryStorage() }).single('workflow'),
     async (req: Request, res: Response): Promise<void> => {
@@ -312,6 +358,12 @@ export class WorkflowController {
     },
   ];
 
+  /**
+   * Confirms permission to override an existing workflow.
+   * 
+   * @param req - Express request object with workflowId and requestId
+   * @param res - Express response object
+   */
   confirmOverride = async (req: Request, res: Response): Promise<void> => {
     try {
       const { workflowId, requestId } = req.body;
@@ -343,6 +395,10 @@ export class WorkflowController {
     }
   };
 
+  /**
+   * Updates an existing workflow's content and/or metadata.
+   * Handles both file uploads and metadata-only updates.
+   */
   updateWorkflow = [
     multer({ storage: multer.memoryStorage() }).single('workflow'),
     async (req: Request, res: Response): Promise<void> => {
@@ -403,6 +459,10 @@ export class WorkflowController {
     },
   ];
 
+  /**
+   * Adds one or more attachments to an existing workflow.
+   * Supports multiple file uploads up to 20 files.
+   */
   addAttachment = [
     multer({ storage: multer.memoryStorage() }).array('attachments', 20),
     async (req: Request, res: Response): Promise<void> => {
@@ -471,6 +531,12 @@ export class WorkflowController {
     },
   ];
 
+  /**
+   * Removes a specific attachment from a workflow.
+   * 
+   * @param req - Express request object with workflow ID and file name
+   * @param res - Express response object
+   */
   deleteAttachment = async (req: Request, res: Response): Promise<void> => {
     try {
       const { id, fileName } = req.params;
@@ -534,6 +600,12 @@ export class WorkflowController {
     }
   };
 
+  /**
+   * Deletes a workflow from the repository.
+   * 
+   * @param req - Express request object with workflow ID in params
+   * @param res - Express response object
+   */
   deleteWorkflow = async (req: Request, res: Response): Promise<void> => {
     try {
       const { id } = req.params;
@@ -573,6 +645,12 @@ export class WorkflowController {
     }
   };
 
+  /**
+   * Retrieves the hierarchical tree structure of workflows.
+   * 
+   * @param req - Express request object with optional path parameter
+   * @param res - Express response object with tree structure
+   */
   getTree = async (req: Request, res: Response): Promise<void> => {
     try {
       const path = req.params['*'] || '';
@@ -594,6 +672,12 @@ export class WorkflowController {
     }
   };
 
+  /**
+   * Retrieves all available workflow tags.
+   * 
+   * @param req - Express request object
+   * @param res - Express response object with tags array
+   */
   getTags = async (req: Request, res: Response): Promise<void> => {
     try {
       const tags = await this.storageService.getAllTags();
@@ -613,6 +697,12 @@ export class WorkflowController {
     }
   };
 
+  /**
+   * Retrieves all workflow authors.
+   * 
+   * @param req - Express request object
+   * @param res - Express response object with authors array
+   */
   getAuthors = async (req: Request, res: Response): Promise<void> => {
     try {
       const authors = await this.storageService.getAllAuthors();
@@ -632,6 +722,12 @@ export class WorkflowController {
     }
   };
 
+  /**
+   * Searches workflows based on various criteria.
+   * 
+   * @param req - Express request object with search parameters
+   * @param res - Express response object with search results
+   */
   searchWorkflows = async (req: Request, res: Response): Promise<void> => {
     try {
       const query: SearchWorkflowRequest = req.query;
@@ -669,6 +765,12 @@ export class WorkflowController {
     }
   };
 
+  /**
+   * Retrieves the owner/author of a specific workflow.
+   * 
+   * @param req - Express request object with workflow ID in params
+   * @returns Promise resolving to owner username or null if not found
+   */
   getWorkflowOwner = async (req: Request): Promise<string | null> => {
     const { id } = req.params;
     if (!id) {
