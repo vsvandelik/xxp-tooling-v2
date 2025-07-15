@@ -288,7 +288,7 @@ export class ProgressPanel {
     this.updateContent();
   }
 
-  private handleUserInputRequest(request: UserInputRequest): void {
+  public handleUserInputRequest(request: UserInputRequest): void {
     // If panel is disposed, fall back to native VS Code input
     if (this.disposed) {
       this.handleUserInputViaNativeDialog(request);

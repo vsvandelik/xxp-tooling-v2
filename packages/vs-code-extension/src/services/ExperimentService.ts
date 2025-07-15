@@ -120,10 +120,24 @@ export class ExperimentService {
       });
 
       // Set up event handlers
-      this.socket!.on('progress', (data: ExperimentProgress) => {
+      this.socket!.on('progress', async (data: ExperimentProgress) => {
         const callbacks = this.activeExperiments.get(data.experimentId);
         if (callbacks?.onProgress) {
           callbacks.onProgress(data);
+        }
+        
+        // Check if experiment completed via progress status
+        if (data.status === 'completed') {
+          console.log(`Experiment ${data.experimentId} completed via progress event`);
+          // Fetch the final result and trigger completion
+          await this.handleExperimentCompletion(data.experimentId);
+        } else if (data.status === 'failed') {
+          console.log(`Experiment ${data.experimentId} failed via progress event`);
+          // Trigger error callback
+          const errorCallbacks = this.activeExperiments.get(data.experimentId);
+          errorCallbacks?.onError?.(new Error('Experiment failed'));
+          this.activeExperiments.delete(data.experimentId);
+          this.socket?.emit('unsubscribe', data.experimentId);
         }
       });
 
@@ -197,7 +211,7 @@ export class ExperimentService {
     }
 
     // Generate a unique experiment ID
-    const experimentId = `exp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const experimentId = `exp_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
 
     try {
       // Make API call to start experiment
@@ -456,5 +470,95 @@ export class ExperimentService {
    */
   unregisterUserInputHandler(experimentId: string): void {
     this.userInputCallbacks.delete(experimentId);
+  }
+
+  /**
+   * Updates callbacks for an existing experiment.
+   * Used when reconnecting to a running experiment with a new panel.
+   *
+   * @param experimentId - Unique identifier of the experiment
+   * @param callbacks - New callback handlers
+   */
+  updateExperimentCallbacks(experimentId: string, callbacks: ExperimentCallbacks): void {
+    if (this.activeExperiments.has(experimentId)) {
+      this.activeExperiments.set(experimentId, callbacks);
+    }
+  }
+
+  /**
+   * Checks if an experiment is actively tracked.
+   *
+   * @param experimentId - Unique identifier of the experiment
+   * @returns true if the experiment is being tracked
+   */
+  isExperimentActive(experimentId: string): boolean {
+    return this.activeExperiments.has(experimentId);
+  }
+
+  /**
+   * Gets the current state of a running experiment.
+   *
+   * @param experimentId - Unique identifier of the experiment
+   * @returns Promise resolving to current experiment state or null if not found
+   */
+  async getExperimentState(experimentId: string): Promise<ExperimentProgress | null> {
+    const serverUrl = await this.serverManager.getServerUrl();
+    if (!serverUrl) {
+      return null;
+    }
+
+    try {
+      const response = await fetch(`${serverUrl}/api/experiments/${experimentId}/state`);
+      if (!response.ok) {
+        return null;
+      }
+      return await response.json();
+    } catch (error) {
+      console.error('Failed to get experiment state:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Handles experiment completion by fetching final result and triggering callbacks.
+   *
+   * @param experimentId - Unique identifier of the completed experiment
+   */
+  private async handleExperimentCompletion(experimentId: string): Promise<void> {
+    try {
+      const serverUrl = await this.serverManager.getServerUrl();
+      if (!serverUrl) {
+        console.error('No server URL available for fetching result');
+        return;
+      }
+
+      // Fetch the final experiment result
+      const response = await fetch(`${serverUrl}/api/experiments/${experimentId}/result`);
+      if (!response.ok) {
+        console.error(`Failed to fetch experiment result: ${response.statusText}`);
+        return;
+      }
+
+      const result = await response.json();
+      console.log(`Fetched result for experiment ${experimentId}:`, result);
+
+      // Trigger completion callback
+      const callbacks = this.activeExperiments.get(experimentId);
+      if (callbacks?.onComplete) {
+        callbacks.onComplete(result);
+      }
+
+      // Clean up
+      this.activeExperiments.delete(experimentId);
+      this.socket?.emit('unsubscribe', experimentId);
+    } catch (error) {
+      console.error(`Error handling experiment completion for ${experimentId}:`, error);
+      
+      // Trigger error callback as fallback
+      const callbacks = this.activeExperiments.get(experimentId);
+      callbacks?.onError?.(new Error(`Failed to fetch completion result: ${error}`));
+      this.activeExperiments.delete(experimentId);
+      this.socket?.emit('unsubscribe', experimentId);
+    }
   }
 }

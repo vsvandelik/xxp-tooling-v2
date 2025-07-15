@@ -51,6 +51,9 @@ export class ProgressPanelManager {
       panel.setExperimentId(experimentId);
       panel.setArtifactPath(experimentInfo.artifactPath);
       this.panels.set(experimentId, panel);
+
+      // Reconnect callbacks for the restored experiment
+      await this.reconnectExperimentCallbacks(experimentId, panel);
     }
 
     return panel;
@@ -82,6 +85,38 @@ export class ProgressPanelManager {
 
   getRunningExperiments(): Array<{ experimentId: string; artifactPath: string }> {
     return Array.from(this.runningExperiments.values());
+  }
+
+  private async reconnectExperimentCallbacks(experimentId: string, panel: ProgressPanel): Promise<void> {
+    // Set up callbacks for the restored experiment
+    this.experimentService.updateExperimentCallbacks(experimentId, {
+      onProgress: async progress => {
+        await panel.updateProgress(progress);
+      },
+      onComplete: async () => {
+        await panel.setCompleted();
+        // Note: The panel will call onExperimentStopped callback which removes it from tracking
+      },
+      onError: async error => {
+        await panel.setError(error);
+        // Note: The panel will call onExperimentStopped callback which removes it from tracking
+      },
+    });
+
+    // Also re-register the user input handler
+    this.experimentService.registerUserInputHandler(experimentId, request => {
+      panel.handleUserInputRequest(request);
+    });
+
+    // Fetch and display current state
+    try {
+      const currentState = await this.experimentService.getExperimentState(experimentId);
+      if (currentState) {
+        await panel.updateProgress(currentState);
+      }
+    } catch (error) {
+      console.error('Failed to fetch current experiment state:', error);
+    }
   }
 
   dispose(): void {

@@ -8,6 +8,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 
 import * as vscode from 'vscode';
+import { RunResult } from '@extremexp/experiment-runner';
 
 import { ProgressPanelManager } from '../panels/ProgressPanelManager.js';
 import { ExperimentService } from '../services/ExperimentService.js';
@@ -115,17 +116,26 @@ export class RunExperimentCommand {
           // Stop tracking this experiment as it's completed
           this.progressPanelManager.stopTrackingExperiment(experimentId);
 
+          // Create output file
+          const outputFilePath = await this.createOutputFile(artifactPath, result);
+
           // Show completion notification
           const action = await vscode.window.showInformationMessage(
             `Experiment completed! ${result.summary.completedTasks} tasks completed.`,
-            'View Outputs',
+            'View Output File',
+            'View Outputs List',
             'View Summary'
           );
 
-          if (action === 'View Outputs') {
-            await this.openOutputs(result.outputs);
+          if (action === 'View Output File') {
+            await this.openOutputFile(outputFilePath);
+          } else if (action === 'View Outputs List') {
+            await this.openOutputsWithReopen(result.outputs);
           } else if (action === 'View Summary') {
-            panel.show();
+            await this.showSummary(panel);
+          } else {
+            // Default action: open the output file
+            await this.openOutputFile(outputFilePath);
           }
         },
         onError: async error => {
@@ -314,61 +324,203 @@ export class RunExperimentCommand {
     outputChannel.show();
   }
 
+
   /**
-   * Presents experiment outputs to the user with selection interface.
-   * Attempts to open file outputs in editor or displays in output channel.
+   * Creates an output file with experiment results and summary.
+   *
+   * @param artifactPath - Path to the original artifact file
+   * @param result - Experiment run result
+   * @returns Promise resolving to the output file path
+   */
+  private async createOutputFile(artifactPath: string, result: RunResult): Promise<string> {
+    const artifactInfo = await this.getArtifactInfo(artifactPath);
+    const outputFileName = `OUTPUT_${artifactInfo.experiment}_${artifactInfo.version}.txt`;
+    const outputFilePath = path.join(path.dirname(artifactPath), outputFileName);
+
+    const content = this.formatOutputContent(result, artifactInfo);
+
+    await fs.promises.writeFile(outputFilePath, content, 'utf-8');
+    return outputFilePath;
+  }
+
+  /**
+   * Formats the experiment result into a readable text format.
+   *
+   * @param result - Experiment run result
+   * @param artifactInfo - Experiment metadata
+   * @returns Formatted output content
+   */
+  private formatOutputContent(result: RunResult, artifactInfo: { experiment: string; version: string }): string {
+    const timestamp = new Date().toISOString();
+    let content = '';
+
+    content += `EXPERIMENT OUTPUT REPORT\n`;
+    content += `========================\n\n`;
+    content += `Experiment: ${artifactInfo.experiment}\n`;
+    content += `Version: ${artifactInfo.version}\n`;
+    content += `Completed: ${timestamp}\n\n`;
+
+    // Summary section
+    content += `SUMMARY\n`;
+    content += `-------\n`;
+    content += `Total Tasks: ${result.summary.totalTasks || 'N/A'}\n`;
+    content += `Completed Tasks: ${result.summary.completedTasks || 'N/A'}\n`;
+    content += `Failed Tasks: ${result.summary.failedTasks || 'N/A'}\n`;
+    content += `Skipped Tasks: ${result.summary.skippedTasks || 'N/A'}\n`;
+    content += `Status: ${result.status}\n\n`;
+
+    // Outputs section
+    content += `OUTPUTS\n`;
+    content += `-------\n`;
+    if (result.outputs && Object.keys(result.outputs).length > 0) {
+      for (const [spaceId, spaceOutputs] of Object.entries(result.outputs)) {
+        content += `\nSpace: ${spaceId}\n`;
+        content += `${'='.repeat(spaceId.length + 7)}\n`;
+        
+        for (const [outputName, outputValue] of Object.entries(spaceOutputs)) {
+          content += `\n${outputName}:\n`;
+          content += `${'-'.repeat(outputName.length + 1)}\n`;
+          content += `${outputValue}\n`;
+        }
+      }
+    } else {
+      content += `No outputs generated.\n`;
+    }
+
+    // Error section (if any)
+    if (result.error) {
+      content += `\nERROR\n`;
+      content += `-----\n`;
+      content += `${result.error.message || result.error}\n`;
+    }
+
+    return content;
+  }
+
+  /**
+   * Opens the output file in VS Code editor.
+   *
+   * @param outputFilePath - Path to the output file
+   */
+  private async openOutputFile(outputFilePath: string): Promise<void> {
+    try {
+      const doc = await vscode.workspace.openTextDocument(outputFilePath);
+      await vscode.window.showTextDocument(doc);
+    } catch (error) {
+      vscode.window.showErrorMessage(`Failed to open output file: ${error}`);
+    }
+  }
+
+  /**
+   * Shows the summary by ensuring the panel is visible.
+   *
+   * @param panel - Progress panel instance
+   */
+  private async showSummary(panel: any): Promise<void> {
+    try {
+      if (panel && !panel.isDisposed()) {
+        panel.show();
+      } else {
+        // Panel is disposed, create a new one and restore the experiment
+        const newPanel = await this.progressPanelManager.createOrShowPanel();
+        newPanel.show();
+      }
+    } catch (error) {
+      vscode.window.showErrorMessage(`Failed to show summary: ${error}`);
+    }
+  }
+
+  /**
+   * Opens outputs with the ability to reopen the selection dialog.
    *
    * @param outputs - Nested object containing space outputs with values
    */
-  private async openOutputs(outputs: Record<string, Record<string, string>>): Promise<void> {
-    // Create a quick pick to select which output to view
-    const items: vscode.QuickPickItem[] = [];
+  private async openOutputsWithReopen(outputs: Record<string, Record<string, string>>): Promise<void> {
+    let continueShowing = true;
+    
+    while (continueShowing) {
+      // Create a quick pick to select which output to view
+      const items: vscode.QuickPickItem[] = [];
 
-    for (const [spaceId, spaceOutputs] of Object.entries(outputs)) {
-      for (const [outputName, outputValue] of Object.entries(spaceOutputs)) {
-        items.push({
-          label: outputName,
-          description: `Space: ${spaceId}`,
-          detail: outputValue,
-        });
+      for (const [spaceId, spaceOutputs] of Object.entries(outputs)) {
+        for (const [outputName, outputValue] of Object.entries(spaceOutputs)) {
+          items.push({
+            label: outputName,
+            description: `Space: ${spaceId}`,
+            detail: outputValue,
+          });
+        }
+      }
+
+      if (items.length === 0) {
+        vscode.window.showInformationMessage('No outputs to display');
+        return;
+      }
+
+      // Add option to view another output
+      items.push({
+        label: '$(refresh) View Another Output',
+        description: 'Select another output to view',
+        detail: 'reopen'
+      });
+
+      const selected = await vscode.window.showQuickPick(items, {
+        placeHolder: 'Select output to view',
+        canPickMany: false,
+      });
+
+      if (!selected) {
+        // User cancelled
+        continueShowing = false;
+      } else if (selected.detail === 'reopen') {
+        // User wants to see the list again, continue the loop
+        continue;
+      } else {
+        // User selected an actual output
+        await this.displayOutput(selected);
+        
+        // Ask if they want to view another output
+        const viewAnother = await vscode.window.showInformationMessage(
+          'Output displayed. Would you like to view another output?',
+          'Yes',
+          'No'
+        );
+        
+        continueShowing = viewAnother === 'Yes';
       }
     }
+  }
 
-    if (items.length === 0) {
-      vscode.window.showInformationMessage('No outputs to display');
-      return;
-    }
+  /**
+   * Displays a selected output.
+   *
+   * @param selected - Selected output item
+   */
+  private async displayOutput(selected: vscode.QuickPickItem): Promise<void> {
+    if (!selected.detail) return;
 
-    const selected = await vscode.window.showQuickPick(items, {
-      placeHolder: 'Select output to view',
-      canPickMany: false,
-    });
-
-    if (selected && selected.detail) {
-      // If the output is a file path, try to open it
-      if (
-        selected.detail.endsWith('.json') ||
-        selected.detail.endsWith('.txt') ||
-        selected.detail.endsWith('.csv')
-      ) {
-        try {
-          const doc = await vscode.workspace.openTextDocument(selected.detail);
-          await vscode.window.showTextDocument(doc);
-          // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        } catch (error) {
-          // If can't open as file, show in output channel
-          const outputChannel = vscode.window.createOutputChannel('ExtremeXP Output');
-          outputChannel.appendLine(`${selected.label}:`);
-          outputChannel.appendLine(selected.detail);
-          outputChannel.show();
-        }
-      } else {
-        // Show in output channel
+    // If the output is a file path, try to open it
+    if (
+      selected.detail.endsWith('.json') ||
+      selected.detail.endsWith('.txt') ||
+      selected.detail.endsWith('.csv')
+    ) {
+      try {
+        const doc = await vscode.workspace.openTextDocument(selected.detail);
+        await vscode.window.showTextDocument(doc);
+      } catch (error) {
+        // If can't open as file, show in output channel
         const outputChannel = vscode.window.createOutputChannel('ExtremeXP Output');
         outputChannel.appendLine(`${selected.label}:`);
         outputChannel.appendLine(selected.detail);
         outputChannel.show();
       }
+    } else {
+      // Show in output channel
+      const outputChannel = vscode.window.createOutputChannel('ExtremeXP Output');
+      outputChannel.appendLine(`${selected.label}:`);
+      outputChannel.appendLine(selected.detail);
+      outputChannel.show();
     }
   }
 }
