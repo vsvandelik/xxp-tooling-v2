@@ -16,7 +16,8 @@ export class ProgressPanel {
 
   constructor(
     private context: vscode.ExtensionContext,
-    private experimentService: ExperimentService
+    private experimentService: ExperimentService,
+    private onExperimentStopped?: (experimentId: string) => void
   ) {
     this.webviewController = new WebviewController();
 
@@ -63,15 +64,28 @@ export class ProgressPanel {
     this.webviewController.setCompleted();
     await this.updateHistoryIfVisible();
     this.updateContent();
+    // Notify parent manager that experiment completed
+    if (this.onExperimentStopped && this.experimentId) {
+      this.onExperimentStopped(this.experimentId);
+    }
   }
 
   async setError(error: Error): Promise<void> {
     this.webviewController.setError(error.message);
     await this.updateHistoryIfVisible();
     this.updateContent();
+    // Notify parent manager that experiment failed
+    if (this.onExperimentStopped && this.experimentId) {
+      this.onExperimentStopped(this.experimentId);
+    }
   }
 
   private updateContent(): void {
+    // Don't update content if webview is disposed
+    if (this.disposed) {
+      return;
+    }
+    
     const state = this.webviewController.getState();
     this.panel.webview.html = WebviewRenderer.renderContent(state);
   }
@@ -141,6 +155,10 @@ export class ProgressPanel {
       if (terminated) {
         this.webviewController.setTerminated();
         this.updateContent();
+        // Notify parent manager that experiment was stopped
+        if (this.onExperimentStopped) {
+          this.onExperimentStopped(this.experimentId);
+        }
       }
     }
   }
@@ -271,6 +289,12 @@ export class ProgressPanel {
   }
 
   private handleUserInputRequest(request: UserInputRequest): void {
+    // If panel is disposed, fall back to native VS Code input
+    if (this.disposed) {
+      this.handleUserInputViaNativeDialog(request);
+      return;
+    }
+    
     this.webviewController.setUserInputRequest(request.requestId, request.prompt);
     this.updateContent();
   }
@@ -311,5 +335,35 @@ export class ProgressPanel {
     } catch (error) {
       vscode.window.showErrorMessage(`Failed to open output: ${error}`);
     }
+  }
+
+  private async handleUserInputViaNativeDialog(request: UserInputRequest): Promise<void> {
+    const value = await vscode.window.showInputBox({
+      prompt: request.prompt,
+      placeHolder: 'Enter value...',
+      ignoreFocusOut: true,
+    });
+
+    if (value === undefined) {
+      // User cancelled
+      return;
+    }
+
+    // Submit the input
+    const serverUrl = await this.experimentService['serverManager'].getServerUrl();
+    if (!serverUrl) {
+      return;
+    }
+
+    await fetch(`${serverUrl}/api/experiments/${request.experimentId}/input`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        requestId: request.requestId,
+        value,
+      }),
+    });
   }
 }

@@ -7,6 +7,7 @@ import { ProgressPanel } from './ProgressPanel.js';
 export class ProgressPanelManager {
   private panels: Map<string, ProgressPanel> = new Map();
   private activePanel: ProgressPanel | null = null;
+  private runningExperiments: Map<string, { experimentId: string; artifactPath: string }> = new Map();
 
   constructor(
     private context: vscode.ExtensionContext,
@@ -19,15 +20,38 @@ export class ProgressPanelManager {
       return this.activePanel;
     }
 
-    const panel = new ProgressPanel(this.context, this.experimentService);
+    const panel = new ProgressPanel(this.context, this.experimentService, (experimentId) => {
+      this.stopTrackingExperiment(experimentId);
+    });
     this.activePanel = panel;
 
     panel.onDidDispose(() => {
       if (this.activePanel === panel) {
         this.activePanel = null;
       }
-      this.panels.delete(panel.getExperimentId() || '');
+      const experimentId = panel.getExperimentId();
+      if (experimentId) {
+        this.panels.delete(experimentId);
+        // Keep track of running experiments even when panel is closed
+        const runningExperiment = this.runningExperiments.get(experimentId);
+        if (runningExperiment) {
+          // Experiment is still running, just panel was closed
+          console.log(`Panel for experiment ${experimentId} was closed, but experiment continues running`);
+        }
+      }
     });
+
+    // If there's a running experiment, restore its state
+    const runningExperimentIds = Array.from(this.runningExperiments.keys());
+    if (runningExperimentIds.length > 0) {
+      // For now, restore the first running experiment
+      // In the future, we could show a picker if multiple experiments are running
+      const experimentId = runningExperimentIds[0]!;
+      const experimentInfo = this.runningExperiments.get(experimentId)!;
+      panel.setExperimentId(experimentId);
+      panel.setArtifactPath(experimentInfo.artifactPath);
+      this.panels.set(experimentId, panel);
+    }
 
     return panel;
   }
@@ -44,9 +68,26 @@ export class ProgressPanelManager {
     return this.panels.get(experimentId);
   }
 
+  trackRunningExperiment(experimentId: string, artifactPath: string): void {
+    this.runningExperiments.set(experimentId, { experimentId, artifactPath });
+  }
+
+  stopTrackingExperiment(experimentId: string): void {
+    this.runningExperiments.delete(experimentId);
+  }
+
+  hasRunningExperiments(): boolean {
+    return this.runningExperiments.size > 0;
+  }
+
+  getRunningExperiments(): Array<{ experimentId: string; artifactPath: string }> {
+    return Array.from(this.runningExperiments.values());
+  }
+
   dispose(): void {
     this.panels.forEach(panel => panel.dispose());
     this.panels.clear();
+    this.runningExperiments.clear();
     this.activePanel = null;
   }
 }

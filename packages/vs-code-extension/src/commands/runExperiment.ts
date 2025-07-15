@@ -112,6 +112,8 @@ export class RunExperimentCommand {
         },
         onComplete: async result => {
           await panel.setCompleted();
+          // Stop tracking this experiment as it's completed
+          this.progressPanelManager.stopTrackingExperiment(experimentId);
 
           // Show completion notification
           const action = await vscode.window.showInformationMessage(
@@ -128,12 +130,17 @@ export class RunExperimentCommand {
         },
         onError: async error => {
           await panel.setError(error);
+          // Stop tracking this experiment as it failed
+          this.progressPanelManager.stopTrackingExperiment(experimentId);
           vscode.window.showErrorMessage(`Experiment failed: ${error.message}`);
         },
       });
 
       panel.setExperimentId(experimentId);
       panel.setArtifactPath(artifactPath);
+      
+      // Track this experiment as running
+      this.progressPanelManager.trackRunningExperiment(experimentId, artifactPath);
       vscode.window.showInformationMessage(
         `Experiment ${resume ? 'resumed' : 'started'}: ${artifactInfo.experiment} v${artifactInfo.version}`
       );
