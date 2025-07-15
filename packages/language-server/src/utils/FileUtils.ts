@@ -1,5 +1,6 @@
 import * as fs from 'fs';
 import * as path from 'path';
+import { fileURLToPath } from 'url';
 
 import { TextDocument } from 'vscode-languageserver-textdocument';
 
@@ -75,8 +76,8 @@ export class FileUtils {
   }
 
   private static normalizeFileUri(uri: string): string {
-    if (uri.startsWith('file:///')) {
-      return decodeURIComponent(uri.slice(7).replace(/\//g, path.sep));
+    if (uri.startsWith('file://')) {
+      return fileURLToPath(uri);
     }
     return uri;
   }
