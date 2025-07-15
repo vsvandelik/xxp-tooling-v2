@@ -76,7 +76,7 @@ export class FileUtils {
 
   private static normalizeFileUri(uri: string): string {
     if (uri.startsWith('file:///')) {
-      return decodeURIComponent(uri.slice(8).replace(/\//g, path.sep));
+      return decodeURIComponent(uri.slice(7).replace(/\//g, path.sep));
     }
     return uri;
   }
