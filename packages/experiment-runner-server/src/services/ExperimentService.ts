@@ -162,11 +162,20 @@ export class ExperimentService {
         console.log(`Progress callback triggered: ${progress * 100}% - ${message}`);
         const experiment = this.activeExperiments.get(experimentId);
         if (experiment) {
-          // Get fresh status from executor to get real-time progress numbers
-          const freshStatus = await this.executor.getStatus(
-            experiment.experimentName,
-            experiment.experimentVersion
-          );
+          let freshStatus = null;
+
+          try {
+            // Get fresh status from executor to get real-time progress numbers
+            freshStatus = await this.executor.getStatus(
+              experiment.experimentName,
+              experiment.experimentVersion
+            );
+          } catch (error) {
+            console.warn(
+              `Failed to get fresh status during progress callback: ${error instanceof Error ? error.message : 'Unknown error'}`
+            );
+            // Continue with cached status instead of crashing
+          }
 
           const progressData: ExperimentProgress = {
             experimentId,
@@ -174,14 +183,23 @@ export class ExperimentService {
             ...(experiment.status.currentSpace && { currentSpace: experiment.status.currentSpace }),
             progress: {
               percentage: progress,
-              completedSpaces: freshStatus?.progress.completedSpaces || 0,
+              completedSpaces:
+                freshStatus?.progress.completedSpaces ||
+                experiment.status.progress.completedSpaces ||
+                0,
               totalSpaces:
                 freshStatus?.progress.totalSpaces || experiment.status.progress.totalSpaces,
-              completedParameterSets: freshStatus?.progress.completedParameterSets || 0,
+              completedParameterSets:
+                freshStatus?.progress.completedParameterSets ||
+                experiment.status.progress.completedParameterSets ||
+                0,
               totalParameterSets:
                 freshStatus?.progress.totalParameterSets ||
                 experiment.status.progress.totalParameterSets,
-              completedTasks: freshStatus?.progress.completedTasks || 0,
+              completedTasks:
+                freshStatus?.progress.completedTasks ||
+                experiment.status.progress.completedTasks ||
+                0,
               totalTasks: freshStatus?.progress.totalTasks || experiment.status.progress.totalTasks,
             },
             timestamp: Date.now(),

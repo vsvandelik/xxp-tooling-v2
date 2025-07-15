@@ -96,6 +96,13 @@ export class SqliteRepository implements DatabaseRepository {
     return this.db;
   }
 
+  private ensureInitializedSafe(): SqliteDatabase | null {
+    if (!this.isInitialized || !this.db) {
+      return null;
+    }
+    return this.db;
+  }
+
   private async createTables(): Promise<void> {
     await this.db!.exec(`
       CREATE TABLE IF NOT EXISTS runs (
@@ -496,7 +503,12 @@ export class SqliteRepository implements DatabaseRepository {
   }
 
   async getTaskStats(runId: string): Promise<{ status: string; count: number }[]> {
-    const db = this.ensureInitialized();
+    const db = this.ensureInitializedSafe();
+
+    if (!db) {
+      console.warn('Database connection not available when getting task stats');
+      return [];
+    }
 
     try {
       return await db.all<{ status: string; count: number }[]>(
@@ -504,6 +516,10 @@ export class SqliteRepository implements DatabaseRepository {
         [runId]
       );
     } catch (error) {
+      if (error instanceof Error && error.message.includes('Database handle is closed')) {
+        console.warn('Database handle was closed during getTaskStats operation');
+        return [];
+      }
       throw new Error(
         `Failed to get task stats: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
@@ -654,7 +670,12 @@ export class SqliteRepository implements DatabaseRepository {
 
   // Progress operations
   async getSpaceStats(runId: string): Promise<{ total: number; completed: number }> {
-    const db = this.ensureInitialized();
+    const db = this.ensureInitializedSafe();
+
+    if (!db) {
+      console.warn('Database connection not available when getting space stats');
+      return { total: 0, completed: 0 };
+    }
 
     try {
       const result = await db.get<{ total: number; completed: number }>(
@@ -669,6 +690,10 @@ export class SqliteRepository implements DatabaseRepository {
       );
       return { total: result?.total || 0, completed: result?.completed || 0 };
     } catch (error) {
+      if (error instanceof Error && error.message.includes('Database handle is closed')) {
+        console.warn('Database handle was closed during getSpaceStats operation');
+        return { total: 0, completed: 0 };
+      }
       throw new Error(
         `Failed to get space stats: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
@@ -676,7 +701,12 @@ export class SqliteRepository implements DatabaseRepository {
   }
 
   async getParamSetStats(runId: string): Promise<{ total: number; completed: number }> {
-    const db = this.ensureInitialized();
+    const db = this.ensureInitializedSafe();
+
+    if (!db) {
+      console.warn('Database connection not available when getting param set stats');
+      return { total: 0, completed: 0 };
+    }
 
     try {
       const result = await db.get<{ total: number; completed: number }>(
@@ -691,6 +721,10 @@ export class SqliteRepository implements DatabaseRepository {
       );
       return { total: result?.total || 0, completed: result?.completed || 0 };
     } catch (error) {
+      if (error instanceof Error && error.message.includes('Database handle is closed')) {
+        console.warn('Database handle was closed during getParamSetStats operation');
+        return { total: 0, completed: 0 };
+      }
       throw new Error(
         `Failed to get param set stats: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
@@ -701,7 +735,12 @@ export class SqliteRepository implements DatabaseRepository {
     runId: string,
     spaceId: string
   ): Promise<{ total: number; completed: number }> {
-    const db = this.ensureInitialized();
+    const db = this.ensureInitializedSafe();
+
+    if (!db) {
+      console.warn('Database connection not available when getting param set stats for space');
+      return { total: 0, completed: 0 };
+    }
 
     try {
       const result = await db.get<{ total: number; completed: number }>(
@@ -716,6 +755,10 @@ export class SqliteRepository implements DatabaseRepository {
       );
       return { total: result?.total || 0, completed: result?.completed || 0 };
     } catch (error) {
+      if (error instanceof Error && error.message.includes('Database handle is closed')) {
+        console.warn('Database handle was closed during getParamSetStatsForSpace operation');
+        return { total: 0, completed: 0 };
+      }
       throw new Error(
         `Failed to get param set stats for space: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
@@ -726,7 +769,12 @@ export class SqliteRepository implements DatabaseRepository {
     runId: string,
     spaceId: string
   ): Promise<{ status: string; count: number }[]> {
-    const db = this.ensureInitialized();
+    const db = this.ensureInitializedSafe();
+
+    if (!db) {
+      console.warn('Database connection not available when getting task stats for space');
+      return [];
+    }
 
     try {
       return await db.all<{ status: string; count: number }[]>(
@@ -734,6 +782,10 @@ export class SqliteRepository implements DatabaseRepository {
         [runId, spaceId]
       );
     } catch (error) {
+      if (error instanceof Error && error.message.includes('Database handle is closed')) {
+        console.warn('Database handle was closed during getTaskStatsForSpace operation');
+        return [];
+      }
       throw new Error(
         `Failed to get task stats for space: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
@@ -749,7 +801,12 @@ export class SqliteRepository implements DatabaseRepository {
     total_param_sets: number;
     total_tasks: number;
   } | null> {
-    const db = this.ensureInitialized();
+    const db = this.ensureInitializedSafe();
+
+    if (!db) {
+      console.warn('Database connection not available when getting space execution with totals');
+      return null;
+    }
 
     try {
       const result = await db.get<{
@@ -763,6 +820,11 @@ export class SqliteRepository implements DatabaseRepository {
       );
       return result || null;
     } catch (error) {
+      // Check if it's a database closed error and handle it gracefully
+      if (error instanceof Error && error.message.includes('Database handle is closed')) {
+        console.warn('Database handle was closed during getSpaceExecutionWithTotals operation');
+        return null;
+      }
       throw new Error(
         `Failed to get space execution with totals: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
@@ -772,7 +834,12 @@ export class SqliteRepository implements DatabaseRepository {
   async getCurrentTaskProgress(
     runId: string
   ): Promise<{ currentTask: string | null; taskIndex: number; totalTasks: number } | null> {
-    const db = this.ensureInitialized();
+    const db = this.ensureInitializedSafe();
+
+    if (!db) {
+      console.warn('Database connection not available when getting current task progress');
+      return null;
+    }
 
     try {
       const result = await db.get<{
@@ -809,6 +876,11 @@ export class SqliteRepository implements DatabaseRepository {
         totalTasks: spaceExecution.total_tasks,
       };
     } catch (error) {
+      // Check if it's a database closed error and handle it gracefully
+      if (error instanceof Error && error.message.includes('Database handle is closed')) {
+        console.warn('Database handle was closed during getCurrentTaskProgress operation');
+        return null;
+      }
       throw new Error(
         `Failed to get current task progress: ${error instanceof Error ? error.message : 'Unknown error'}`
       );

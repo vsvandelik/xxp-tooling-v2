@@ -242,9 +242,12 @@ export class ExperimentExecutor implements ExperimentRunner {
 
       throw error;
     } finally {
-      // Only close after experiment completion/failure since this is a long-running operation
-      // Note: If using a server-managed repository, this might not actually close the connection
-      await this.repository.close();
+      // Note: In server environments, the database connection should be managed
+      // by the service layer, not closed here. This prevents issues where
+      // the server tries to access the database after experiment failure.
+      // For now, we'll comment out the close to prevent the server crash issue.
+      // TODO: Add a flag to control whether to close the database or not
+      // await this.repository.close();
     }
   }
 
