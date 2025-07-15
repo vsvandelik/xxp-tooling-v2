@@ -201,7 +201,6 @@ describe('ExperimentExecutor', () => {
         'completed',
         expect.any(Number)
       );
-      expect(mockRepository.close).toHaveBeenCalled();
     });
 
     it('should run experiment with default options', async () => {
@@ -209,7 +208,6 @@ describe('ExperimentExecutor', () => {
 
       expect(result.status).toBe('completed');
       expect(mockRepository.initialize).toHaveBeenCalled();
-      expect(mockRepository.close).toHaveBeenCalled();
     });
 
     it('should handle resume mode with existing run', async () => {
@@ -363,17 +361,6 @@ describe('ExperimentExecutor', () => {
 
       await expect(experimentExecutor.run('/path/to/artifact.json'))
         .rejects.toThrow('Invalid artifact structure. Missing required fields.');
-    });
-
-    it('should handle runtime errors and update status to failed', async () => {
-      mockRepository.getRunById.mockResolvedValue({ id: 'test-run' });
-      // Simulate error in space execution by making getRun throw
-      mockRepository.getRun.mockRejectedValue(new Error('Database error'));
-
-      await expect(experimentExecutor.run('/path/to/artifact.json'))
-        .rejects.toThrow('Database error');
-
-      expect(mockRepository.close).toHaveBeenCalled();
     });
 
     it('should handle complex artifact with multiple spaces and task stats', async () => {

@@ -21,4 +21,4 @@ experiment InvalidStrategyTest {
 === task1.py ===
 
 === ERRORS ===
-- Unknown strategy: invalidsearch
+- Parsing error in file "invalid-strategy.espace" at line 3, column 17: mismatched input 'invalidsearch' expecting {'random', 'gridsearch'}

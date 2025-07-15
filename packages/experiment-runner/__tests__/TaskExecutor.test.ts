@@ -1,11 +1,12 @@
 import { TaskExecutor } from '../src/executors/TaskExecutor.js';
 import { Task, ParameterSet, Artifact } from '../src/types/artifact.types.js';
-import { spawn } from 'child_process';
+import { spawn, exec } from 'child_process';
 import { EventEmitter } from 'events';
 
 // Mock child_process
 jest.mock('child_process');
 const mockSpawn = spawn as jest.MockedFunction<typeof spawn>;
+const mockExec = exec as jest.MockedFunction<typeof exec>;
 
 // Mock dependencies
 jest.mock('../src/database/DatabaseRepository.js', () => ({
@@ -47,6 +48,16 @@ describe('TaskExecutor', () => {
       emitError: jest.fn(),
     };
     taskExecutor = new TaskExecutor(mockRepository, '/mock/artifact/folder', mockProgress);
+    
+    // Mock exec to simulate successful python3 detection
+    mockExec.mockImplementation((command: string, callback: any) => {
+      if (command.includes('python3 --version')) {
+        callback(null, 'Python 3.8.0', '');
+      } else {
+        callback(new Error('Command not found'), '', '');
+      }
+      return null as any;
+    });
     
     // Set up a mock artifact with input data
     mockArtifact = {
@@ -137,7 +148,7 @@ describe('TaskExecutor', () => {
         output1: 'output_value_1',
         output2: 'output_value_2',
       });      // Verify spawn was called with correct arguments
-      expect(mockSpawn).toHaveBeenCalledWith('python', [
+      expect(mockSpawn).toHaveBeenCalledWith('python3', [
         'test_script.py',
         '--param1',
         'value1',
@@ -199,7 +210,7 @@ describe('TaskExecutor', () => {
       }, 10);
 
       await executePromise;      // Verify spawn was called with space input values since no data mapping exists
-      expect(mockSpawn).toHaveBeenCalledWith('python', [
+      expect(mockSpawn).toHaveBeenCalledWith('python3', [
         'test_script.py',
         '--param1',
         'value1',
@@ -231,7 +242,7 @@ describe('TaskExecutor', () => {
       await executePromise;
 
       // Verify spawn was called without input arguments
-      expect(mockSpawn).toHaveBeenCalledWith('python', [
+      expect(mockSpawn).toHaveBeenCalledWith('python3', [
         'test_script.py',
         '--param1',
         'value1',
