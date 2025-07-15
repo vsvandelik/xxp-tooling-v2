@@ -17,7 +17,7 @@ export class FileResolver {
 
   /**
    * Creates a new file resolver.
-   * 
+   *
    * @param workflowDirectory - Base directory for resolving relative paths
    */
   constructor(workflowDirectory: string) {
@@ -26,7 +26,7 @@ export class FileResolver {
 
   /**
    * Finds all workflow files in the inheritance chain for a given workflow.
-   * 
+   *
    * @param workflowName - Name of the workflow to find
    * @returns Promise resolving to array of file paths in dependency order (parents first)
    * @throws Error if workflow files are not found
@@ -63,7 +63,7 @@ export class FileResolver {
 
   /**
    * Resolves a data file path relative to the workflow directory.
-   * 
+   *
    * @param dataPath - Absolute or relative path to a data file
    * @returns Absolute path to the data file
    */
@@ -76,7 +76,7 @@ export class FileResolver {
 
   /**
    * Resolves an implementation file path relative to the workflow directory.
-   * 
+   *
    * @param implementationPath - Absolute or relative path to an implementation file
    * @returns Absolute path to the implementation file
    */

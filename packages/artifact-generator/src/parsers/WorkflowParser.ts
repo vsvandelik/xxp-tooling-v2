@@ -19,7 +19,7 @@ import { WorkflowModelVisitor } from '../visitors/WorkflowModelVisitor.js';
 export class WorkflowParser {
   /**
    * Parses an XXP workflow file into a WorkflowModel.
-   * 
+   *
    * @param filePath - Path to the XXP workflow file
    * @returns Promise resolving to the parsed workflow model
    * @throws Error if the file cannot be read or contains syntax errors

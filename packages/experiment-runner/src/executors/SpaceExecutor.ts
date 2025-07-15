@@ -19,7 +19,7 @@ import { TaskExecutor } from './TaskExecutor.js';
 export class SpaceExecutor {
   /**
    * Creates a new space executor.
-   * 
+   *
    * @param repository - Database repository for persistence
    * @param taskExecutor - Task executor for individual task execution
    * @param progress - Progress emitter for status updates
@@ -34,7 +34,7 @@ export class SpaceExecutor {
    * Executes all parameter sets within a space.
    * Creates space execution records, iterates through all parameter sets,
    * and coordinates task execution for each parameter combination.
-   * 
+   *
    * @param runId - Unique identifier for the experiment run
    * @param space - Space definition containing parameters and task order
    * @param taskMap - Map of task IDs to task definitions
@@ -106,11 +106,11 @@ export class SpaceExecutor {
         let completedTasksInParameterSet = 0;
         for (let taskIndex = 0; taskIndex < space.tasksOrder.length; taskIndex++) {
           const taskId = space.tasksOrder[taskIndex];
-          
+
           if (!taskId) {
             throw new Error(`Task at index ${taskIndex} not found in space ${space.spaceId}`);
           }
-          
+
           // Update current task in run progress
           await this.repository.updateRunProgress(runId, space.spaceId, i, taskId);
 
@@ -168,15 +168,15 @@ export class SpaceExecutor {
           'failed',
           Date.now()
         );
-        
+
         // Mark space as failed and stop execution since subsequent tasks may depend on failed output
         await this.repository.updateSpaceExecution(runId, space.spaceId, 'failed', Date.now());
-        
+
         this.progress.emitProgress(
           (i + 1) / totalParameterSets,
           `Parameter set ${i + 1}/${totalParameterSets} failed in space ${space.spaceId}: ${(error as Error).message}`
         );
-        
+
         // Re-throw error to stop execution since subsequent tasks may depend on this one
         throw error;
       }

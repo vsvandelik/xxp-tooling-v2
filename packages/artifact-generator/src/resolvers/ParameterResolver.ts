@@ -28,7 +28,7 @@ export interface ParameterCombination {
 export class ParameterResolver {
   /**
    * Resolves parameter combinations for all spaces in an experiment.
-   * 
+   *
    * @param experiment - The experiment model containing spaces and parameters
    * @param workflows - Optional workflow models for parameter filtering
    * @returns Array of parameter combinations for each space
@@ -49,7 +49,7 @@ export class ParameterResolver {
 
   /**
    * Generates parameter combinations for a specific space based on its strategy.
-   * 
+   *
    * @param space - The space model containing parameter definitions
    * @param workflows - Optional workflow models for parameter filtering
    * @returns Array of parameter value combinations

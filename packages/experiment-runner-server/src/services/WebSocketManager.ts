@@ -30,7 +30,7 @@ export class WebSocketManager {
 
   /**
    * Creates a new WebSocket manager.
-   * 
+   *
    * @param io - Socket.IO server instance
    * @param experimentService - Experiment service for handling requests
    */
@@ -62,7 +62,7 @@ export class WebSocketManager {
 
   /**
    * Sets up event handlers for a new socket connection.
-   * 
+   *
    * @param socket - The socket connection to configure
    */
   private setupSocketHandlers(socket: Socket): void {
@@ -159,7 +159,7 @@ export class WebSocketManager {
 
   /**
    * Handles client disconnection and cleanup.
-   * 
+   *
    * @param socketId - ID of the disconnected socket
    */
   private handleDisconnect(socketId: string): void {
@@ -184,7 +184,7 @@ export class WebSocketManager {
 
   /**
    * Broadcasts progress updates to all subscribers of an experiment.
-   * 
+   *
    * @param experimentId - ID of the experiment
    * @param progress - Progress data to broadcast
    */
@@ -195,7 +195,7 @@ export class WebSocketManager {
 
   /**
    * Broadcasts user input request to all subscribers of an experiment.
-   * 
+   *
    * @param experimentId - ID of the experiment
    * @param request - User input request to broadcast
    */
@@ -206,7 +206,7 @@ export class WebSocketManager {
   /**
    * Broadcasts experiment completion to all subscribers.
    * Automatically cleans up subscriptions for the completed experiment.
-   * 
+   *
    * @param experimentId - ID of the completed experiment
    * @param result - Experiment execution result
    */
@@ -231,7 +231,7 @@ export class WebSocketManager {
 
   /**
    * Broadcasts experiment error to all subscribers.
-   * 
+   *
    * @param experimentId - ID of the failed experiment
    * @param error - Error that occurred during execution
    */
@@ -247,7 +247,7 @@ export class WebSocketManager {
 
   /**
    * Sends validation result to a specific client.
-   * 
+   *
    * @param socketId - ID of the target socket
    * @param validation - Validation result with errors and warnings
    * @param validation.errors - Array of validation errors
@@ -267,7 +267,7 @@ export class WebSocketManager {
 
   /**
    * Gets the number of currently connected clients.
-   * 
+   *
    * @returns Number of connected WebSocket clients
    */
   getConnectedClients(): number {
@@ -276,7 +276,7 @@ export class WebSocketManager {
 
   /**
    * Gets the number of clients subscribed to a specific experiment.
-   * 
+   *
    * @param experimentId - ID of the experiment
    * @returns Number of subscribers for the experiment
    */

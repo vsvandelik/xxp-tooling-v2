@@ -16,7 +16,7 @@ import {
 
 /**
  * Creates Express router with experiment-related routes.
- * 
+ *
  * @param experimentService - Service for managing experiment execution
  * @param wsManager - WebSocket manager for real-time updates
  * @returns Configured Express router with all experiment endpoints

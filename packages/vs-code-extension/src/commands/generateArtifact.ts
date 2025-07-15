@@ -28,7 +28,7 @@ interface ValidationResult {
 export class GenerateArtifactCommand {
   /**
    * Creates a new generate artifact command instance.
-   * 
+   *
    * @param toolExecutor - Tool executor for running the artifact generator
    */
   constructor(private toolExecutor: ToolExecutor) {}
@@ -37,7 +37,7 @@ export class GenerateArtifactCommand {
    * Executes the generate artifact command for the currently active ESPACE file.
    * Validates file type, runs artifact generation with progress reporting,
    * and handles success/failure scenarios with user feedback.
-   * 
+   *
    * @throws Error if file operations or tool execution fails
    */
   async execute(): Promise<void> {
@@ -94,7 +94,7 @@ export class GenerateArtifactCommand {
 
   /**
    * Runs the artifact generator tool on the specified ESPACE file.
-   * 
+   *
    * @param espacePath - Absolute path to the ESPACE file
    * @param cancellationToken - VS Code cancellation token for user cancellation
    * @returns Promise resolving to generation result with validation information
@@ -139,7 +139,7 @@ export class GenerateArtifactCommand {
 
   /**
    * Parses tool output to extract validation errors and warnings.
-   * 
+   *
    * @param output - Combined stdout and stderr from tool execution
    * @returns Validation result with categorized errors and warnings
    */
@@ -168,7 +168,7 @@ export class GenerateArtifactCommand {
   /**
    * Handles successful artifact generation by showing appropriate user feedback.
    * Offers options to view warnings or open the generated artifact.
-   * 
+   *
    * @param result - Successful generation result with artifact path and validation
    */
   private async handleSuccess(result: {
@@ -205,7 +205,7 @@ export class GenerateArtifactCommand {
   /**
    * Handles failed artifact generation by showing error information.
    * Offers option to view detailed validation errors.
-   * 
+   *
    * @param result - Failed generation result with validation errors
    */
   private async handleFailure(result: {
@@ -229,7 +229,7 @@ export class GenerateArtifactCommand {
   /**
    * Shows detailed validation results in a VS Code output channel.
    * Displays errors and warnings in a formatted, readable manner.
-   * 
+   *
    * @param validation - Validation result containing errors and warnings
    */
   private async showValidationResults(validation: ValidationResult): Promise<void> {
@@ -258,7 +258,7 @@ export class GenerateArtifactCommand {
 
   /**
    * Opens the generated artifact JSON file in VS Code editor.
-   * 
+   *
    * @param artifactPath - Absolute path to the generated artifact file
    * @throws Error if file cannot be opened
    */

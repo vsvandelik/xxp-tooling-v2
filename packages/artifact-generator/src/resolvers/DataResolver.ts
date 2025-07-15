@@ -25,7 +25,7 @@ export interface ResolvedData {
 export class DataResolver {
   /**
    * Resolves all data definitions for an experiment.
-   * 
+   *
    * @param experiment - The experiment model
    * @param workflows - Array of workflow models
    * @param resolvedTasks - Map of resolved task definitions
@@ -65,7 +65,7 @@ export class DataResolver {
 
   /**
    * Builds a map of workflow names to workflow models for efficient lookup.
-   * 
+   *
    * @param workflows - Array of workflow models
    * @returns Map of workflow name to workflow model
    */

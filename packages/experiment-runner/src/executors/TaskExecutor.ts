@@ -20,7 +20,7 @@ export class TaskExecutor {
 
   /**
    * Creates a new task executor.
-   * 
+   *
    * @param repository - Database repository for persistence
    * @param artifactFolder - Base folder path for resolving relative paths
    * @param progress - Progress emitter for status updates
@@ -33,7 +33,7 @@ export class TaskExecutor {
 
   /**
    * Sets the artifact context for parameter resolution.
-   * 
+   *
    * @param artifact - Experiment artifact containing global data definitions
    */
   setArtifact(artifact: Artifact): void {
@@ -44,7 +44,7 @@ export class TaskExecutor {
    * Executes a single task with the given parameters.
    * Handles task lifecycle including status tracking, parameter resolution,
    * subprocess execution, and output collection.
-   * 
+   *
    * @param runId - Unique identifier for the experiment run
    * @param spaceId - Space identifier containing this task
    * @param paramSetIndex - Index of the parameter set being executed

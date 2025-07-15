@@ -30,7 +30,7 @@ export class ExperimentRunnerServer {
 
   /**
    * Creates a new experiment runner server.
-   * 
+   *
    * @param config - Server configuration including port, database path, and options
    */
   constructor(config: ServerConfig) {
@@ -111,7 +111,7 @@ export class ExperimentRunnerServer {
 
   /**
    * Starts the HTTP server and initializes all services.
-   * 
+   *
    * @returns Promise that resolves when server is listening
    */
   async start(): Promise<void> {
@@ -127,7 +127,7 @@ export class ExperimentRunnerServer {
 
   /**
    * Stops the HTTP server and shuts down all services gracefully.
-   * 
+   *
    * @returns Promise that resolves when server is fully stopped
    */
   async stop(): Promise<void> {

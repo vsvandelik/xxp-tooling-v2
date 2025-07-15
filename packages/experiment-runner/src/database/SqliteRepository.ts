@@ -268,7 +268,14 @@ export class SqliteRepository implements DatabaseRepository {
     try {
       await db.run(
         'INSERT INTO space_executions (run_id, space_id, status, start_time, total_param_sets, total_tasks) VALUES (?, ?, ?, ?, ?, ?)',
-        [record.run_id, record.space_id, record.status, record.start_time, record.total_param_sets, record.total_tasks]
+        [
+          record.run_id,
+          record.space_id,
+          record.status,
+          record.start_time,
+          record.total_param_sets,
+          record.total_tasks,
+        ]
       );
     } catch (error) {
       throw new Error(
@@ -625,7 +632,12 @@ export class SqliteRepository implements DatabaseRepository {
     }
   }
 
-  async updateRunProgress(runId: string, currentSpace?: string, currentParamSet?: number, currentTask?: string): Promise<void> {
+  async updateRunProgress(
+    runId: string,
+    currentSpace?: string,
+    currentParamSet?: number,
+    currentTask?: string
+  ): Promise<void> {
     const db = this.ensureInitialized();
 
     try {
@@ -685,7 +697,10 @@ export class SqliteRepository implements DatabaseRepository {
     }
   }
 
-  async getParamSetStatsForSpace(runId: string, spaceId: string): Promise<{ total: number; completed: number }> {
+  async getParamSetStatsForSpace(
+    runId: string,
+    spaceId: string
+  ): Promise<{ total: number; completed: number }> {
     const db = this.ensureInitialized();
 
     try {
@@ -707,7 +722,10 @@ export class SqliteRepository implements DatabaseRepository {
     }
   }
 
-  async getTaskStatsForSpace(runId: string, spaceId: string): Promise<{ status: string; count: number }[]> {
+  async getTaskStatsForSpace(
+    runId: string,
+    spaceId: string
+  ): Promise<{ status: string; count: number }[]> {
     const db = this.ensureInitialized();
 
     try {
@@ -722,11 +740,24 @@ export class SqliteRepository implements DatabaseRepository {
     }
   }
 
-  async getSpaceExecutionWithTotals(runId: string, spaceId: string): Promise<{space_id: string, status: string, total_param_sets: number, total_tasks: number} | null> {
+  async getSpaceExecutionWithTotals(
+    runId: string,
+    spaceId: string
+  ): Promise<{
+    space_id: string;
+    status: string;
+    total_param_sets: number;
+    total_tasks: number;
+  } | null> {
     const db = this.ensureInitialized();
 
     try {
-      const result = await db.get<{space_id: string, status: string, total_param_sets: number, total_tasks: number}>(
+      const result = await db.get<{
+        space_id: string;
+        status: string;
+        total_param_sets: number;
+        total_tasks: number;
+      }>(
         'SELECT space_id, status, total_param_sets, total_tasks FROM space_executions WHERE run_id = ? AND space_id = ?',
         [runId, spaceId]
       );
@@ -738,21 +769,24 @@ export class SqliteRepository implements DatabaseRepository {
     }
   }
 
-  async getCurrentTaskProgress(runId: string): Promise<{currentTask: string | null, taskIndex: number, totalTasks: number} | null> {
+  async getCurrentTaskProgress(
+    runId: string
+  ): Promise<{ currentTask: string | null; taskIndex: number; totalTasks: number } | null> {
     const db = this.ensureInitialized();
 
     try {
-      const result = await db.get<{current_space: string, current_param_set: number, current_task: string}>(
-        'SELECT current_space, current_param_set, current_task FROM runs WHERE id = ?',
-        [runId]
-      );
-      
+      const result = await db.get<{
+        current_space: string;
+        current_param_set: number;
+        current_task: string;
+      }>('SELECT current_space, current_param_set, current_task FROM runs WHERE id = ?', [runId]);
+
       if (!result?.current_space || result.current_param_set === undefined) {
         return null;
       }
 
       // Get space execution to find total tasks per set
-      const spaceExecution = await db.get<{total_tasks: number}>(
+      const spaceExecution = await db.get<{ total_tasks: number }>(
         'SELECT total_tasks FROM space_executions WHERE run_id = ? AND space_id = ?',
         [runId, result.current_space]
       );
@@ -762,7 +796,7 @@ export class SqliteRepository implements DatabaseRepository {
       }
 
       // Get task order from completed task executions to determine current task index
-      const completedTasks = await db.all<{task_id: string}[]>(
+      const completedTasks = await db.all<{ task_id: string }[]>(
         'SELECT task_id FROM task_executions WHERE run_id = ? AND space_id = ? AND param_set_index = ? AND status = "completed" ORDER BY start_time',
         [runId, result.current_space, result.current_param_set]
       );
@@ -772,7 +806,7 @@ export class SqliteRepository implements DatabaseRepository {
       return {
         currentTask: result.current_task,
         taskIndex,
-        totalTasks: spaceExecution.total_tasks
+        totalTasks: spaceExecution.total_tasks,
       };
     } catch (error) {
       throw new Error(

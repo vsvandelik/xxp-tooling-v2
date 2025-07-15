@@ -19,7 +19,7 @@ import { UserInputProvider } from './userInput/UserInputProvider.js';
 class CLIInputProvider implements UserInputProvider {
   /**
    * Prompts the user for input using the command line interface.
-   * 
+   *
    * @param prompt - The prompt message to display to the user
    * @returns Promise resolving to the user's input
    */
@@ -41,7 +41,7 @@ class CLIProgressCallback implements ProgressCallback {
 
   /**
    * Called when a task starts execution.
-   * 
+   *
    * @param taskId - Unique identifier of the task
    * @param params - Parameter values for this task execution
    */
@@ -52,7 +52,7 @@ class CLIProgressCallback implements ProgressCallback {
 
   /**
    * Called when a task completes successfully.
-   * 
+   *
    * @param taskId - Unique identifier of the task
    * @param _params - Parameter values used (unused in CLI)
    * @param outputs - Output data produced by the task
@@ -69,7 +69,7 @@ class CLIProgressCallback implements ProgressCallback {
 
   /**
    * Called when a parameter space starts execution.
-   * 
+   *
    * @param spaceId - Unique identifier of the space
    */
   onSpaceStart(spaceId: string): void {
@@ -78,7 +78,7 @@ class CLIProgressCallback implements ProgressCallback {
 
   /**
    * Called when a parameter space completes execution.
-   * 
+   *
    * @param spaceId - Unique identifier of the space
    */
   onSpaceComplete(spaceId: string): void {
@@ -87,7 +87,7 @@ class CLIProgressCallback implements ProgressCallback {
 
   /**
    * Called when a parameter set starts execution within a space.
-   * 
+   *
    * @param _spaceId - Space identifier (unused in CLI)
    * @param index - Index of the parameter set (0-based)
    * @param params - Parameter values for this set
@@ -98,7 +98,7 @@ class CLIProgressCallback implements ProgressCallback {
 
   /**
    * Called when a parameter set completes execution.
-   * 
+   *
    * @param _spaceId - Space identifier (unused)
    * @param _index - Parameter set index (unused)
    */
@@ -109,7 +109,7 @@ class CLIProgressCallback implements ProgressCallback {
 
   /**
    * Called when user input is required during experiment execution.
-   * 
+   *
    * @param prompt - The prompt message requesting user input
    */
   onUserInputRequired(prompt: string): void {
@@ -119,7 +119,7 @@ class CLIProgressCallback implements ProgressCallback {
 
   /**
    * Called when an error occurs during experiment execution.
-   * 
+   *
    * @param error - The error that occurred
    * @param context - Additional context information about the error
    */
@@ -131,7 +131,7 @@ class CLIProgressCallback implements ProgressCallback {
 
   /**
    * Called to report overall experiment progress.
-   * 
+   *
    * @param progress - Progress value between 0 and 1
    * @param message - Progress message
    */

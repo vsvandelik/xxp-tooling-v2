@@ -15,7 +15,7 @@ export class ConsoleInputProvider implements UserInputProvider {
   /**
    * Prompts the user for input through the console.
    * Creates a readline interface and waits for user input.
-   * 
+   *
    * @param prompt - Message to display to the user
    * @returns Promise resolving to the user's input string
    */

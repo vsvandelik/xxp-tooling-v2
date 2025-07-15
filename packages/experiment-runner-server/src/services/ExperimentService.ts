@@ -63,7 +63,7 @@ export class ExperimentService {
 
   /**
    * Creates a new experiment service.
-   * 
+   *
    * @param config - Service configuration including database path and concurrency limits
    */
   constructor(config: ExperimentServiceConfig) {
@@ -74,7 +74,7 @@ export class ExperimentService {
   /**
    * Initializes the experiment service and database connection.
    * Must be called before using the service.
-   * 
+   *
    * @returns Promise that resolves when initialization is complete
    */
   async initialize(): Promise<void> {
@@ -87,7 +87,7 @@ export class ExperimentService {
   /**
    * Shuts down the experiment service gracefully.
    * Terminates all running experiments and closes database connections.
-   * 
+   *
    * @returns Promise that resolves when shutdown is complete
    */
   async shutdown(): Promise<void> {
@@ -107,7 +107,7 @@ export class ExperimentService {
 
   /**
    * Starts a new experiment execution or resumes an existing one.
-   * 
+   *
    * @param artifactPath - Path to the experiment artifact JSON file
    * @param options - Execution options including callbacks and settings
    * @param options.experimentId - Optional specific experiment ID to use
@@ -163,8 +163,11 @@ export class ExperimentService {
         const experiment = this.activeExperiments.get(experimentId);
         if (experiment) {
           // Get fresh status from executor to get real-time progress numbers
-          const freshStatus = await this.executor.getStatus(experiment.experimentName, experiment.experimentVersion);
-          
+          const freshStatus = await this.executor.getStatus(
+            experiment.experimentName,
+            experiment.experimentVersion
+          );
+
           const progressData: ExperimentProgress = {
             experimentId,
             status: experiment.status.status,
@@ -172,9 +175,12 @@ export class ExperimentService {
             progress: {
               percentage: progress,
               completedSpaces: freshStatus?.progress.completedSpaces || 0,
-              totalSpaces: freshStatus?.progress.totalSpaces || experiment.status.progress.totalSpaces,
+              totalSpaces:
+                freshStatus?.progress.totalSpaces || experiment.status.progress.totalSpaces,
               completedParameterSets: freshStatus?.progress.completedParameterSets || 0,
-              totalParameterSets: freshStatus?.progress.totalParameterSets || experiment.status.progress.totalParameterSets,
+              totalParameterSets:
+                freshStatus?.progress.totalParameterSets ||
+                experiment.status.progress.totalParameterSets,
               completedTasks: freshStatus?.progress.completedTasks || 0,
               totalTasks: freshStatus?.progress.totalTasks || experiment.status.progress.totalTasks,
             },
@@ -236,7 +242,7 @@ export class ExperimentService {
   /**
    * Internal method to execute an experiment in the background.
    * Handles artifact loading, progress tracking, and status updates.
-   * 
+   *
    * @param experimentId - Unique identifier for the experiment
    * @param artifactPath - Path to the experiment artifact file
    * @param options - Execution configuration and callbacks
@@ -292,8 +298,10 @@ export class ExperimentService {
                 ),
                 completedTasks: 0,
                 totalTasks: artifact.spaces.reduce(
-                  (sum: number, space: { parameters: string | Expression[]; tasksOrder: string[] }) =>
-                    sum + space.parameters.length * space.tasksOrder.length,
+                  (
+                    sum: number,
+                    space: { parameters: string | Expression[]; tasksOrder: string[] }
+                  ) => sum + space.parameters.length * space.tasksOrder.length,
                   0
                 ),
               },
@@ -325,7 +333,7 @@ export class ExperimentService {
   /**
    * Terminates a running experiment gracefully.
    * Stops execution and rejects any pending user input requests.
-   * 
+   *
    * @param experimentId - ID of the experiment to terminate
    * @returns Promise resolving to true if terminated, false if experiment not found
    */
@@ -356,7 +364,7 @@ export class ExperimentService {
 
   /**
    * Gets the current status and progress of an experiment.
-   * 
+   *
    * @param experimentId - ID of the experiment to query
    * @returns Promise resolving to current status or null if experiment not found
    */
@@ -372,7 +380,7 @@ export class ExperimentService {
   /**
    * Retrieves the execution history for an experiment.
    * Returns detailed information about completed task executions.
-   * 
+   *
    * @param experimentId - ID of the experiment to query
    * @param options - Optional filtering and pagination options
    * @param options.limit - Maximum number of history items to return
@@ -467,7 +475,7 @@ export class ExperimentService {
 
   /**
    * Submits user input response to a pending input request.
-   * 
+   *
    * @param response - User input response containing request ID and value
    * @returns True if input was successfully submitted, false if request not found
    */
@@ -484,7 +492,7 @@ export class ExperimentService {
 
   /**
    * Gets all currently active experiments.
-   * 
+   *
    * @returns Array of active experiment objects
    */
   getActiveExperiments(): ActiveExperiment[] {
@@ -493,7 +501,7 @@ export class ExperimentService {
 
   /**
    * Updates progress tracking for an active experiment.
-   * 
+   *
    * @param experimentId - ID of the experiment to update
    * @param updates - Progress updates to apply
    * @param updates.currentSpace - Current space being executed
@@ -515,7 +523,7 @@ export class ExperimentService {
 
   /**
    * Generates a unique experiment ID.
-   * 
+   *
    * @returns Unique experiment identifier
    */
   private generateExperimentId(): string {
@@ -524,7 +532,7 @@ export class ExperimentService {
 
   /**
    * Generates a unique request ID for user input requests.
-   * 
+   *
    * @returns Unique request identifier
    */
   private generateRequestId(): string {
@@ -533,7 +541,7 @@ export class ExperimentService {
 
   /**
    * Loads and parses an experiment artifact from a JSON file.
-   * 
+   *
    * @param artifactPath - Path to the artifact JSON file
    * @returns Promise resolving to the parsed artifact object
    * @throws Error if file cannot be read or parsed
@@ -548,7 +556,7 @@ export class ExperimentService {
   /**
    * Validates an experiment artifact file for correctness.
    * Checks for required fields and basic structural integrity.
-   * 
+   *
    * @param artifactPath - Path to the artifact JSON file to validate
    * @returns Promise resolving to validation result with errors and warnings
    */
@@ -601,7 +609,7 @@ export class ExperimentService {
   /**
    * Generates an experiment artifact from an ESPACE file.
    * Spawns the artifact-generator CLI tool to process the ESPACE file.
-   * 
+   *
    * @param espacePath - Path to the ESPACE experiment definition file
    * @param outputPath - Optional output path for the generated artifact
    * @returns Promise resolving to generation result with success status and validation

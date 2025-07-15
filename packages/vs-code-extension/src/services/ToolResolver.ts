@@ -32,7 +32,7 @@ export class ToolResolver {
 
   /**
    * Creates a new tool resolver instance.
-   * 
+   *
    * @param context - VS Code extension context for accessing extension paths
    */
   constructor(private context: vscode.ExtensionContext) {}
@@ -40,7 +40,7 @@ export class ToolResolver {
   /**
    * Resolves the location and execution information for a named tool.
    * Uses caching to avoid repeated file system operations.
-   * 
+   *
    * @param toolName - Name of the tool to resolve (e.g., 'artifact-generator')
    * @returns Promise resolving to tool information
    * @throws Error if tool cannot be found in any search location
@@ -59,7 +59,7 @@ export class ToolResolver {
   /**
    * Searches for a tool across all possible locations.
    * Checks user configuration first, then searches predefined paths.
-   * 
+   *
    * @param toolName - Name of the tool to find
    * @returns Promise resolving to tool information
    * @throws Error if tool is not found in any location
@@ -97,7 +97,7 @@ export class ToolResolver {
   /**
    * Gets the ordered list of search paths for a specific tool.
    * Includes bundled tools, development paths, and node_modules locations.
-   * 
+   *
    * @param toolName - Name of the tool to get search paths for
    * @returns Array of absolute paths to search in priority order
    */
@@ -152,7 +152,7 @@ export class ToolResolver {
 
   /**
    * Checks if a file exists at the specified path.
-   * 
+   *
    * @param filePath - Absolute path to check
    * @returns Promise resolving to true if file exists and is a file
    */
@@ -167,7 +167,7 @@ export class ToolResolver {
 
   /**
    * Determines the execution type of a tool based on its file extension.
-   * 
+   *
    * @param toolPath - Path to the tool executable
    * @returns 'node' for .js files, 'binary' for everything else
    */
@@ -177,7 +177,7 @@ export class ToolResolver {
 
   /**
    * Gets the appropriate working directory for tool execution.
-   * 
+   *
    * @param toolPath - Path to the tool executable
    * @returns Directory containing the tool executable
    */

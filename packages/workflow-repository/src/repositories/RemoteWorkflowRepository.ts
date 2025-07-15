@@ -32,7 +32,7 @@ export class RemoteWorkflowRepository implements IWorkflowRepository {
 
   /**
    * Creates a new remote workflow repository client.
-   * 
+   *
    * @param baseUrl - Base URL of the workflow repository server
    * @param username - Optional username for authentication
    * @param password - Optional password for authentication
@@ -45,7 +45,7 @@ export class RemoteWorkflowRepository implements IWorkflowRepository {
 
   /**
    * Authenticates with the remote server using provided credentials.
-   * 
+   *
    * @returns Promise resolving to true if authentication succeeded
    * @throws Error if network request fails
    */
@@ -83,7 +83,7 @@ export class RemoteWorkflowRepository implements IWorkflowRepository {
 
   /**
    * Lists workflows from the remote repository.
-   * 
+   *
    * @param path - Optional path to list workflows from
    * @param options - Optional search and filtering options
    * @returns Promise resolving to array of workflow metadata
@@ -111,7 +111,7 @@ export class RemoteWorkflowRepository implements IWorkflowRepository {
 
   /**
    * Retrieves a complete workflow item including content and attachments.
-   * 
+   *
    * @param id - Unique workflow identifier
    * @returns Promise resolving to workflow item or null if not found
    * @throws Error if server communication fails
@@ -144,7 +144,7 @@ export class RemoteWorkflowRepository implements IWorkflowRepository {
 
   /**
    * Downloads and extracts workflow content from the remote server.
-   * 
+   *
    * @param id - Unique workflow identifier
    * @returns Promise resolving to workflow content or null if not found
    * @throws Error if download or extraction fails
@@ -194,7 +194,7 @@ export class RemoteWorkflowRepository implements IWorkflowRepository {
 
   /**
    * Uploads a new workflow to the remote repository.
-   * 
+   *
    * @param path - Target path for the workflow
    * @param content - Workflow content including main file and attachments
    * @param metadata - Workflow metadata excluding system-generated fields
@@ -247,7 +247,7 @@ export class RemoteWorkflowRepository implements IWorkflowRepository {
 
   /**
    * Updates an existing workflow in the remote repository.
-   * 
+   *
    * @param id - Unique workflow identifier
    * @param content - Updated workflow content
    * @param metadata - Partial metadata updates
@@ -298,7 +298,7 @@ export class RemoteWorkflowRepository implements IWorkflowRepository {
 
   /**
    * Deletes a workflow from the remote repository.
-   * 
+   *
    * @param id - Unique workflow identifier
    * @returns Promise resolving to true if deletion succeeded
    * @throws Error if authentication fails
@@ -320,7 +320,7 @@ export class RemoteWorkflowRepository implements IWorkflowRepository {
 
   /**
    * Checks if a workflow exists in the remote repository.
-   * 
+   *
    * @param id - Unique workflow identifier
    * @returns Promise resolving to true if workflow exists
    */
@@ -335,7 +335,7 @@ export class RemoteWorkflowRepository implements IWorkflowRepository {
 
   /**
    * Searches workflows in the remote repository.
-   * 
+   *
    * @param options - Search criteria including query, tags, author, etc.
    * @returns Promise resolving to array of matching workflow metadata
    * @throws Error if server request fails
@@ -362,7 +362,7 @@ export class RemoteWorkflowRepository implements IWorkflowRepository {
 
   /**
    * Retrieves the hierarchical tree structure of workflows.
-   * 
+   *
    * @param path - Optional path to get tree structure from
    * @returns Promise resolving to workflow tree node
    * @throws Error if server request fails
@@ -381,7 +381,7 @@ export class RemoteWorkflowRepository implements IWorkflowRepository {
 
   /**
    * Retrieves all available tags from the remote repository.
-   * 
+   *
    * @returns Promise resolving to array of tag strings
    * @throws Error if server request fails
    */
@@ -398,7 +398,7 @@ export class RemoteWorkflowRepository implements IWorkflowRepository {
 
   /**
    * Retrieves all workflow authors from the remote repository.
-   * 
+   *
    * @returns Promise resolving to array of author names
    * @throws Error if server request fails
    */
@@ -415,7 +415,7 @@ export class RemoteWorkflowRepository implements IWorkflowRepository {
 
   /**
    * Makes an authenticated HTTP request to the server.
-   * 
+   *
    * @param endpoint - API endpoint path
    * @param options - Request options with optional content type skipping
    * @returns Promise resolving to HTTP response
@@ -460,7 +460,7 @@ export class RemoteWorkflowRepository implements IWorkflowRepository {
 
   /**
    * Ensures the client is authenticated before making protected requests.
-   * 
+   *
    * @throws Error if authentication fails
    */
   private async ensureAuthenticated(): Promise<void> {
@@ -474,7 +474,7 @@ export class RemoteWorkflowRepository implements IWorkflowRepository {
 
   /**
    * Creates a ZIP archive containing workflow content and metadata.
-   * 
+   *
    * @param content - Workflow content including main file and attachments
    * @param metadata - Workflow metadata for manifest creation
    * @returns Promise resolving to ZIP buffer
@@ -511,7 +511,7 @@ export class RemoteWorkflowRepository implements IWorkflowRepository {
 
   /**
    * Loads attachment metadata for a workflow.
-   * 
+   *
    * @param workflowId - Unique workflow identifier
    * @param metadata - Workflow metadata containing attachment information
    * @returns Promise resolving to array of attachment metadata
@@ -551,7 +551,7 @@ export class RemoteWorkflowRepository implements IWorkflowRepository {
 
   /**
    * Determines MIME type based on file extension.
-   * 
+   *
    * @param fileName - Name of the file including extension
    * @returns MIME type string or default octet-stream
    */

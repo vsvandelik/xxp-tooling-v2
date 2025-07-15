@@ -22,7 +22,7 @@ export class WorkflowStorageService {
 
   /**
    * Creates a new workflow storage service.
-   * 
+   *
    * @param basePath - Base directory path for workflow storage
    */
   constructor(private basePath: string) {
@@ -31,7 +31,7 @@ export class WorkflowStorageService {
 
   /**
    * Ensures the storage directory exists and is accessible.
-   * 
+   *
    * @throws Error if directory creation fails
    */
   async ensureInitialized(): Promise<void> {
@@ -44,7 +44,7 @@ export class WorkflowStorageService {
 
   /**
    * Retrieves all unique tags from workflows in the repository.
-   * 
+   *
    * @returns Promise resolving to sorted array of tag strings
    * @throws Error if repository access fails
    */
@@ -61,7 +61,7 @@ export class WorkflowStorageService {
 
   /**
    * Retrieves all unique authors from workflows in the repository.
-   * 
+   *
    * @returns Promise resolving to sorted array of author names
    * @throws Error if repository access fails
    */
@@ -78,7 +78,7 @@ export class WorkflowStorageService {
 
   /**
    * Gets the owner/author of a specific workflow.
-   * 
+   *
    * @param workflowId - Unique workflow identifier
    * @returns Promise resolving to author name or null if not found
    */
@@ -89,7 +89,7 @@ export class WorkflowStorageService {
 
   /**
    * Checks if a workflow with the same name exists at the specified path.
-   * 
+   *
    * @param workflowPath - Target path to check
    * @param workflowName - Workflow name to search for
    * @returns Promise resolving to existence check result with optional ID
@@ -110,7 +110,7 @@ export class WorkflowStorageService {
 
   /**
    * Checks if override permission has been granted for a workflow.
-   * 
+   *
    * @param workflowId - Unique workflow identifier
    * @param requestId - Request session identifier
    * @returns Promise resolving to true if override is allowed
@@ -122,7 +122,7 @@ export class WorkflowStorageService {
 
   /**
    * Sets override permission for a workflow upload request.
-   * 
+   *
    * @param workflowId - Unique workflow identifier
    * @param requestId - Request session identifier
    * @param allowed - Whether to allow the override
@@ -145,7 +145,7 @@ export class WorkflowStorageService {
 
   /**
    * Creates a downloadable ZIP archive for a workflow.
-   * 
+   *
    * @param workflowId - Unique workflow identifier
    * @returns Promise resolving to ZIP buffer or null if workflow not found
    * @throws Error if ZIP creation fails
@@ -190,7 +190,7 @@ export class WorkflowStorageService {
 
   /**
    * Extracts workflow content and metadata from a ZIP archive.
-   * 
+   *
    * @param zipBuffer - ZIP file buffer to extract
    * @returns Promise resolving to extracted content and metadata or null if invalid
    * @throws Error if extraction fails
@@ -279,7 +279,7 @@ export class WorkflowStorageService {
 
   /**
    * Validates that a workflow path is safe and allowed.
-   * 
+   *
    * @param workflowPath - Path to validate
    * @returns Promise resolving to true if path is valid
    */
@@ -290,7 +290,7 @@ export class WorkflowStorageService {
 
   /**
    * Gets the underlying local workflow repository instance.
-   * 
+   *
    * @returns LocalWorkflowRepository instance
    */
   getRepository(): LocalWorkflowRepository {

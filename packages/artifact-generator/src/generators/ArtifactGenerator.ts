@@ -71,7 +71,7 @@ export class ArtifactGenerator {
 
   /**
    * Creates a new ArtifactGenerator instance.
-   * 
+   *
    * @param options - Configuration options for the generator
    */
   constructor(options: ArtifactGeneratorOptions) {
@@ -80,7 +80,7 @@ export class ArtifactGenerator {
 
   /**
    * Generates an experiment artifact from an ESPACE file.
-   * 
+   *
    * @param espaceFilePath - Path to the ESPACE experiment file
    * @returns Promise resolving to the generated artifact and validation results
    */
@@ -146,7 +146,7 @@ export class ArtifactGenerator {
 
   /**
    * Validates an ESPACE experiment file without generating the artifact.
-   * 
+   *
    * @param espaceFilePath - Path to the ESPACE experiment file to validate
    * @returns Promise resolving to validation results with errors and warnings
    */

@@ -49,7 +49,7 @@ export interface ToolExecutionResult {
 export class ToolExecutor {
   /**
    * Creates a new tool executor instance.
-   * 
+   *
    * @param toolResolver - Tool resolver for locating executable tools
    */
   constructor(private toolResolver: ToolResolver) {}
@@ -57,7 +57,7 @@ export class ToolExecutor {
   /**
    * Executes a tool with buffered output and returns the complete result.
    * Supports cancellation, timeout, and cross-platform argument handling.
-   * 
+   *
    * @param toolName - Name of the tool to execute
    * @param options - Execution options including arguments and environment
    * @returns Promise resolving to complete execution result
@@ -166,7 +166,7 @@ export class ToolExecutor {
   /**
    * Executes a tool with real-time streaming output callbacks.
    * Returns the child process for further management and monitoring.
-   * 
+   *
    * @param toolName - Name of the tool to execute
    * @param options - Execution options with streaming callbacks
    * @returns Promise resolving to the spawned child process

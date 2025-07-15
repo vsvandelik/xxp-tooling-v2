@@ -10,7 +10,7 @@
 export interface UserInputProvider {
   /**
    * Requests input from the user with the given prompt.
-   * 
+   *
    * @param prompt - Message to display to the user requesting input
    * @returns Promise resolving to the user's input as a string
    */

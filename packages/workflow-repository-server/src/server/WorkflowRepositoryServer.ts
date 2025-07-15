@@ -41,7 +41,7 @@ export class WorkflowRepositoryServer {
 
   /**
    * Creates a new workflow repository server.
-   * 
+   *
    * @param config - Server configuration including port, storage path, and security settings
    */
   constructor(private config: ServerConfig) {
@@ -58,7 +58,7 @@ export class WorkflowRepositoryServer {
 
   /**
    * Starts the HTTP server and initializes storage services.
-   * 
+   *
    * @returns Promise that resolves when server is listening
    * @throws Error if port is in use or server fails to start
    */

@@ -14,7 +14,7 @@ import { ResolvedTask } from '../resolvers/TaskResolver.js';
 export class DataFlowResolver {
   /**
    * Validates data flow for all spaces in an experiment.
-   * 
+   *
    * @param experiment - The experiment model to validate
    * @param workflows - Array of workflow models
    * @param resolvedTasks - Map of resolved task definitions
@@ -32,7 +32,7 @@ export class DataFlowResolver {
 
   /**
    * Validates data flow for a specific space.
-   * 
+   *
    * @param space - The space model to validate
    * @param workflows - Array of workflow models
    * @param resolvedTasks - Map of resolved task definitions

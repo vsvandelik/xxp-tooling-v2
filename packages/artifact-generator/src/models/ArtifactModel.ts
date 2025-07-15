@@ -12,7 +12,7 @@ import { ExpressionType } from './ExperimentModel.js';
 export class ArtifactModel {
   /**
    * Creates a new experiment artifact.
-   * 
+   *
    * @param experiment - Name of the experiment
    * @param version - Version of the artifact format
    * @param tasks - Array of task groups (parallel execution groups)
@@ -31,7 +31,7 @@ export class ArtifactModel {
 
   /**
    * Converts the artifact model to a JSON object.
-   * 
+   *
    * @returns Plain JavaScript object representation of the artifact
    */
   toJSON(): any {
@@ -53,7 +53,7 @@ export class ArtifactModel {
 export class TaskDefinition {
   /**
    * Creates a new task definition.
-   * 
+   *
    * @param taskId - Unique identifier for the task
    * @param workflow - Name of the workflow this task belongs to
    * @param implementation - Path to the task implementation file
@@ -74,7 +74,7 @@ export class TaskDefinition {
 
   /**
    * Converts the task definition to a JSON object.
-   * 
+   *
    * @returns Plain JavaScript object representation of the task
    */
   toJSON(): any {
@@ -97,7 +97,7 @@ export class TaskDefinition {
 export class SpaceDefinition {
   /**
    * Creates a new space definition.
-   * 
+   *
    * @param spaceId - Unique identifier for the space
    * @param tasksOrder - Ordered list of task IDs to execute in this space
    * @param parameters - Array of parameter value combinations for this space
@@ -112,7 +112,7 @@ export class SpaceDefinition {
 
   /**
    * Converts the space definition to a JSON object.
-   * 
+   *
    * @returns Plain JavaScript object representation of the space
    */
   toJSON(): any {
@@ -132,7 +132,7 @@ export class SpaceDefinition {
 export class ControlDefinition {
   /**
    * Creates a new control flow definition.
-   * 
+   *
    * @param START - Initial space ID to start experiment execution
    * @param transitions - Array of transitions between spaces
    */
@@ -143,7 +143,7 @@ export class ControlDefinition {
 
   /**
    * Converts the control definition to a JSON object.
-   * 
+   *
    * @returns Plain JavaScript object representation of the control flow
    */
   toJSON(): any {
@@ -161,7 +161,7 @@ export class ControlDefinition {
 export class TransitionDefinition {
   /**
    * Creates a new transition definition.
-   * 
+   *
    * @param from - Source space ID or 'START'
    * @param to - Target space ID or 'END'
    * @param condition - Optional condition for conditional transitions
@@ -174,7 +174,7 @@ export class TransitionDefinition {
 
   /**
    * Converts the transition definition to a JSON object.
-   * 
+   *
    * @returns Plain JavaScript object representation of the transition
    */
   toJSON(): any {

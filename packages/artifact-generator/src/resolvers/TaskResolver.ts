@@ -45,7 +45,7 @@ export interface ResolvedTask {
 export class TaskResolver {
   /**
    * Resolves all tasks from experiment spaces and workflows.
-   * 
+   *
    * @param experiment - The experiment model containing spaces and task configurations
    * @param workflows - Array of workflow models to resolve tasks from
    * @param resolvedParameters - Optional parameter combinations for classification

@@ -16,7 +16,7 @@ import { WorkflowMetadata } from '../models/WorkflowMetadata.js';
 export interface IWorkflowRepository {
   /**
    * Lists workflows in the repository.
-   * 
+   *
    * @param path - Optional path to list workflows from (default: root)
    * @param options - Optional search and filtering options
    * @returns Promise resolving to array of workflow metadata
@@ -25,7 +25,7 @@ export interface IWorkflowRepository {
 
   /**
    * Gets a complete workflow by ID including content and attachments.
-   * 
+   *
    * @param id - Unique workflow identifier
    * @returns Promise resolving to workflow item or null if not found
    */
@@ -33,7 +33,7 @@ export interface IWorkflowRepository {
 
   /**
    * Gets only the content of a workflow (main file and attachments).
-   * 
+   *
    * @param id - Unique workflow identifier
    * @returns Promise resolving to workflow content or null if not found
    */
@@ -41,7 +41,7 @@ export interface IWorkflowRepository {
 
   /**
    * Uploads a new workflow to the repository.
-   * 
+   *
    * @param path - Target path for the workflow
    * @param content - Workflow content including main file and attachments
    * @param metadata - Workflow metadata (excluding auto-generated fields)
@@ -56,7 +56,7 @@ export interface IWorkflowRepository {
 
   /**
    * Updates an existing workflow in the repository.
-   * 
+   *
    * @param id - Unique workflow identifier
    * @param content - Updated workflow content
    * @param metadata - Partial metadata updates (excluding auto-generated fields)
@@ -71,7 +71,7 @@ export interface IWorkflowRepository {
 
   /**
    * Deletes a workflow from the repository.
-   * 
+   *
    * @param id - Unique workflow identifier
    * @returns Promise resolving to true if deleted, false if not found
    */
@@ -79,7 +79,7 @@ export interface IWorkflowRepository {
 
   /**
    * Checks if a workflow exists in the repository.
-   * 
+   *
    * @param id - Unique workflow identifier
    * @returns Promise resolving to true if workflow exists
    */
@@ -87,7 +87,7 @@ export interface IWorkflowRepository {
 
   /**
    * Searches workflows based on criteria.
-   * 
+   *
    * @param options - Search criteria including query, tags, author, pagination
    * @returns Promise resolving to array of matching workflow metadata
    */
@@ -95,7 +95,7 @@ export interface IWorkflowRepository {
 
   /**
    * Gets the hierarchical tree structure of the repository.
-   * 
+   *
    * @param path - Optional path to get tree structure from (default: root)
    * @returns Promise resolving to tree node representing the structure
    */

@@ -14,7 +14,7 @@ import { Space, Task } from '../types/artifact.types.js';
 export class DataManager {
   /**
    * Creates a new data manager.
-   * 
+   *
    * @param repository - Database repository for accessing execution data
    */
   constructor(private repository: DatabaseRepository) {}
@@ -22,7 +22,7 @@ export class DataManager {
   /**
    * Collects final output data from all completed task executions.
    * Aggregates outputs from all spaces and parameter sets into a structured result.
-   * 
+   *
    * @param runId - Unique identifier for the experiment run
    * @param spaces - Array of spaces that were executed
    * @param taskMap - Map of task IDs to task definitions

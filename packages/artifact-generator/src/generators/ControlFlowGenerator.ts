@@ -13,7 +13,7 @@ import { ExperimentModel } from '../models/ExperimentModel.js';
 export class ControlFlowGenerator {
   /**
    * Generates a control flow definition from an experiment model.
-   * 
+   *
    * @param experiment - The experiment model containing control flow information
    * @returns Control definition for the artifact
    */
@@ -60,7 +60,7 @@ export class ControlFlowGenerator {
 
   /**
    * Creates a default control flow when none is explicitly defined.
-   * 
+   *
    * @param experiment - The experiment model
    * @returns Default control definition (linear flow for multiple spaces, direct flow for single space)
    */
