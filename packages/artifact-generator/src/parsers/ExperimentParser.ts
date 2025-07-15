@@ -19,7 +19,7 @@ import { ParsingErrorListener } from '../visitors/ParsingErrorListener.js';
 export class ExperimentParser {
   /**
    * Parses an ESPACE experiment file into an ExperimentModel.
-   * 
+   *
    * @param espaceFileName - Path to the ESPACE experiment file
    * @returns Promise resolving to the parsed experiment model
    * @throws Error if the file cannot be read or contains syntax errors

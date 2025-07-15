@@ -13,7 +13,7 @@ import { ResolvedTask } from '../resolvers/TaskResolver.js';
 export class TaskGenerator {
   /**
    * Generates task definitions grouped by workflow.
-   * 
+   *
    * @param resolvedTasks - Map of resolved task definitions
    * @param workflowsInUse - Optional set of workflows to ensure empty groups are created
    * @returns Array of task definition groups (one group per workflow)
@@ -49,7 +49,7 @@ export class TaskGenerator {
 
   /**
    * Creates a task definition from a resolved task.
-   * 
+   *
    * @param resolvedTask - The resolved task to convert
    * @returns Task definition for the artifact
    * @throws Error if the task has no implementation

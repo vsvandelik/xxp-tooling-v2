@@ -48,7 +48,7 @@ let statusBarItem: vscode.StatusBarItem;
  * Main extension activation function called when VS Code loads the extension.
  * Initializes all services, registers commands, sets up UI elements, and configures
  * language support for XXP and ESPACE files.
- * 
+ *
  * @param context - VS Code extension context for registrations and state management
  * @throws Error if critical services fail to initialize
  */
@@ -99,7 +99,7 @@ export async function activate(context: vscode.ExtensionContext) {
 /**
  * Initializes core services required for experiment execution.
  * Sets up server manager, experiment service, and progress panel management.
- * 
+ *
  * @param context - VS Code extension context
  * @throws Error if any core service fails to initialize
  */
@@ -140,7 +140,7 @@ async function initializeServices(context: vscode.ExtensionContext): Promise<voi
 /**
  * Initializes the workflow repository system for browsing and managing workflows.
  * Sets up configuration management, tree data provider, and command handlers.
- * 
+ *
  * @param context - VS Code extension context
  * @throws Error if workflow repository system fails to initialize
  */
@@ -167,7 +167,7 @@ async function initializeWorkflowRepository(context: vscode.ExtensionContext): P
 /**
  * Initializes the ExtremeXP Language Server for XXP and ESPACE language support.
  * Provides syntax highlighting, code completion, diagnostics, and other language features.
- * 
+ *
  * @param context - VS Code extension context
  * @throws Error if language server fails to start
  */
@@ -190,7 +190,7 @@ async function initializeLanguageServer(context: vscode.ExtensionContext): Promi
 /**
  * Registers experiment-related commands after core services are initialized.
  * Includes generate artifact, run experiment, and show progress commands.
- * 
+ *
  * @param context - VS Code extension context for command registration
  */
 function registerExperimentCommands(context: vscode.ExtensionContext): void {
@@ -225,7 +225,7 @@ function registerExperimentCommands(context: vscode.ExtensionContext): void {
 /**
  * Registers utility and server management commands.
  * Includes server control, tool cache management, and language server restart commands.
- * 
+ *
  * @param context - VS Code extension context for command registration
  */
 function registerUtilityCommands(context: vscode.ExtensionContext): void {
@@ -271,7 +271,7 @@ function registerUtilityCommands(context: vscode.ExtensionContext): void {
 /**
  * Sets up the workflow repository tree view in VS Code's explorer sidebar.
  * Creates and registers the tree data provider for browsing workflow repositories.
- * 
+ *
  * @param context - VS Code extension context
  */
 function setupWorkflowRepositoryView(context: vscode.ExtensionContext): void {
@@ -290,7 +290,7 @@ function setupWorkflowRepositoryView(context: vscode.ExtensionContext): void {
 
 /**
  * Utility function to register a command with proper subscription management.
- * 
+ *
  * @param context - VS Code extension context
  * @param command - Command identifier string
  * @param handler - Command handler function
@@ -305,7 +305,7 @@ function registerCommand(
 
 /**
  * Handles the stop server command by stopping the experiment runner server.
- * 
+ *
  * @throws Error if server manager is not available
  */
 async function handleStopServer(): Promise<void> {
@@ -319,7 +319,7 @@ async function handleStopServer(): Promise<void> {
 
 /**
  * Handles the restart server command by restarting the experiment runner server.
- * 
+ *
  * @throws Error if server manager is not available
  */
 async function handleRestartServer(): Promise<void> {
@@ -333,7 +333,7 @@ async function handleRestartServer(): Promise<void> {
 
 /**
  * Sets up the status bar item showing ExtremeXP server status.
- * 
+ *
  * @param context - VS Code extension context for subscription management
  */
 function setupStatusBar(context: vscode.ExtensionContext): void {
@@ -346,7 +346,7 @@ function setupStatusBar(context: vscode.ExtensionContext): void {
 
 /**
  * Creates and configures the ExtremeXP status bar item.
- * 
+ *
  * @returns Configured status bar item with icon, tooltip, and command
  */
 function createStatusBarItem(): vscode.StatusBarItem {
@@ -392,7 +392,7 @@ function setupStatusBarListener(): void {
 
 /**
  * Updates the status bar item appearance based on server status.
- * 
+ *
  * @param statusBarItem - VS Code status bar item to update
  * @param status - Server status ('running', 'stopped', 'error')
  */
@@ -416,7 +416,7 @@ function updateStatusBarItem(statusBarItem: vscode.StatusBarItem, status: string
 /**
  * Sets up configuration change listener for ExtremeXP settings.
  * Handles dynamic updates to server, tool, workflow, and language settings.
- * 
+ *
  * @param context - VS Code extension context for subscription management
  */
 function setupConfigurationListener(context: vscode.ExtensionContext): void {
@@ -471,7 +471,7 @@ async function setupWorkflowFeatures(): Promise<void> {
 /**
  * Extension deactivation function called when VS Code unloads the extension.
  * Cleans up all services, stops servers, and disposes of resources.
- * 
+ *
  * @throws Error if cleanup operations fail (errors are logged but not thrown)
  */
 export async function deactivate() {
@@ -489,7 +489,7 @@ export async function deactivate() {
 /**
  * Cleans up all services during extension deactivation.
  * Stops servers, disposes managers, and releases resources with timeout protection.
- * 
+ *
  * @throws Error if any cleanup operation fails
  */
 async function cleanupServices(): Promise<void> {

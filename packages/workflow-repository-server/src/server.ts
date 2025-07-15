@@ -17,7 +17,7 @@ const config: ServerConfig = {
 /**
  * Starts the workflow repository server with configuration and error handling.
  * Displays startup information, API documentation, and default credentials.
- * 
+ *
  * @throws Error if server fails to start or port is in use
  */
 async function startServer(): Promise<void> {

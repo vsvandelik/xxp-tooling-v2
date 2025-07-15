@@ -12,7 +12,7 @@ import { ExpressionType } from './ExperimentModel.js';
 export class WorkflowModel {
   /**
    * Creates a new workflow model.
-   * 
+   *
    * @param name - Name of the workflow
    * @param parentWorkflow - Name of parent workflow for inheritance (null if no parent)
    * @param tasks - Array of task definitions
@@ -46,7 +46,7 @@ export class TaskModel {
 
   /**
    * Creates a new task model.
-   * 
+   *
    * @param name - Name of the task
    * @param workflowName - Name of the workflow this task belongs to
    */
@@ -57,7 +57,7 @@ export class TaskModel {
 
   /**
    * Determines if this task is abstract (has no implementation).
-   * 
+   *
    * @returns True if the task has no implementation
    */
   get isAbstract(): boolean {
@@ -66,7 +66,7 @@ export class TaskModel {
 
   /**
    * Gets the unique identifier for this task.
-   * 
+   *
    * @returns Task ID in format 'workflowName:taskName'
    */
   get id(): string {
@@ -81,7 +81,7 @@ export class TaskModel {
 export class TaskConfigurationModel {
   /**
    * Creates a new task configuration.
-   * 
+   *
    * @param name - Name of the task to configure
    * @param implementation - Implementation file path override (null to keep existing)
    * @param parameters - Parameter overrides for this task
@@ -104,7 +104,7 @@ export class TaskConfigurationModel {
 export class ParameterModel {
   /**
    * Creates a new parameter model.
-   * 
+   *
    * @param name - Name of the parameter
    * @param value - Default value for the parameter (null if required)
    */
@@ -115,7 +115,7 @@ export class ParameterModel {
 
   /**
    * Determines if this parameter is required (has no default value).
-   * 
+   *
    * @returns True if the parameter is required
    */
   get isRequired(): boolean {
@@ -130,7 +130,7 @@ export class ParameterModel {
 export class DataModel {
   /**
    * Creates a new data model.
-   * 
+   *
    * @param name - Name of the data element
    * @param value - Initial file path or value (null if abstract)
    */
@@ -147,14 +147,14 @@ export class DataModel {
 export class TaskChain {
   /**
    * Creates a new task chain.
-   * 
+   *
    * @param elements - Array of chain elements defining execution order
    */
   constructor(public elements: ChainElement[]) {}
 
   /**
    * Gets the execution order of tasks, excluding START and END markers.
-   * 
+   *
    * @returns Array of task names in execution order
    */
   getExecutionOrder(): string[] {
@@ -171,7 +171,7 @@ export class TaskChain {
 export class ChainElement {
   /**
    * Creates a new chain element.
-   * 
+   *
    * @param name - Name of the task or special marker (START/END)
    */
   constructor(public name: string) {}

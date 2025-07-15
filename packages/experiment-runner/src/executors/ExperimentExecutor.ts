@@ -31,7 +31,7 @@ export class ExperimentExecutor implements ExperimentRunner {
 
   /**
    * Creates a new experiment executor.
-   * 
+   *
    * @param repositoryOrPath - Database repository instance or path to SQLite database file
    */
   constructor(repositoryOrPath?: DatabaseRepository | string) {
@@ -44,7 +44,7 @@ export class ExperimentExecutor implements ExperimentRunner {
 
   /**
    * Gets the underlying database repository instance.
-   * 
+   *
    * @returns The database repository being used for persistence
    */
   getRepository(): DatabaseRepository {
@@ -54,7 +54,7 @@ export class ExperimentExecutor implements ExperimentRunner {
   /**
    * Executes an experiment from an artifact file.
    * Supports resuming interrupted experiments and provides comprehensive progress tracking.
-   * 
+   *
    * @param artifactPath - Path to the experiment artifact JSON file
    * @param options - Execution options including callbacks and resume settings
    * @returns Promise resolving to the experiment execution result
@@ -242,15 +242,18 @@ export class ExperimentExecutor implements ExperimentRunner {
 
       throw error;
     } finally {
-      // Only close after experiment completion/failure since this is a long-running operation
-      // Note: If using a server-managed repository, this might not actually close the connection
-      await this.repository.close();
+      // Note: In server environments, the database connection should be managed
+      // by the service layer, not closed here. This prevents issues where
+      // the server tries to access the database after experiment failure.
+      // For now, we'll comment out the close to prevent the server crash issue.
+      // TODO: Add a flag to control whether to close the database or not
+      // await this.repository.close();
     }
   }
 
   /**
    * Gets the current status and progress of an experiment.
-   * 
+   *
    * @param experimentName - Name of the experiment
    * @param experimentVersion - Version of the experiment
    * @returns Promise resolving to current status or null if experiment not found
@@ -269,14 +272,20 @@ export class ExperimentExecutor implements ExperimentRunner {
 
     if (run.current_space) {
       // Get space-specific progress for the current space
-      const currentSpaceExecution = await this.repository.getSpaceExecutionWithTotals(run.id, run.current_space);
-      const spaceParamStats = await this.repository.getParamSetStatsForSpace(run.id, run.current_space);
+      const currentSpaceExecution = await this.repository.getSpaceExecutionWithTotals(
+        run.id,
+        run.current_space
+      );
+      const spaceParamStats = await this.repository.getParamSetStatsForSpace(
+        run.id,
+        run.current_space
+      );
       const currentTaskProgress = await this.repository.getCurrentTaskProgress(run.id);
-      
+
       // For hierarchical progress, show completed tasks within current parameter set
       let completedTasks = 0;
       let totalTasks = currentSpaceExecution?.total_tasks || 0;
-      
+
       if (currentTaskProgress) {
         completedTasks = currentTaskProgress.taskIndex - 1; // taskIndex is 1-based, so subtract 1 for completed count
         totalTasks = currentTaskProgress.totalTasks;
@@ -301,7 +310,7 @@ export class ExperimentExecutor implements ExperimentRunner {
       // Overall progress (no current space - experiment completed/not started)
       const paramStats = await this.repository.getParamSetStats(run.id);
       const taskStats = await this.repository.getTaskStats(run.id);
-      
+
       // Calculate completed task count
       let completedTasks = 0;
       for (const stat of taskStats) {
@@ -333,7 +342,7 @@ export class ExperimentExecutor implements ExperimentRunner {
 
   /**
    * Terminates a running experiment gracefully.
-   * 
+   *
    * @param experimentName - Name of the experiment to terminate
    * @param experimentVersion - Version of the experiment to terminate
    * @returns Promise resolving to true if terminated, false if not running
@@ -351,7 +360,7 @@ export class ExperimentExecutor implements ExperimentRunner {
 
   /**
    * Loads and validates an experiment artifact from a JSON file.
-   * 
+   *
    * @param artifactPath - Path to the artifact JSON file
    * @returns Promise resolving to the parsed and validated artifact
    * @throws Error if file cannot be read, parsed, or is invalid

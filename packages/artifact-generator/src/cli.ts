@@ -71,7 +71,7 @@ program.parse();
 
 /**
  * Prints validation results to the console and exits the process if there are errors.
- * 
+ *
  * @param validation - The validation result containing errors and warnings
  * @param validation.errors - Array of validation error messages
  * @param validation.warnings - Array of validation warning messages

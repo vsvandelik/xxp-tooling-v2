@@ -39,7 +39,7 @@ interface WorkflowManifest {
 export class LocalWorkflowRepository implements IWorkflowRepository {
   /**
    * Creates a new local workflow repository.
-   * 
+   *
    * @param basePath - Base directory path for workflow storage
    */
   constructor(private readonly basePath: string) {}

@@ -46,7 +46,7 @@ export class ExperimentService {
   /**
    * Creates a new experiment service instance.
    * Sets up automatic WebSocket connection management based on server status.
-   * 
+   *
    * @param serverManager - Server manager for experiment runner server lifecycle
    */
   constructor(private serverManager: ServerManager) {
@@ -62,7 +62,7 @@ export class ExperimentService {
   /**
    * Establishes WebSocket connection to the experiment runner server.
    * Sets up event handlers for real-time communication and error handling.
-   * 
+   *
    * @throws Error if connection fails or times out
    */
   private async connect(): Promise<void> {
@@ -168,7 +168,7 @@ export class ExperimentService {
   /**
    * Starts a new experiment or resumes an existing one.
    * Ensures server is running, establishes WebSocket connection, and sets up callbacks.
-   * 
+   *
    * @param artifactPath - Absolute path to the experiment artifact JSON file
    * @param options - Experiment options including resume flag and callback handlers
    * @returns Promise resolving to unique experiment identifier
@@ -263,7 +263,7 @@ export class ExperimentService {
 
   /**
    * Terminates a running experiment and cleans up resources.
-   * 
+   *
    * @param experimentId - Unique identifier of the experiment to terminate
    * @returns Promise resolving to true if termination succeeded
    * @throws Error if server is not available
@@ -294,7 +294,7 @@ export class ExperimentService {
 
   /**
    * Gets the current status of an experiment by name and version.
-   * 
+   *
    * @param experimentName - Name of the experiment
    * @param version - Version of the experiment
    * @returns Promise resolving to experiment status or null if not found
@@ -323,7 +323,7 @@ export class ExperimentService {
 
   /**
    * Retrieves the execution history for a specific experiment.
-   * 
+   *
    * @param experimentId - Unique identifier of the experiment
    * @param options - Query options for filtering and pagination
    * @returns Promise resolving to array of task history items
@@ -361,7 +361,7 @@ export class ExperimentService {
 
   /**
    * Validates an artifact file for experiment execution.
-   * 
+   *
    * @param artifactPath - Absolute path to the artifact JSON file
    * @returns Promise resolving to validation result with errors and warnings
    * @throws Error if server is not available or validation fails
@@ -403,7 +403,7 @@ export class ExperimentService {
   /**
    * Handles user input requests from running experiments.
    * Shows VS Code input dialog and submits response to server.
-   * 
+   *
    * @param request - User input request from the experiment
    */
   private async handleUserInput(request: UserInputRequest): Promise<void> {
@@ -438,7 +438,7 @@ export class ExperimentService {
 
   /**
    * Registers a custom user input handler for an experiment.
-   * 
+   *
    * @param experimentId - Unique identifier of the experiment
    * @param handler - Custom handler function for user input requests
    */
@@ -451,7 +451,7 @@ export class ExperimentService {
 
   /**
    * Unregisters the user input handler for an experiment.
-   * 
+   *
    * @param experimentId - Unique identifier of the experiment
    */
   unregisterUserInputHandler(experimentId: string): void {

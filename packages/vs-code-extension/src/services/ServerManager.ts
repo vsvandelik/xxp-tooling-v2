@@ -38,7 +38,7 @@ export class ServerManager {
 
   /**
    * Creates a new server manager instance.
-   * 
+   *
    * @param context - VS Code extension context for resource management
    * @param toolExecutor - Tool executor for running server processes
    */
@@ -61,7 +61,7 @@ export class ServerManager {
   /**
    * Ensures the experiment runner server is running.
    * Attempts auto-start if configured and handles port conflicts gracefully.
-   * 
+   *
    * @throws Error if server cannot be started and auto-start fails
    */
   async ensureServerRunning(): Promise<void> {
@@ -112,7 +112,7 @@ export class ServerManager {
   /**
    * Starts the experiment runner server process.
    * Handles port availability checking, process spawning, and readiness verification.
-   * 
+   *
    * @throws Error if server startup fails or port is unavailable
    */
   async startServer(): Promise<void> {
@@ -210,7 +210,6 @@ export class ServerManager {
     if (this.serverProcess) {
       this.outputChannel.appendLine('Stopping ExtremeXP server...');
 
-
       try {
         // Try graceful shutdown first
         await this.attemptGracefulShutdown();
@@ -229,7 +228,7 @@ export class ServerManager {
 
   /**
    * Attempts graceful server shutdown using appropriate signals.
-   * 
+   *
    * @throws Error if graceful shutdown times out
    */
   private async attemptGracefulShutdown(): Promise<void> {
@@ -313,7 +312,7 @@ export class ServerManager {
 
   /**
    * Restarts the server by stopping and starting it.
-   * 
+   *
    * @throws Error if restart process fails
    */
   async restartServer(): Promise<void> {
@@ -323,7 +322,7 @@ export class ServerManager {
 
   /**
    * Gets the server URL if the server is running.
-   * 
+   *
    * @returns Server URL or null if server is not running
    */
   async getServerUrl(): Promise<string | null> {
@@ -335,7 +334,7 @@ export class ServerManager {
 
   /**
    * Gets the current server status.
-   * 
+   *
    * @returns Current server status
    */
   getStatus(): ServerStatus {
@@ -344,7 +343,7 @@ export class ServerManager {
 
   /**
    * Registers a status change event handler.
-   * 
+   *
    * @param handler - Function to call when server status changes
    * @returns Disposable to unregister the handler
    */
@@ -413,7 +412,7 @@ export class ServerManager {
 
   /**
    * Sets the server status and notifies all registered handlers.
-   * 
+   *
    * @param status - New server status
    */
   private setStatus(status: ServerStatus): void {
@@ -423,7 +422,7 @@ export class ServerManager {
 
   /**
    * Checks if a port is available for server binding.
-   * 
+   *
    * @param port - Port number to check
    * @returns Promise resolving to true if port is available
    */
@@ -446,7 +445,7 @@ export class ServerManager {
 
   /**
    * Locates the experiment runner server module using tool resolver.
-   * 
+   *
    * @returns Promise resolving to server module path or null if not found
    */
   private async findServerModule(): Promise<string | null> {
@@ -464,12 +463,12 @@ export class ServerManager {
 
   /**
    * Gets the platform-specific default database directory.
-   * 
+   *
    * @returns Platform-appropriate database directory path
    */
   private getDefaultDatabaseDirectory(): string {
     const platform = os.platform();
-    
+
     if (platform === 'win32') {
       // Windows: Use local app data directory
       return path.join(os.homedir(), 'AppData', 'Local', 'ExtremeXP');
@@ -489,7 +488,7 @@ export class ServerManager {
   /**
    * Gets the database path from configuration or default location.
    * Creates the directory if it doesn't exist.
-   * 
+   *
    * @returns Absolute path to the experiment database file
    */
   private getDatabasePath(): string {
@@ -502,7 +501,7 @@ export class ServerManager {
 
     // Default to platform-specific application data directory
     const defaultDir = this.getDefaultDatabaseDirectory();
-    
+
     // Ensure the directory exists
     try {
       fs.mkdirSync(defaultDir, { recursive: true });
@@ -514,13 +513,13 @@ export class ServerManager {
       }
       return './experiment_runs.db';
     }
-    
+
     return path.join(defaultDir, 'experiment_runs.db');
   }
 
   /**
    * Waits for the server to become ready by polling the health endpoint.
-   * 
+   *
    * @param timeout - Maximum time to wait in milliseconds
    * @throws Error if server doesn't become ready within timeout
    */
@@ -545,7 +544,7 @@ export class ServerManager {
 
   /**
    * Finds an available port starting from the specified port.
-   * 
+   *
    * @param startPort - Starting port number to check
    * @returns Promise resolving to available port or null if none found
    */

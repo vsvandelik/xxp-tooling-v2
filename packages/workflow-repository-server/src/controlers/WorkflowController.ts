@@ -33,7 +33,7 @@ export class WorkflowController {
 
   /**
    * Creates a new workflow controller.
-   * 
+   *
    * @param storageService - Service for workflow storage operations
    * @param userService - Service for user authentication and authorization
    */
@@ -44,7 +44,7 @@ export class WorkflowController {
 
   /**
    * Lists workflows with optional search and filtering.
-   * 
+   *
    * @param req - Express request object with optional query parameters
    * @param res - Express response object
    */
@@ -87,7 +87,7 @@ export class WorkflowController {
 
   /**
    * Retrieves metadata for a specific workflow.
-   * 
+   *
    * @param req - Express request object with workflow ID in params
    * @param res - Express response object
    */
@@ -132,7 +132,7 @@ export class WorkflowController {
 
   /**
    * Downloads a complete workflow as a ZIP archive.
-   * 
+   *
    * @param req - Express request object with workflow ID in params
    * @param res - Express response object with ZIP content
    */
@@ -173,7 +173,7 @@ export class WorkflowController {
 
   /**
    * Downloads a specific file from a workflow.
-   * 
+   *
    * @param req - Express request object with workflow ID and file path
    * @param res - Express response object with file content
    */
@@ -360,7 +360,7 @@ export class WorkflowController {
 
   /**
    * Confirms permission to override an existing workflow.
-   * 
+   *
    * @param req - Express request object with workflowId and requestId
    * @param res - Express response object
    */
@@ -533,7 +533,7 @@ export class WorkflowController {
 
   /**
    * Removes a specific attachment from a workflow.
-   * 
+   *
    * @param req - Express request object with workflow ID and file name
    * @param res - Express response object
    */
@@ -602,7 +602,7 @@ export class WorkflowController {
 
   /**
    * Deletes a workflow from the repository.
-   * 
+   *
    * @param req - Express request object with workflow ID in params
    * @param res - Express response object
    */
@@ -647,7 +647,7 @@ export class WorkflowController {
 
   /**
    * Retrieves the hierarchical tree structure of workflows.
-   * 
+   *
    * @param req - Express request object with optional path parameter
    * @param res - Express response object with tree structure
    */
@@ -674,7 +674,7 @@ export class WorkflowController {
 
   /**
    * Retrieves all available workflow tags.
-   * 
+   *
    * @param req - Express request object
    * @param res - Express response object with tags array
    */
@@ -699,7 +699,7 @@ export class WorkflowController {
 
   /**
    * Retrieves all workflow authors.
-   * 
+   *
    * @param req - Express request object
    * @param res - Express response object with authors array
    */
@@ -724,7 +724,7 @@ export class WorkflowController {
 
   /**
    * Searches workflows based on various criteria.
-   * 
+   *
    * @param req - Express request object with search parameters
    * @param res - Express response object with search results
    */
@@ -767,7 +767,7 @@ export class WorkflowController {
 
   /**
    * Retrieves the owner/author of a specific workflow.
-   * 
+   *
    * @param req - Express request object with workflow ID in params
    * @returns Promise resolving to owner username or null if not found
    */

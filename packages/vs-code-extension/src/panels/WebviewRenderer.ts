@@ -222,10 +222,12 @@ export class WebviewRenderer {
 
   static renderContent(state: WebviewState): string {
     const percentage = Math.round(state.progress.percentage * 100);
-    
+
     // Create hierarchical progress details
     const overallProgress = `Overall Spaces: ${state.progress.completedSpaces}/${state.progress.totalSpaces}`;
-    const currentSpaceLabel = state.currentSpace ? `Current Space (${state.currentSpace})` : 'Current Space';
+    const currentSpaceLabel = state.currentSpace
+      ? `Current Space (${state.currentSpace})`
+      : 'Current Space';
     const spaceProgress = `Parameter Sets: ${state.progress.completedParameterSets}/${state.progress.totalParameterSets}`;
     const taskProgress = `Tasks in Current Set: ${state.progress.completedTasks}/${state.progress.totalTasks}`;
 

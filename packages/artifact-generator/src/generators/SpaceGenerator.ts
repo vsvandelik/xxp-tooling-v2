@@ -16,7 +16,7 @@ import { ResolvedTask, TaskResolver } from '../resolvers/TaskResolver.js';
 export class SpaceGenerator {
   /**
    * Generates space definitions from experiment spaces and resolved components.
-   * 
+   *
    * @param experiment - The experiment model containing spaces
    * @param parameterCombinations - Resolved parameter combinations for each space
    * @param resolvedTasks - Map of resolved task definitions
@@ -60,7 +60,7 @@ export class SpaceGenerator {
 
   /**
    * Determines the execution order of tasks for a given space.
-   * 
+   *
    * @param space - The space model
    * @param resolvedTasks - Map of resolved task definitions
    * @param taskResolver - Task resolver for ID mapping

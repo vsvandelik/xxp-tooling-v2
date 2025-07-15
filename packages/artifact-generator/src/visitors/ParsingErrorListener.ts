@@ -14,7 +14,7 @@ import * as antlr from 'antlr4ng';
 export class ParsingErrorListener extends antlr.BaseErrorListener {
   /**
    * Creates a new parsing error listener.
-   * 
+   *
    * @param fileName - Name of the file being parsed for error context
    */
   constructor(private fileName: string) {
@@ -23,11 +23,11 @@ export class ParsingErrorListener extends antlr.BaseErrorListener {
 
   /**
    * Handles syntax errors during parsing by throwing detailed error messages.
-   * 
+   *
    * @param recognizer - The ANTLR recognizer that encountered the error
    * @param offendingSymbol - The token that caused the error
    * @param line - Line number where the error occurred
-   * @param column - Column number where the error occurred  
+   * @param column - Column number where the error occurred
    * @param msg - Error message from ANTLR
    * @param _e - Recognition exception (unused)
    * @throws Error with detailed location and context information

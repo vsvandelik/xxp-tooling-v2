@@ -26,7 +26,7 @@ declare global {
 export class AuthenticationMiddleware {
   /**
    * Creates a new authentication middleware instance.
-   * 
+   *
    * @param userService - Service for user authentication and authorization
    */
   constructor(private userService: UserService) {}
@@ -34,7 +34,7 @@ export class AuthenticationMiddleware {
   /**
    * Middleware to extract and validate JWT tokens from Authorization header.
    * Attaches user object to request if token is valid, continues regardless.
-   * 
+   *
    * @param req - Express request object
    * @param res - Express response object
    * @param next - Express next function
@@ -63,7 +63,7 @@ export class AuthenticationMiddleware {
   /**
    * Middleware to require authentication for protected endpoints.
    * Returns 401 Unauthorized if no valid user is attached to request.
-   * 
+   *
    * @param req - Express request object
    * @param res - Express response object
    * @param next - Express next function
@@ -83,7 +83,7 @@ export class AuthenticationMiddleware {
   /**
    * Middleware to require admin role for administrative endpoints.
    * Returns 403 Forbidden if user is not authenticated or not an admin.
-   * 
+   *
    * @param req - Express request object
    * @param res - Express response object
    * @param next - Express next function
@@ -103,7 +103,7 @@ export class AuthenticationMiddleware {
   /**
    * Creates middleware to require ownership or admin access to resources.
    * Uses provided function to determine resource owner for access control.
-   * 
+   *
    * @param getResourceOwner - Function to extract resource owner from request
    * @returns Express middleware function
    */

@@ -5,6 +5,8 @@
  */
 
 import { spawn } from 'child_process';
+import { promisify } from 'util';
+import { exec } from 'child_process';
 
 import { DatabaseRepository } from '../database/DatabaseRepository.js';
 import { ProgressEmitter } from '../progress/ProgressEmitter.js';
@@ -17,10 +19,11 @@ import { Task, ParameterSet, Expression, Artifact } from '../types/artifact.type
  */
 export class TaskExecutor {
   private artifact: Artifact | null = null;
+  private pythonExecutable: string | null = null;
 
   /**
    * Creates a new task executor.
-   * 
+   *
    * @param repository - Database repository for persistence
    * @param artifactFolder - Base folder path for resolving relative paths
    * @param progress - Progress emitter for status updates
@@ -33,7 +36,7 @@ export class TaskExecutor {
 
   /**
    * Sets the artifact context for parameter resolution.
-   * 
+   *
    * @param artifact - Experiment artifact containing global data definitions
    */
   setArtifact(artifact: Artifact): void {
@@ -44,7 +47,7 @@ export class TaskExecutor {
    * Executes a single task with the given parameters.
    * Handles task lifecycle including status tracking, parameter resolution,
    * subprocess execution, and output collection.
-   * 
+   *
    * @param runId - Unique identifier for the experiment run
    * @param spaceId - Space identifier containing this task
    * @param paramSetIndex - Index of the parameter set being executed
@@ -224,82 +227,130 @@ export class TaskExecutor {
     inputData: Record<string, string>,
     task: Task
   ): Promise<Record<string, string>> {
-    return new Promise((resolve, reject) => {
-      const args: string[] = [];
+    return new Promise(async (resolve, reject) => {
+      try {
+        const pythonExe = await this.getPythonExecutable();
 
-      // Add parameters
-      for (const [key, value] of Object.entries(params)) {
-        args.push(`--${key}`, String(value));
-      }
+        const args: string[] = [];
 
-      // Add inputs as comma-separated positional arguments in the order defined in the task
-      const inputValues: string[] = [];
-      for (const inputName of task.inputData) {
-        const inputValue = inputData[inputName];
-        if (inputValue) {
-          inputValues.push(inputValue);
+        // Add parameters
+        for (const [key, value] of Object.entries(params)) {
+          args.push(`--${key}`, String(value));
         }
-      }
 
-      if (inputValues.length > 0) {
-        args.push(...inputValues.map(val => String(val)));
-      }
-
-      const proc = spawn('python', [scriptPath, ...args], {
-        cwd: this.artifactFolder,
-      });
-
-      let stdout = '';
-      let stderr = '';
-
-      proc.stdout.on('data', data => {
-        stdout += data.toString();
-      });
-
-      proc.stderr.on('data', data => {
-        stderr += data.toString();
-      });
-
-      proc.on('close', code => {
-        if (code !== 0) {
-          reject(new Error(`Task failed with exit code ${code}: ${stderr}`));
-        } else {
-          try {
-            // Parse the first line of stdout to get output data strings
-            const firstLine = stdout.split('\n')[0]?.trim();
-            if (!firstLine) {
-              reject(new Error(`No output received from Python script ${scriptPath}`));
-              return;
-            }
-
-            // Parse comma-separated output strings
-            const outputStrings = firstLine.split(',').map(str => str.trim().replace(/^"|"$/g, ''));
-
-            // Map output names to strings in the order defined in the task
-            const outputs: Record<string, string> = {};
-            for (let i = 0; i < task.outputData.length; i++) {
-              const outputName = task.outputData[i];
-              const outputString = outputStrings[i];
-              if (outputName && outputString) {
-                outputs[outputName] = outputString;
-              } else {
-                reject(
-                  new Error(`Missing output for '${outputName}' or insufficient outputs returned`)
-                );
-                return;
-              }
-            }
-
-            resolve(outputs);
-          } catch (error) {
-            reject(new Error(`Failed to parse script output: ${(error as Error).message}`));
+        // Add inputs as comma-separated positional arguments in the order defined in the task
+        const inputValues: string[] = [];
+        for (const inputName of task.inputData) {
+          const inputValue = inputData[inputName];
+          if (inputValue) {
+            inputValues.push(inputValue);
           }
         }
-      });
 
-      proc.on('error', err => {
-        reject(err);
-      });
+        if (inputValues.length > 0) {
+          args.push(...inputValues.map(val => String(val)));
+        }
+
+        const proc = spawn(pythonExe, [scriptPath, ...args], {
+          cwd: this.artifactFolder,
+        });
+
+        let stdout = '';
+        let stderr = '';
+
+        proc.stdout.on('data', data => {
+          stdout += data.toString();
+        });
+
+        proc.stderr.on('data', data => {
+          stderr += data.toString();
+        });
+
+        proc.on('close', code => {
+          if (code !== 0) {
+            reject(new Error(`Task failed with exit code ${code}: ${stderr}`));
+          } else {
+            try {
+              // Parse the first line of stdout to get output data strings
+              const firstLine = stdout.split('\n')[0]?.trim();
+              if (!firstLine) {
+                reject(new Error(`No output received from Python script ${scriptPath}`));
+                return;
+              }
+
+              // Parse comma-separated output strings
+              const outputStrings = firstLine
+                .split(',')
+                .map(str => str.trim().replace(/^"|"$/g, ''));
+
+              // Map output names to strings in the order defined in the task
+              const outputs: Record<string, string> = {};
+              for (let i = 0; i < task.outputData.length; i++) {
+                const outputName = task.outputData[i];
+                const outputString = outputStrings[i];
+                if (outputName && outputString) {
+                  outputs[outputName] = outputString;
+                } else {
+                  reject(
+                    new Error(`Missing output for '${outputName}' or insufficient outputs returned`)
+                  );
+                  return;
+                }
+              }
+
+              resolve(outputs);
+            } catch (error) {
+              reject(new Error(`Failed to parse script output: ${(error as Error).message}`));
+            }
+          }
+        });
+        proc.on('error', err => {
+          if (err.message.includes('ENOENT')) {
+            reject(
+              new Error(
+                `Python executable not found. Please ensure Python is installed and available in the system PATH. Original error: ${err.message}`
+              )
+            );
+          } else {
+            reject(err);
+          }
+        });
+      } catch (error) {
+        reject(new Error(`Failed to get Python executable: ${(error as Error).message}`));
+      }
     });
+  }
+
+  /**
+   * Determines the available Python executable (python3 or python as fallback).
+   * Caches the result for subsequent calls.
+   *
+   * @returns Promise resolving to the Python executable name
+   * @throws Error if no Python executable is found
+   */
+  private async getPythonExecutable(): Promise<string> {
+    if (this.pythonExecutable) {
+      return this.pythonExecutable;
+    }
+
+    const execAsync = promisify(exec);
+
+    // Try python3 first
+    try {
+      await execAsync('python3 --version');
+      this.pythonExecutable = 'python3';
+      return this.pythonExecutable;
+    } catch {
+      // python3 not found, try python
+      try {
+        await execAsync('python --version');
+        this.pythonExecutable = 'python';
+        return this.pythonExecutable;
+      } catch {
+        throw new Error(
+          'No Python executable found. Please ensure Python is installed and available in the system PATH (python3 or python).'
+        );
+      }
+    }
   }
 }
