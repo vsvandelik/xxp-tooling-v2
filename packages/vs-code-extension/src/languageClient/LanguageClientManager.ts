@@ -110,82 +110,11 @@ export class LanguageClientManager {
   private registerFeatures(): void {
     if (!this.client) return;
 
-    // Register custom commands
-    this.registerCommands();
-
     // Register code lens provider if needed
     // this.registerCodeLensProvider();
 
     // Register custom notifications handlers
     this.registerNotificationHandlers();
-  }
-
-  private registerCommands(): void {
-    // Clear any existing command registrations
-    this.commandDisposables.forEach(disposable => disposable.dispose());
-    this.commandDisposables = [];
-
-    // Register quick fix commands
-    this.commandDisposables.push(
-      vscode.commands.registerCommand(
-        'extremexp.quickfix.addMissingParameter',
-        async (uri: string, param: string, location: vscode.Range) => {
-          const document = await vscode.workspace.openTextDocument(vscode.Uri.parse(uri));
-          const edit = new vscode.WorkspaceEdit();
-
-          // Find appropriate location to add parameter
-          const insertPosition = this.findParameterInsertPosition(document, location);
-          if (insertPosition) {
-            edit.insert(document.uri, insertPosition, `    param ${param};\n`);
-            await vscode.workspace.applyEdit(edit);
-          }
-        }
-      )
-    );
-
-    this.commandDisposables.push(
-      vscode.commands.registerCommand(
-        'extremexp.quickfix.removeUnusedParameter',
-        async (uri: string, location: vscode.Range) => {
-          const document = await vscode.workspace.openTextDocument(vscode.Uri.parse(uri));
-          const edit = new vscode.WorkspaceEdit();
-          edit.delete(document.uri, location);
-          await vscode.workspace.applyEdit(edit);
-        }
-      )
-    );
-
-    this.commandDisposables.push(
-      vscode.commands.registerCommand(
-        'extremexp.quickfix.createMissingWorkflow',
-        async (workflowName: string) => {
-          const workspaceFolders = vscode.workspace.workspaceFolders;
-          if (!workspaceFolders || workspaceFolders.length === 0) {
-            vscode.window.showErrorMessage('No workspace folder open');
-            return;
-          }
-
-          const workspaceRoot = workspaceFolders[0]!.uri.fsPath;
-          const fileName = `${workflowName.charAt(0).toLowerCase() + workflowName.slice(1)}.xxp`;
-          const filePath = path.join(workspaceRoot, fileName);
-
-          const content = `workflow ${workflowName} {\n    // TODO: Define workflow\n}\n`;
-
-          await vscode.workspace.fs.writeFile(
-            vscode.Uri.file(filePath),
-            Buffer.from(content, 'utf8')
-          );
-
-          const document = await vscode.workspace.openTextDocument(filePath);
-          await vscode.window.showTextDocument(document);
-        }
-      )
-    );
-
-    // Add all command disposables to the extension context
-    this.commandDisposables.forEach(disposable => {
-      this.context.subscriptions.push(disposable);
-    });
   }
 
   private registerNotificationHandlers(): void {
@@ -217,23 +146,6 @@ export class LanguageClientManager {
         );
       }
     );
-  }
-
-  private findParameterInsertPosition(
-    document: vscode.TextDocument,
-    location: vscode.Range
-  ): vscode.Position | undefined {
-    // Simple implementation - find the space body and insert at the beginning
-    const text = document.getText();
-    const lines = text.split('\n');
-    for (let i = location.start.line; i < lines.length; i++) {
-      const line = lines[i];
-      if (line && line.includes('{')) {
-        return new vscode.Position(i + 1, 0);
-      }
-    }
-
-    return undefined;
   }
 }
 

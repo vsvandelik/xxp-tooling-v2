@@ -52,11 +52,16 @@ export class DocumentSymbolTable extends SymbolTable {
     }
 
     if (!currentContext) return [];
-    let currentWorkflowSymbol = DocumentSymbolTable.symbolWithContextRecursive(
+    /*let currentWorkflowSymbol = DocumentSymbolTable.symbolWithContextRecursive(
       this,
       currentContext,
       documentUri
-    );
+    );*/
+    
+    let currentWorkflowSymbol = this.children.filter(child =>
+      (child instanceof WorkflowSymbol && (child as WorkflowSymbol).document.uri === documentUri) ||
+      (child instanceof ExperimentSymbol && (child as ExperimentSymbol).document.uri === documentUri)
+    )[0];
     while (currentWorkflowSymbol && !(currentWorkflowSymbol instanceof SymbolTable)) {
       currentWorkflowSymbol = currentWorkflowSymbol.parent;
     }

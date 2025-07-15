@@ -51,7 +51,7 @@ connection.onInitialize((): InitializeResult => {
     definitionProvider: true,
     referencesProvider: true,
     renameProvider: {
-      prepareProvider: false,
+      prepareProvider: true,
     },
     diagnosticProvider: {
       interFileDependencies: true,

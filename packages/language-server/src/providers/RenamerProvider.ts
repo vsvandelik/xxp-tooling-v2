@@ -2,15 +2,11 @@ import {
   XxpDataDefinitionContext,
   XxpTaskDefinitionContext,
   XxpWorkflowHeaderContext,
-  XxpWorkflowNameReadContext,
-  EspaceWorkflowNameReadContext,
-  EspaceSpaceNameReadContext,
-  EspaceTaskNameReadContext,
   EspaceSpaceHeaderContext,
   EspaceExperimentHeaderContext,
 } from '@extremexp/core';
 import { BaseSymbol } from 'antlr4-c3';
-import { RenameParams, WorkspaceEdit, TextEdit } from 'vscode-languageserver';
+import { RenameParams, WorkspaceEdit, TextEdit, PrepareRenameParams, Range } from 'vscode-languageserver';
 
 import { ExperimentSymbol } from '../core/models/symbols/ExperimentSymbol.js';
 import { SpaceSymbol } from '../core/models/symbols/SpaceSymbol.js';
@@ -33,7 +29,29 @@ export class RenamerProvider extends Provider {
   private logger = Logger.getLogger();
 
   addHandlers(): void {
+    this.connection!.onPrepareRename(params => this.onPrepareRename(params));
     this.connection!.onRenameRequest(params => this.onRenameRequest(params));
+  }
+
+  private async onPrepareRename(params: PrepareRenameParams): Promise<Range | null> {
+    this.logger.info(`Received prepare rename request for document: ${params.textDocument.uri}`);
+
+    const result = super.getDocumentAndPosition(params.textDocument, params.position);
+    if (!result) return null;
+    const [document, tokenPosition] = result;
+
+    const symbol = await this.resolveSymbol(document, tokenPosition);
+    if (!symbol) return null;
+
+    // Don't allow renaming built-in tasks
+    if (symbol.name === 'START' || symbol.name === 'END') {
+      this.logger.warn(`Cannot rename built-in task: ${symbol.name}`);
+      return null;
+    }
+
+    // Return the range of the current symbol
+    const range = RangeUtils.getRangeFromParseTree(tokenPosition.terminalNode || tokenPosition.parseTree);
+    return range ?? null;
   }
 
   private async onRenameRequest(params: RenameParams): Promise<WorkspaceEdit | null> {
@@ -79,57 +97,22 @@ export class RenamerProvider extends Provider {
   }
 
   private async resolveSymbol(document: any, tokenPosition: any): Promise<BaseSymbol | null> {
-    // Handle workflow references
-    if (
-      tokenPosition.parseTree instanceof XxpWorkflowNameReadContext ||
-      tokenPosition.parseTree instanceof EspaceWorkflowNameReadContext
-    ) {
-      const folderSymbolTable = this.documentManager?.getDocumentSymbolTableForFile(document.uri);
-      return (await folderSymbolTable?.resolve(tokenPosition.text, false)) || null;
-    }
+    if (document.symbolTable === undefined) return null;
 
-    // Handle space references in ESPACE files
-    if (tokenPosition.parseTree instanceof EspaceSpaceNameReadContext) {
-      const experimentSymbol = document.symbolTable?.children.find(
-        (c: BaseSymbol) => c instanceof ExperimentSymbol
-      ) as ExperimentSymbol;
-      if (experimentSymbol) {
-        return (await experimentSymbol.resolve(tokenPosition.text, false)) || null;
-      }
-    }
-
-    // Handle task references in ESPACE files
-    if (tokenPosition.parseTree instanceof EspaceTaskNameReadContext) {
-      const experimentSymbol = document.symbolTable?.children.find(
-        (c: BaseSymbol) => c instanceof ExperimentSymbol
-      ) as ExperimentSymbol;
-      if (experimentSymbol) {
-        const localSymbol = await experimentSymbol.resolve(tokenPosition.text, true);
-        if (localSymbol) return localSymbol;
-
-        // If not found locally, search in referenced workflows
-        const spaces = await experimentSymbol.getSymbolsOfType(SpaceSymbol);
-        for (const space of spaces) {
-          if (space.workflowReference) {
-            const workflowSymbol = await space.workflowReference.resolve(tokenPosition.text, false);
-            if (workflowSymbol) return workflowSymbol;
-          }
-        }
-      }
-    }
-
-    // Default resolution
-    if (document.workflowSymbolTable) {
-      return (await document.workflowSymbolTable.resolve(tokenPosition.text, false)) || null;
-    }
-
-    return null;
+    // Use the same symbol resolution as ReferencesProvider
+    const symbol = document.symbolTable!.resolveSymbol(
+      document,
+      tokenPosition.parseTree,
+      tokenPosition.text
+    );
+    
+    return symbol || null;
   }
 
   private async getAllReferencesForRename(symbol: BaseSymbol): Promise<TerminalSymbolReference[]> {
     const references: TerminalSymbolReference[] = [];
 
-    // Add all references from the symbol
+    // Add all references from the symbol (same as ReferencesProvider)
     if (
       symbol instanceof TerminalSymbolWithReferences ||
       symbol instanceof WorkflowSymbol ||
@@ -137,7 +120,7 @@ export class RenamerProvider extends Provider {
     ) {
       references.push(...symbol.references);
 
-      // Add the definition itself
+      // Add the definition itself for rename
       if (symbol.context) {
         const context = symbol.context as RuleWithIdentifiers;
         const identifier = context.IDENTIFIER?.();
@@ -147,41 +130,22 @@ export class RenamerProvider extends Provider {
       }
     }
 
-    // For workflow symbols, also check in ESPACE files
+    // For workflow symbols, also check in ESPACE files (same as ReferencesProvider)
     if (symbol instanceof WorkflowSymbol) {
       const folderSymbolTable = this.documentManager?.getDocumentSymbolTableForFile(
         symbol.document.uri
       );
       if (folderSymbolTable) {
+        // Find all experiment symbols that might reference this workflow
         const experiments = await folderSymbolTable.getSymbolsOfType(ExperimentSymbol);
         for (const experiment of experiments) {
           const spaces = await experiment.getSymbolsOfType(SpaceSymbol);
           for (const space of spaces) {
             if (space.workflowReference?.name === symbol.name) {
-              // Add all references from the workflow symbol in ESPACE files
               references.push(...space.workflowReference.references);
-
-              // Also check for task references in ESPACE files
-              const tasks = await space.workflowReference.getSymbolsOfType(
-                TerminalSymbolWithReferences
-              );
-              for (const task of tasks) {
-                if (task.name === symbol.name) {
-                  references.push(...task.references);
-                }
-              }
             }
           }
         }
-      }
-    }
-
-    // For space symbols, include the definition
-    if (symbol instanceof SpaceSymbol && symbol.context) {
-      const context = symbol.context as EspaceSpaceHeaderContext;
-      const identifier = context.IDENTIFIER?.();
-      if (identifier) {
-        references.push(new TerminalSymbolReference(identifier, symbol.document));
       }
     }
 

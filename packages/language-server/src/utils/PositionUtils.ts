@@ -52,6 +52,11 @@ export abstract class PositionUtils {
     tokens: TokenStream,
     caretPosition: CaretPosition
   ): { index: number; token: Token } {
+    // Handle empty token stream
+    if (tokens.size === 0) {
+      throw new Error('TokenStream is empty');
+    }
+    
     let index: number = 0;
     let token: Token = tokens.get(index);
 
