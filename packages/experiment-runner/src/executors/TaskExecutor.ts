@@ -147,13 +147,21 @@ export class TaskExecutor {
 
   private resolveParameters(task: Task, paramSet: ParameterSet): Record<string, Expression> {
     const params = { ...task.staticParameters };
+    
+    // Get the simple task name (part after the colon in taskId like "AlgorithmA:postProcessing" -> "postProcessing")
+    const simpleTaskName = task.taskId.includes(':') ? task.taskId.split(':')[1] || task.taskId : task.taskId;
 
     // First, handle dynamic parameters
     for (const dynParam of task.dynamicParameters) {
-      // Check for task-specific override
-      const overrideKey = `${task.taskId}:${dynParam}`;
-      if (overrideKey in paramSet) {
-        params[dynParam] = paramSet[overrideKey]!;
+      // Check for task-specific override with full task ID
+      const fullOverrideKey = `${task.taskId}:${dynParam}`;
+      // Check for task-specific override with simple task name
+      const simpleOverrideKey = `${simpleTaskName}:${dynParam}`;
+      
+      if (fullOverrideKey in paramSet) {
+        params[dynParam] = paramSet[fullOverrideKey]!;
+      } else if (simpleOverrideKey in paramSet) {
+        params[dynParam] = paramSet[simpleOverrideKey]!;
       } else if (dynParam in paramSet) {
         params[dynParam] = paramSet[dynParam]!;
       }
@@ -161,12 +169,33 @@ export class TaskExecutor {
 
     // Then, handle static parameter overrides from space
     for (const staticParam of Object.keys(task.staticParameters)) {
-      // Check for task-specific override
-      const overrideKey = `${task.taskId}:${staticParam}`;
-      if (overrideKey in paramSet) {
-        params[staticParam] = paramSet[overrideKey]!;
+      // Check for task-specific override with full task ID
+      const fullOverrideKey = `${task.taskId}:${staticParam}`;
+      // Check for task-specific override with simple task name
+      const simpleOverrideKey = `${simpleTaskName}:${staticParam}`;
+      
+      if (fullOverrideKey in paramSet) {
+        params[staticParam] = paramSet[fullOverrideKey]!;
+      } else if (simpleOverrideKey in paramSet) {
+        params[staticParam] = paramSet[simpleOverrideKey]!;
       } else if (staticParam in paramSet) {
         params[staticParam] = paramSet[staticParam]!;
+      }
+    }
+
+    // Finally, check for any task-specific parameters that might not be in static/dynamic lists
+    // This handles cases where parameters are defined in the space but not in the task definition
+    for (const [key, value] of Object.entries(paramSet)) {
+      if (key.startsWith(`${simpleTaskName}:`)) {
+        const paramName = key.substring(simpleTaskName.length + 1); // Remove "taskName:" prefix
+        if (!(paramName in params)) { // Only add if not already resolved
+          params[paramName] = value;
+        }
+      } else if (key.startsWith(`${task.taskId}:`)) {
+        const paramName = key.substring(task.taskId.length + 1); // Remove "fullTaskId:" prefix
+        if (!(paramName in params)) { // Only add if not already resolved
+          params[paramName] = value;
+        }
       }
     }
 
