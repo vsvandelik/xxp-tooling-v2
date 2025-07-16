@@ -22,6 +22,8 @@
         "build": "tsc --build",
         "build:watch": "tsc --build --watch",
         "clean": "tsc --build --clean",
+        "bundle": "node esbuild.mjs --production",
+        "bundle:watch": "node esbuild.mjs --watch",
         "test": "jest",
         "test:watch": "jest --watch",
         "test:coverage": "jest --coverage",
@@ -44,5 +46,8 @@
     "dependencies": {
         "@extremexp/core": "^1.0.0",
         "commander": "^11.1.0"
+    },
+    "devDependencies": {
+        "esbuild": "^0.25.6"
     }
 }

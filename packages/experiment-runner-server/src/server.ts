@@ -144,8 +144,15 @@ export class ExperimentRunnerServer {
 }
 
 // CLI entry point
-const __filename = fileURLToPath(import.meta.url);
-const isMainModule = process.argv[1] && path.resolve(process.argv[1]) === __filename;
+let isMainModule = false;
+if (typeof import.meta !== 'undefined' && import.meta.url) {
+  // ESM
+  const __filename = fileURLToPath(import.meta.url);
+  isMainModule = !!process.argv[1] && path.resolve(process.argv[1]) === __filename;
+} else {
+  // CJS
+  isMainModule = require.main === module;
+}
 
 if (isMainModule) {
   const config: ServerConfig = {

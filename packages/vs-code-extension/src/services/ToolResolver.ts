@@ -108,7 +108,7 @@ export class ToolResolver {
     const toolMappings: Record<string, string[]> = {
       'artifact-generator': [
         // Bundled with extension (production)
-        path.join(extensionPath, 'bundled-tools/artifact-generator/cli.js'),
+        path.join(extensionPath, 'tools/artifact-generator.cjs'),
 
         // Development paths (monorepo)
         path.join(workspacePath, 'packages/artifact-generator/dist/cli.js'),
@@ -121,7 +121,7 @@ export class ToolResolver {
       ],
       'experiment-runner-server': [
         // Bundled with extension (production)
-        path.join(extensionPath, 'bundled-tools/experiment-runner-server/server.js'),
+        path.join(extensionPath, 'tools/experiment-runner-server.cjs'),
 
         // Development paths (monorepo)
         path.join(workspacePath, 'packages/experiment-runner-server/dist/server.js'),
@@ -134,7 +134,7 @@ export class ToolResolver {
       ],
       'language-server': [
         // Bundled with extension (production)
-        path.join(extensionPath, 'bundled-tools/language-server/server.js'),
+        path.join(extensionPath, 'tools/language-server.cjs'),
 
         // Development paths (monorepo)
         path.join(workspacePath, 'packages/language-server/dist/server.js'),
