@@ -1,6 +1,7 @@
 .vscode/**
 .vscode-test/**
 src/**
+!src/language-configuration/**
 .gitignore
 .yarnrc*
 vsc-extension-quickstart.md
@@ -10,13 +11,14 @@ vsc-extension-quickstart.md
 .nyc_output
 coverage
 **/*.ts
-!bundled-tools/**
+!tools/**
 node_modules/**
-!bundled-tools/node_modules/**
 test-files/**
 ../**
 ../../**
 **/tsconfig.tsbuildinfo
 scripts/**
+**/*.mjs
 *.md
 !README.md
+!LICENSE.md

@@ -152,6 +152,51 @@ export class ServerManager {
         throw new Error('Could not find experiment-runner-server module');
       }
 
+      // Install sqlite3 dependency if needed
+      const serverDir = path.dirname(serverPath);
+      // Go up one directory from the server module to find the actual server project root
+      const serverProjectDir = path.dirname(serverDir);
+      this.outputChannel.appendLine(`Installing sqlite3 in server project directory: ${serverProjectDir}`);
+      
+      try {
+        // Use child_process directly for npm since it's not a configured tool
+        const { spawn } = await import('child_process');
+        const npmCommand = process.platform === 'win32' ? 'npm.cmd' : 'npm';
+        
+        await new Promise<void>((resolve, reject) => {
+          const npmProcess = spawn(npmCommand, ['install', 'https://github.com/TryGhost/node-sqlite3'], {
+            cwd: serverProjectDir,
+            shell: true,
+            windowsHide: true
+          });
+          
+          npmProcess.stdout?.on('data', data => {
+            this.outputChannel.append(data.toString());
+          });
+          
+          npmProcess.stderr?.on('data', data => {
+            this.outputChannel.append(data.toString());
+          });
+          
+          npmProcess.on('close', code => {
+            if (code === 0) {
+              resolve();
+            } else {
+              reject(new Error(`npm install exited with code ${code}`));
+            }
+          });
+          
+          npmProcess.on('error', error => {
+            reject(error);
+          });
+        });
+        
+        this.outputChannel.appendLine('sqlite3 installation completed');
+      } catch (error) {
+        this.outputChannel.appendLine(`Warning: Failed to install sqlite3: ${error}`);
+        // Continue anyway - the server might already have it installed
+      }
+
       // Start server process using toolExecutor
       const env = {
         PORT: this.port.toString(),

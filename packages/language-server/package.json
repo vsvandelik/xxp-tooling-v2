@@ -19,6 +19,8 @@
         "build": "tsc --build",
         "build:watch": "tsc --build --watch",
         "clean": "tsc --build --clean",
+        "bundle": "node esbuild.mjs --production",
+        "bundle:watch": "node esbuild.mjs --watch",
         "test": "jest",
         "test:watch": "jest --watch",
         "test:coverage": "jest --coverage"
@@ -43,5 +45,8 @@
         "vscode-languageserver": "^9.0.1",
         "vscode-languageserver-textdocument": "^1.0.11",
         "vscode-uri": "^3.0.8"
+    },
+    "devDependencies": {
+        "esbuild": "^0.25.6"
     }
 }
