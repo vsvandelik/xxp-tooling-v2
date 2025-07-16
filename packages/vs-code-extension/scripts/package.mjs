@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import { execSync } from 'child_process';
-import { copyFileSync, mkdirSync, existsSync } from 'fs';
+import { copyFileSync, mkdirSync, existsSync, readFileSync, writeFileSync, unlinkSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 
@@ -58,11 +58,48 @@ for (const pkg of packages) {
   copyFileSync(sourceFile, targetFile);
 }
 
+// Step 2.5: Remove @extremexp dependencies from package.json
+console.log('🧹 Removing @extremexp dependencies from package.json...');
+const packageJsonPath = join(extensionRoot, 'package.json');
+const packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf8'));
+
+// Backup original package.json
+const backupPath = join(extensionRoot, 'package.json.backup');
+copyFileSync(packageJsonPath, backupPath);
+
+// Remove @extremexp dependencies
+if (packageJson.dependencies) {
+  Object.keys(packageJson.dependencies).forEach(dep => {
+    if (dep.startsWith('@extremexp')) {
+      delete packageJson.dependencies[dep];
+    }
+  });
+}
+
+if (packageJson.devDependencies) {
+  Object.keys(packageJson.devDependencies).forEach(dep => {
+    if (dep.startsWith('@extremexp')) {
+      delete packageJson.devDependencies[dep];
+    }
+  });
+}~
+
+// Write modified package.json
+writeFileSync(packageJsonPath, JSON.stringify(packageJson, null, 2));
+
 // Step 3: Package the extension
 console.log('📦 Creating VSIX package...');
 execSync('vsce package', { 
   cwd: extensionRoot, 
   stdio: 'inherit' 
 });
+
+// Step 4: Clean up
+console.log('🔄 Restoring original package.json...');
+copyFileSync(backupPath, packageJsonPath);
+
+// Remove backup file
+console.log('🗑️ Removing backup file...');
+unlinkSync(backupPath);
 
 console.log('✅ Package process completed successfully!');

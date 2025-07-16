@@ -14,7 +14,7 @@ async function main() {
     platform: 'node',
     target: 'node22',
     outfile: 'dist/server.cjs',
-    external: [],
+    external: ['sqlite3'],
     logLevel: 'warning',
     plugins: [
       /* add to the end of plugins array */

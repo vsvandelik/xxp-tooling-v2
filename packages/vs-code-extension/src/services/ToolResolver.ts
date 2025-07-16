@@ -29,13 +29,17 @@ export interface ToolInfo {
 export class ToolResolver {
   /** Cache of resolved tool information for performance optimization */
   private toolCache = new Map<string, ToolInfo>();
+  /** Debug output channel for tool resolution logging */
+  private debugChannel: vscode.OutputChannel;
 
   /**
    * Creates a new tool resolver instance.
    *
    * @param context - VS Code extension context for accessing extension paths
    */
-  constructor(private context: vscode.ExtensionContext) {}
+  constructor(private context: vscode.ExtensionContext) {
+    this.debugChannel = vscode.window.createOutputChannel('ExtremeXP Tools');
+  }
 
   /**
    * Resolves the location and execution information for a named tool.
@@ -65,11 +69,15 @@ export class ToolResolver {
    * @throws Error if tool is not found in any location
    */
   private async findTool(toolName: string): Promise<ToolInfo> {
+    this.debugChannel.appendLine(`[ToolResolver] Finding tool: ${toolName}`);
+    
     // Check user configuration first
     const config = vscode.workspace.getConfiguration('extremexp');
     const configKey = `tools.${toolName.replace(/-/g, '')}.path`; // Remove all hyphens for config key
     const userPath = config.get<string>(configKey);
+    
     if (userPath && (await this.pathExists(userPath))) {
+      this.debugChannel.appendLine(`[ToolResolver] Found tool at user configured path: ${userPath}`);
       return {
         name: toolName,
         path: userPath,
@@ -77,20 +85,23 @@ export class ToolResolver {
       };
     }
 
-    // Rest of the method remains the same...
+    // Search in predefined paths
     const searchPaths = this.getSearchPaths(toolName);
 
     for (const searchPath of searchPaths) {
       if (await this.pathExists(searchPath)) {
-        return {
+        const toolInfo = {
           name: toolName,
           path: searchPath,
           type: this.getToolType(searchPath),
           cwd: this.getToolWorkingDirectory(searchPath),
         };
+        this.debugChannel.appendLine(`[ToolResolver] Found tool: ${toolInfo.name} at ${toolInfo.path}`);
+        return toolInfo;
       }
     }
 
+    this.debugChannel.appendLine(`[ToolResolver] Tool '${toolName}' not found in any search path`);
     throw new Error(`Tool '${toolName}' not found. Please check your configuration.`);
   }
 

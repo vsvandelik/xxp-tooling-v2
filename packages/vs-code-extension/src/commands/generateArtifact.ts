@@ -49,6 +49,7 @@ export class GenerateArtifactCommand {
     }
 
     const document = activeEditor.document;
+    
     if (!document.fileName.endsWith('.espace')) {
       vscode.window.showErrorMessage(
         'Active file is not an ESPACE file. Please open an ESPACE file first.'
@@ -78,6 +79,10 @@ export class GenerateArtifactCommand {
         progress.report({ increment: 0, message: 'Starting artifact generation...' });
 
         try {
+          if (token.isCancellationRequested) {
+            return;
+          }
+
           const result = await this.runArtifactGenerator(espacePath, token);
 
           if (result.success) {
@@ -86,7 +91,8 @@ export class GenerateArtifactCommand {
             await this.handleFailure(result);
           }
         } catch (error) {
-          vscode.window.showErrorMessage(`Artifact generation failed: ${error}`);
+          const errorMessage = error instanceof Error ? error.message : String(error);
+          vscode.window.showErrorMessage(`Artifact generation failed: ${errorMessage}`);
         }
       }
     );
@@ -129,10 +135,21 @@ export class GenerateArtifactCommand {
         validation,
       };
     } else {
+      let errorMessage: string;
+      if (result.cancelled) {
+        errorMessage = 'Tool execution was cancelled by user or timeout';
+      } else if (result.stderr && result.stderr.trim()) {
+        errorMessage = result.stderr.trim();
+      } else if (result.stdout && result.stdout.trim()) {
+        errorMessage = result.stdout.trim();
+      } else {
+        errorMessage = `Tool execution failed with exit code ${result.exitCode}. No output captured.`;
+      }
+
       return {
         success: false,
         validation,
-        error: result.stderr || result.stdout || 'Unknown error',
+        error: errorMessage,
       };
     }
   }
@@ -148,17 +165,51 @@ export class GenerateArtifactCommand {
     const warnings: string[] = [];
 
     const lines = output.split('\n');
+    let inErrorsSection = false;
+    let inWarningsSection = false;
+    
     for (const line of lines) {
-      if (line.includes('Validation error:') || line.includes('Error:')) {
-        const error = line.replace(/^.*?(Validation error:|Error:)\s*/, '').trim();
+      const trimmedLine = line.trim();
+      
+      // Check for section headers
+      if (trimmedLine === 'Validation errors:') {
+        inErrorsSection = true;
+        inWarningsSection = false;
+        continue;
+      } else if (trimmedLine === 'Validation warnings:') {
+        inWarningsSection = true;
+        inErrorsSection = false;
+        continue;
+      } else if (trimmedLine.startsWith('Validation error:') || trimmedLine.includes('Error:')) {
+        // Single error line format
+        const error = trimmedLine.replace(/^.*?(Validation error:|Error:)\s*/, '').trim();
         if (error) {
           errors.push(error);
         }
-      } else if (line.includes('Validation warning:') || line.includes('Warning:')) {
-        const warning = line.replace(/^.*?(Validation warning:|Warning:)\s*/, '').trim();
+        continue;
+      } else if (trimmedLine.startsWith('Validation warning:') || trimmedLine.includes('Warning:')) {
+        // Single warning line format
+        const warning = trimmedLine.replace(/^.*?(Validation warning:|Warning:)\s*/, '').trim();
         if (warning) {
           warnings.push(warning);
         }
+        continue;
+      }
+      
+      // Check for bullet point items in sections
+      if (trimmedLine.startsWith('- ')) {
+        const item = trimmedLine.substring(2).trim();
+        if (item) {
+          if (inErrorsSection) {
+            errors.push(item);
+          } else if (inWarningsSection) {
+            warnings.push(item);
+          }
+        }
+      } else if (trimmedLine && !trimmedLine.startsWith('Validation') && (inErrorsSection || inWarningsSection)) {
+        // If we hit a non-empty line that's not a bullet point, we're likely out of the section
+        inErrorsSection = false;
+        inWarningsSection = false;
       }
     }
 
