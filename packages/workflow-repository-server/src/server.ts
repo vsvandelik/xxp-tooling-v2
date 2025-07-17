@@ -4,7 +4,10 @@
  * for the ExtremeXP workflow repository HTTP API server.
  */
 
-import { DatabaseWorkflowRepositoryServer, DatabaseServerConfig } from './server/DatabaseWorkflowRepositoryServer.js';
+import {
+  DatabaseWorkflowRepositoryServer,
+  DatabaseServerConfig,
+} from './server/DatabaseWorkflowRepositoryServer.js';
 
 /** Server configuration loaded from environment variables with fallback defaults */
 const config: DatabaseServerConfig = {

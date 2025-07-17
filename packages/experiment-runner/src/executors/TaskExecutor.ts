@@ -4,9 +4,8 @@
  * input/output data management, and subprocess execution.
  */
 
-import { spawn } from 'child_process';
+import { spawn, exec } from 'child_process';
 import { promisify } from 'util';
-import { exec } from 'child_process';
 
 import { DatabaseRepository } from '../database/DatabaseRepository.js';
 import { ProgressEmitter } from '../progress/ProgressEmitter.js';
@@ -147,9 +146,11 @@ export class TaskExecutor {
 
   private resolveParameters(task: Task, paramSet: ParameterSet): Record<string, Expression> {
     const params = { ...task.staticParameters };
-    
+
     // Get the simple task name (part after the colon in taskId like "AlgorithmA:postProcessing" -> "postProcessing")
-    const simpleTaskName = task.taskId.includes(':') ? task.taskId.split(':')[1] || task.taskId : task.taskId;
+    const simpleTaskName = task.taskId.includes(':')
+      ? task.taskId.split(':')[1] || task.taskId
+      : task.taskId;
 
     // First, handle dynamic parameters
     for (const dynParam of task.dynamicParameters) {
@@ -157,7 +158,7 @@ export class TaskExecutor {
       const fullOverrideKey = `${task.taskId}:${dynParam}`;
       // Check for task-specific override with simple task name
       const simpleOverrideKey = `${simpleTaskName}:${dynParam}`;
-      
+
       if (fullOverrideKey in paramSet) {
         params[dynParam] = paramSet[fullOverrideKey]!;
       } else if (simpleOverrideKey in paramSet) {
@@ -173,7 +174,7 @@ export class TaskExecutor {
       const fullOverrideKey = `${task.taskId}:${staticParam}`;
       // Check for task-specific override with simple task name
       const simpleOverrideKey = `${simpleTaskName}:${staticParam}`;
-      
+
       if (fullOverrideKey in paramSet) {
         params[staticParam] = paramSet[fullOverrideKey]!;
       } else if (simpleOverrideKey in paramSet) {
@@ -188,12 +189,14 @@ export class TaskExecutor {
     for (const [key, value] of Object.entries(paramSet)) {
       if (key.startsWith(`${simpleTaskName}:`)) {
         const paramName = key.substring(simpleTaskName.length + 1); // Remove "taskName:" prefix
-        if (!(paramName in params)) { // Only add if not already resolved
+        if (!(paramName in params)) {
+          // Only add if not already resolved
           params[paramName] = value;
         }
       } else if (key.startsWith(`${task.taskId}:`)) {
         const paramName = key.substring(task.taskId.length + 1); // Remove "fullTaskId:" prefix
-        if (!(paramName in params)) { // Only add if not already resolved
+        if (!(paramName in params)) {
+          // Only add if not already resolved
           params[paramName] = value;
         }
       }

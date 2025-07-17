@@ -7,10 +7,19 @@
 import * as fs from 'fs/promises';
 import * as path from 'path';
 
-import { WorkflowContent, WorkflowMetadata, WorkflowSearchOptions, WorkflowTreeNode } from '@extremexp/workflow-repository';
+import {
+  WorkflowContent,
+  WorkflowMetadata,
+  WorkflowSearchOptions,
+  WorkflowTreeNode,
+} from '@extremexp/workflow-repository';
 import { v4 as uuidv4 } from 'uuid';
 
-import { IWorkflowDatabase, WorkflowRecord, WorkflowTreeRecord } from '../database/IWorkflowDatabase.js';
+import {
+  IWorkflowDatabase,
+  WorkflowRecord,
+  WorkflowTreeRecord,
+} from '../database/IWorkflowDatabase.js';
 
 /**
  * Interface for workflow manifest metadata from ZIP files.
@@ -375,7 +384,7 @@ export class DatabaseWorkflowStorageService {
 
     // Update files
     const workflowDir = existing.filePath;
-    
+
     // Update main file
     const mainFilePath = path.join(workflowDir, existing.mainFile);
     await fs.writeFile(mainFilePath, content.mainFile, 'utf-8');
@@ -438,7 +447,7 @@ export class DatabaseWorkflowStorageService {
       // Remove from tree structure - use same path construction as when adding
       const fullPath = existing.path ? `${existing.path}/${existing.name}` : existing.name;
       await this.database.removeTreeStructure(fullPath);
-      
+
       // Clean up empty parent directories
       await this.cleanupEmptyParentDirectories(existing.path);
     }
@@ -464,7 +473,7 @@ export class DatabaseWorkflowStorageService {
    * @returns Promise resolving to array of workflow metadata
    */
   async listWorkflows(options?: WorkflowSearchOptions): Promise<WorkflowMetadata[]> {
-    const records = options 
+    const records = options
       ? await this.database.searchWorkflows(options)
       : await this.database.listWorkflows();
 
@@ -503,7 +512,7 @@ export class DatabaseWorkflowStorageService {
     try {
       const workflowDir = workflow.filePath;
       const mainFilePath = path.join(workflowDir, workflow.mainFile);
-      
+
       const mainFile = await fs.readFile(mainFilePath, 'utf-8');
       const attachments = new Map<string, Buffer>();
 
@@ -552,11 +561,15 @@ export class DatabaseWorkflowStorageService {
   /**
    * Updates the tree structure for a workflow.
    */
-  private async updateTreeStructure(workflowPath: string, workflowName: string, workflowId: string): Promise<void> {
+  private async updateTreeStructure(
+    workflowPath: string,
+    workflowName: string,
+    workflowId: string
+  ): Promise<void> {
     // Update parent directories
     const pathParts = workflowPath.split('/').filter(part => part);
     let currentPath = '';
-    
+
     for (const part of pathParts) {
       currentPath = currentPath ? `${currentPath}/${part}` : part;
       await this.database.updateTreeStructure(currentPath, true);
@@ -578,23 +591,23 @@ export class DatabaseWorkflowStorageService {
 
     // Get all paths from most specific to least specific
     const pathParts = workflowPath.split('/').filter(part => part);
-    
+
     // Check each parent path from most specific to least specific
     for (let i = pathParts.length; i > 0; i--) {
       const currentPath = pathParts.slice(0, i).join('/');
-      
+
       // Get tree records for this specific path and its immediate children
       const parentPath = i > 1 ? pathParts.slice(0, i - 1).join('/') : '';
       const allRecords = await this.database.getTreeStructure(parentPath || undefined);
-      
+
       // Find records that are direct children of the current path
       const childRecords = allRecords.filter(record => {
         // Skip the directory itself
         if (record.path === currentPath) return false;
-        
+
         // Find direct children (path starts with currentPath/ but doesn't have more slashes after that)
         if (!record.path.startsWith(`${currentPath}/`)) return false;
-        
+
         const remainingPath = record.path.substring(`${currentPath}/`.length);
         return !remainingPath.includes('/'); // Direct child, not grandchild
       });
@@ -612,7 +625,10 @@ export class DatabaseWorkflowStorageService {
   /**
    * Builds tree structure from database records.
    */
-  private async buildTreeFromRecords(records: WorkflowTreeRecord[], rootPath?: string): Promise<WorkflowTreeNode> {
+  private async buildTreeFromRecords(
+    records: WorkflowTreeRecord[],
+    rootPath?: string
+  ): Promise<WorkflowTreeNode> {
     // Use mutable interfaces during construction
     interface MutableTreeNode {
       name: string;
@@ -670,7 +686,8 @@ export class DatabaseWorkflowStorageService {
       };
 
       if (node.children !== undefined) {
-        (result as { children?: readonly WorkflowTreeNode[] }).children = node.children.map(convertToReadonly);
+        (result as { children?: readonly WorkflowTreeNode[] }).children =
+          node.children.map(convertToReadonly);
       }
 
       if (node.metadata !== undefined) {

@@ -125,7 +125,7 @@ export class ExperimentService {
         if (callbacks?.onProgress) {
           callbacks.onProgress(data);
         }
-        
+
         // Check if experiment completed via progress status
         if (data.status === 'completed') {
           console.log(`Experiment ${data.experimentId} completed via progress event`);
@@ -553,7 +553,7 @@ export class ExperimentService {
       this.socket?.emit('unsubscribe', experimentId);
     } catch (error) {
       console.error(`Error handling experiment completion for ${experimentId}:`, error);
-      
+
       // Trigger error callback as fallback
       const callbacks = this.activeExperiments.get(experimentId);
       callbacks?.onError?.(new Error(`Failed to fetch completion result: ${error}`));

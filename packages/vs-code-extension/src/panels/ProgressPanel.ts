@@ -85,7 +85,7 @@ export class ProgressPanel {
     if (this.disposed) {
       return;
     }
-    
+
     const state = this.webviewController.getState();
     this.panel.webview.html = WebviewRenderer.renderContent(state);
   }
@@ -294,7 +294,7 @@ export class ProgressPanel {
       this.handleUserInputViaNativeDialog(request);
       return;
     }
-    
+
     this.webviewController.setUserInputRequest(request.requestId, request.prompt);
     this.updateContent();
   }

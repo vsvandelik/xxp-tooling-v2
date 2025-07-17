@@ -7,8 +7,8 @@
 import * as fs from 'fs';
 import * as path from 'path';
 
-import * as vscode from 'vscode';
 import { RunResult } from '@extremexp/experiment-runner';
+import * as vscode from 'vscode';
 
 import { ProgressPanelManager } from '../panels/ProgressPanelManager.js';
 import { ExperimentService } from '../services/ExperimentService.js';
@@ -148,7 +148,7 @@ export class RunExperimentCommand {
 
       panel.setExperimentId(experimentId);
       panel.setArtifactPath(artifactPath);
-      
+
       // Track this experiment as running
       this.progressPanelManager.trackRunningExperiment(experimentId, artifactPath);
       vscode.window.showInformationMessage(
@@ -324,7 +324,6 @@ export class RunExperimentCommand {
     outputChannel.show();
   }
 
-
   /**
    * Creates an output file with experiment results and summary.
    *
@@ -350,7 +349,10 @@ export class RunExperimentCommand {
    * @param artifactInfo - Experiment metadata
    * @returns Formatted output content
    */
-  private formatOutputContent(result: RunResult, artifactInfo: { experiment: string; version: string }): string {
+  private formatOutputContent(
+    result: RunResult,
+    artifactInfo: { experiment: string; version: string }
+  ): string {
     const timestamp = new Date().toISOString();
     let content = '';
 
@@ -376,7 +378,7 @@ export class RunExperimentCommand {
       for (const [spaceId, spaceOutputs] of Object.entries(result.outputs)) {
         content += `\nSpace: ${spaceId}\n`;
         content += `${'='.repeat(spaceId.length + 7)}\n`;
-        
+
         for (const [outputName, outputValue] of Object.entries(spaceOutputs)) {
           content += `\n${outputName}:\n`;
           content += `${'-'.repeat(outputName.length + 1)}\n`;
@@ -435,9 +437,11 @@ export class RunExperimentCommand {
    *
    * @param outputs - Nested object containing space outputs with values
    */
-  private async openOutputsWithReopen(outputs: Record<string, Record<string, string>>): Promise<void> {
+  private async openOutputsWithReopen(
+    outputs: Record<string, Record<string, string>>
+  ): Promise<void> {
     let continueShowing = true;
-    
+
     while (continueShowing) {
       // Create a quick pick to select which output to view
       const items: vscode.QuickPickItem[] = [];
@@ -461,7 +465,7 @@ export class RunExperimentCommand {
       items.push({
         label: '$(refresh) View Another Output',
         description: 'Select another output to view',
-        detail: 'reopen'
+        detail: 'reopen',
       });
 
       const selected = await vscode.window.showQuickPick(items, {
@@ -478,14 +482,14 @@ export class RunExperimentCommand {
       } else {
         // User selected an actual output
         await this.displayOutput(selected);
-        
+
         // Ask if they want to view another output
         const viewAnother = await vscode.window.showInformationMessage(
           'Output displayed. Would you like to view another output?',
           'Yes',
           'No'
         );
-        
+
         continueShowing = viewAnother === 'Yes';
       }
     }
