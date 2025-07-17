@@ -6,7 +6,7 @@
 
 import { ApiResponse, LoginRequest, LoginResponse } from '@extremexp/workflow-repository';
 import cors from 'cors';
-import express, { Request } from 'express';
+import express from 'express';
 
 import { DatabaseWorkflowController } from '../controllers/DatabaseWorkflowController.js';
 import { SqliteWorkflowDatabase } from '../database/SqliteWorkflowDatabase.js';
@@ -50,7 +50,9 @@ export class DatabaseWorkflowRepositoryServer {
    */
   constructor(private config: DatabaseServerConfig) {
     this.app = express();
-    this.database = new SqliteWorkflowDatabase(config.databasePath || 'workflow-repository.sqlite3');
+    this.database = new SqliteWorkflowDatabase(
+      config.databasePath || 'workflow-repository.sqlite3'
+    );
     this.storageService = new DatabaseWorkflowStorageService(this.database, config.storagePath);
     this.userService = new UserService(config.jwtSecret);
     this.authMiddleware = new AuthenticationMiddleware(this.userService);
@@ -178,13 +180,29 @@ export class DatabaseWorkflowRepositoryServer {
 
   private setupWorkflowRoutes(): void {
     // All workflow endpoints require authentication
-    this.app.get('/workflows', this.authMiddleware.requireAuth, this.workflowController.listWorkflows);
+    this.app.get(
+      '/workflows',
+      this.authMiddleware.requireAuth,
+      this.workflowController.listWorkflows
+    );
 
-    this.app.get('/workflows/:id', this.authMiddleware.requireAuth, this.workflowController.getWorkflow);
+    this.app.get(
+      '/workflows/:id',
+      this.authMiddleware.requireAuth,
+      this.workflowController.getWorkflow
+    );
 
-    this.app.get('/workflows/:id/content', this.authMiddleware.requireAuth, this.workflowController.downloadWorkflow);
+    this.app.get(
+      '/workflows/:id/content',
+      this.authMiddleware.requireAuth,
+      this.workflowController.downloadWorkflow
+    );
 
-    this.app.get('/workflows/:id/files/*', this.authMiddleware.requireAuth, this.workflowController.downloadWorkflowFile);
+    this.app.get(
+      '/workflows/:id/files/*',
+      this.authMiddleware.requireAuth,
+      this.workflowController.downloadWorkflowFile
+    );
 
     this.app.post(
       '/workflows',
@@ -231,7 +249,11 @@ export class DatabaseWorkflowRepositoryServer {
     this.app.get('/tree', this.authMiddleware.requireAuth, this.workflowController.getTree);
     this.app.get('/tree/*', this.authMiddleware.requireAuth, this.workflowController.getTree);
 
-    this.app.get('/search', this.authMiddleware.requireAuth, this.workflowController.searchWorkflows);
+    this.app.get(
+      '/search',
+      this.authMiddleware.requireAuth,
+      this.workflowController.searchWorkflows
+    );
 
     this.app.get('/tags', this.authMiddleware.requireAuth, this.workflowController.getTags);
 

@@ -49,7 +49,7 @@ export class GenerateArtifactCommand {
     }
 
     const document = activeEditor.document;
-    
+
     if (!document.fileName.endsWith('.espace')) {
       vscode.window.showErrorMessage(
         'Active file is not an ESPACE file. Please open an ESPACE file first.'
@@ -167,10 +167,10 @@ export class GenerateArtifactCommand {
     const lines = output.split('\n');
     let inErrorsSection = false;
     let inWarningsSection = false;
-    
+
     for (const line of lines) {
       const trimmedLine = line.trim();
-      
+
       // Check for section headers
       if (trimmedLine === 'Validation errors:') {
         inErrorsSection = true;
@@ -187,7 +187,10 @@ export class GenerateArtifactCommand {
           errors.push(error);
         }
         continue;
-      } else if (trimmedLine.startsWith('Validation warning:') || trimmedLine.includes('Warning:')) {
+      } else if (
+        trimmedLine.startsWith('Validation warning:') ||
+        trimmedLine.includes('Warning:')
+      ) {
         // Single warning line format
         const warning = trimmedLine.replace(/^.*?(Validation warning:|Warning:)\s*/, '').trim();
         if (warning) {
@@ -195,7 +198,7 @@ export class GenerateArtifactCommand {
         }
         continue;
       }
-      
+
       // Check for bullet point items in sections
       if (trimmedLine.startsWith('- ')) {
         const item = trimmedLine.substring(2).trim();
@@ -206,7 +209,11 @@ export class GenerateArtifactCommand {
             warnings.push(item);
           }
         }
-      } else if (trimmedLine && !trimmedLine.startsWith('Validation') && (inErrorsSection || inWarningsSection)) {
+      } else if (
+        trimmedLine &&
+        !trimmedLine.startsWith('Validation') &&
+        (inErrorsSection || inWarningsSection)
+      ) {
         // If we hit a non-empty line that's not a bullet point, we're likely out of the section
         inErrorsSection = false;
         inWarningsSection = false;

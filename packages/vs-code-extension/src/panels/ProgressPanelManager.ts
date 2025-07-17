@@ -7,7 +7,8 @@ import { ProgressPanel } from './ProgressPanel.js';
 export class ProgressPanelManager {
   private panels: Map<string, ProgressPanel> = new Map();
   private activePanel: ProgressPanel | null = null;
-  private runningExperiments: Map<string, { experimentId: string; artifactPath: string }> = new Map();
+  private runningExperiments: Map<string, { experimentId: string; artifactPath: string }> =
+    new Map();
 
   constructor(
     private context: vscode.ExtensionContext,
@@ -20,7 +21,7 @@ export class ProgressPanelManager {
       return this.activePanel;
     }
 
-    const panel = new ProgressPanel(this.context, this.experimentService, (experimentId) => {
+    const panel = new ProgressPanel(this.context, this.experimentService, experimentId => {
       this.stopTrackingExperiment(experimentId);
     });
     this.activePanel = panel;
@@ -36,7 +37,9 @@ export class ProgressPanelManager {
         const runningExperiment = this.runningExperiments.get(experimentId);
         if (runningExperiment) {
           // Experiment is still running, just panel was closed
-          console.log(`Panel for experiment ${experimentId} was closed, but experiment continues running`);
+          console.log(
+            `Panel for experiment ${experimentId} was closed, but experiment continues running`
+          );
         }
       }
     });
@@ -87,7 +90,10 @@ export class ProgressPanelManager {
     return Array.from(this.runningExperiments.values());
   }
 
-  private async reconnectExperimentCallbacks(experimentId: string, panel: ProgressPanel): Promise<void> {
+  private async reconnectExperimentCallbacks(
+    experimentId: string,
+    panel: ProgressPanel
+  ): Promise<void> {
     // Set up callbacks for the restored experiment
     this.experimentService.updateExperimentCallbacks(experimentId, {
       onProgress: async progress => {

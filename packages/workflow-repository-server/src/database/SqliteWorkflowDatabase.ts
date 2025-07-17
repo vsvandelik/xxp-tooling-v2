@@ -3,9 +3,9 @@
  * Provides persistent storage for workflow metadata using SQLite database.
  */
 
+import { WorkflowSearchOptions } from '@extremexp/workflow-repository';
 import { open, Database as SqliteDatabase } from 'sqlite';
 import sqlite3 from 'sqlite3';
-import { WorkflowSearchOptions } from '@extremexp/workflow-repository';
 
 import { IWorkflowDatabase, WorkflowRecord, WorkflowTreeRecord } from './IWorkflowDatabase.js';
 
@@ -246,7 +246,10 @@ export class SqliteWorkflowDatabase implements IWorkflowDatabase {
     const db = this.ensureInitialized();
 
     try {
-      const result = await db.get<{ count: number }>('SELECT COUNT(*) as count FROM workflows WHERE id = ?', [id]);
+      const result = await db.get<{ count: number }>(
+        'SELECT COUNT(*) as count FROM workflows WHERE id = ?',
+        [id]
+      );
       return (result?.count || 0) > 0;
     } catch (error) {
       throw new Error(
@@ -364,7 +367,9 @@ export class SqliteWorkflowDatabase implements IWorkflowDatabase {
     const db = this.ensureInitialized();
 
     try {
-      const results = await db.all<{ author: string }[]>('SELECT DISTINCT author FROM workflows ORDER BY author');
+      const results = await db.all<{ author: string }[]>(
+        'SELECT DISTINCT author FROM workflows ORDER BY author'
+      );
       return results.map(row => row.author);
     } catch (error) {
       throw new Error(
@@ -377,7 +382,9 @@ export class SqliteWorkflowDatabase implements IWorkflowDatabase {
     const db = this.ensureInitialized();
 
     try {
-      const result = await db.get<{ author: string }>('SELECT author FROM workflows WHERE id = ?', [id]);
+      const result = await db.get<{ author: string }>('SELECT author FROM workflows WHERE id = ?', [
+        id,
+      ]);
       return result?.author || null;
     } catch (error) {
       throw new Error(
@@ -386,12 +393,18 @@ export class SqliteWorkflowDatabase implements IWorkflowDatabase {
     }
   }
 
-  async findWorkflowByPathAndName(path: string, name: string): Promise<{ exists: boolean; id?: string }> {
+  async findWorkflowByPathAndName(
+    path: string,
+    name: string
+  ): Promise<{ exists: boolean; id?: string }> {
     const db = this.ensureInitialized();
 
     try {
-      const result = await db.get<{ id: string }>('SELECT id FROM workflows WHERE path = ? AND name = ?', [path, name]);
-      
+      const result = await db.get<{ id: string }>(
+        'SELECT id FROM workflows WHERE path = ? AND name = ?',
+        [path, name]
+      );
+
       if (result) {
         return { exists: true, id: result.id };
       }
@@ -427,7 +440,11 @@ export class SqliteWorkflowDatabase implements IWorkflowDatabase {
     }
   }
 
-  async updateTreeStructure(path: string, isDirectory: boolean, workflowId?: string): Promise<void> {
+  async updateTreeStructure(
+    path: string,
+    isDirectory: boolean,
+    workflowId?: string
+  ): Promise<void> {
     const db = this.ensureInitialized();
 
     try {

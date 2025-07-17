@@ -6,7 +6,7 @@
 
 import { ApiResponse, LoginRequest, LoginResponse } from '@extremexp/workflow-repository';
 import cors from 'cors';
-import express, { Request } from 'express';
+import express from 'express';
 
 import { WorkflowController } from '../controlers/WorkflowController.js';
 import { AuthenticationMiddleware } from '../middleware/AuthenticationMiddleware.js';
@@ -166,13 +166,29 @@ export class WorkflowRepositoryServer {
 
   private setupWorkflowRoutes(): void {
     // All workflow endpoints require authentication
-    this.app.get('/workflows', this.authMiddleware.requireAuth, this.workflowController.listWorkflows);
+    this.app.get(
+      '/workflows',
+      this.authMiddleware.requireAuth,
+      this.workflowController.listWorkflows
+    );
 
-    this.app.get('/workflows/:id', this.authMiddleware.requireAuth, this.workflowController.getWorkflow);
+    this.app.get(
+      '/workflows/:id',
+      this.authMiddleware.requireAuth,
+      this.workflowController.getWorkflow
+    );
 
-    this.app.get('/workflows/:id/content', this.authMiddleware.requireAuth, this.workflowController.downloadWorkflow);
+    this.app.get(
+      '/workflows/:id/content',
+      this.authMiddleware.requireAuth,
+      this.workflowController.downloadWorkflow
+    );
 
-    this.app.get('/workflows/:id/files/*', this.authMiddleware.requireAuth, this.workflowController.downloadWorkflowFile);
+    this.app.get(
+      '/workflows/:id/files/*',
+      this.authMiddleware.requireAuth,
+      this.workflowController.downloadWorkflowFile
+    );
 
     this.app.post(
       '/workflows',
@@ -219,7 +235,11 @@ export class WorkflowRepositoryServer {
     this.app.get('/tree', this.authMiddleware.requireAuth, this.workflowController.getTree);
     this.app.get('/tree/*', this.authMiddleware.requireAuth, this.workflowController.getTree);
 
-    this.app.get('/search', this.authMiddleware.requireAuth, this.workflowController.searchWorkflows);
+    this.app.get(
+      '/search',
+      this.authMiddleware.requireAuth,
+      this.workflowController.searchWorkflows
+    );
 
     this.app.get('/tags', this.authMiddleware.requireAuth, this.workflowController.getTags);
 

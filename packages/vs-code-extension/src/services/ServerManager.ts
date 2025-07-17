@@ -156,28 +156,34 @@ export class ServerManager {
       const serverDir = path.dirname(serverPath);
       // Go up one directory from the server module to find the actual server project root
       const serverProjectDir = path.dirname(serverDir);
-      this.outputChannel.appendLine(`Installing sqlite3 in server project directory: ${serverProjectDir}`);
-      
+      this.outputChannel.appendLine(
+        `Installing sqlite3 in server project directory: ${serverProjectDir}`
+      );
+
       try {
         // Use child_process directly for npm since it's not a configured tool
         const { spawn } = await import('child_process');
         const npmCommand = process.platform === 'win32' ? 'npm.cmd' : 'npm';
-        
+
         await new Promise<void>((resolve, reject) => {
-          const npmProcess = spawn(npmCommand, ['install', 'https://github.com/TryGhost/node-sqlite3'], {
-            cwd: serverProjectDir,
-            shell: true,
-            windowsHide: true
-          });
-          
+          const npmProcess = spawn(
+            npmCommand,
+            ['install', 'https://github.com/TryGhost/node-sqlite3'],
+            {
+              cwd: serverProjectDir,
+              shell: true,
+              windowsHide: true,
+            }
+          );
+
           npmProcess.stdout?.on('data', data => {
             this.outputChannel.append(data.toString());
           });
-          
+
           npmProcess.stderr?.on('data', data => {
             this.outputChannel.append(data.toString());
           });
-          
+
           npmProcess.on('close', code => {
             if (code === 0) {
               resolve();
@@ -185,12 +191,12 @@ export class ServerManager {
               reject(new Error(`npm install exited with code ${code}`));
             }
           });
-          
+
           npmProcess.on('error', error => {
             reject(error);
           });
         });
-        
+
         this.outputChannel.appendLine('sqlite3 installation completed');
       } catch (error) {
         this.outputChannel.appendLine(`Warning: Failed to install sqlite3: ${error}`);

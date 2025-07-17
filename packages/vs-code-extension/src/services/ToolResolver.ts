@@ -70,14 +70,16 @@ export class ToolResolver {
    */
   private async findTool(toolName: string): Promise<ToolInfo> {
     this.debugChannel.appendLine(`[ToolResolver] Finding tool: ${toolName}`);
-    
+
     // Check user configuration first
     const config = vscode.workspace.getConfiguration('extremexp');
     const configKey = `tools.${toolName.replace(/-/g, '')}.path`; // Remove all hyphens for config key
     const userPath = config.get<string>(configKey);
-    
+
     if (userPath && (await this.pathExists(userPath))) {
-      this.debugChannel.appendLine(`[ToolResolver] Found tool at user configured path: ${userPath}`);
+      this.debugChannel.appendLine(
+        `[ToolResolver] Found tool at user configured path: ${userPath}`
+      );
       return {
         name: toolName,
         path: userPath,
@@ -96,7 +98,9 @@ export class ToolResolver {
           type: this.getToolType(searchPath),
           cwd: this.getToolWorkingDirectory(searchPath),
         };
-        this.debugChannel.appendLine(`[ToolResolver] Found tool: ${toolInfo.name} at ${toolInfo.path}`);
+        this.debugChannel.appendLine(
+          `[ToolResolver] Found tool: ${toolInfo.name} at ${toolInfo.path}`
+        );
         return toolInfo;
       }
     }

@@ -19,8 +19,8 @@ import { Request, Response } from 'express';
 import multer from 'multer';
 import { v4 as uuidv4 } from 'uuid';
 
-import { UserService } from '../services/UserService.js';
 import { DatabaseWorkflowStorageService } from '../services/DatabaseWorkflowStorageService.js';
+import { UserService } from '../services/UserService.js';
 
 /**
  * Controller class handling all workflow-related HTTP API endpoints with database storage.
@@ -55,8 +55,13 @@ export class DatabaseWorkflowController {
       // Create search options object, only including defined properties
       const searchOptions: WorkflowSearchOptions = {
         ...(query.query !== undefined && { query: query.query }),
-        ...(query.tags !== undefined && { 
-          tags: Array.isArray(query.tags) ? query.tags : String(query.tags).split(',').map((tag: string) => tag.trim()).filter((tag: string) => tag)
+        ...(query.tags !== undefined && {
+          tags: Array.isArray(query.tags)
+            ? query.tags
+            : String(query.tags)
+                .split(',')
+                .map((tag: string) => tag.trim())
+                .filter((tag: string) => tag),
         }),
         ...(query.author !== undefined && { author: query.author }),
         ...(query.path !== undefined && { path: query.path }),
@@ -281,11 +286,15 @@ export class DatabaseWorkflowController {
           }
 
           // User confirmed override, update instead of create
-          const metadata = await this.storageService.updateWorkflow(existingCheck.id!, extracted.content, {
-            description: uploadRequest.description,
-            author: req.user?.username || uploadRequest.author,
-            tags: uploadRequest.tags,
-          });
+          const metadata = await this.storageService.updateWorkflow(
+            existingCheck.id!,
+            extracted.content,
+            {
+              description: uploadRequest.description,
+              author: req.user?.username || uploadRequest.author,
+              tags: uploadRequest.tags,
+            }
+          );
 
           const response: ApiResponse = {
             success: true,
@@ -298,14 +307,18 @@ export class DatabaseWorkflowController {
         }
 
         // New workflow, proceed with upload
-        const metadata = await this.storageService.storeWorkflow(uploadRequest.path, extracted.content, {
-          name: uploadRequest.name,
-          description: uploadRequest.description,
-          author: req.user?.username || uploadRequest.author,
-          tags: uploadRequest.tags,
-          path: uploadRequest.path,
-          mainFile: uploadRequest.mainFile,
-        });
+        const metadata = await this.storageService.storeWorkflow(
+          uploadRequest.path,
+          extracted.content,
+          {
+            name: uploadRequest.name,
+            description: uploadRequest.description,
+            author: req.user?.username || uploadRequest.author,
+            tags: uploadRequest.tags,
+            path: uploadRequest.path,
+            mainFile: uploadRequest.mainFile,
+          }
+        );
 
         const response: ApiResponse = {
           success: true,
@@ -556,8 +569,13 @@ export class DatabaseWorkflowController {
       // Create search options object, only including defined properties
       const searchOptions: WorkflowSearchOptions = {
         ...(query.query !== undefined && { query: query.query }),
-        ...(query.tags !== undefined && { 
-          tags: Array.isArray(query.tags) ? query.tags : String(query.tags).split(',').map((tag: string) => tag.trim()).filter((tag: string) => tag)
+        ...(query.tags !== undefined && {
+          tags: Array.isArray(query.tags)
+            ? query.tags
+            : String(query.tags)
+                .split(',')
+                .map((tag: string) => tag.trim())
+                .filter((tag: string) => tag),
         }),
         ...(query.author !== undefined && { author: query.author }),
         ...(query.path !== undefined && { path: query.path }),
