@@ -51,5 +51,8 @@
         "sqlite": "^5.1.1",
         "sqlite3": "^5.1.7",
         "uuid": "^10.0.0"
+    },
+    "devDependencies": {
+        "@types/jest": "^30.0.0"
     }
 }

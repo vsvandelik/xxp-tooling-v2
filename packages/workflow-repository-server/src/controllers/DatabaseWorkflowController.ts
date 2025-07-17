@@ -55,7 +55,9 @@ export class DatabaseWorkflowController {
       // Create search options object, only including defined properties
       const searchOptions: WorkflowSearchOptions = {
         ...(query.query !== undefined && { query: query.query }),
-        ...(query.tags !== undefined && { tags: query.tags }),
+        ...(query.tags !== undefined && { 
+          tags: Array.isArray(query.tags) ? query.tags : String(query.tags).split(',').map((tag: string) => tag.trim()).filter((tag: string) => tag)
+        }),
         ...(query.author !== undefined && { author: query.author }),
         ...(query.path !== undefined && { path: query.path }),
         ...(query.limit !== undefined && { limit: parseInt(query.limit.toString()) }),
@@ -553,7 +555,9 @@ export class DatabaseWorkflowController {
       // Create search options object, only including defined properties
       const searchOptions: WorkflowSearchOptions = {
         ...(query.query !== undefined && { query: query.query }),
-        ...(query.tags !== undefined && { tags: query.tags }),
+        ...(query.tags !== undefined && { 
+          tags: Array.isArray(query.tags) ? query.tags : String(query.tags).split(',').map((tag: string) => tag.trim()).filter((tag: string) => tag)
+        }),
         ...(query.author !== undefined && { author: query.author }),
         ...(query.path !== undefined && { path: query.path }),
         ...(query.limit !== undefined && { limit: parseInt(query.limit.toString()) }),
