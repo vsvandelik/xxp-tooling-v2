@@ -167,8 +167,8 @@ describe('GenerateArtifactCommand', () => {
       
       (mockToolExecutor.execute as any).mockResolvedValue({
         success: true,
-        stdout: 'Artifact generated successfully: /test/artifact.json',
-        stderr: 'Validation warning: Deprecated feature used',
+        stdout: 'Artifact generated successfully: /test/artifact.json\n',
+        stderr: 'Validation warning: Deprecated feature used\n',
         exitCode: 0,
         cancelled: false,
       });
@@ -177,6 +177,7 @@ describe('GenerateArtifactCommand', () => {
       
       await command.execute();
       
+      // The warnings should be detected and showWarningMessage should be called
       expect(mockWindow.showWarningMessage).toHaveBeenCalledWith(
         'Artifact generated with 1 warning(s)',
         'Show Warnings',
@@ -222,7 +223,7 @@ describe('GenerateArtifactCommand', () => {
       await command.execute();
       
       expect(mockWindow.showErrorMessage).toHaveBeenCalledWith(
-        'Artifact generation failed: Error: Tool not found'
+        'Artifact generation failed: Tool not found'
       );
     });
 

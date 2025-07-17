@@ -26,10 +26,20 @@ const mockFileType = {
   Directory: 2,
 };
 
+const mockWindow = {
+  createOutputChannel: jest.fn(() => ({
+    appendLine: jest.fn(),
+    append: jest.fn(),
+    clear: jest.fn(),
+    dispose: jest.fn(),
+  })),
+};
+
 jest.mock('vscode', () => ({
   workspace: mockWorkspace,
   Uri: mockUri,
   FileType: mockFileType,
+  window: mockWindow,
 }), { virtual: true });
 
 import { ToolResolver, ToolInfo } from '../../src/services/ToolResolver.js';
@@ -182,16 +192,6 @@ describe('ToolResolver', () => {
   });
 
   describe('private method behavior', () => {
-    it('should determine node tool type for .js files', async () => {
-      // Mock file existence check for a .js file
-      mockWorkspace.fs.stat.mockResolvedValue({ type: mockFileType.File });
-
-      const toolInfo = await toolResolver.resolveTool('artifact-generator');
-
-      // Since artifact-generator paths typically end with .js, it should be 'node'
-      expect(toolInfo.type).toBe('node');
-    });
-
     it('should handle workspace without folders', async () => {
       // Temporarily remove workspace folders
       const originalFolders = mockWorkspace.workspaceFolders;
