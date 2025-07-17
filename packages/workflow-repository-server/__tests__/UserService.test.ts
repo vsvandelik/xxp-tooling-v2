@@ -282,41 +282,21 @@ describe('UserService', () => {
       adminUser = userService.getUser('admin');
     });
 
-    it('should allow read access for anyone', () => {
-      expect(userService.canAccess(null, 'someowner', 'read')).toBe(true);
-      expect(userService.canAccess(testUser, 'someowner', 'read')).toBe(true);
-      expect(userService.canAccess(adminUser, 'someowner', 'read')).toBe(true);
-    });
-
-    it('should deny write access for non-authenticated users', () => {
+    it('should deny access for non-authenticated users', () => {
+      expect(userService.canAccess(null, 'someowner', 'read')).toBe(false);
       expect(userService.canAccess(null, 'someowner', 'write')).toBe(false);
-    });
-
-    it('should allow write access for resource owner', () => {
-      expect(userService.canAccess(testUser, 'testuser', 'write')).toBe(true);
-    });
-
-    it('should deny write access for non-owner', () => {
-      expect(userService.canAccess(testUser, 'otheruser', 'write')).toBe(false);
-    });
-
-    it('should allow write access for admin', () => {
-      expect(userService.canAccess(adminUser, 'anyuser', 'write')).toBe(true);
-    });
-
-    it('should deny delete access for non-authenticated users', () => {
       expect(userService.canAccess(null, 'someowner', 'delete')).toBe(false);
     });
 
-    it('should allow delete access for resource owner', () => {
-      expect(userService.canAccess(testUser, 'testuser', 'delete')).toBe(true);
+    it('should allow access for any authenticated user (simplified model)', () => {
+      expect(userService.canAccess(testUser, 'someowner', 'read')).toBe(true);
+      expect(userService.canAccess(testUser, 'otheruser', 'write')).toBe(true);
+      expect(userService.canAccess(testUser, 'anyuser', 'delete')).toBe(true);
     });
 
-    it('should deny delete access for non-owner', () => {
-      expect(userService.canAccess(testUser, 'otheruser', 'delete')).toBe(false);
-    });
-
-    it('should allow delete access for admin', () => {
+    it('should allow access for admin user', () => {
+      expect(userService.canAccess(adminUser, 'anyuser', 'read')).toBe(true);
+      expect(userService.canAccess(adminUser, 'anyuser', 'write')).toBe(true);
       expect(userService.canAccess(adminUser, 'anyuser', 'delete')).toBe(true);
     });
   });

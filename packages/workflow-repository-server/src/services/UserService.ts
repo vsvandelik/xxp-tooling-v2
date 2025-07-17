@@ -140,24 +140,22 @@ export class UserService {
     return this.users.delete(username);
   }
 
+  /**
+   * Simplified access control - all authenticated users have full access.
+   * This method is kept for backward compatibility but always returns true for authenticated users.
+   *
+   * @param user - User object (null for unauthenticated)
+   * @param resourceOwner - Resource owner (unused in simplified model)
+   * @param operation - Operation type (unused in simplified model)
+   * @returns true if user is authenticated, false otherwise
+   */
   canAccess(
     user: User | null,
     resourceOwner: string,
     operation: 'read' | 'write' | 'delete'
   ): boolean {
-    if (operation === 'read') {
-      return true;
-    }
-
-    if (!user) {
-      return false;
-    }
-
-    if (user.role === 'admin') {
-      return true;
-    }
-
-    return user.username === resourceOwner;
+    // In simplified model, all authenticated users have full access
+    return user !== null;
   }
 
   private initializeAdminUser(): void {

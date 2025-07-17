@@ -1,22 +1,23 @@
 /**
- * Main workflow repository server implementation.
+ * Database-based workflow repository server implementation.
  * Provides HTTP server with REST API for workflow storage, authentication,
- * and management operations across the ExtremeXP tooling ecosystem.
+ * and management operations using database persistence for metadata.
  */
 
 import { ApiResponse, LoginRequest, LoginResponse } from '@extremexp/workflow-repository';
 import cors from 'cors';
 import express, { Request } from 'express';
 
-import { WorkflowController } from '../controlers/WorkflowController.js';
+import { DatabaseWorkflowController } from '../controllers/DatabaseWorkflowController.js';
+import { SqliteWorkflowDatabase } from '../database/SqliteWorkflowDatabase.js';
 import { AuthenticationMiddleware } from '../middleware/AuthenticationMiddleware.js';
+import { DatabaseWorkflowStorageService } from '../services/DatabaseWorkflowStorageService.js';
 import { UserService } from '../services/UserService.js';
-import { WorkflowStorageService } from '../services/WorkflowStorageService.js';
 
 /**
- * Configuration options for the workflow repository server.
+ * Configuration options for the database workflow repository server.
  */
-export interface ServerConfig {
+export interface DatabaseServerConfig {
   /** Port number for the HTTP server */
   port: number;
   /** Base directory path for workflow storage */
@@ -25,31 +26,35 @@ export interface ServerConfig {
   jwtSecret: string;
   /** CORS origin configuration (optional) */
   corsOrigin?: string;
+  /** Database file path (optional, defaults to 'workflow-repository.sqlite3') */
+  databasePath?: string;
 }
 
 /**
- * Main workflow repository server providing HTTP API for workflow management.
- * Integrates authentication, storage services, and REST API endpoints
+ * Database-based workflow repository server providing HTTP API for workflow management.
+ * Integrates authentication, database storage services, and REST API endpoints
  * for comprehensive workflow repository functionality.
  */
-export class WorkflowRepositoryServer {
+export class DatabaseWorkflowRepositoryServer {
   private app: express.Application;
-  private storageService: WorkflowStorageService;
+  private database: SqliteWorkflowDatabase;
+  private storageService: DatabaseWorkflowStorageService;
   private userService: UserService;
   private authMiddleware: AuthenticationMiddleware;
-  private workflowController: WorkflowController;
+  private workflowController: DatabaseWorkflowController;
 
   /**
-   * Creates a new workflow repository server.
+   * Creates a new database workflow repository server.
    *
    * @param config - Server configuration including port, storage path, and security settings
    */
-  constructor(private config: ServerConfig) {
+  constructor(private config: DatabaseServerConfig) {
     this.app = express();
-    this.storageService = new WorkflowStorageService(config.storagePath);
+    this.database = new SqliteWorkflowDatabase(config.databasePath || 'workflow-repository.sqlite3');
+    this.storageService = new DatabaseWorkflowStorageService(this.database, config.storagePath);
     this.userService = new UserService(config.jwtSecret);
     this.authMiddleware = new AuthenticationMiddleware(this.userService);
-    this.workflowController = new WorkflowController(this.storageService, this.userService);
+    this.workflowController = new DatabaseWorkflowController(this.storageService, this.userService);
 
     this.setupMiddleware();
     this.setupRoutes();
@@ -67,7 +72,7 @@ export class WorkflowRepositoryServer {
 
     return new Promise((resolve, reject) => {
       const server = this.app.listen(this.config.port, () => {
-        console.log(`Workflow Repository Server running on port ${this.config.port}`);
+        console.log(`Database Workflow Repository Server running on port ${this.config.port}`);
         resolve();
       });
 
@@ -83,6 +88,13 @@ export class WorkflowRepositoryServer {
         }
       });
     });
+  }
+
+  /**
+   * Stops the server and closes database connections.
+   */
+  async stop(): Promise<void> {
+    await this.storageService.close();
   }
 
   getApp(): express.Application {
@@ -234,6 +246,7 @@ export class WorkflowRepositoryServer {
           status: 'healthy',
           timestamp: new Date().toISOString(),
           version: '1.0.0',
+          storage: 'database',
         },
       };
       res.json(response);
