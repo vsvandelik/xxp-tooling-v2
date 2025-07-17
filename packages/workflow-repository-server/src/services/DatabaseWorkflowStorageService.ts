@@ -6,10 +6,23 @@
 
 import * as fs from 'fs/promises';
 import * as path from 'path';
+
+import { WorkflowContent, WorkflowMetadata, WorkflowSearchOptions, WorkflowTreeNode } from '@extremexp/workflow-repository';
 import { v4 as uuidv4 } from 'uuid';
 
-import { WorkflowContent, WorkflowMetadata, WorkflowSearchOptions } from '@extremexp/workflow-repository';
-import { IWorkflowDatabase, WorkflowRecord } from '../database/IWorkflowDatabase.js';
+import { IWorkflowDatabase, WorkflowRecord, WorkflowTreeRecord } from '../database/IWorkflowDatabase.js';
+
+/**
+ * Interface for workflow manifest metadata from ZIP files.
+ */
+interface WorkflowManifest {
+  name: string;
+  description: string;
+  author: string;
+  version: string;
+  tags: string[];
+  mainFile: string;
+}
 
 /**
  * Service class providing database-backed storage operations for workflows on the server.
@@ -166,7 +179,14 @@ export class DatabaseWorkflowStorageService {
           name: workflow.name,
           description: workflow.description,
           author: workflow.author,
-          tags: JSON.parse(workflow.tags),
+          tags: (() => {
+            try {
+              const parsed = JSON.parse(workflow.tags);
+              return Array.isArray(parsed) ? parsed : [];
+            } catch {
+              return [];
+            }
+          })(),
           mainFile: workflow.mainFile,
         },
         null,
@@ -186,14 +206,14 @@ export class DatabaseWorkflowStorageService {
    */
   async extractWorkflowFromZip(
     zipBuffer: Buffer
-  ): Promise<{ content: WorkflowContent; metadata: any } | null> {
+  ): Promise<{ content: WorkflowContent; metadata: WorkflowManifest } | null> {
     try {
       const JSZip = await import('jszip');
       const zip = await JSZip.default.loadAsync(zipBuffer);
 
       // First, try to find workflow.json
       const manifestFile = zip.file('workflow.json');
-      let metadata: any;
+      let metadata: WorkflowManifest;
 
       if (!manifestFile) {
         // No manifest file, check if it's a single workflow file
@@ -415,8 +435,12 @@ export class DatabaseWorkflowStorageService {
     const deleted = await this.database.deleteWorkflow(workflowId);
 
     if (deleted) {
-      // Remove from tree structure
-      await this.database.removeTreeStructure(path.join(existing.path, existing.name));
+      // Remove from tree structure - use same path construction as when adding
+      const fullPath = existing.path ? `${existing.path}/${existing.name}` : existing.name;
+      await this.database.removeTreeStructure(fullPath);
+      
+      // Clean up empty parent directories
+      await this.cleanupEmptyParentDirectories(existing.path);
     }
 
     return deleted;
@@ -464,9 +488,9 @@ export class DatabaseWorkflowStorageService {
    * @param path - Optional path to get tree structure from
    * @returns Promise resolving to tree structure
    */
-  async getTreeStructure(path?: string): Promise<any> {
+  async getTreeStructure(path?: string): Promise<WorkflowTreeNode> {
     const records = await this.database.getTreeStructure(path);
-    return await this.buildTreeFromRecords(records);
+    return await this.buildTreeFromRecords(records, path);
   }
 
   /**
@@ -502,13 +526,22 @@ export class DatabaseWorkflowStorageService {
    * Converts a database record to WorkflowMetadata.
    */
   private recordToMetadata(record: WorkflowRecord): WorkflowMetadata {
+    let tags: string[];
+    try {
+      const parsed = JSON.parse(record.tags);
+      tags = Array.isArray(parsed) ? parsed : [];
+    } catch {
+      // If parsing fails, treat as empty array
+      tags = [];
+    }
+
     return {
       id: record.id,
       name: record.name,
       description: record.description,
       author: record.author,
-      tags: JSON.parse(record.tags),
-      path: record.path,
+      tags: tags,
+      path: record.path + record.name,
       mainFile: record.mainFile,
       createdAt: new Date(record.createdAt),
       modifiedAt: new Date(record.modifiedAt),
@@ -535,20 +568,74 @@ export class DatabaseWorkflowStorageService {
   }
 
   /**
+   * Cleans up empty parent directories after a workflow is deleted.
+   * Recursively removes parent directories that have no children left.
+   */
+  private async cleanupEmptyParentDirectories(workflowPath: string | null): Promise<void> {
+    if (!workflowPath || workflowPath.trim() === '') {
+      return;
+    }
+
+    // Get all paths from most specific to least specific
+    const pathParts = workflowPath.split('/').filter(part => part);
+    
+    // Check each parent path from most specific to least specific
+    for (let i = pathParts.length; i > 0; i--) {
+      const currentPath = pathParts.slice(0, i).join('/');
+      
+      // Get tree records for this specific path and its immediate children
+      const parentPath = i > 1 ? pathParts.slice(0, i - 1).join('/') : '';
+      const allRecords = await this.database.getTreeStructure(parentPath || undefined);
+      
+      // Find records that are direct children of the current path
+      const childRecords = allRecords.filter(record => {
+        // Skip the directory itself
+        if (record.path === currentPath) return false;
+        
+        // Find direct children (path starts with currentPath/ but doesn't have more slashes after that)
+        if (!record.path.startsWith(`${currentPath}/`)) return false;
+        
+        const remainingPath = record.path.substring(`${currentPath}/`.length);
+        return !remainingPath.includes('/'); // Direct child, not grandchild
+      });
+
+      // If this directory has no children, remove it
+      if (childRecords.length === 0) {
+        await this.database.removeTreeStructure(currentPath);
+      } else {
+        // If this directory has children, stop cleanup (don't remove parent directories)
+        break;
+      }
+    }
+  }
+
+  /**
    * Builds tree structure from database records.
    */
-  private async buildTreeFromRecords(records: any[]): Promise<any> {
-    const nodeMap = new Map<string, any>();
-    const rootNodes: any[] = [];
+  private async buildTreeFromRecords(records: WorkflowTreeRecord[], rootPath?: string): Promise<WorkflowTreeNode> {
+    // Use mutable interfaces during construction
+    interface MutableTreeNode {
+      name: string;
+      path: string;
+      type: 'folder' | 'workflow';
+      children?: MutableTreeNode[];
+      metadata?: WorkflowMetadata;
+    }
+
+    const nodeMap = new Map<string, MutableTreeNode>();
+    const rootNodes: MutableTreeNode[] = [];
 
     // Create nodes
     for (const record of records) {
-      const node: any = {
+      const node: MutableTreeNode = {
         name: record.name,
         path: record.path,
         type: record.isDirectory ? 'folder' : 'workflow',
-        children: record.isDirectory ? [] : undefined,
       };
+
+      if (record.isDirectory) {
+        node.children = [];
+      }
 
       // If this is a workflow node, populate metadata
       if (record.workflowId) {
@@ -564,16 +651,56 @@ export class DatabaseWorkflowStorageService {
     // Build tree structure
     for (const record of records) {
       const node = nodeMap.get(record.path);
-      if (record.parentPath && nodeMap.has(record.parentPath)) {
+      if (node && record.parentPath && nodeMap.has(record.parentPath)) {
         const parent = nodeMap.get(record.parentPath);
-        if (parent.children) {
+        if (parent && parent.children) {
           parent.children.push(node);
         }
-      } else {
+      } else if (node) {
         rootNodes.push(node);
       }
     }
 
-    return rootNodes;
+    // Convert to readonly structure
+    const convertToReadonly = (node: MutableTreeNode): WorkflowTreeNode => {
+      const result: WorkflowTreeNode = {
+        name: node.name,
+        path: node.path,
+        type: node.type,
+      };
+
+      if (node.children !== undefined) {
+        (result as { children?: readonly WorkflowTreeNode[] }).children = node.children.map(convertToReadonly);
+      }
+
+      if (node.metadata !== undefined) {
+        (result as { metadata?: WorkflowMetadata }).metadata = node.metadata;
+      }
+
+      return result;
+    };
+
+    // If a specific path is provided, find and return that node as root
+    if (rootPath && rootPath.trim() !== '') {
+      const targetNode = nodeMap.get(rootPath);
+      if (targetNode) {
+        return convertToReadonly(targetNode);
+      }
+      // If the target path doesn't exist in records, return empty structure
+      return {
+        name: rootPath.split('/').pop() || rootPath,
+        path: rootPath,
+        type: 'folder',
+        children: [],
+      };
+    }
+
+    // Default: return full repository structure
+    return {
+      name: 'Repository',
+      path: '',
+      type: 'folder',
+      children: rootNodes.map(convertToReadonly),
+    };
   }
 }

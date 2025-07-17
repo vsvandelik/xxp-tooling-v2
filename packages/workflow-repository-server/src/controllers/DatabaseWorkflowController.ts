@@ -475,7 +475,7 @@ export class DatabaseWorkflowController {
    */
   getTree = async (req: Request, res: Response): Promise<void> => {
     try {
-      const path = req.params['*'] || '';
+      const path = req.params[0] || '';
       const tree = await this.storageService.getTreeStructure(path);
 
       const response: ApiResponse<TreeResponse> = {
