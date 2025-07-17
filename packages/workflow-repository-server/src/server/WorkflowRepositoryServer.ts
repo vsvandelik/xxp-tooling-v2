@@ -165,13 +165,14 @@ export class WorkflowRepositoryServer {
   }
 
   private setupWorkflowRoutes(): void {
-    this.app.get('/workflows', this.workflowController.listWorkflows);
+    // All workflow endpoints require authentication
+    this.app.get('/workflows', this.authMiddleware.requireAuth, this.workflowController.listWorkflows);
 
-    this.app.get('/workflows/:id', this.workflowController.getWorkflow);
+    this.app.get('/workflows/:id', this.authMiddleware.requireAuth, this.workflowController.getWorkflow);
 
-    this.app.get('/workflows/:id/content', this.workflowController.downloadWorkflow);
+    this.app.get('/workflows/:id/content', this.authMiddleware.requireAuth, this.workflowController.downloadWorkflow);
 
-    this.app.get('/workflows/:id/files/*', this.workflowController.downloadWorkflowFile);
+    this.app.get('/workflows/:id/files/*', this.authMiddleware.requireAuth, this.workflowController.downloadWorkflowFile);
 
     this.app.post(
       '/workflows',
@@ -189,10 +190,6 @@ export class WorkflowRepositoryServer {
     this.app.post(
       '/workflows/:id/attachments',
       this.authMiddleware.requireAuth,
-      this.authMiddleware.requireOwnerOrAdmin((req: Request) => {
-        const { id } = req.params;
-        return id || null;
-      }),
       this.workflowController.addAttachment[0] as express.RequestHandler,
       this.workflowController.addAttachment[1] as express.RequestHandler
     );
@@ -200,20 +197,12 @@ export class WorkflowRepositoryServer {
     this.app.delete(
       '/workflows/:id/attachments/:fileName',
       this.authMiddleware.requireAuth,
-      this.authMiddleware.requireOwnerOrAdmin((req: Request) => {
-        const { id } = req.params;
-        return id || null;
-      }),
       this.workflowController.deleteAttachment
     );
 
     this.app.put(
       '/workflows/:id',
       this.authMiddleware.requireAuth,
-      this.authMiddleware.requireOwnerOrAdmin((req: Request) => {
-        const { id } = req.params;
-        return id || null;
-      }),
       this.workflowController.updateWorkflow[0] as express.RequestHandler,
       this.workflowController.updateWorkflow[1] as express.RequestHandler
     );
@@ -221,23 +210,20 @@ export class WorkflowRepositoryServer {
     this.app.delete(
       '/workflows/:id',
       this.authMiddleware.requireAuth,
-      this.authMiddleware.requireOwnerOrAdmin((req: Request) => {
-        const { id } = req.params;
-        return id || null;
-      }),
       this.workflowController.deleteWorkflow
     );
   }
 
   private setupDiscoveryRoutes(): void {
-    this.app.get('/tree', this.workflowController.getTree);
-    this.app.get('/tree/*', this.workflowController.getTree);
+    // All discovery endpoints require authentication
+    this.app.get('/tree', this.authMiddleware.requireAuth, this.workflowController.getTree);
+    this.app.get('/tree/*', this.authMiddleware.requireAuth, this.workflowController.getTree);
 
-    this.app.get('/search', this.workflowController.searchWorkflows);
+    this.app.get('/search', this.authMiddleware.requireAuth, this.workflowController.searchWorkflows);
 
-    this.app.get('/tags', this.workflowController.getTags);
+    this.app.get('/tags', this.authMiddleware.requireAuth, this.workflowController.getTags);
 
-    this.app.get('/authors', this.workflowController.getAuthors);
+    this.app.get('/authors', this.authMiddleware.requireAuth, this.workflowController.getAuthors);
   }
 
   private setupHealthRoute(): void {

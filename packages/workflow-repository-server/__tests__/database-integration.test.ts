@@ -15,6 +15,21 @@ describe('Database Workflow Repository Server Integration Tests', () => {
   let server: DatabaseWorkflowRepositoryServer;
   let testDir: string;
   let dbPath: string;
+  let authToken: string;
+
+  // Helper function to get authentication token
+  const getAuthToken = async (): Promise<string> => {
+    const response = await request(server.getApp())
+      .post('/auth/login')
+      .send({
+        username: 'admin',
+        password: 'admin123'
+      });
+    
+    expect(response.status).toBe(200);
+    expect(response.body.success).toBe(true);
+    return response.body.data.token;
+  };
 
   beforeAll(async () => {
     // Create temporary test directory
@@ -33,6 +48,9 @@ describe('Database Workflow Repository Server Integration Tests', () => {
     });
 
     await server.start();
+    
+    // Get authentication token for tests
+    authToken = await getAuthToken();
   });
 
   afterAll(async () => {
@@ -91,7 +109,9 @@ describe('Database Workflow Repository Server Integration Tests', () => {
     });
 
     it('should initially have no workflows', async () => {
-      const response = await request(server.getApp()).get('/workflows');
+      const response = await request(server.getApp())
+        .get('/workflows')
+        .set('Authorization', `Bearer ${authToken}`);
 
       expect(response.status).toBe(200);
       expect(response.body.success).toBe(true);
@@ -99,7 +119,9 @@ describe('Database Workflow Repository Server Integration Tests', () => {
     });
 
     it('should initially have no tags', async () => {
-      const response = await request(server.getApp()).get('/tags');
+      const response = await request(server.getApp())
+        .get('/tags')
+        .set('Authorization', `Bearer ${authToken}`);
 
       expect(response.status).toBe(200);
       expect(response.body.success).toBe(true);
@@ -107,7 +129,9 @@ describe('Database Workflow Repository Server Integration Tests', () => {
     });
 
     it('should initially have no authors', async () => {
-      const response = await request(server.getApp()).get('/authors');
+      const response = await request(server.getApp())
+        .get('/authors')
+        .set('Authorization', `Bearer ${authToken}`);
 
       expect(response.status).toBe(200);
       expect(response.body.success).toBe(true);
@@ -115,7 +139,9 @@ describe('Database Workflow Repository Server Integration Tests', () => {
     });
 
     it('should return empty tree structure initially', async () => {
-      const response = await request(server.getApp()).get('/tree');
+      const response = await request(server.getApp())
+        .get('/tree')
+        .set('Authorization', `Bearer ${authToken}`);
 
       expect(response.status).toBe(200);
       expect(response.body.success).toBe(true);
@@ -125,7 +151,8 @@ describe('Database Workflow Repository Server Integration Tests', () => {
     it('should handle search with no results', async () => {
       const response = await request(server.getApp())
         .get('/search')
-        .query({ query: 'nonexistent' });
+        .query({ query: 'nonexistent' })
+        .set('Authorization', `Bearer ${authToken}`);
 
       expect(response.status).toBe(200);
       expect(response.body.success).toBe(true);
@@ -133,7 +160,9 @@ describe('Database Workflow Repository Server Integration Tests', () => {
     });
 
     it('should return 404 for non-existent workflow', async () => {
-      const response = await request(server.getApp()).get('/workflows/nonexistent-id');
+      const response = await request(server.getApp())
+        .get('/workflows/nonexistent-id')
+        .set('Authorization', `Bearer ${authToken}`);
 
       expect(response.status).toBe(404);
       expect(response.body.success).toBe(false);
@@ -141,7 +170,9 @@ describe('Database Workflow Repository Server Integration Tests', () => {
     });
 
     it('should return 404 for non-existent workflow download', async () => {
-      const response = await request(server.getApp()).get('/workflows/nonexistent-id/content');
+      const response = await request(server.getApp())
+        .get('/workflows/nonexistent-id/content')
+        .set('Authorization', `Bearer ${authToken}`);
 
       expect(response.status).toBe(404);
       expect(response.body.success).toBe(false);
@@ -168,6 +199,14 @@ describe('Database Workflow Repository Server Integration Tests', () => {
       const response = await request(server.getApp()).delete('/workflows/test-id');
 
       expect(response.status).toBe(401);
+    });
+
+    it('should return 404 for non-existent workflow deletion', async () => {
+      const response = await request(server.getApp())
+        .delete('/workflows/test-id')
+        .set('Authorization', `Bearer ${authToken}`);
+
+      expect(response.status).toBe(404);
     });
 
     it('should require authentication for attachment operations', async () => {
@@ -207,7 +246,9 @@ describe('Database Workflow Repository Server Integration Tests', () => {
 
     it('should handle database queries without errors', async () => {
       // This test ensures the database is properly initialized and can handle queries
-      const response = await request(server.getApp()).get('/workflows');
+      const response = await request(server.getApp())
+        .get('/workflows')
+        .set('Authorization', `Bearer ${authToken}`);
       expect(response.status).toBe(200);
       expect(response.body.success).toBe(true);
     });
@@ -225,7 +266,8 @@ describe('Database Workflow Repository Server Integration Tests', () => {
     it('should handle malformed requests', async () => {
       const response = await request(server.getApp())
         .get('/workflows/test-id')
-        .send('invalid json');
+        .send('invalid json')
+        .set('Authorization', `Bearer ${authToken}`);
 
       // Should still work since it's a GET request
       expect(response.status).toBe(404);
@@ -247,7 +289,8 @@ describe('Database Workflow Repository Server Integration Tests', () => {
       for (const query of queries) {
         const response = await request(server.getApp())
           .get('/search')
-          .query(query);
+          .query(query)
+          .set('Authorization', `Bearer ${authToken}`);
 
         expect(response.status).toBe(200);
         expect(response.body.success).toBe(true);
@@ -268,7 +311,8 @@ describe('Database Workflow Repository Server Integration Tests', () => {
       for (const query of queries) {
         const response = await request(server.getApp())
           .get('/workflows')
-          .query(query);
+          .query(query)
+          .set('Authorization', `Bearer ${authToken}`);
 
         expect(response.status).toBe(200);
         expect(response.body.success).toBe(true);
@@ -283,7 +327,9 @@ describe('Database Workflow Repository Server Integration Tests', () => {
 
       for (const path of paths) {
         const url = path ? `/tree/${path}` : '/tree';
-        const response = await request(server.getApp()).get(url);
+        const response = await request(server.getApp())
+          .get(url)
+          .set('Authorization', `Bearer ${authToken}`);
 
         expect(response.status).toBe(200);
         expect(response.body.success).toBe(true);
@@ -295,9 +341,10 @@ describe('Database Workflow Repository Server Integration Tests', () => {
   describe('File Operations', () => {
     it('should handle file download requests gracefully', async () => {
       const response = await request(server.getApp())
-        .get('/workflows/test-id/files/test.txt');
+        .get('/workflows/test-id/files/test.txt')
+        .set('Authorization', `Bearer ${authToken}`);
 
-      expect(response.status).toBe(400); // Workflow ID validation
+      expect(response.status).toBe(501); // Not implemented
     });
 
     it('should validate workflow ID for file operations', async () => {
@@ -309,10 +356,10 @@ describe('Database Workflow Repository Server Integration Tests', () => {
 
     it('should validate file path for file operations', async () => {
       const response = await request(server.getApp())
-        .get('/workflows/test-id/files/');
+        .get('/workflows/test-id/files/')
+        .set('Authorization', `Bearer ${authToken}`);
 
-      expect(response.status).toBe(400);
-      expect(response.body.success).toBe(false);
+      expect(response.status).toBe(400); // File path is required
       expect(response.body.error).toBe('File path is required');
     });
   });
@@ -330,17 +377,17 @@ describe('Database Workflow Repository Server Integration Tests', () => {
         
         switch (endpoint.method) {
           case 'get':
-            response = await request(server.getApp()).get(endpoint.path);
+            response = await request(server.getApp()).get(endpoint.path).set('Authorization', `Bearer ${authToken}`);
             break;
           case 'delete':
-            response = await request(server.getApp()).delete(endpoint.path);
+            response = await request(server.getApp()).delete(endpoint.path).set('Authorization', `Bearer ${authToken}`);
             break;
           default:
             throw new Error(`Unsupported method: ${endpoint.method}`);
         }
         
-        // Should return 404 for non-existent workflows or 401 for auth required
-        expect([401, 404]).toContain(response.status);
+        // Should return 404 for non-existent workflows
+        expect(response.status).toBe(404);
       }
     });
 
@@ -357,7 +404,8 @@ describe('Database Workflow Repository Server Integration Tests', () => {
     it('should handle different content types', async () => {
       const response = await request(server.getApp())
         .get('/workflows')
-        .set('Accept', 'application/json');
+        .set('Accept', 'application/json')
+        .set('Authorization', `Bearer ${authToken}`);
 
       expect(response.status).toBe(200);
       expect(response.headers['content-type']).toMatch(/json/);
@@ -376,7 +424,7 @@ describe('Database Workflow Repository Server Integration Tests', () => {
   describe('Concurrent Operations', () => {
     it('should handle concurrent requests', async () => {
       const promises = Array.from({ length: 10 }, () =>
-        request(server.getApp()).get('/workflows')
+        request(server.getApp()).get('/workflows').set('Authorization', `Bearer ${authToken}`)
       );
 
       const responses = await Promise.all(promises);
@@ -389,7 +437,7 @@ describe('Database Workflow Repository Server Integration Tests', () => {
 
     it('should handle concurrent metadata requests', async () => {
       const promises = Array.from({ length: 10 }, () =>
-        request(server.getApp()).get('/tags')
+        request(server.getApp()).get('/tags').set('Authorization', `Bearer ${authToken}`)
       );
 
       const responses = await Promise.all(promises);

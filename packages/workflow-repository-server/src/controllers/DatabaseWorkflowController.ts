@@ -179,7 +179,8 @@ export class DatabaseWorkflowController {
    */
   downloadWorkflowFile = async (req: Request, res: Response): Promise<void> => {
     try {
-      const { id, '*': filePath } = req.params;
+      const { id } = req.params;
+      const filePath = req.params['*'] || req.params['0'];
       if (!id) {
         const response: ApiResponse = {
           success: false,
