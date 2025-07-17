@@ -466,7 +466,7 @@ export class DatabaseWorkflowStorageService {
    */
   async getTreeStructure(path?: string): Promise<any> {
     const records = await this.database.getTreeStructure(path);
-    return this.buildTreeFromRecords(records);
+    return await this.buildTreeFromRecords(records);
   }
 
   /**
@@ -537,7 +537,7 @@ export class DatabaseWorkflowStorageService {
   /**
    * Builds tree structure from database records.
    */
-  private buildTreeFromRecords(records: any[]): any {
+  private async buildTreeFromRecords(records: any[]): Promise<any> {
     const nodeMap = new Map<string, any>();
     const rootNodes: any[] = [];
 
@@ -546,12 +546,16 @@ export class DatabaseWorkflowStorageService {
       const node: any = {
         name: record.name,
         path: record.path,
-        isDirectory: record.isDirectory,
-        children: [],
+        type: record.isDirectory ? 'folder' : 'workflow',
+        children: record.isDirectory ? [] : undefined,
       };
 
+      // If this is a workflow node, populate metadata
       if (record.workflowId) {
-        node.workflowId = record.workflowId;
+        const workflowRecord = await this.database.getWorkflow(record.workflowId);
+        if (workflowRecord) {
+          node.metadata = this.recordToMetadata(workflowRecord);
+        }
       }
 
       nodeMap.set(record.path, node);
@@ -562,7 +566,9 @@ export class DatabaseWorkflowStorageService {
       const node = nodeMap.get(record.path);
       if (record.parentPath && nodeMap.has(record.parentPath)) {
         const parent = nodeMap.get(record.parentPath);
-        parent.children.push(node);
+        if (parent.children) {
+          parent.children.push(node);
+        }
       } else {
         rootNodes.push(node);
       }

@@ -4,14 +4,15 @@
  * for the ExtremeXP workflow repository HTTP API server.
  */
 
-import { WorkflowRepositoryServer, ServerConfig } from './server/WorkflowRepositoryServer.js';
+import { DatabaseWorkflowRepositoryServer, DatabaseServerConfig } from './server/DatabaseWorkflowRepositoryServer.js';
 
 /** Server configuration loaded from environment variables with fallback defaults */
-const config: ServerConfig = {
+const config: DatabaseServerConfig = {
   port: parseInt(process.env['PORT'] || '3001'),
   storagePath: process.env['STORAGE_PATH'] || './workflow-repository',
   jwtSecret: process.env['JWT_SECRET'] || 'your-secret-key-change-in-production',
   corsOrigin: process.env['CORS_ORIGIN'] || '*',
+  databasePath: process.env['DATABASE_PATH'] || './workflow-repository.sqlite3',
 };
 
 /**
@@ -21,19 +22,21 @@ const config: ServerConfig = {
  * @throws Error if server fails to start or port is in use
  */
 async function startServer(): Promise<void> {
-  console.log('Starting Workflow Repository Server...');
+  console.log('Starting Database Workflow Repository Server...');
   console.log('Configuration:', {
     port: config.port,
     storagePath: config.storagePath,
     corsOrigin: config.corsOrigin,
+    databasePath: config.databasePath,
   });
 
   try {
-    const server = new WorkflowRepositoryServer(config);
+    server = new DatabaseWorkflowRepositoryServer(config);
     await server.start();
 
-    console.log('🚀 Server started successfully!');
+    console.log('🚀 Database Server started successfully!');
     console.log(`📂 Storage path: ${config.storagePath}`);
+    console.log(`💾 Database path: ${config.databasePath}`);
     console.log(`🌐 Server URL: http://localhost:${config.port}`);
     console.log('📖 API Documentation:');
     console.log('  - GET  /health - Health check');
@@ -66,19 +69,27 @@ async function startServer(): Promise<void> {
   }
 }
 
+let server: DatabaseWorkflowRepositoryServer | null = null;
+
 /**
  * Handles graceful shutdown on SIGINT (Ctrl+C).
  */
-process.on('SIGINT', () => {
+process.on('SIGINT', async () => {
   console.log('\n👋 Shutting down server...');
+  if (server) {
+    await server.stop();
+  }
   process.exit(0);
 });
 
 /**
  * Handles graceful shutdown on SIGTERM (process termination).
  */
-process.on('SIGTERM', () => {
+process.on('SIGTERM', async () => {
   console.log('\n👋 Shutting down server...');
+  if (server) {
+    await server.stop();
+  }
   process.exit(0);
 });
 
